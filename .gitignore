@@ -2,6 +2,16 @@
 # Ranoa Digital Solutions
 
 # ===================================
+# Claude Code & IDE Configuration
+# ===================================
+.claude/
+
+# ===================================
+# Archive & Temporary Development Files
+# ===================================
+_archive/
+
+# ===================================
 # Environment & Configuration
 # ===================================
 config/.env.php
