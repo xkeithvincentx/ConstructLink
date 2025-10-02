@@ -1,0 +1,33 @@
+{
+    "name": "sample-module",
+    "display_name": "Sample Module",
+    "version": "1.0.0",
+    "description": "A sample module demonstrating the ConstructLink module system capabilities",
+    "author": "ConstructLink Development Team",
+    "main_class": "SampleModule",
+    "dependencies": {
+        "php": "7.4.0",
+        "constructlink": "1.0.0"
+    },
+    "permissions": [
+        {
+            "name": "sample_module.view",
+            "display_name": "View Sample Module",
+            "description": "Allow viewing sample module content"
+        },
+        {
+            "name": "sample_module.manage",
+            "display_name": "Manage Sample Module",
+            "description": "Allow managing sample module settings"
+        }
+    ],
+    "menu_items": [
+        {
+            "title": "Sample Module",
+            "url": "?route=sample-module",
+            "icon": "bi-puzzle",
+            "permission": "sample_module.view",
+            "display_order": 100
+        }
+    ]
+}

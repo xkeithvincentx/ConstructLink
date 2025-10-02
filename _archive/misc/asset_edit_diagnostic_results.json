@@ -1,0 +1,172 @@
+[
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Diagnostic initialized successfully",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Database connection working",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Database charset\/collation",
+        "details": [
+            "utf8mb4",
+            "utf8mb4_unicode_ci"
+        ]
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Testing with asset",
+        "details": {
+            "id": 175,
+            "ref": "CON-LEG-TO-CV-0007",
+            "name": "Battery Cordless Drill (Metal\/Wood)"
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Asset data loading works correctly",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Asset classification data",
+        "details": {
+            "category_id": 4,
+            "category_name": "Power Tools",
+            "equipment_type_id": 6,
+            "equipment_type_name": "Drill",
+            "subtype_id": 10,
+            "subtype_name": null,
+            "brand_id": 4,
+            "brand_name": "Milwaukee"
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Asset has all required fields for editing",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Categories loaded successfully",
+        "details": {
+            "count": 14
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Projects loaded successfully",
+        "details": {
+            "count": 2
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Makers loaded",
+        "details": {
+            "count": 1
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Vendors loaded",
+        "details": {
+            "count": 1
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Clients loaded",
+        "details": {
+            "count": 0
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Brands loaded successfully",
+        "details": {
+            "count": 7
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Equipment-types API working",
+        "details": {
+            "category_id": 1,
+            "category_name": "Electrical Supplies",
+            "equipment_types_count": 7,
+            "sample_equipment_types": [
+                "Circuit Protection",
+                "Conduit System",
+                "Electrical Panel"
+            ]
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "WARNING",
+        "message": "Subtypes API returns empty data",
+        "details": {
+            "equipment_type_id": 106
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Found fully classified asset for dropdown testing",
+        "details": {
+            "asset_id": 175,
+            "ref": "CON-LEG-TO-CV-0007",
+            "category_id": 4,
+            "equipment_type_id": 6,
+            "subtype_id": 10,
+            "brand_id": 4
+        }
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Asset's equipment type found in category equipment types",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "SUCCESS",
+        "message": "Asset's subtype found in equipment type subtypes",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "To test JavaScript\/Frontend issues, perform these steps:",
+        "details": null
+    },
+    {
+        "timestamp": "2025-09-02 13:35:55",
+        "level": "INFO",
+        "message": "Test URLs",
+        "details": {
+            "edit_form": "?route=assets\/edit&id=175",
+            "equipment_types_api": "?route=api\/equipment-types&category_id=1",
+            "subtypes_api": "?route=api\/subtypes&equipment_type_id=1"
+        }
+    }
+]

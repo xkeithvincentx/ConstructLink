@@ -1,0 +1,110 @@
+# ConstructLink - Git Ignore Configuration
+# Ranoa Digital Solutions
+
+# ===================================
+# Environment & Configuration
+# ===================================
+config/.env.php
+.env
+.env.*
+!.env.example
+
+# ===================================
+# Sensitive Data
+# ===================================
+config/database.php
+*.key
+*.pem
+credentials.json
+
+# ===================================
+# User Uploads & Generated Files
+# ===================================
+uploads/*
+!uploads/.gitkeep
+backups/*
+!backups/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# ===================================
+# Dependencies
+# ===================================
+vendor/
+node_modules/
+composer.phar
+package-lock.json
+yarn.lock
+
+# ===================================
+# IDE & Editor Files
+# ===================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.phpintel/
+.buildpath
+.project
+.settings/
+*.code-workspace
+
+# ===================================
+# Operating System Files
+# ===================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===================================
+# Temporary & Cache Files
+# ===================================
+*.tmp
+*.temp
+*.cache
+*.log
+*.swp
+*.swo
+*~
+.sass-cache/
+*.css.map
+
+# ===================================
+# PHP Specific
+# ===================================
+*.php~
+*.php.bak
+.phpunit.result.cache
+
+# ===================================
+# Version Control
+# ===================================
+*.orig
+*.rej
+*.patch
+
+# ===================================
+# Build & Distribution
+# ===================================
+dist/
+build/
+*.min.js
+*.min.css
+
+# ===================================
+# Documentation (Keep README.md)
+# ===================================
+# Ignore generated docs, keep main README
+docs/generated/
+
+# ===================================
+# Testing (if applicable)
+# ===================================
+phpunit.xml
+.phpunit.cache/
+coverage/

@@ -1,0 +1,276 @@
+<?php
+/**
+ * ConstructLink™ Transfer Receipt View
+ * Site Inventory Clerk receipt step in MVA workflow
+ */
+
+// Start output buffering
+ob_start();
+
+$user = Auth::getInstance()->getCurrentUser();
+$userRole = $user['role_name'] ?? 'Guest';
+?>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-box-arrow-in-down me-2"></i>Receive Transfer
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Transfer
+        </a>
+    </div>
+</div>
+
+<!-- Transfer Information -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Transfer Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Transfer ID:</strong><br>
+                        <span class="text-muted">#<?= htmlspecialchars($transfer['id']) ?></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-primary"><?= $transfer['status'] ?></span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Asset:</strong><br>
+                        <span class="text-muted"><?= htmlspecialchars($transfer['asset_name']) ?> (<?= htmlspecialchars($transfer['asset_ref']) ?>)</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Transfer Type:</strong><br>
+                        <span class="text-muted"><?= ucfirst($transfer['transfer_type']) ?></span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>From Project:</strong><br>
+                        <span class="text-muted"><?= htmlspecialchars($transfer['from_project_name']) ?></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>To Project:</strong><br>
+                        <span class="text-muted"><?= htmlspecialchars($transfer['to_project_name']) ?></span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Reason for Transfer:</strong><br>
+                        <p class="text-muted mt-1"><?= htmlspecialchars($transfer['reason']) ?></p>
+                    </div>
+                </div>
+                
+                <?php if (!empty($transfer['notes'])): ?>
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Notes:</strong><br>
+                        <p class="text-muted mt-1"><?= htmlspecialchars($transfer['notes']) ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Receipt Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-check-circle me-2"></i>Confirm Receipt
+                </h5>
+            </div>
+            <div class="card-body">
+                <?php if (!empty($errors)): ?>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <?php foreach ($errors as $error): ?>
+                                <li><?= htmlspecialchars($error) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (canReceiveTransfer($transfer, $user)): ?>
+                <form method="POST" action="?route=transfers/receive&id=<?= $transfer['id'] ?>">
+                    <?= CSRFProtection::getTokenField() ?>
+                    
+                    <div class="mb-3">
+                        <label for="receipt_notes" class="form-label">Receipt Notes</label>
+                        <textarea class="form-control" id="receipt_notes" name="receipt_notes" rows="4" 
+                                  placeholder="Please provide receipt notes, including condition of the asset and any discrepancies..."><?= htmlspecialchars($_POST['receipt_notes'] ?? '') ?></textarea>
+                        <div class="form-text">
+                            Document the condition of the received asset and any relevant details about the receipt.
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>Confirm Receipt
+                        </button>
+                        <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+                <?php else: ?>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to receive this transfer or it is not in a receivable status.
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Receipt Guidelines -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Receipt Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">As a Site Inventory Clerk, verify:</h6>
+                    <ul class="mb-0">
+                        <li>The asset matches the transfer description</li>
+                        <li>The asset is in the expected condition</li>
+                        <li>All accessories/parts are included</li>
+                        <li>Document any damage or missing items</li>
+                        <li>Confirm proper storage location</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transfer Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Current Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Transfer Requested</h6>
+                            <p class="timeline-text">
+                                By: <?= htmlspecialchars($transfer['initiated_by_name']) ?><br>
+                                <small class="text-muted"><?= date('M j, Y g:i A', strtotime($transfer['created_at'])) ?></small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Transfer Verified</h6>
+                            <p class="timeline-text">
+                                <?php if (!empty($transfer['verified_by_name'])): ?>
+                                    By: <?= htmlspecialchars($transfer['verified_by_name']) ?><br>
+                                <?php endif; ?>
+                                <small class="text-muted"><?= date('M j, Y g:i A', strtotime($transfer['verification_date'] ?? $transfer['updated_at'])) ?></small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Transfer Approved</h6>
+                            <p class="timeline-text">
+                                <?php if (!empty($transfer['approved_by_name'])): ?>
+                                    By: <?= htmlspecialchars($transfer['approved_by_name']) ?><br>
+                                <?php endif; ?>
+                                <small class="text-muted"><?= date('M j, Y g:i A', strtotime($transfer['approval_date'] ?? $transfer['updated_at'])) ?></small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Pending Receipt</h6>
+                            <p class="timeline-text">
+                                Awaiting Site Inventory Clerk receipt<br>
+                                <small class="text-muted">Current step</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+</style>
+
+<?php
+$content = ob_get_clean();
+$pageTitle = 'Receive Transfer - ConstructLink™';
+include APP_ROOT . '/views/layouts/main.php';
+?> 

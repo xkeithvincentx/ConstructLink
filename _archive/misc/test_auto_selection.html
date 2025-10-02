@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auto-Selection</title>
+</head>
+<body>
+    <h1>Test Category and Equipment Type Auto-Selection</h1>
+    
+    <form>
+        <div>
+            <label for="category_id">Category:</label>
+            <select id="category_id">
+                <option value="">Select Category</option>
+                <option value="4">Power Tools</option>
+                <option value="13">Welding Equipment</option>
+                <option value="5">Hand Tools</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="equipment_type_id">Equipment Type:</label>
+            <select id="equipment_type_id">
+                <option value="">Select Equipment Type</option>
+            </select>
+        </div>
+    </form>
+
+    <script>
+        // Simulate the API data structure
+        const mockEquipmentTypes = [
+            { id: 6, name: 'Drill', category_id: '4', category_name: 'Power Tools', description: 'Drilling and boring tools' },
+            { id: 7, name: 'Grinder', category_id: '4', category_name: 'Power Tools', description: 'Grinding tools' },
+            { id: 1, name: 'Arc Welder', category_id: '13', category_name: 'Welding Equipment', description: 'Electric arc welding machines' },
+            { id: 14, name: 'Hammer', category_id: '5', category_name: 'Hand Tools', description: 'Striking tools' }
+        ];
+        
+        let allEquipmentTypes = mockEquipmentTypes;
+        
+        const categorySelect = document.getElementById('category_id');
+        const equipmentTypeSelect = document.getElementById('equipment_type_id');
+        
+        // Initialize with all equipment types
+        populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
+        
+        // Category change handler
+        categorySelect.addEventListener('change', function() {
+            const categoryId = this.value;
+            console.log('Category changed to:', categoryId);
+            filterEquipmentTypesByCategory(categoryId);
+        });
+        
+        // Equipment type change handler  
+        equipmentTypeSelect.addEventListener('change', function() {
+            const equipmentTypeId = this.value;
+            const selectedOption = this.options[this.selectedIndex];
+            
+            console.log('Equipment type changed:', equipmentTypeId);
+            console.log('Selected option:', selectedOption);
+            console.log('Dataset categoryId:', selectedOption?.dataset?.categoryId);
+            console.log('Dataset categoryName:', selectedOption?.dataset?.categoryName);
+            
+            // Auto-select category if equipment type is selected
+            if (equipmentTypeId && selectedOption && selectedOption.dataset && selectedOption.dataset.categoryId) {
+                const categoryId = selectedOption.dataset.categoryId;
+                const categoryName = selectedOption.dataset.categoryName;
+                
+                console.log('Current category value:', categorySelect.value, 'Target category:', categoryId);
+                
+                if (categorySelect.value !== categoryId) {
+                    console.log('Auto-selecting category:', categoryId, categoryName);
+                    categorySelect.value = categoryId;
+                    categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    alert('Category automatically selected: ' + categoryName);
+                } else {
+                    console.log('Category already selected correctly');
+                }
+            } else {
+                console.log('No category data found for equipment type or no equipment type selected');
+            }
+        });
+        
+        // Helper functions
+        function populateEquipmentTypeDropdown(types, placeholder = 'Select Equipment Type') {
+            equipmentTypeSelect.innerHTML = `<option value="">${placeholder}</option>`;
+            
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = type.name + (placeholder.includes('search') ? ` (${type.category_name})` : '');
+                option.dataset.categoryId = type.category_id;
+                option.dataset.categoryName = type.category_name;
+                if (type.description) {
+                    option.title = type.description;
+                }
+                equipmentTypeSelect.appendChild(option);
+            });
+            
+            console.log('Populated dropdown with', types.length, 'equipment types');
+        }
+        
+        function filterEquipmentTypesByCategory(categoryId) {
+            if (!categoryId) {
+                populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
+                return;
+            }
+            
+            const filteredTypes = allEquipmentTypes.filter(type => type.category_id == categoryId);
+            console.log('Filtering by category', categoryId, '- found', filteredTypes.length, 'types');
+            populateEquipmentTypeDropdown(filteredTypes, 'Select Equipment Type');
+        }
+    </script>
+</body>
+</html>
