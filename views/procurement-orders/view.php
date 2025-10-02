@@ -174,27 +174,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     <?php endif; ?>
 
-    <!-- Display Messages -->
-    <?php if (isset($_GET['message'])): ?>
-        <?php
-        $messages = [
-            'procurement_order_created' => ['type' => 'success', 'text' => 'Procurement order has been created successfully.'],
-            'procurement_order_updated' => ['type' => 'success', 'text' => 'Procurement order has been updated successfully.'],
-            'procurement_order_approved' => ['type' => 'success', 'text' => 'Procurement order has been approved successfully.'],
-            'procurement_order_rejected' => ['type' => 'danger', 'text' => 'Procurement order has been rejected.'],
-            'procurement_order_received' => ['type' => 'success', 'text' => 'Procurement order has been received successfully.'],
-            'assets_generated' => ['type' => 'success', 'text' => 'Assets have been generated successfully. Count: ' . ($_GET['count'] ?? 0)],
-            'feature_not_available' => ['type' => 'warning', 'text' => 'Asset generation feature is currently not available. Please contact your system administrator.']
-        ];
-        $message = $messages[$_GET['message']] ?? null;
-        if ($message): ?>
-            <div class="alert alert-<?= $message['type'] ?> alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i><?= $message['text'] ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-    <?php endif; ?>
-
     <div class="row">
         <!-- Main Content -->
         <div class="col-lg-8">

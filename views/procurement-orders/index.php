@@ -38,39 +38,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php
-    $messages = [
-        'procurement_order_created' => ['type' => 'success', 'text' => 'Procurement order has been created successfully.'],
-        'procurement_order_updated' => ['type' => 'success', 'text' => 'Procurement order has been updated successfully.'],
-        'procurement_order_approved' => ['type' => 'success', 'text' => 'Procurement order has been approved successfully.'],
-        'procurement_order_rejected' => ['type' => 'danger', 'text' => 'Procurement order has been rejected.'],
-        'procurement_order_received' => ['type' => 'success', 'text' => 'Procurement order has been received successfully.'],
-        'assets_generated' => ['type' => 'success', 'text' => 'Assets have been generated successfully. Count: ' . ($_GET['count'] ?? 0)],
-        'submitted_for_approval' => ['type' => 'success', 'text' => 'Procurement order has been submitted for approval successfully.'],
-        'retroactive_created' => ['type' => 'warning', 'text' => 'Retroactive procurement order has been created successfully and will follow standard workflow.']
-    ];
-    $messageKey = is_array($_GET['message']) ? $_GET['message'][0] : $_GET['message'];
-    $message = $messages[$messageKey] ?? null;
-    if ($message):
-    ?>
-        <div class="alert alert-<?= $message['type'] ?> alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i><?= $message['text'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
-<?php if (isset($_GET['error'])): ?>
-    <?php if ($_GET['error'] === 'export_failed'): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>Failed to export procurement orders. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <!-- MVA Workflow Sidebar -->
 <div class="alert alert-info mb-4">
     <strong>MVA Workflow:</strong> <br>

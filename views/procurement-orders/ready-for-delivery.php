@@ -21,25 +21,6 @@ $userRole = $user['role_name'] ?? 'Guest';
     </div>
 </div>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php if ($_GET['message'] === 'delivery_scheduled'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Delivery has been scheduled successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
-<?php if (isset($_GET['error'])): ?>
-    <?php if ($_GET['error'] === 'schedule_failed'): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>Failed to schedule delivery. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-4">

@@ -47,23 +47,6 @@ $canReceive = in_array($userRole, $roleConfig['procurement-orders/receive'] ?? [
     </div>
 <?php endif; ?>
 
-<!-- Success Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php
-    $messageMap = [
-        'procurement_order_received' => ['type' => 'success', 'text' => 'Procurement order has been received successfully.'],
-    ];
-    $messageInfo = $messageMap[$_GET['message']] ?? null;
-    ?>
-    <?php if ($messageInfo): ?>
-        <div class="alert alert-<?= $messageInfo['type'] ?> alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>
-            <?= htmlspecialchars($messageInfo['text']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <div class="row">
         <div class="col-lg-8">
             <!-- Receive Form -->

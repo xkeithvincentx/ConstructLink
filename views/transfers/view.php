@@ -67,66 +67,6 @@ $userRole = $user['role_name'] ?? 'Guest';
     </div>
 </div>
 
-<!-- Success/Error Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php if ($_GET['message'] === 'transfer_created'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Transfer request created successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_streamlined'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-lightning-fill me-2"></i>Transfer completed with streamlined process! Ready for final completion.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_simplified'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check2-circle me-2"></i>Transfer created with simplified process! Awaiting final approval.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_verified'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Transfer request verified successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_approved'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Transfer approved successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_received'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Transfer received successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_completed'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Transfer completed successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'transfer_canceled'): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>Transfer canceled successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'asset_returned'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset returned successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'return_initiated'): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="bi bi-truck me-2"></i>Return process initiated successfully! Asset is now in transit back to origin project.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'return_completed'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Return completed successfully! Asset is now available at origin project.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <div class="row">
     <!-- Transfer Details -->
     <div class="col-lg-8">

@@ -74,29 +74,6 @@ $user = $auth->getCurrentUser();
     </div>
 </div>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php
-    $messages = [
-        'tool_borrowed' => 'Tool borrowed successfully!',
-        'tool_returned' => 'Tool returned successfully!',
-        'borrowing_extended' => 'Borrowing period extended successfully!',
-        'tool_verified' => 'Tool request verified successfully!',
-        'tool_approved' => 'Tool request approved successfully!',
-        'tool_canceled' => 'Tool request canceled successfully!',
-        'tool_processed_streamlined' => 'Basic tool processed successfully using streamlined workflow!',
-        'tool_critical_created' => 'Critical tool request created and sent for verification!'
-    ];
-    $message = $messages[$_GET['message']] ?? '';
-    ?>
-    <?php if ($message): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($message) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <!-- Status Badge -->
 <div class="row mb-4">
     <div class="col-12">
@@ -520,15 +497,6 @@ function markOverdue(borrowId) {
         });
     }
 }
-
-// Auto-dismiss alerts after 5 seconds
-setTimeout(function() {
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(function(alert) {
-        const bsAlert = new bootstrap.Alert(alert);
-        bsAlert.close();
-    });
-}, 5000);
 </script>
 
 <style>

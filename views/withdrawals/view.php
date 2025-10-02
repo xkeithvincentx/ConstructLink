@@ -70,36 +70,6 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
     </div>
 </div>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php if ($_GET['message'] === 'withdrawal_created'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Withdrawal request created successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'withdrawal_verified'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Withdrawal verified successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'withdrawal_approved'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Withdrawal approved successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'withdrawal_released'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset has been released successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php elseif ($_GET['message'] === 'withdrawal_returned'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset has been returned successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <div class="row">
     <div class="col-lg-8">
         <!-- Withdrawal Information -->

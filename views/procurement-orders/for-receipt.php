@@ -21,25 +21,6 @@ $userRole = $user['role_name'] ?? 'Guest';
     </div>
 </div>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php if ($_GET['message'] === 'receipt_confirmed'): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Receipt has been confirmed successfully!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
-<?php if (isset($_GET['error'])): ?>
-    <?php if ($_GET['error'] === 'receipt_failed'): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>Failed to confirm receipt. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
 <!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-3">
