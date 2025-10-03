@@ -2,15 +2,15 @@
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Site Actions -->
-        <div class="card mb-4">
-            <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0 text-warning">
-                    <i class="bi bi-clipboard-data me-2"></i>Pending Site Actions
+        <div class="card mb-4" style="border-left: 4px solid var(--warning-color);">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-data me-2 text-warning"></i>Pending Site Actions
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <?php 
+                    <?php
                     $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                     $pendingItems = [
                         ['label' => 'Draft Requests', 'count' => $siteData['draft_requests'] ?? 0, 'route' => 'requests?status=Draft', 'icon' => 'bi-file-earmark-text', 'color' => 'primary'],
@@ -18,21 +18,21 @@
                         ['label' => 'Transfers to Receive', 'count' => $siteData['transfers_to_receive'] ?? 0, 'route' => 'transfers?status=Approved', 'icon' => 'bi-arrow-down', 'color' => 'info'],
                         ['label' => 'Withdrawals to Verify', 'count' => $siteData['withdrawals_to_verify'] ?? 0, 'route' => 'withdrawals?status=Pending+Verification', 'icon' => 'bi-check-circle', 'color' => 'warning']
                     ];
-                    
+
                     foreach ($pendingItems as $item):
                     ?>
                     <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 border rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2"></i>
+                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
                                     <span class="fw-semibold"><?= $item['label'] ?></span>
                                 </div>
                                 <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
                             </div>
                             <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-outline-<?= $item['color'] ?> mt-2">
-                                Process Now <i class="bi bi-arrow-right"></i>
+                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
+                                <i class="bi bi-eye me-1"></i>Process Now
                             </a>
                             <?php endif; ?>
                         </div>

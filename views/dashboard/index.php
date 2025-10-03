@@ -129,14 +129,19 @@ ob_start();
 <div class="row mb-4">
     <!-- Total Assets -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 border-primary">
-            <div class="card-body text-center">
-                <div class="text-primary mb-2">
-                    <i class="bi bi-box fs-1"></i>
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Assets</p>
+                        <h3 class="mb-0"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h3>
+                    </div>
+                    <div class="text-muted" style="opacity: 0.3;">
+                        <i class="bi bi-box fs-1"></i>
+                    </div>
                 </div>
-                <h3 class="text-primary"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h3>
-                <p class="card-text text-muted">Total Assets</p>
                 <small class="text-muted">
+                    <i class="bi bi-cash-stack me-1"></i>
                     Value: <?= formatCurrency($dashboardData['total_asset_value'] ?? 0) ?>
                 </small>
             </div>
@@ -145,20 +150,25 @@ ob_start();
 
     <!-- Available Assets -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 border-success">
-            <div class="card-body text-center">
-                <div class="text-success mb-2">
-                    <i class="bi bi-check-circle fs-1"></i>
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-1 small">Available</p>
+                        <h3 class="mb-0 text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></h3>
+                    </div>
+                    <div class="text-success" style="opacity: 0.3;">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
                 </div>
-                <h3 class="text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></h3>
-                <p class="card-text text-muted">Available</p>
                 <small class="text-muted">
-                    <?php 
+                    <?php
                     $total = $dashboardData['total_assets'] ?? 1;
                     $available = $dashboardData['available_assets'] ?? 0;
                     $percentage = $total > 0 ? round(($available / $total) * 100, 1) : 0;
-                    echo $percentage . '% of total';
                     ?>
+                    <i class="bi bi-graph-up me-1"></i>
+                    <?= $percentage ?>% of total
                 </small>
             </div>
         </div>
@@ -166,19 +176,24 @@ ob_start();
 
     <!-- In Use Assets -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 border-warning">
-            <div class="card-body text-center">
-                <div class="text-warning mb-2">
-                    <i class="bi bi-gear fs-1"></i>
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-1 small">In Use</p>
+                        <h3 class="mb-0 text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></h3>
+                    </div>
+                    <div class="text-warning" style="opacity: 0.3;">
+                        <i class="bi bi-gear fs-1"></i>
+                    </div>
                 </div>
-                <h3 class="text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></h3>
-                <p class="card-text text-muted">In Use</p>
                 <small class="text-muted">
-                    <?php 
+                    <?php
                     $inUse = $dashboardData['in_use_assets'] ?? 0;
                     $percentage = $total > 0 ? round(($inUse / $total) * 100, 1) : 0;
-                    echo $percentage . '% of total';
                     ?>
+                    <i class="bi bi-graph-up me-1"></i>
+                    <?= $percentage ?>% of total
                 </small>
             </div>
         </div>
@@ -272,14 +287,20 @@ ob_start();
     ?>
     
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 border-<?= $fourthCard['border'] ?>">
-            <div class="card-body text-center">
-                <div class="text-<?= $fourthCard['color'] ?> mb-2">
-                    <i class="<?= $fourthCard['icon'] ?> fs-1"></i>
+        <div class="card h-100" style="border-left: 4px solid var(--<?= $fourthCard['color'] ?>-color);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-1 small"><?= $fourthCard['title'] ?></p>
+                        <h3 class="mb-0 text-<?= $fourthCard['color'] ?>"><?= is_numeric($fourthCard['value']) ? number_format($fourthCard['value']) : $fourthCard['value'] ?></h3>
+                    </div>
+                    <div class="text-<?= $fourthCard['color'] ?>" style="opacity: 0.3;">
+                        <i class="<?= $fourthCard['icon'] ?> fs-1"></i>
+                    </div>
                 </div>
-                <h3 class="text-<?= $fourthCard['color'] ?>"><?= is_numeric($fourthCard['value']) ? number_format($fourthCard['value']) : $fourthCard['value'] ?></h3>
-                <p class="card-text text-muted"><?= $fourthCard['title'] ?></p>
-                <small class="text-muted"><?= $fourthCard['subtitle'] ?></small>
+                <small class="text-muted">
+                    <?= $fourthCard['subtitle'] ?>
+                </small>
             </div>
         </div>
     </div>

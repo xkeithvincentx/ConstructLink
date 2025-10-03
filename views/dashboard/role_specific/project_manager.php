@@ -2,10 +2,10 @@
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Project Actions -->
-        <div class="card mb-4">
-            <div class="card-header bg-info bg-opacity-10">
-                <h5 class="mb-0 text-info">
-                    <i class="bi bi-clipboard-check me-2"></i>Pending Project Actions
+        <div class="card mb-4" style="border-left: 4px solid var(--info-color);">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check me-2 text-info"></i>Pending Project Actions
                 </h5>
             </div>
             <div class="card-body">
@@ -22,17 +22,17 @@
                     foreach ($pendingItems as $item):
                     ?>
                     <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 border rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2"></i>
+                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
                                     <span class="fw-semibold"><?= $item['label'] ?></span>
                                 </div>
                                 <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
                             </div>
                             <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-outline-<?= $item['color'] ?> mt-2">
-                                Review Now <i class="bi bi-arrow-right"></i>
+                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
+                                <i class="bi bi-eye me-1"></i>Review Now
                             </a>
                             <?php endif; ?>
                         </div>

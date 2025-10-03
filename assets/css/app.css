@@ -3,60 +3,88 @@
  * Main application stylesheet
  */
 
-/* Root Variables */
+/* Root Variables - Muted Professional Palette */
 :root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
-    --success-color: #1cc88a;
-    --warning-color: #f6c23e;
-    --danger-color: #e74a3b;
-    --info-color: #36b9cc;
-    --light-color: #f8f9fa;
-    --dark-color: #5a5c69;
-    --border-color: #e3e6f0;
-    --shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    /* Primary Brand Colors (Muted & Professional) */
+    --primary-color: #6B7280;        /* Slate Gray - neutral, professional */
+    --primary-dark: #4B5563;         /* Darker slate for contrast */
+    --secondary-color: #9CA3AF;      /* Light slate for secondary elements */
+    --accent-color: #10B981;         /* Muted Emerald - success/action accent */
+
+    /* Functional Colors (Soft & Clear) */
+    --success-color: #10B981;        /* Muted Emerald */
+    --warning-color: #F59E0B;        /* Amber */
+    --danger-color: #EF4444;         /* Soft Red */
+    --info-color: #3B82F6;           /* Sky Blue */
+    --neutral-color: #6B7280;        /* Slate */
+
+    /* Background & UI Colors */
+    --bg-light: #F9FAFB;             /* Off-white background */
+    --bg-card: #FFFFFF;              /* Pure white cards */
+    --light-color: #F3F4F6;          /* Light gray for hover states */
+    --border-color: #E5E7EB;         /* Light gray borders */
+
+    /* Text Colors */
+    --text-primary: #111827;         /* Near-black text */
+    --text-muted: #6B7280;           /* Muted gray text */
+    --dark-color: #374151;           /* Dark gray for headings */
+
+    /* Shadows */
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Global Styles */
 body {
     font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f8f9fc;
-    color: var(--dark-color);
+    background-color: var(--bg-light);
+    color: var(--text-primary);
 }
 
 /* Custom Bootstrap Overrides */
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    border: none;
-    transition: all 0.3s ease;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    color: #ffffff;
+    transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-lg);
 }
 
 .bg-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.border-primary {
+    border-color: var(--primary-color) !important;
 }
 
 /* Card Styles */
 .card {
     box-shadow: var(--shadow);
-    border: none;
-    border-radius: 0.75rem;
-    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--bg-card);
+    transition: all 0.2s ease;
 }
 
 .card:hover {
     box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
 }
 
 .card-header {
-    background-color: #fff;
+    background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
     font-weight: 600;
     color: var(--dark-color);
@@ -89,13 +117,13 @@ body {
 }
 
 .sidebar .nav-link.active {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background-color: var(--primary-color);
     color: white;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    box-shadow: var(--shadow);
 }
 
 .sidebar .nav-link.active:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    background-color: var(--primary-dark);
     transform: translateX(5px);
 }
 
@@ -120,7 +148,7 @@ body {
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(102, 126, 234, 0.05);
+    background-color: var(--light-color);
 }
 
 /* Badge Styles */
@@ -146,7 +174,7 @@ body {
 
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.25);
 }
 
 .input-group-text {
@@ -163,28 +191,33 @@ body {
 }
 
 .alert-primary {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    background-color: rgba(107, 114, 128, 0.1);
     border-left: 4px solid var(--primary-color);
+    color: var(--dark-color);
 }
 
 .alert-success {
-    background-color: rgba(28, 200, 138, 0.1);
+    background-color: rgba(16, 185, 129, 0.1);
     border-left: 4px solid var(--success-color);
+    color: var(--dark-color);
 }
 
 .alert-warning {
-    background-color: rgba(246, 194, 62, 0.1);
+    background-color: rgba(245, 158, 11, 0.1);
     border-left: 4px solid var(--warning-color);
+    color: var(--dark-color);
 }
 
 .alert-danger {
-    background-color: rgba(231, 74, 59, 0.1);
+    background-color: rgba(239, 68, 68, 0.1);
     border-left: 4px solid var(--danger-color);
+    color: var(--dark-color);
 }
 
 .alert-info {
-    background-color: rgba(54, 185, 204, 0.1);
+    background-color: rgba(59, 130, 246, 0.1);
     border-left: 4px solid var(--info-color);
+    color: var(--dark-color);
 }
 
 /* Loading Spinner */
@@ -235,7 +268,7 @@ body {
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+    background: var(--border-color);
 }
 
 .timeline-item {
@@ -255,26 +288,25 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background-color: var(--primary-color);
     border: 3px solid #fff;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.2);
 }
 
 /* Statistics Cards */
 .stat-card {
-    background: linear-gradient(135deg, #fff 0%, #f8f9fc 100%);
+    background-color: var(--bg-card);
     border-left: 4px solid var(--primary-color);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
 }
 
 .stat-card .stat-icon {
     font-size: 2rem;
-    opacity: 0.3;
+    opacity: 0.2;
 }
 
 /* Search Results Dropdown */
@@ -391,15 +423,11 @@ body {
 
 /* Utility Classes */
 .text-gradient {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--primary-color);
 }
 
 .border-gradient {
-    border: 2px solid;
-    border-image: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) 1;
+    border: 2px solid var(--primary-color);
 }
 
 .shadow-sm { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
@@ -416,12 +444,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background-color: var(--primary-color);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    background-color: var(--primary-dark);
 }
 
 /* Focus Styles for Accessibility */

@@ -2,45 +2,45 @@
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- System Overview -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary bg-opacity-10">
-                <h5 class="mb-0 text-primary">
-                    <i class="bi bi-speedometer2 me-2"></i>System Overview
+        <div class="card mb-4" style="border-left: 4px solid var(--primary-color);">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-speedometer2 me-2 text-primary"></i>System Overview
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <div class="text-center">
-                            <i class="bi bi-people text-primary fs-1"></i>
-                            <h4 class="text-primary"><?= number_format($dashboardData['role_specific']['admin']['total_users'] ?? 0) ?></h4>
-                            <p class="text-muted mb-0">Total Users</p>
+                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
+                            <i class="bi bi-people text-muted fs-1" style="opacity: 0.4;"></i>
+                            <h4 class="mt-2 mb-1"><?= number_format($dashboardData['role_specific']['admin']['total_users'] ?? 0) ?></h4>
+                            <p class="text-muted mb-1 small">Total Users</p>
                             <small class="text-success">
-                                <?= number_format($dashboardData['role_specific']['admin']['active_users'] ?? 0) ?> active
+                                <i class="bi bi-check-circle"></i> <?= number_format($dashboardData['role_specific']['admin']['active_users'] ?? 0) ?> active
                             </small>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <div class="text-center">
-                            <i class="bi bi-activity text-success fs-1"></i>
-                            <h4 class="text-success"><?= number_format($dashboardData['role_specific']['admin']['active_sessions'] ?? 0) ?></h4>
-                            <p class="text-muted mb-0">Active Sessions</p>
+                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
+                            <i class="bi bi-activity text-success fs-1" style="opacity: 0.4;"></i>
+                            <h4 class="mt-2 mb-1 text-success"><?= number_format($dashboardData['role_specific']['admin']['active_sessions'] ?? 0) ?></h4>
+                            <p class="text-muted mb-1 small">Active Sessions</p>
                             <small class="text-muted">Current online users</small>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <div class="text-center">
-                            <i class="bi bi-database text-info fs-1"></i>
-                            <h4 class="text-info"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h4>
-                            <p class="text-muted mb-0">Total Assets</p>
+                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
+                            <i class="bi bi-database text-info fs-1" style="opacity: 0.4;"></i>
+                            <h4 class="mt-2 mb-1 text-info"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h4>
+                            <p class="text-muted mb-1 small">Total Assets</p>
                             <small class="text-muted">System-wide</small>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <div class="text-center">
-                            <i class="bi bi-building text-warning fs-1"></i>
-                            <h4 class="text-warning"><?= number_format($dashboardData['active_projects'] ?? 0) ?></h4>
-                            <p class="text-muted mb-0">Active Projects</p>
+                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
+                            <i class="bi bi-building text-warning fs-1" style="opacity: 0.4;"></i>
+                            <h4 class="mt-2 mb-1 text-warning"><?= number_format($dashboardData['active_projects'] ?? 0) ?></h4>
+                            <p class="text-muted mb-1 small">Active Projects</p>
                             <small class="text-muted">Currently running</small>
                         </div>
                     </div>
