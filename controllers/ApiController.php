@@ -1216,15 +1216,33 @@ class ApiController {
             echo json_encode(['error' => 'Authentication required']);
             return;
         }
-        
+
         try {
             $user = $this->auth->getCurrentUser();
             $userRole = $user['role_name'];
             $userId = $user['id'];
             $limit = min((int)($_GET['limit'] ?? 10), 50);
             $offset = max((int)($_GET['offset'] ?? 0), 0);
-            
+
             $notifications = [];
+
+            // Get database notifications first
+            require_once APP_ROOT . '/models/NotificationModel.php';
+            $notificationModel = new NotificationModel();
+            $dbNotifications = $notificationModel->getUserNotifications($userId, $limit, $offset);
+
+            foreach ($dbNotifications as $dbNotif) {
+                $notifications[] = [
+                    'id' => $dbNotif['id'],
+                    'type' => $dbNotif['type'],
+                    'title' => $dbNotif['title'],
+                    'message' => $dbNotif['message'],
+                    'icon' => $this->getNotificationIcon($dbNotif['type']),
+                    'url' => $dbNotif['url'] ?? '#',
+                    'time' => $this->timeAgo($dbNotif['created_at']),
+                    'unread' => !$dbNotif['is_read']
+                ];
+            }
             
             // Get overdue withdrawals
             if (hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
@@ -1354,6 +1372,9 @@ class ApiController {
             // Calculate total before pagination
             $totalCount = count($notifications);
             $unreadCount = count(array_filter($notifications, function($n) { return $n['unread']; }));
+
+            // Add database unread count
+            $unreadCount += $notificationModel->getUnreadCount($userId);
             
             // Apply pagination
             $notifications = array_slice($notifications, $offset, $limit);
@@ -1406,11 +1427,15 @@ class ApiController {
                 return;
             }
             
-            // For now, just return success since we're using real-time notifications
-            // In a real implementation, you'd store read status in database
+            // Mark notification as read in database
+            require_once APP_ROOT . '/models/NotificationModel.php';
+            $notificationModel = new NotificationModel();
+
+            $result = $notificationModel->markAsRead($notificationId);
+
             echo json_encode([
-                'success' => true,
-                'message' => 'Notification marked as read'
+                'success' => $result,
+                'message' => $result ? 'Notification marked as read' : 'Failed to mark notification as read'
             ]);
             
         } catch (Exception $e) {
@@ -1428,15 +1453,32 @@ class ApiController {
      */
     private function timeAgo($datetime) {
         if (empty($datetime)) return 'N/A';
-        
+
         $time = time() - strtotime($datetime);
-        
+
         if ($time < 60) return 'just now';
         if ($time < 3600) return floor($time / 60) . ' minutes ago';
         if ($time < 86400) return floor($time / 3600) . ' hours ago';
         if ($time < 2592000) return floor($time / 86400) . ' days ago';
-        
+
         return date('M j, Y', strtotime($datetime));
+    }
+
+    /**
+     * Get notification icon based on type
+     */
+    private function getNotificationIcon($type) {
+        $icons = [
+            'info' => 'bi bi-info-circle',
+            'success' => 'bi bi-check-circle',
+            'warning' => 'bi bi-exclamation-triangle',
+            'danger' => 'bi bi-x-circle',
+            'transfer' => 'bi bi-arrow-left-right',
+            'approval' => 'bi bi-check-circle-fill',
+            'workflow' => 'bi bi-diagram-3'
+        ];
+
+        return $icons[$type] ?? 'bi bi-bell';
     }
     
     /**
