@@ -91,8 +91,9 @@ class TransferController {
             // Get filter options
             $projectModel = new ProjectModel();
             $assetModel = new AssetModel();
-            
-            $projects = $projectModel->getActiveProjects();
+
+            // For transfers, get ALL active projects (not filtered by role)
+            $projects = $projectModel->getAllActiveProjects();
             $assets = $assetModel->findAll([], "name ASC", 100);
             
             $pageTitle = 'Asset Transfers - ConstructLink™';
@@ -214,8 +215,10 @@ class TransferController {
         // Get form options
         try {
             $projectModel = new ProjectModel();
-            
-            $projects = $projectModel->getActiveProjects();
+
+            // For transfers, get ALL active projects (not filtered by role)
+            // Project Managers need to see all projects to transfer assets between sites
+            $projects = $projectModel->getAllActiveProjects();
             $availableAssets = $this->getAvailableAssetsForTransfer();
             
             $pageTitle = 'Create Transfer Request - ConstructLink™';

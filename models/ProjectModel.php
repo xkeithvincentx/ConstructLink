@@ -580,35 +580,58 @@ class ProjectModel extends BaseModel {
     }
     
     /**
+     * Get ALL active projects (no role filtering)
+     * Used for transfers, reports, and admin functions
+     */
+    public function getAllActiveProjects() {
+        try {
+            $sql = "
+                SELECT p.id, p.name, p.code, p.location, p.project_manager_id
+                FROM projects p
+                WHERE p.is_active = 1
+                ORDER BY p.name ASC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll();
+
+        } catch (Exception $e) {
+            error_log("ProjectModel::getAllActiveProjects error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Get active projects for dropdown (role-based)
      */
     public function getActiveProjects() {
         try {
             $currentUser = Auth::getInstance()->getCurrentUser();
             $userRole = $currentUser['role_name'] ?? '';
-            
+
             $conditions = ["p.is_active = 1"];
             $params = [];
-            
+
             // Simplified role-based filtering - only apply if user has specific role and is not admin
             if ($userRole === 'Project Manager' && !in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])) {
                 $conditions[] = "p.project_manager_id = ?";
                 $params[] = $currentUser['id'];
             }
-            
+
             $whereClause = "WHERE " . implode(" AND ", $conditions);
-            
+
             $sql = "
                 SELECT p.id, p.name, p.code, p.location
                 FROM projects p
                 {$whereClause}
                 ORDER BY p.name ASC
             ";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll();
-            
+
         } catch (Exception $e) {
             error_log("ProjectModel::getActiveProjects error: " . $e->getMessage());
             return [];
