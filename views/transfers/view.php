@@ -11,57 +11,54 @@ $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye me-2"></i>Transfer Details #<?= htmlspecialchars($transfer['id']) ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=transfers" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Transfers
-            </a>
-        </div>
-        
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="?route=transfers" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>
+        <span class="d-none d-sm-inline">Back to Transfers</span>
+    </a>
+
+    <div class="btn-group">
         <!-- MVA Workflow Actions -->
         <?php if (canVerifyTransfer($transfer, $user)): ?>
-            <a href="?route=transfers/verify&id=<?= $transfer['id'] ?>" class="btn btn-warning me-2">
-                <i class="bi bi-search me-1"></i>Verify Transfer
+            <a href="?route=transfers/verify&id=<?= $transfer['id'] ?>" class="btn btn-warning btn-sm">
+                <i class="bi bi-search me-1"></i>Verify
             </a>
         <?php endif; ?>
-        
+
         <?php if (canAuthorizeTransfer($transfer, $user)): ?>
-            <a href="?route=transfers/approve&id=<?= $transfer['id'] ?>" class="btn btn-success me-2">
-                <i class="bi bi-check-circle me-1"></i>Approve Transfer
+            <a href="?route=transfers/approve&id=<?= $transfer['id'] ?>" class="btn btn-success btn-sm">
+                <i class="bi bi-check-circle me-1"></i>Approve
             </a>
         <?php endif; ?>
-        
+
+        <?php if (canDispatchTransfer($transfer, $user)): ?>
+            <a href="?route=transfers/dispatch&id=<?= $transfer['id'] ?>" class="btn btn-primary btn-sm">
+                <i class="bi bi-send me-1"></i>Dispatch
+            </a>
+        <?php endif; ?>
+
         <?php if (canReceiveTransfer($transfer, $user)): ?>
-            <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>" class="btn btn-info me-2">
-                <i class="bi bi-box-arrow-in-down me-1"></i>Receive Transfer
+            <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>" class="btn btn-info btn-sm">
+                <i class="bi bi-check-circle me-1"></i>Complete
             </a>
         <?php endif; ?>
-        
-        <?php if (canCompleteTransfer($transfer, $user)): ?>
-            <a href="?route=transfers/complete&id=<?= $transfer['id'] ?>" class="btn btn-primary me-2">
-                <i class="bi bi-check2-all me-1"></i>Complete Transfer
-            </a>
-        <?php endif; ?>
-        
+
         <?php if (canReturnAsset($transfer, $user)): ?>
-            <a href="?route=transfers/returnAsset&id=<?= $transfer['id'] ?>" class="btn btn-secondary me-2">
+            <a href="?route=transfers/returnAsset&id=<?= $transfer['id'] ?>" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-return-left me-1"></i>Initiate Return
             </a>
         <?php endif; ?>
-        
+
         <?php if (canReceiveReturn($transfer, $user)): ?>
-            <a href="?route=transfers/receive-return&id=<?= $transfer['id'] ?>" class="btn btn-warning me-2">
+            <a href="?route=transfers/receive-return&id=<?= $transfer['id'] ?>" class="btn btn-warning btn-sm">
                 <i class="bi bi-box-arrow-in-down me-1"></i>Receive Return
             </a>
         <?php endif; ?>
-        
+
         <?php if (canCancelTransfer($transfer, $user)): ?>
-            <a href="?route=transfers/cancel&id=<?= $transfer['id'] ?>" class="btn btn-danger me-2">
-                <i class="bi bi-x-circle me-1"></i>Cancel Transfer
+            <a href="?route=transfers/cancel&id=<?= $transfer['id'] ?>" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
             </a>
         <?php endif; ?>
     </div>

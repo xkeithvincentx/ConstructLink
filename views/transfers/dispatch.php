@@ -11,15 +11,12 @@ $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-send me-2"></i>Dispatch Transfer
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Details
-        </a>
-    </div>
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-end align-items-center mb-4">
+    <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>
+        <span class="d-none d-sm-inline">Back to Details</span>
+    </a>
 </div>
 
 <!-- Transfer Information -->
