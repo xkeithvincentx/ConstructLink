@@ -27,25 +27,25 @@ $userRole = $user['role_name'] ?? 'Guest';
 
     <!-- Secondary Actions (Right) -->
     <div class="btn-toolbar flex-wrap gap-2" role="toolbar" aria-label="Secondary actions">
+        <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
         <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
-                        Analytics
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="?route=vendors/vendorComparison">
-                            <i class="bi bi-bar-chart me-2"></i>Compare Vendors
-                        </a></li>
-                        <li><a class="dropdown-item" href="?route=vendors/riskAssessment">
-                            <i class="bi bi-shield-exclamation me-2"></i>Risk Assessment
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="?route=vendors/pendingWorkflows">
-                            <i class="bi bi-clock me-2"></i>Pending Workflows
-                        </a></li>
-                    </ul>
-                </div>
-            <?php endif; ?>
+            <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                Analytics
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?route=vendors/vendorComparison">
+                    <i class="bi bi-bar-chart me-2"></i>Compare Vendors
+                </a></li>
+                <li><a class="dropdown-item" href="?route=vendors/riskAssessment">
+                    <i class="bi bi-shield-exclamation me-2"></i>Risk Assessment
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?route=vendors/pendingWorkflows">
+                    <i class="bi bi-clock me-2"></i>Pending Workflows
+                </a></li>
+            </ul>
         </div>
+        <?php endif; ?>
         <?php if ($auth->hasRole(['System Admin', 'Procurement Officer'])): ?>
             <div class="btn-group" role="group">
                 <a href="?route=vendors/create" class="btn btn-primary">

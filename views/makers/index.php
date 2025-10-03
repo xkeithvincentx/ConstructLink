@@ -6,20 +6,21 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-gear me-2"></i>
-        Manufacturer Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if ($auth->hasRole(['System Admin', 'Procurement Officer'])): ?>
-            <a href="?route=makers/create" class="btn btn-primary me-2">
-                <i class="bi bi-plus-circle me-1"></i>Add Manufacturer
+            <a href="?route=makers/create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-sm-inline">Add Manufacturer</span>
+                <span class="d-sm-none">Add</span>
             </a>
         <?php endif; ?>
-        <button type="button" class="btn btn-outline-secondary" onclick="refreshMakers()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </div>
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Secondary actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshMakers()">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span class="d-none d-sm-inline ms-1">Refresh</span>
         </button>
     </div>
 </div>
@@ -50,64 +51,76 @@ $user = $auth->getCurrentUser();
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Manufacturers</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-gear text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Manufacturers</h6>
                         <h3 class="mb-0"><?= $makerStats['total_makers'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-gear display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-building me-1"></i>Registered makers
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Manufacturers</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Manufacturers</h6>
                         <h3 class="mb-0"><?= $makerStats['active_makers'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Currently active
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Assets</h6>
                         <h3 class="mb-0"><?= $makerStats['total_assets'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-layers me-1"></i>From all makers
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Countries</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-globe text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Countries</h6>
                         <h3 class="mb-0"><?= $makerStats['countries_represented'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-globe display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-geo-alt me-1"></i>Global coverage
+                </p>
             </div>
         </div>
     </div>
