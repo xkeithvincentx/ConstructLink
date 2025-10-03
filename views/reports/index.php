@@ -6,83 +6,88 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-graph-up me-2"></i>
-        Reports & Analytics
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-outline-primary" onclick="refreshReports()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-            </button>
-        </div>
-    </div>
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-end align-items-center mb-4">
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="refreshReports()">
+        <i class="bi bi-arrow-clockwise me-1"></i>
+        <span class="d-none d-sm-inline">Refresh</span>
+    </button>
 </div>
 
 <!-- Quick Stats Overview -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Assets</h6>
                         <h3 class="mb-0"><?= $dashboardStats['assets']['total_assets'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box display-4 opacity-75"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>Across all projects
+                </p>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Projects</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-building text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Projects</h6>
                         <h3 class="mb-0"><?= $dashboardStats['projects']['active_projects'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building display-4 opacity-75"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Currently running
+                </p>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Withdrawals</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-arrow-up-right text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Withdrawals</h6>
                         <h3 class="mb-0"><?= $dashboardStats['withdrawals']['released_withdrawals'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-arrow-up-right display-4 opacity-75"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock me-1"></i>Currently released
+                </p>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-danger text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Open Incidents</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Open Incidents</h6>
                         <h3 class="mb-0"><?= ($dashboardStats['incidents']['under_investigation'] ?? 0) + ($dashboardStats['incidents']['verified_incidents'] ?? 0) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-4 opacity-75"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-exclamation me-1"></i>Requires attention
+                </p>
             </div>
         </div>
     </div>

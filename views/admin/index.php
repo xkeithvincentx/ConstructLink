@@ -5,38 +5,40 @@ ob_start();
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">
-            <i class="bi bi-gear-fill me-2"></i>
-            <?= htmlspecialchars($pageHeader ?? 'System Administration') ?>
-        </h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group me-2">
-                <a href="?route=admin/settings" class="btn btn-outline-primary">
-                    <i class="bi bi-sliders me-1"></i>Settings
-                </a>
-                <a href="?route=admin/upgrades" class="btn btn-outline-success">
-                    <i class="bi bi-arrow-up-circle me-1"></i>Upgrades
-                </a>
-                <a href="?route=admin/backups" class="btn btn-outline-secondary">
-                    <i class="bi bi-cloud-download me-1"></i>Backups
-                </a>
-                <a href="?route=admin/maintenance" class="btn btn-outline-warning">
-                    <i class="bi bi-tools me-1"></i>Maintenance
-                </a>
-                <a href="?route=admin/security" class="btn btn-outline-danger">
-                    <i class="bi bi-shield-lock me-1"></i>Security
-                </a>
-                <a href="?route=admin/modules" class="btn btn-outline-primary">
-                    <i class="bi bi-puzzle me-1"></i>Modules
-                </a>
-                <a href="?route=admin/logs" class="btn btn-outline-info">
-                    <i class="bi bi-journal-text me-1"></i>Logs
-                </a>
-            </div>
-        </div>
+
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="btn-toolbar gap-2" role="toolbar">
+        <a href="?route=admin/settings" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-sliders me-1"></i>
+            <span class="d-none d-sm-inline">Settings</span>
+        </a>
+        <a href="?route=admin/upgrades" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-arrow-up-circle me-1"></i>
+            <span class="d-none d-sm-inline">Upgrades</span>
+        </a>
+        <a href="?route=admin/backups" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-cloud-download me-1"></i>
+            <span class="d-none d-sm-inline">Backups</span>
+        </a>
+        <a href="?route=admin/maintenance" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-tools me-1"></i>
+            <span class="d-none d-sm-inline">Maintenance</span>
+        </a>
+        <a href="?route=admin/security" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-shield-lock me-1"></i>
+            <span class="d-none d-sm-inline">Security</span>
+        </a>
+        <a href="?route=admin/modules" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-puzzle me-1"></i>
+            <span class="d-none d-sm-inline">Modules</span>
+        </a>
+        <a href="?route=admin/logs" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-journal-text me-1"></i>
+            <span class="d-none d-sm-inline">Logs</span>
+        </a>
     </div>
+</div>
 
     <!-- System Health Status -->
     <div class="row mb-4">

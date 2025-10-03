@@ -21,91 +21,97 @@ $userRole = $user['role_name'] ?? 'Guest';
     </div>
 </div>
 
-<!-- Enhanced Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Projects</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-building text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Projects</h6>
                         <h3 class="mb-0"><?= $projectStats['total_projects'] ?? 0 ?></h3>
-                        <small class="opacity-75">All projects in system</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-folder me-1"></i>All projects in system
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Projects</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Projects</h6>
                         <h3 class="mb-0"><?= $projectStats['active_projects'] ?? 0 ?></h3>
-                        <small class="opacity-75">Currently running</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-play-circle me-1"></i>Currently running
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Assets</h6>
                         <h3 class="mb-0"><?= $projectStats['total_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">Across all projects</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-layers me-1"></i>Across all projects
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                            <i class="bi bi-currency-dollar text-warning fs-5"></i>
+                        <?php else: ?>
+                            <i class="bi bi-cart text-warning fs-5"></i>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">
                             <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
                                 Total Value
                             <?php else: ?>
                                 Procurement Orders
                             <?php endif; ?>
                         </h6>
-                        <h3 class="mb-0">
+                        <h3 class="mb-0" style="font-size: 1.3rem;">
                             <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
                                 ₱<?= number_format($projectStats['total_asset_value'] ?? 0, 2) ?>
                             <?php else: ?>
                                 <?= $projectStats['total_procurement_orders'] ?? 0 ?>
                             <?php endif; ?>
                         </h3>
-                        <small class="opacity-75">
-                            <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
-                                Asset investments
-                            <?php else: ?>
-                                Active orders
-                            <?php endif; ?>
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
-                            <i class="bi bi-currency-dollar display-6"></i>
-                        <?php else: ?>
-                            <i class="bi bi-cart display-6"></i>
-                        <?php endif; ?>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                        <i class="bi bi-cash-stack me-1"></i>Asset investments
+                    <?php else: ?>
+                        <i class="bi bi-bag-check me-1"></i>Active orders
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
     </div>

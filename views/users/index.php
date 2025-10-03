@@ -22,64 +22,79 @@ $auth = Auth::getInstance();
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Users</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-people text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Users</h6>
                         <h3 class="mb-0"><?= count($users ?? []) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-people display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-list-ul me-1"></i>All system users
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Users</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-person-check text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Users</h6>
                         <h3 class="mb-0"><?= count(array_filter($users ?? [], fn($u) => $u['is_active'])) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-person-check display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Can login
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Inactive Users</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-person-x text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Inactive Users</h6>
                         <h3 class="mb-0"><?= count(array_filter($users ?? [], fn($u) => !$u['is_active'])) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-person-x display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-slash-circle me-1"></i>Disabled accounts
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">System Admins</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-shield-check text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">System Admins</h6>
                         <h3 class="mb-0"><?= count(array_filter($users ?? [], fn($u) => $u['role_name'] === 'System Admin')) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-shield-check display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-key me-1"></i>Full access
+                </p>
             </div>
         </div>
     </div>

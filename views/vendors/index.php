@@ -89,67 +89,79 @@ $userRole = $user['role_name'] ?? 'Guest';
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Vendors</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-building text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Vendors</h6>
                         <h3 class="mb-0"><?= $vendorStats['total_vendors'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shop me-1"></i>Registered suppliers
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Preferred Vendors</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-star-fill text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Preferred Vendors</h6>
                         <h3 class="mb-0"><?= $vendorStats['preferred_vendors'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-star-fill display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-award me-1"></i>Top rated suppliers
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active (30 days)</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-activity text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active (30 days)</h6>
                         <h3 class="mb-0"><?= $vendorStats['active_vendors_30d'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-activity display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>Recently active
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Avg Rating</h6>
-                        <h3 class="mb-0">
-                            <?= isset($vendorStats['average_rating']) && $vendorStats['average_rating'] > 0 ? 
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-star text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Avg Rating</h6>
+                        <h3 class="mb-0" style="font-size: 1.3rem;">
+                            <?= isset($vendorStats['average_rating']) && $vendorStats['average_rating'] > 0 ?
                                 number_format($vendorStats['average_rating'], 1) . '/5.0' : 'N/A' ?>
                         </h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-star display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clipboard-data me-1"></i>Overall performance
+                </p>
             </div>
         </div>
     </div>

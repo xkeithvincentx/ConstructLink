@@ -22,64 +22,76 @@ $userRole = $user['role_name'] ?? 'Guest';
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Categories</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-tags text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Categories</h6>
                         <h3 class="mb-0"><?= count($categories ?? []) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-tags display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-collection me-1"></i>All asset categories
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">🔧 Capital Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-gear text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Capital Assets</h6>
                         <h3 class="mb-0"><?= count(array_filter($categories ?? [], fn($c) => ($c['asset_type'] ?? 'capital') === 'capital')) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-gear display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-tools me-1"></i>Equipment & tools
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">📦 Inventory</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box-seam text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Inventory</h6>
                         <h3 class="mb-0"><?= count(array_filter($categories ?? [], fn($c) => ($c['asset_type'] ?? 'capital') === 'inventory')) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box-seam display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-stack me-1"></i>Materials & supplies
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">💰 Direct Expenses</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-receipt text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Direct Expenses</h6>
                         <h3 class="mb-0"><?= count(array_filter($categories ?? [], fn($c) => ($c['asset_type'] ?? 'capital') === 'expense')) ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-receipt display-6"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-cash-coin me-1"></i>Non-capitalizable
+                </p>
             </div>
         </div>
     </div>
