@@ -5,6 +5,9 @@ ob_start();
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 
+// Determine if this is a critical tool (>50,000 PHP)
+$assetValue = $borrowedTool['asset_value'] ?? $borrowedTool['acquisition_cost'] ?? 0;
+$isCriticalTool = $assetValue > 50000;
 
 ?>
 
