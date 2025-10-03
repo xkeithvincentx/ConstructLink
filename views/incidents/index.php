@@ -8,16 +8,15 @@ $auth = Auth::getInstance();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Asset Incidents
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if (hasPermission('incidents/create')): ?>
-            <a href="?route=incidents/create" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>Report Incident
+            <a href="?route=incidents/create" class="btn btn-danger btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-sm-inline">Report Incident</span>
+                <span class="d-sm-none">Report</span>
             </a>
         <?php endif; ?>
     </div>

@@ -8,20 +8,24 @@ $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-tools me-2"></i>
-        Borrowed Tools Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-2">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
-            <a href="?route=borrowed-tools/create" class="btn btn-primary me-2">
-                <i class="bi bi-plus-circle me-1"></i>Borrow Tool
+            <a href="?route=borrowed-tools/create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-sm-inline">Borrow Tool</span>
+                <span class="d-sm-none">Borrow</span>
             </a>
         <?php endif; ?>
-        <button type="button" class="btn btn-outline-secondary" onclick="refreshBorrowedTools()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </div>
+
+    <!-- Secondary Actions (Right) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Secondary actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshBorrowedTools()">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span class="d-none d-sm-inline ms-1">Refresh</span>
         </button>
     </div>
 </div>

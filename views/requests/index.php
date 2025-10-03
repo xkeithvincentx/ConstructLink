@@ -13,22 +13,25 @@ $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-clipboard-check me-2"></i>
-        Unified Request Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-2">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if (in_array($user['role_name'], $roleConfig['requests/create'] ?? [])): ?>
-            <a href="?route=requests/create" class="btn btn-primary me-2">
-                <i class="bi bi-plus-circle me-1"></i>New Request
+            <a href="?route=requests/create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-sm-inline">New Request</span>
+                <span class="d-sm-none">Create</span>
             </a>
         <?php endif; ?>
-        
+    </div>
+
+    <!-- Secondary Actions (Right) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Secondary actions">
         <?php if (in_array($user['role_name'], $roleConfig['requests/export'] ?? [])): ?>
-            <a href="?route=requests/export<?= !empty($_GET) ? '&' . http_build_query($_GET) : '' ?>" class="btn btn-success">
-                <i class="bi bi-download me-1"></i>Export
+            <a href="?route=requests/export<?= !empty($_GET) ? '&' . http_build_query($_GET) : '' ?>" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-download me-1"></i>
+                <span class="d-none d-sm-inline">Export</span>
             </a>
         <?php endif; ?>
     </div>

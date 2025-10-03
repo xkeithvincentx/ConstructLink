@@ -7,16 +7,15 @@ $userRole = $user['role_name'] ?? 'Guest';
 $auth = Auth::getInstance();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-people me-2"></i>
-        User Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if ($auth->hasRole(['System Admin'])): ?>
-            <a href="?route=users/create" class="btn btn-primary">
-                <i class="bi bi-person-plus me-1"></i>Add User
+            <a href="?route=users/create" class="btn btn-primary btn-sm">
+                <i class="bi bi-person-plus me-1"></i>
+                <span class="d-none d-sm-inline">Add User</span>
+                <span class="d-sm-none">Add</span>
             </a>
         <?php endif; ?>
     </div>

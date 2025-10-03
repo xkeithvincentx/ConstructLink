@@ -6,18 +6,22 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-diagram-3 me-2"></i>
-        Discipline Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button class="btn btn-primary me-2" onclick="addDiscipline()">
-            <i class="bi bi-plus-circle me-1"></i>Add Discipline
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
+        <button class="btn btn-primary btn-sm" onclick="addDiscipline()">
+            <i class="bi bi-plus-circle me-1"></i>
+            <span class="d-none d-sm-inline">Add Discipline</span>
+            <span class="d-sm-none">Add</span>
         </button>
-        <button class="btn btn-outline-secondary" onclick="loadDisciplines()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </div>
+
+    <!-- Secondary Actions (Right) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Secondary actions">
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadDisciplines()">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span class="d-none d-sm-inline ms-1">Refresh</span>
         </button>
     </div>
 </div>

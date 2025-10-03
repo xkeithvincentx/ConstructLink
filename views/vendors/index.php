@@ -7,22 +7,27 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-building me-2"></i>
-        Vendor Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2" role="group">
-            <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
-                <a href="?route=vendors/productCatalog" class="btn btn-success">
-                    <i class="bi bi-search me-1"></i>Product Catalog
-                </a>
-                <a href="?route=vendors/intelligenceDashboard" class="btn btn-info">
-                    <i class="bi bi-graph-up me-1"></i>Intelligence Dashboard
-                </a>
-                <div class="btn-group" role="group">
+<!-- Action Buttons (No Header - handled by layout) -->
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-2">
+    <!-- Primary Actions (Left) -->
+    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
+        <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+            <a href="?route=vendors/productCatalog" class="btn btn-success btn-sm">
+                <i class="bi bi-search me-1"></i>
+                <span class="d-none d-md-inline">Product Catalog</span>
+                <span class="d-md-none">Catalog</span>
+            </a>
+            <a href="?route=vendors/intelligenceDashboard" class="btn btn-info btn-sm">
+                <i class="bi bi-graph-up me-1"></i>
+                <span class="d-none d-md-inline">Intelligence Dashboard</span>
+                <span class="d-md-none">Dashboard</span>
+            </a>
+        <?php endif; ?>
+    </div>
+
+    <!-- Secondary Actions (Right) -->
+    <div class="btn-toolbar flex-wrap gap-2" role="toolbar" aria-label="Secondary actions">
+        <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
                         Analytics
                     </button>
