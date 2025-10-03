@@ -384,6 +384,12 @@ $routes = [
         'auth' => true,
         'roles' => getRolesFor('transfers/approve')
     ],
+    'transfers/dispatch' => [
+        'controller' => 'TransferController',
+        'action' => 'dispatch',
+        'auth' => true,
+        'roles' => getRolesFor('transfers/dispatch')
+    ],
     'transfers/receive' => [
         'controller' => 'TransferController',
         'action' => 'receive',

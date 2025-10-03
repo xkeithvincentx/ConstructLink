@@ -375,7 +375,75 @@ class TransferController {
     }
     
     /**
-     * Receive transfer (Site Inventory Clerk step)
+     * Dispatch transfer (FROM Project Manager confirms asset sent)
+     */
+    public function dispatch() {
+        $transferId = $_GET['id'] ?? 0;
+        if (!$transferId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $transfer = $this->transferModel->getTransferWithDetails($transferId);
+            if (!$transfer) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permissions using centralized RBAC
+            if (!$this->hasTransferPermission('dispatch', $transfer)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            // Check if transfer is in correct status
+            if ($transfer['status'] !== 'Approved') {
+                $errors[] = 'This transfer must be approved before dispatch.';
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $dispatchNotes = Validator::sanitize($_POST['dispatch_notes'] ?? '');
+                $dispatchedBy = $this->auth->getCurrentUser()['id'];
+
+                if (empty($errors)) {
+                    $result = $this->transferModel->dispatchTransfer($transferId, $dispatchedBy, $dispatchNotes);
+
+                    if ($result['success']) {
+                        header('Location: ?route=transfers/view&id=' . $transferId . '&message=transfer_dispatched');
+                        exit;
+                    } else {
+                        $errors[] = $result['message'];
+                    }
+                }
+            }
+
+            $pageTitle = 'Dispatch Transfer - ConstructLink™';
+            $pageHeader = 'Dispatch Transfer: ' . htmlspecialchars($transfer['asset_name']);
+            $breadcrumbs = [
+                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
+                ['title' => 'Transfers', 'url' => '?route=transfers'],
+                ['title' => 'Dispatch Transfer', 'url' => '?route=transfers/dispatch&id=' . $transferId]
+            ];
+
+            include APP_ROOT . '/views/transfers/dispatch.php';
+
+        } catch (Exception $e) {
+            error_log("Transfer dispatch error: " . $e->getMessage());
+            $error = 'Failed to process transfer dispatch';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Receive transfer (TO Project Manager acknowledges receipt)
      */
     public function receive() {
         // Check permissions using centralized RBAC
@@ -404,8 +472,8 @@ class TransferController {
             }
             
             // Check if transfer is in correct status
-            if ($transfer['status'] !== 'Approved') {
-                $errors[] = 'Transfer must be approved before receiving.';
+            if ($transfer['status'] !== 'In Transit') {
+                $errors[] = 'Transfer must be dispatched (In Transit) before receiving.';
             }
             
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {

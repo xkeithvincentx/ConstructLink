@@ -7,12 +7,13 @@
 class TransferModel extends BaseModel {
     protected $table = 'transfers';
     protected $fillable = [
-        'asset_id', 'from_project', 'to_project', 'reason', 'initiated_by', 
-        'transfer_type', 'approved_by', 'transfer_date', 'expected_return', 
-        'actual_return', 'approval_date', 'status', 'notes', 'verified_by', 
-        'verification_date', 'received_by', 'receipt_date', 'completed_by', 
-        'completion_date', 'return_initiated_by', 'return_initiation_date',
-        'return_received_by', 'return_receipt_date', 'return_status', 'return_notes'
+        'asset_id', 'from_project', 'to_project', 'reason', 'initiated_by',
+        'transfer_type', 'approved_by', 'transfer_date', 'expected_return',
+        'actual_return', 'approval_date', 'status', 'notes', 'verified_by',
+        'verification_date', 'dispatched_by', 'dispatch_date', 'dispatch_notes',
+        'received_by', 'receipt_date', 'completed_by', 'completion_date',
+        'return_initiated_by', 'return_initiation_date', 'return_received_by',
+        'return_receipt_date', 'return_status', 'return_notes'
     ];
     
     /**
@@ -241,22 +242,70 @@ class TransferModel extends BaseModel {
     }
     
     /**
-     * Receive transfer (Site Inventory Clerk step)
+     * Dispatch transfer (FROM Project Manager confirms asset sent)
      */
-    public function receiveTransfer($transferId, $receivedBy, $notes = null) {
+    public function dispatchTransfer($transferId, $dispatchedBy, $notes = null) {
         try {
             $this->beginTransaction();
-            
+
             // Get transfer details
             $transfer = $this->find($transferId);
             if (!$transfer) {
                 $this->rollback();
                 return ['success' => false, 'message' => 'Transfer not found'];
             }
-            
+
             if ($transfer['status'] !== 'Approved') {
                 $this->rollback();
-                return ['success' => false, 'message' => 'Transfer must be approved before receiving'];
+                return ['success' => false, 'message' => 'Transfer must be approved before dispatch'];
+            }
+
+            // Update transfer status to In Transit
+            $updateResult = $this->update($transferId, [
+                'status' => 'In Transit',
+                'dispatched_by' => $dispatchedBy,
+                'dispatch_date' => date('Y-m-d H:i:s'),
+                'dispatch_notes' => $notes
+            ]);
+
+            if (!$updateResult) {
+                $this->rollback();
+                return ['success' => false, 'message' => 'Failed to update transfer status'];
+            }
+
+            $this->commit();
+
+            return [
+                'success' => true,
+                'transfer' => $updateResult,
+                'message' => 'Transfer dispatched successfully - Asset is now in transit'
+            ];
+
+        } catch (Exception $e) {
+            $this->rollback();
+            error_log("Transfer dispatch error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to dispatch transfer'];
+        }
+    }
+
+    /**
+     * Receive transfer (TO Project Manager acknowledges receipt)
+     */
+    public function receiveTransfer($transferId, $receivedBy, $notes = null) {
+        try {
+            $this->beginTransaction();
+
+            // Get transfer details
+            $transfer = $this->find($transferId);
+            if (!$transfer) {
+                $this->rollback();
+                return ['success' => false, 'message' => 'Transfer not found'];
+            }
+
+            // Transfer must be In Transit before it can be received
+            if ($transfer['status'] !== 'In Transit') {
+                $this->rollback();
+                return ['success' => false, 'message' => 'Transfer must be dispatched (In Transit) before receiving'];
             }
             
             // Update transfer status
@@ -359,7 +408,7 @@ class TransferModel extends BaseModel {
                 return ['success' => false, 'message' => 'Transfer not found'];
             }
             
-            if (!in_array($transfer['status'], ['Pending Verification', 'Pending Approval', 'Approved'])) {
+            if (!in_array($transfer['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'In Transit'])) {
                 $this->rollback();
                 return ['success' => false, 'message' => 'Cannot cancel transfer in current status'];
             }
@@ -421,6 +470,7 @@ class TransferModel extends BaseModel {
                        COALESCE(ui.full_name, 'Unknown') as initiated_by_name,
                        COALESCE(ua.full_name, 'Unknown') as approved_by_name,
                        COALESCE(uv.full_name, 'Unknown') as verified_by_name,
+                       COALESCE(ud.full_name, 'Unknown') as dispatched_by_name,
                        COALESCE(ur.full_name, 'Unknown') as received_by_name,
                        COALESCE(uc.full_name, 'Unknown') as completed_by_name,
                        COALESCE(uri.full_name, 'Unknown') as return_initiated_by_name,
@@ -433,6 +483,7 @@ class TransferModel extends BaseModel {
                 LEFT JOIN users ui ON t.initiated_by = ui.id
                 LEFT JOIN users ua ON t.approved_by = ua.id
                 LEFT JOIN users uv ON t.verified_by = uv.id
+                LEFT JOIN users ud ON t.dispatched_by = ud.id
                 LEFT JOIN users ur ON t.received_by = ur.id
                 LEFT JOIN users uc ON t.completed_by = uc.id
                 LEFT JOIN users uri ON t.return_initiated_by = uri.id
@@ -520,12 +571,14 @@ class TransferModel extends BaseModel {
             $orderBy = $filters['order_by'] ?? 't.created_at DESC';
             
             $dataSql = "
-                SELECT t.*, 
-                       COALESCE(a.ref, 'N/A') as asset_ref, 
+                SELECT t.*,
+                       COALESCE(a.ref, 'N/A') as asset_ref,
                        COALESCE(a.name, 'Unknown') as asset_name,
                        COALESCE(c.name, 'Unknown') as category_name,
                        COALESCE(pf.name, 'Unknown') as from_project_name,
+                       pf.project_manager_id as from_project_manager_id,
                        COALESCE(pt.name, 'Unknown') as to_project_name,
+                       pt.project_manager_id as to_project_manager_id,
                        COALESCE(ui.full_name, 'Unknown') as initiated_by_name
                 FROM transfers t
                 LEFT JOIN assets a ON t.asset_id = a.id
@@ -596,6 +649,7 @@ class TransferModel extends BaseModel {
                     SUM(CASE WHEN status = 'Pending Verification' THEN 1 ELSE 0 END) as pending_verification,
                     SUM(CASE WHEN status = 'Pending Approval' THEN 1 ELSE 0 END) as pending_approval,
                     SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = 'In Transit' THEN 1 ELSE 0 END) as in_transit,
                     SUM(CASE WHEN status = 'Received' THEN 1 ELSE 0 END) as received,
                     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
                     SUM(CASE WHEN status = 'Canceled' THEN 1 ELSE 0 END) as canceled,
@@ -670,6 +724,7 @@ class TransferModel extends BaseModel {
             'pending_verification' => 0,
             'pending_approval' => 0,
             'approved' => 0,
+            'in_transit' => 0,
             'received' => 0,
             'completed' => 0,
             'canceled' => 0,

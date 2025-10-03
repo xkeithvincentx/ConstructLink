@@ -66,6 +66,7 @@ return [
     'transfers/create' => ['Finance Director', 'Asset Director', 'Project Manager', 'System Admin'],
     'transfers/verify' => ['Finance Director', 'Asset Director', 'Project Manager', 'System Admin'],
     'transfers/approve' => ['Finance Director', 'Asset Director', 'System Admin'],
+    'transfers/dispatch' => ['Finance Director', 'Asset Director', 'Project Manager', 'System Admin'],
     'transfers/receive' => ['Project Manager', 'System Admin'],
     'transfers/complete' => ['Project Manager', 'System Admin'],
     'transfers/view' => ['System Admin', 'Asset Director', 'Project Manager', 'Finance Director'],

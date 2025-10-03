@@ -153,27 +153,22 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 
-    <!-- In Transit (Received) -->
+    <!-- In Transit -->
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-box-arrow-right text-primary fs-5"></i>
+                        <i class="bi bi-truck text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-1 small">In Transit</h6>
-                        <h3 class="mb-0"><?= $transferStats['received'] ?? 0 ?></h3>
+                        <h3 class="mb-0"><?= $transferStats['in_transit'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-clock me-1"></i><?= $transferStats['overdue_returns'] ?? 0 ?> overdue returns
+                    <i class="bi bi-send me-1"></i>Assets being transferred
                 </p>
-                <?php if (($transferStats['overdue_returns'] ?? 0) > 0): ?>
-                    <a href="?route=transfers&transfer_type=temporary" class="btn btn-sm btn-outline-danger w-100 mt-2">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Review Overdue
-                    </a>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -308,6 +303,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <option value="Pending Verification" <?= ($_GET['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>Pending Verification</option>
                     <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>Pending Approval</option>
                     <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>Approved</option>
+                    <option value="In Transit" <?= ($_GET['status'] ?? '') === 'In Transit' ? 'selected' : '' ?>>In Transit</option>
                     <option value="Received" <?= ($_GET['status'] ?? '') === 'Received' ? 'selected' : '' ?>>Received</option>
                     <option value="Completed" <?= ($_GET['status'] ?? '') === 'Completed' ? 'selected' : '' ?>>Completed</option>
                     <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>Canceled</option>
@@ -489,8 +485,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($transfer['transfer_type'] === 'temporary'): ?>
-                                        <?php 
+                                    <?php if ($transfer['transfer_type'] === 'temporary' && $transfer['status'] === 'Completed'): ?>
+                                        <?php
                                         $returnStatus = $transfer['return_status'] ?? 'not_returned';
                                         $returnStatusBadges = [
                                             'not_returned' => 'bg-secondary',
@@ -531,9 +527,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     $statusClasses = [
                                         'Pending Verification' => 'bg-warning',
                                         'Pending Approval' => 'bg-info',
-                                        'Approved' => 'bg-primary',
+                                        'Approved' => 'bg-success',
+                                        'In Transit' => 'bg-primary',
                                         'Received' => 'bg-secondary',
-                                        'Completed' => 'bg-success',
+                                        'Completed' => 'bg-dark',
                                         'Canceled' => 'bg-danger'
                                     ];
                                     $statusClass = $statusClasses[$transfer['status']] ?? 'bg-secondary';
@@ -567,14 +564,21 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <?php endif; ?>
                                         
                                         <?php if (in_array($userRole, $approveRoles) && $transfer['status'] === 'Pending Approval'): ?>
-                                            <a href="?route=transfers/approve&id=<?= $transfer['id'] ?>" 
+                                            <a href="?route=transfers/approve&id=<?= $transfer['id'] ?>"
                                                class="btn btn-outline-success" title="Approve Transfer">
                                                 <i class="bi bi-check-circle"></i>
                                             </a>
                                         <?php endif; ?>
-                                        
+
+                                        <?php if (canDispatchTransfer($transfer, $user)): ?>
+                                            <a href="?route=transfers/dispatch&id=<?= $transfer['id'] ?>"
+                                               class="btn btn-outline-primary" title="Dispatch Transfer">
+                                                <i class="bi bi-send"></i>
+                                            </a>
+                                        <?php endif; ?>
+
                                         <?php if (canReceiveTransfer($transfer, $user)): ?>
-                                            <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>" 
+                                            <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>"
                                                class="btn btn-outline-info" title="Receive Transfer">
                                                 <i class="bi bi-box-arrow-in-down"></i>
                                             </a>
@@ -604,7 +608,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                             </a>
                                         <?php endif; ?>
                                         
-                                        <?php if (in_array($userRole, $cancelRoles) && in_array($transfer['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
+                                        <?php if (in_array($userRole, $cancelRoles) && in_array($transfer['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'In Transit'])): ?>
                                             <a href="?route=transfers/cancel&id=<?= $transfer['id'] ?>" 
                                                class="btn btn-outline-danger" title="Cancel Transfer">
                                                 <i class="bi bi-x-circle"></i>

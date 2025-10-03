@@ -1141,23 +1141,49 @@ function canAuthorizeTransfer($transfer, $user) {
     return hasPermission('transfers/approve') && $transfer['status'] === 'Pending Approval';
 }
 
-function canReceiveTransfer($transfer, $user) {
-    if (!hasPermission('transfers/receive') || $transfer['status'] !== 'Approved') {
+function canDispatchTransfer($transfer, $user) {
+    if (!hasPermission('transfers/dispatch') || $transfer['status'] !== 'Approved') {
         return false;
     }
-    
+
+    // System Admin can dispatch all transfers
+    if ($user['role_name'] === 'System Admin') {
+        return true;
+    }
+
+    // FROM Project Manager can dispatch
+    if ($user['role_name'] === 'Project Manager') {
+        return ($transfer['from_project_manager_id'] ?? null) == $user['id'];
+    }
+
+    // Other authorized roles can dispatch
+    return true;
+}
+
+function canReceiveTransfer($transfer, $user) {
+    if (!hasPermission('transfers/receive') || $transfer['status'] !== 'In Transit') {
+        return false;
+    }
+
     // System Admin can receive all transfers
     if ($user['role_name'] === 'System Admin') {
         return true;
     }
-    
-    // Project Manager can only receive transfers if assigned to the destination project
+
+    // Finance/Asset Directors can receive all transfers
+    if (in_array($user['role_name'], ['Finance Director', 'Asset Director'])) {
+        return true;
+    }
+
+    // TO Project Manager ONLY - receive transfers to their project
     if ($user['role_name'] === 'Project Manager') {
+        // ONLY allow if user is the TO project manager (destination)
+        // Do NOT allow FROM project manager to receive
         return ($transfer['to_project_manager_id'] ?? null) == $user['id'];
     }
-    
-    // Other roles (Asset Director, Finance Director) can receive all transfers
-    return true;
+
+    // For other roles, deny by default for safety
+    return false;
 }
 
 function canCompleteTransfer($transfer, $user) {
