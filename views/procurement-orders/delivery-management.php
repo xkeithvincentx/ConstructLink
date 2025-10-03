@@ -12,105 +12,117 @@ $userRole = $user['role_name'] ?? 'Guest';
 <!-- Add navigation buttons here if needed -->
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
+<div class="row g-3 mb-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Ready for Delivery</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $stats['ready_count'] ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock text-primary fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-clock text-primary" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Ready for Delivery</h6>
+                        <h3 class="mb-0"><?= $stats['ready_count'] ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box me-1"></i>Awaiting schedule
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Scheduled</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $stats['scheduled_count'] ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-calendar-check text-info fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-calendar-check text-info" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Scheduled</h6>
+                        <h3 class="mb-0"><?= $stats['scheduled_count'] ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar-event me-1"></i>Delivery planned
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            In Transit</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $stats['in_transit_count'] ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-truck text-warning fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-truck text-warning" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">In Transit</h6>
+                        <h3 class="mb-0"><?= $stats['in_transit_count'] ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-arrow-right me-1"></i>On the way
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card border-left-danger shadow h-100 py-2">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                            For Receipt</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $stats['for_receipt_count'] ?? 0 ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clipboard-check text-danger fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-clipboard-check text-danger" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">For Receipt</h6>
+                        <h3 class="mb-0"><?= $stats['for_receipt_count'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-square me-1"></i>Verify delivery
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Generate Assets</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $stats['for_assets_count'] ?? 0 ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-plus-square text-success fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-plus-square text-success" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Generate Assets</h6>
+                        <h3 class="mb-0"><?= $stats['for_assets_count'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-file-earmark-plus me-1"></i>Create records
+                </p>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card border-left-secondary shadow h-100 py-2">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
-                            Total Value</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">₱<?= number_format($stats['total_value'], 2) ?></div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-currency-dollar text-secondary fs-5"></i>
                     </div>
-                    <div class="col-auto">
-                        <i class="bi bi-currency-dollar text-secondary" style="font-size: 2rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Value</h6>
+                        <h3 class="mb-0" style="font-size: 1.3rem;">₱<?= number_format($stats['total_value'], 2) ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-cash-stack me-1"></i>All deliveries
+                </p>
             </div>
         </div>
     </div>
