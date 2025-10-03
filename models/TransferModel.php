@@ -126,7 +126,10 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send notifications based on workflow status
+            $this->sendTransferNotification($transfer['id'], 'created', $data['initiated_by']);
+
             return ['success' => true, 'transfer' => $transfer, 'smart_workflow' => true];
             
         } catch (Exception $e) {
@@ -169,9 +172,12 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send notification
+            $this->sendTransferNotification($transferId, 'verified', $verifiedBy);
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
                 'message' => 'Transfer verified successfully'
             ];
@@ -227,9 +233,12 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send notification
+            $this->sendTransferNotification($transferId, 'approved', $approvedBy);
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
                 'message' => 'Transfer approved successfully - Asset is now in transit'
             ];
@@ -274,6 +283,9 @@ class TransferModel extends BaseModel {
             }
 
             $this->commit();
+
+            // Send notification
+            $this->sendTransferNotification($transferId, 'dispatched', $dispatchedBy);
 
             return [
                 'success' => true,
@@ -337,6 +349,9 @@ class TransferModel extends BaseModel {
             }
 
             $this->commit();
+
+            // Send notification
+            $this->sendTransferNotification($transferId, 'completed', $receivedBy);
 
             return [
                 'success' => true,
@@ -451,9 +466,13 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send notification
+            $currentUser = Auth::getInstance()->getCurrentUser();
+            $this->sendTransferNotification($transferId, 'canceled', $currentUser['id'] ?? null);
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
                 'message' => 'Transfer canceled successfully'
             ];
@@ -1197,6 +1216,167 @@ class TransferModel extends BaseModel {
         } catch (Exception $e) {
             error_log("Get transfers due soon error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Send transfer workflow notifications
+     */
+    private function sendTransferNotification($transferId, $action, $actorId) {
+        try {
+            require_once APP_ROOT . '/models/NotificationModel.php';
+            require_once APP_ROOT . '/models/ProjectModel.php';
+            require_once APP_ROOT . '/models/UserModel.php';
+
+            $notificationModel = new NotificationModel();
+            $projectModel = new ProjectModel();
+            $userModel = new UserModel();
+
+            // Get transfer details
+            $transfer = $this->getTransferWithDetails($transferId);
+            if (!$transfer) {
+                return false;
+            }
+
+            $assetName = $transfer['asset_name'] ?? 'Asset';
+            $assetRef = $transfer['asset_ref'] ?? '';
+            $fromProject = $transfer['from_project_name'] ?? 'Unknown';
+            $toProject = $transfer['to_project_name'] ?? 'Unknown';
+            $transferUrl = '?route=transfers/view&id=' . $transferId;
+
+            // Determine recipients and message based on action
+            $recipients = [];
+            $title = '';
+            $message = '';
+            $type = 'transfer';
+
+            switch ($action) {
+                case 'created':
+                    $title = 'New Transfer Request Created';
+                    $message = "Transfer request for {$assetName} ({$assetRef}) from {$fromProject} to {$toProject} has been created and requires verification.";
+
+                    // Notify verifiers (Project Managers)
+                    if ($transfer['status'] === 'Pending Verification') {
+                        $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+                        if ($fromProjectPM) {
+                            $recipients[] = $fromProjectPM;
+                        }
+                    } else if ($transfer['status'] === 'Pending Approval') {
+                        // Notify approvers
+                        $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
+                        foreach ($approvers as $approver) {
+                            $recipients[] = $approver['id'];
+                        }
+                    }
+                    break;
+
+                case 'verified':
+                    $title = 'Transfer Request Verified';
+                    $message = "Transfer request for {$assetName} ({$assetRef}) has been verified and is awaiting approval.";
+
+                    // Notify approvers (Finance Director, Asset Director)
+                    $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
+                    foreach ($approvers as $approver) {
+                        $recipients[] = $approver['id'];
+                    }
+
+                    // Notify initiator
+                    if ($transfer['initiated_by']) {
+                        $recipients[] = $transfer['initiated_by'];
+                    }
+                    break;
+
+                case 'approved':
+                    $title = 'Transfer Request Approved';
+                    $message = "Transfer request for {$assetName} ({$assetRef}) has been approved and is ready for dispatch.";
+
+                    // Notify FROM Project Manager for dispatch
+                    $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+                    if ($fromProjectPM) {
+                        $recipients[] = $fromProjectPM;
+                    }
+
+                    // Notify initiator
+                    if ($transfer['initiated_by']) {
+                        $recipients[] = $transfer['initiated_by'];
+                    }
+                    break;
+
+                case 'dispatched':
+                    $title = 'Transfer Dispatched - Asset In Transit';
+                    $message = "Transfer for {$assetName} ({$assetRef}) has been dispatched from {$fromProject} and is now in transit to {$toProject}.";
+
+                    // Notify TO Project Manager to receive
+                    $toProjectPM = $projectModel->find($transfer['to_project'])['project_manager_id'] ?? null;
+                    if ($toProjectPM) {
+                        $recipients[] = $toProjectPM;
+                    }
+
+                    // Notify initiator
+                    if ($transfer['initiated_by']) {
+                        $recipients[] = $transfer['initiated_by'];
+                    }
+                    break;
+
+                case 'completed':
+                    $title = 'Transfer Completed Successfully';
+                    $message = "Transfer for {$assetName} ({$assetRef}) has been completed. Asset is now at {$toProject}.";
+                    $type = 'success';
+
+                    // Notify initiator
+                    if ($transfer['initiated_by']) {
+                        $recipients[] = $transfer['initiated_by'];
+                    }
+
+                    // Notify FROM Project Manager
+                    $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+                    if ($fromProjectPM) {
+                        $recipients[] = $fromProjectPM;
+                    }
+
+                    // Notify approvers
+                    if ($transfer['approved_by']) {
+                        $recipients[] = $transfer['approved_by'];
+                    }
+                    break;
+
+                case 'canceled':
+                    $title = 'Transfer Request Canceled';
+                    $message = "Transfer request for {$assetName} ({$assetRef}) from {$fromProject} to {$toProject} has been canceled.";
+                    $type = 'warning';
+
+                    // Notify all involved parties
+                    if ($transfer['initiated_by']) {
+                        $recipients[] = $transfer['initiated_by'];
+                    }
+                    if ($transfer['verified_by']) {
+                        $recipients[] = $transfer['verified_by'];
+                    }
+                    if ($transfer['approved_by']) {
+                        $recipients[] = $transfer['approved_by'];
+                    }
+                    break;
+            }
+
+            // Remove duplicates and send notifications
+            $recipients = array_unique(array_filter($recipients));
+
+            if (!empty($recipients)) {
+                $notificationModel->notifyMultipleUsers(
+                    $recipients,
+                    $title,
+                    $message,
+                    $type,
+                    $transferUrl,
+                    'transfer',
+                    $transferId
+                );
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log("Transfer notification error: " . $e->getMessage());
+            return false;
         }
     }
 }
