@@ -1177,9 +1177,23 @@ function canReceiveTransfer($transfer, $user) {
 
     // TO Project Manager ONLY - receive transfers to their project
     if ($user['role_name'] === 'Project Manager') {
-        // ONLY allow if user is the TO project manager (destination)
-        // Do NOT allow FROM project manager to receive
-        return ($transfer['to_project_manager_id'] ?? null) == $user['id'];
+        // If TO project has a PM assigned, only that PM can receive
+        if (!empty($transfer['to_project_manager_id'])) {
+            return $transfer['to_project_manager_id'] == $user['id'];
+        }
+
+        // If TO project has NO PM assigned, any PM can receive it
+        // But exclude the FROM project manager to avoid confusion
+        if (empty($transfer['to_project_manager_id'])) {
+            // Don't allow FROM PM to receive
+            if (($transfer['from_project_manager_id'] ?? null) == $user['id']) {
+                return false;
+            }
+            // Allow any other PM to receive
+            return true;
+        }
+
+        return false;
     }
 
     // For other roles, deny by default for safety

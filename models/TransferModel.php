@@ -289,14 +289,15 @@ class TransferModel extends BaseModel {
     }
 
     /**
-     * Receive transfer (TO Project Manager acknowledges receipt)
+     * Receive and Complete transfer in one step (simplified workflow)
+     * TO Project Manager receives the asset and it's immediately completed
      */
     public function receiveTransfer($transferId, $receivedBy, $notes = null) {
         try {
             $this->beginTransaction();
 
             // Get transfer details
-            $transfer = $this->find($transferId);
+            $transfer = $this->getTransferWithDetails($transferId);
             if (!$transfer) {
                 $this->rollback();
                 return ['success' => false, 'message' => 'Transfer not found'];
@@ -307,28 +308,42 @@ class TransferModel extends BaseModel {
                 $this->rollback();
                 return ['success' => false, 'message' => 'Transfer must be dispatched (In Transit) before receiving'];
             }
-            
-            // Update transfer status
+
+            // Update asset project location and status
+            $assetModel = new AssetModel();
+            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+                'project_id' => $transfer['to_project'],
+                'status' => 'available'  // Asset is now available at the new location
+            ]);
+
+            if (!$assetUpdateResult) {
+                $this->rollback();
+                return ['success' => false, 'message' => 'Failed to update asset location'];
+            }
+
+            // Update transfer to Completed status (skip Received status)
             $updateResult = $this->update($transferId, [
-                'status' => 'Received',
+                'status' => 'Completed',
                 'received_by' => $receivedBy,
                 'receipt_date' => date('Y-m-d H:i:s'),
+                'completed_by' => $receivedBy,  // Same person receives and completes
+                'completion_date' => date('Y-m-d H:i:s'),
                 'notes' => $notes
             ]);
-            
+
             if (!$updateResult) {
                 $this->rollback();
                 return ['success' => false, 'message' => 'Failed to update transfer status'];
             }
-            
+
             $this->commit();
-            
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
-                'message' => 'Transfer received successfully'
+                'message' => 'Transfer received and completed successfully'
             ];
-            
+
         } catch (Exception $e) {
             $this->rollback();
             error_log("Transfer receipt error: " . $e->getMessage());

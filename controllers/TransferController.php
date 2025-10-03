@@ -484,9 +484,9 @@ class TransferController {
                 
                 if (empty($errors)) {
                     $result = $this->transferModel->receiveTransfer($transferId, $receivedBy, $receiptNotes);
-                    
+
                     if ($result['success']) {
-                        header('Location: ?route=transfers/view&id=' . $transferId . '&message=transfer_received');
+                        header('Location: ?route=transfers/view&id=' . $transferId . '&message=transfer_completed');
                         exit;
                     } else {
                         $errors[] = $result['message'];
@@ -494,12 +494,12 @@ class TransferController {
                 }
             }
             
-            $pageTitle = 'Receive Transfer - ConstructLink™';
-            $pageHeader = 'Receive Transfer: ' . htmlspecialchars($transfer['asset_name']);
+            $pageTitle = 'Complete Transfer - ConstructLink™';
+            $pageHeader = 'Complete Transfer: ' . htmlspecialchars($transfer['asset_name']);
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard'],
                 ['title' => 'Transfers', 'url' => '?route=transfers'],
-                ['title' => 'Receive Transfer', 'url' => '?route=transfers/receive&id=' . $transferId]
+                ['title' => 'Complete Transfer', 'url' => '?route=transfers/receive&id=' . $transferId]
             ];
             
             include APP_ROOT . '/views/transfers/receive.php';

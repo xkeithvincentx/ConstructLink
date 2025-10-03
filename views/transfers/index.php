@@ -304,7 +304,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>Pending Approval</option>
                     <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>Approved</option>
                     <option value="In Transit" <?= ($_GET['status'] ?? '') === 'In Transit' ? 'selected' : '' ?>>In Transit</option>
-                    <option value="Received" <?= ($_GET['status'] ?? '') === 'Received' ? 'selected' : '' ?>>Received</option>
                     <option value="Completed" <?= ($_GET['status'] ?? '') === 'Completed' ? 'selected' : '' ?>>Completed</option>
                     <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>Canceled</option>
                 </select>
@@ -579,15 +578,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
                                         <?php if (canReceiveTransfer($transfer, $user)): ?>
                                             <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>"
-                                               class="btn btn-outline-info" title="Receive Transfer">
-                                                <i class="bi bi-box-arrow-in-down"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (in_array($userRole, $completeRoles) && $transfer['status'] === 'Received'): ?>
-                                            <a href="?route=transfers/complete&id=<?= $transfer['id'] ?>" 
-                                               class="btn btn-outline-primary" title="Complete Transfer">
-                                                <i class="bi bi-check2-all"></i>
+                                               class="btn btn-outline-success" title="Complete Transfer">
+                                                <i class="bi bi-check-circle"></i>
                                             </a>
                                         <?php endif; ?>
                                         

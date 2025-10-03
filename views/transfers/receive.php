@@ -1,7 +1,7 @@
 <?php
 /**
- * ConstructLink™ Transfer Receipt View
- * Site Inventory Clerk receipt step in MVA workflow
+ * ConstructLink™ Transfer Complete View
+ * TO Project Manager receives and completes transfer in one step
  */
 
 // Start output buffering
@@ -13,7 +13,7 @@ $userRole = $user['role_name'] ?? 'Guest';
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
-        <i class="bi bi-box-arrow-in-down me-2"></i>Receive Transfer
+        <i class="bi bi-check-circle me-2"></i>Complete Transfer
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary">
@@ -106,17 +106,17 @@ $userRole = $user['role_name'] ?? 'Guest';
                     <?= CSRFProtection::getTokenField() ?>
                     
                     <div class="mb-3">
-                        <label for="receipt_notes" class="form-label">Receipt Notes</label>
-                        <textarea class="form-control" id="receipt_notes" name="receipt_notes" rows="4" 
-                                  placeholder="Please provide receipt notes, including condition of the asset and any discrepancies..."><?= htmlspecialchars($_POST['receipt_notes'] ?? '') ?></textarea>
+                        <label for="receipt_notes" class="form-label">Completion Notes</label>
+                        <textarea class="form-control" id="receipt_notes" name="receipt_notes" rows="4"
+                                  placeholder="Confirm asset condition and completion details..."><?= htmlspecialchars($_POST['receipt_notes'] ?? '') ?></textarea>
                         <div class="form-text">
-                            Document the condition of the received asset and any relevant details about the receipt.
+                            Document the condition of the asset and confirm it has been received at the destination project.
                         </div>
                     </div>
-                    
+
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle me-1"></i>Confirm Receipt
+                            <i class="bi bi-check-circle me-1"></i>Complete Transfer
                         </button>
                         <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-outline-secondary">
                             Cancel
