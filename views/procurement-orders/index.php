@@ -46,132 +46,179 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- MVA Workflow Sidebar -->
-<div class="alert alert-info mb-4">
-    <strong>MVA Workflow:</strong> <br>
-    <span class="badge bg-primary">Maker</span> (Procurement Officer) →
-    <span class="badge bg-warning text-dark">Verifier</span> (Asset Director) →
-    <span class="badge bg-success">Authorizer</span> (Finance Director) →
-    <span class="badge bg-info">Scheduled</span> →
-    <span class="badge bg-secondary">Delivered</span> →
-    <span class="badge bg-dark">Received</span>
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <!-- Pending Verification -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
+                        <h3 class="mb-0"><?= $stats['pending_verification'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person me-1"></i>Asset Director review
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Approval -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Approval</h6>
+                        <h3 class="mb-0"><?= $stats['pending_approval'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-check me-1"></i>Finance Director approval
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approved -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Approved</h6>
+                        <h3 class="mb-0"><?= $stats['approved'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-cart-check me-1"></i>Ready to order
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- In Transit / Scheduled -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-truck text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">In Transit</h6>
+                        <h3 class="mb-0"><?= ($stats['scheduled'] ?? 0) + ($stats['in_transit'] ?? 0) ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box me-1"></i>Awaiting delivery
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivered -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box-seam text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Delivered</h6>
+                        <h3 class="mb-0"><?= $stats['delivered'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check me-1"></i>Awaiting receipt
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Received (Completed) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Received</h6>
+                        <h3 class="mb-0"><?= $stats['received'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-archive me-1"></i>Completed orders
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canceled -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-x-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Canceled</h6>
+                        <h3 class="mb-0"><?= $stats['canceled'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-slash-circle me-1"></i>Withdrawn orders
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Value -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-currency-dollar text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Value</h6>
+                        <h3 class="mb-0" style="font-size: 1.3rem;">₱<?= number_format($stats['total_value'] ?? 0, 2) ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>Active orders value
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Role-Based Statistics Cards -->
-<div class="row mb-4">
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer'])): ?>
-        <!-- Pending Verification (for Verifiers) -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Pending Verification</h6>
-                            <h3 class="mb-0"><?= $stats['pending_verification'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-clock display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director'])): ?>
-        <!-- Pending Approval (for Authorizers) -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Pending Approval</h6>
-                            <h3 class="mb-0"><?= $stats['pending_approval'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-hourglass-split display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Procurement Officer', 'Asset Director'])): ?>
-        <!-- Approved Orders -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Approved</h6>
-                            <h3 class="mb-0"><?= $stats['approved'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-check-circle display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Procurement Officer', 'Project Manager'])): ?>
-        <!-- In Transit Orders -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">In Transit</h6>
-                            <h3 class="mb-0"><?= $stats['in_transit'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-truck display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
-        <!-- Delivered Orders -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-secondary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Delivered</h6>
-                            <h3 class="mb-0"><?= $stats['delivered'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-box-seam display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director'])): ?>
-        <!-- Total Value (Financial Overview) -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-dark text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Value</h6>
-                            <h4 class="mb-0">₱<?= number_format($stats['total_value'] ?? 0, 2) ?></h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-currency-dollar display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
+<!-- MVA Workflow Info Banner -->
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
+    <span class="badge bg-primary">Maker</span> (Procurement Officer) →
+    <span class="badge bg-warning text-dark">Verifier</span> (Asset Director) →
+    <span class="badge bg-info">Authorizer</span> (Finance Director) →
+    <span class="badge bg-success">Approved</span> →
+    <span class="badge bg-primary">In Transit</span> →
+    <span class="badge bg-secondary">Delivered</span> →
+    <span class="badge bg-secondary">Received</span>
 </div>
 
 <!-- Delivery Alerts Section -->

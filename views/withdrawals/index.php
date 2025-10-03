@@ -22,172 +22,177 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- MVA Workflow Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <!-- Pending Verification -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Verification</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock-history text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
                         <h3 class="mb-0"><?= $withdrawalStats['pending_verification'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-person me-1"></i><?= $withdrawalStats['my_pending_verifications'] ?? 0 ?> for your review
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clock-history display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-warning-dark">
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person me-1"></i><?= $withdrawalStats['my_pending_verifications'] ?? 0 ?> for your review
+                </p>
                 <?php if (in_array($userRole, $roleConfig['withdrawals/verify'] ?? []) && ($withdrawalStats['my_pending_verifications'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Pending%20Verification" class="text-white text-decoration-none">
-                        <small><i class="bi bi-search me-1"></i>Verify Now</small>
+                    <a href="?route=withdrawals&status=Pending%20Verification" class="btn btn-sm btn-outline-warning w-100 mt-2">
+                        <i class="bi bi-search me-1"></i>Verify Now
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">No pending verifications</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+
+    <!-- Pending Approval -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Approval</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-person-check text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Approval</h6>
                         <h3 class="mb-0"><?= $withdrawalStats['pending_approval'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-person-check me-1"></i><?= $withdrawalStats['my_pending_approvals'] ?? 0 ?> for your approval
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-person-check display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-info-dark">
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person-check me-1"></i><?= $withdrawalStats['my_pending_approvals'] ?? 0 ?> for your approval
+                </p>
                 <?php if (in_array($userRole, $roleConfig['withdrawals/approve'] ?? []) && ($withdrawalStats['my_pending_approvals'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Pending%20Approval" class="text-white text-decoration-none">
-                        <small><i class="bi bi-check-circle me-1"></i>Approve Now</small>
+                    <a href="?route=withdrawals&status=Pending%20Approval" class="btn btn-sm btn-outline-info w-100 mt-2">
+                        <i class="bi bi-check-circle me-1"></i>Approve Now
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">No pending approvals</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+
+    <!-- Approved for Release -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Withdrawals</h6>
-                        <h3 class="mb-0"><?= ($withdrawalStats['approved'] ?? 0) + ($withdrawalStats['released'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-clock me-1"></i><?= $withdrawalStats['overdue_returns'] ?? 0 ?> overdue returns
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box-arrow-right display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Approved for Release</h6>
+                        <h3 class="mb-0"><?= $withdrawalStats['approved'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box-arrow-right me-1"></i>Ready for warehouse release
+                </p>
+                <?php if (in_array($userRole, $roleConfig['withdrawals/release'] ?? []) && ($withdrawalStats['approved'] ?? 0) > 0): ?>
+                    <a href="?route=withdrawals&status=Approved" class="btn btn-sm btn-outline-success w-100 mt-2">
+                        <i class="bi bi-box-arrow-right me-1"></i>Release Assets
+                    </a>
+                <?php endif; ?>
             </div>
-            <div class="card-footer bg-success-dark">
+        </div>
+    </div>
+
+    <!-- Released (Active) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box-arrow-right text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Released (Active)</h6>
+                        <h3 class="mb-0"><?= $withdrawalStats['released'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock me-1"></i><?= $withdrawalStats['overdue_returns'] ?? 0 ?> overdue returns
+                </p>
                 <?php if (($withdrawalStats['overdue_returns'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Released" class="text-white text-decoration-none">
-                        <small><i class="bi bi-exclamation-triangle me-1"></i>Review Overdue</small>
+                    <a href="?route=withdrawals&status=Released" class="btn btn-sm btn-outline-danger w-100 mt-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Review Overdue
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">All returns on time</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+
+    <!-- Returned (Completed) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Completed</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['returned'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-percent me-1"></i><?= $withdrawalStats['return_rate'] ?? 0 ?>% return rate
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-arrow-return-left text-secondary fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-arrow-return-left display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Returned</h6>
+                        <h3 class="mb-0"><?= $withdrawalStats['returned'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-percent me-1"></i><?= $withdrawalStats['return_rate'] ?? 0 ?>% return rate
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=withdrawals&status=Returned" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Completed</small>
-                </a>
+        </div>
+    </div>
+
+    <!-- Canceled -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-x-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Canceled</h6>
+                        <h3 class="mb-0"><?= $withdrawalStats['canceled'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-down me-1"></i><?= $withdrawalStats['cancellation_rate'] ?? 0 ?>% cancellation rate
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Withdrawals -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-list-ul text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Withdrawals</h6>
+                        <h3 class="mb-0"><?= $withdrawalStats['total_withdrawals'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>All time
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Additional Status Cards -->
-<div class="row mb-4">
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card border-primary h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-primary">
-                    <i class="bi bi-check2-circle me-2"></i>Approved for Release
-                </h6>
-                <h4 class="text-primary mb-0"><?= $withdrawalStats['approved'] ?? 0 ?></h4>
-                <small class="text-muted">Ready for warehouse release</small>
-                <?php if (in_array($userRole, $roleConfig['withdrawals/release'] ?? []) && ($withdrawalStats['approved'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <a href="?route=withdrawals&status=Approved" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-box-arrow-right me-1"></i>Release Assets
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card border-secondary h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-secondary">
-                    <i class="bi bi-x-circle me-2"></i>Canceled Requests
-                </h6>
-                <h4 class="text-secondary mb-0"><?= $withdrawalStats['canceled'] ?? 0 ?></h4>
-                <small class="text-muted">Withdrawn or canceled</small>
-                <?php if (($withdrawalStats['canceled'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <small class="text-secondary">
-                            <i class="bi bi-graph-down me-1"></i>
-                            <?= $withdrawalStats['cancellation_rate'] ?? 0 ?>% cancellation rate
-                        </small>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 col-md-12 mb-3">
-        <div class="card border-info h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-info">
-                    <i class="bi bi-speedometer2 me-2"></i>Performance Metrics
-                </h6>
-                <div class="row">
-                    <div class="col-6">
-                        <h5 class="text-info mb-0"><?= $withdrawalStats['avg_approval_time_hours'] ?? 0 ?>h</h5>
-                        <small class="text-muted">Avg. approval time</small>
-                    </div>
-                    <div class="col-6">
-                        <h5 class="text-info mb-0"><?= $withdrawalStats['avg_return_time_days'] ?? 0 ?>d</h5>
-                        <small class="text-muted">Avg. return time</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- MVA Workflow Info Banner -->
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
+    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
+    <span class="badge bg-info">Authorizer</span> (Asset Director) →
+    <span class="badge bg-success">Approved</span> →
+    <span class="badge bg-primary">Released</span> →
+    <span class="badge bg-secondary">Returned</span>
 </div>
 
 <!-- Overdue Alerts -->

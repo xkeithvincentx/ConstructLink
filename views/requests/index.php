@@ -69,189 +69,189 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <!-- Draft/Submitted -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Requests</h6>
-                        <h3 class="mb-0"><?= $requestStats['total_requests'] ?? 0 ?></h3>
-                        <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
-                            <small class="opacity-75">
-                                <i class="bi bi-currency-dollar me-1"></i><?= formatCurrency($requestStats['total_estimated_value'] ?? 0) ?> est. value
-                            </small>
-                        <?php endif; ?>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-pencil-square text-info fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clipboard-data display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Draft/Submitted</h6>
+                        <h3 class="mb-0"><?= ($requestStats['draft'] ?? 0) + ($requestStats['submitted'] ?? 0) ?></h3>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=requests" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Requests</small>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock-history me-1"></i>Awaiting initial review
+                </p>
+                <a href="?route=requests&status=Submitted" class="btn btn-sm btn-outline-info w-100 mt-2">
+                    <i class="bi bi-eye me-1"></i>Review (<?= $requestStats['my_pending_reviews'] ?? 0 ?>)
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+
+    <!-- Under Review -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Review</h6>
-                        <h3 class="mb-0"><?= ($requestStats['submitted'] ?? 0) + ($requestStats['reviewed'] ?? 0) + ($requestStats['forwarded'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-person-check me-1"></i><?= $requestStats['my_pending_reviews'] ?? 0 ?> require your action
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-search text-warning fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clock-history display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Under Review</h6>
+                        <h3 class="mb-0"><?= ($requestStats['reviewed'] ?? 0) + ($requestStats['forwarded'] ?? 0) ?></h3>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-warning-dark">
-                <?php if (($requestStats['my_pending_reviews'] ?? 0) > 0): ?>
-                    <a href="?route=requests&status=<?= in_array($userRole, $roleConfig['requests/review'] ?? []) ? 'Submitted' : 'Reviewed' ?>" class="text-white text-decoration-none">
-                        <small><i class="bi bi-arrow-right-circle me-1"></i>Review Now</small>
-                    </a>
-                <?php else: ?>
-                    <small class="text-white-50">No pending reviews</small>
-                <?php endif; ?>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person-check me-1"></i>Project Manager verified
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+
+    <!-- Procurement Ready -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Approved</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Procurement Ready</h6>
                         <h3 class="mb-0"><?= $requestStats['approved'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-graph-up me-1"></i><?= $requestStats['approval_rate'] ?? 0 ?>% approval rate
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=requests&status=Approved" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Approved</small>
-                </a>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check2-all me-1"></i>Approved, awaiting PO creation
+                </p>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card <?= (($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0)) > 0 ? 'bg-danger' : 'bg-secondary' ?> text-white h-100">
+
+    <!-- In Procurement -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Urgent/Critical</h6>
-                        <h3 class="mb-0"><?= ($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-exclamation-circle me-1"></i><?= $requestStats['overdue_requests'] ?? 0 ?> overdue
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-cart-check text-primary fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">In Procurement</h6>
+                        <h3 class="mb-0"><?= $requestStats['in_procurement'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock me-1"></i>PO created and in progress
+                </p>
             </div>
-            <div class="card-footer bg-danger-dark">
+        </div>
+    </div>
+
+    <!-- Urgent/Critical -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Urgent/Critical</h6>
+                        <h3 class="mb-0"><?= ($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0) ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-circle me-1"></i><?= $requestStats['overdue_requests'] ?? 0 ?> overdue
+                </p>
                 <?php if ((($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0)) > 0): ?>
-                    <a href="?route=requests&urgency=Critical" class="text-white text-decoration-none">
-                        <small><i class="bi bi-eye me-1"></i>Review Priority Items</small>
+                    <a href="?route=requests&urgency=Critical" class="btn btn-sm btn-outline-danger w-100 mt-2">
+                        <i class="bi bi-eye me-1"></i>Review Priority Items
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">No urgent requests</small>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-all text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Completed</h6>
+                        <h3 class="mb-0"><?= $requestStats['completed'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-archive me-1"></i>Fulfilled requests
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Declined -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-x-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Declined</h6>
+                        <h3 class="mb-0"><?= $requestStats['declined'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-slash-circle me-1"></i>Rejected requests
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Requests -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-list-ul text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Requests</h6>
+                        <h3 class="mb-0"><?= $requestStats['total_requests'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>All time
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MVA Workflow Status Cards -->
+<!-- MVA Workflow Info Banner -->
 <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Project Manager', 'Procurement Officer'])): ?>
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-info">
-            <div class="card-body text-center">
-                <h6 class="card-title text-info">
-                    <i class="bi bi-pencil-square me-2"></i>Draft/Submitted
-                </h6>
-                <h4 class="text-info mb-0"><?= ($requestStats['draft'] ?? 0) + ($requestStats['submitted'] ?? 0) ?></h4>
-                <small class="text-muted">Awaiting initial review</small>
-                <?php if (in_array($userRole, $roleConfig['requests/review'] ?? []) && ($requestStats['submitted'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <a href="?route=requests&status=Submitted" class="btn btn-sm btn-outline-info">
-                            <i class="bi bi-eye me-1"></i>Review (<?= $requestStats['submitted'] ?? 0 ?>)
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-warning">
-            <div class="card-body text-center">
-                <h6 class="card-title text-warning">
-                    <i class="bi bi-search me-2"></i>Under Review
-                </h6>
-                <h4 class="text-warning mb-0"><?= ($requestStats['reviewed'] ?? 0) + ($requestStats['forwarded'] ?? 0) ?></h4>
-                <small class="text-muted">Project Manager verified</small>
-                <?php if (in_array($userRole, $roleConfig['requests/approve'] ?? []) && (($requestStats['reviewed'] ?? 0) + ($requestStats['forwarded'] ?? 0)) > 0): ?>
-                    <div class="mt-2">
-                        <a href="?route=requests&status=Reviewed" class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-check-circle me-1"></i>Approve Now
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-success">
-            <div class="card-body text-center">
-                <h6 class="card-title text-success">
-                    <i class="bi bi-check-circle-fill me-2"></i>Procurement Ready
-                </h6>
-                <h4 class="text-success mb-0"><?= $requestStats['ready_for_procurement'] ?? 0 ?></h4>
-                <small class="text-muted">Approved, awaiting PO creation</small>
-                <?php if (in_array($userRole, $roleConfig['procurement-orders/create'] ?? []) && ($requestStats['ready_for_procurement'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <a href="?route=procurement-orders/approved-requests" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-plus-circle me-1"></i>Create POs
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-primary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-primary">
-                    <i class="bi bi-truck me-2"></i>In Procurement
-                </h6>
-                <h4 class="text-primary mb-0"><?= $requestStats['procured'] ?? 0 ?></h4>
-                <small class="text-muted">PO created and in progress</small>
-                <?php if (($requestStats['procured'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <small class="text-primary">
-                            <i class="bi bi-clock me-1"></i>
-                            <?= $requestStats['avg_procurement_time_days'] ?? 0 ?> days avg. delivery
-                        </small>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
+    <span class="badge bg-info">Maker</span> (Site Inventory Clerk) →
+    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
+    <span class="badge bg-success">Authorizer</span> (Asset Director) →
+    <span class="badge bg-primary">In Procurement</span> →
+    <span class="badge bg-secondary">Completed</span>
 </div>
 <?php endif; ?>
+
+<!-- Old cards removed - using standardized design above -->
 
 <!-- Delivery Alerts Section -->
 <?php if (isset($deliveryAlerts) && !empty($deliveryAlerts)): ?>

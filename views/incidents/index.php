@@ -22,220 +22,173 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- MVA Workflow Sidebar -->
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <!-- Pending Verification -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
+                        <h3 class="mb-0"><?= $incidentStats['pending_verification'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person me-1"></i>Project Manager review needed
+                </p>
+                <?php if (in_array($userRole, ['Project Manager', 'System Admin']) && ($incidentStats['pending_verification'] ?? 0) > 0): ?>
+                    <a href="?route=incidents&status=Pending Verification" class="btn btn-sm btn-outline-warning w-100 mt-2">
+                        <i class="bi bi-search me-1"></i>Review Now
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Authorization -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Authorization</h6>
+                        <h3 class="mb-0"><?= $incidentStats['pending_authorization'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-check me-1"></i>Asset Director approval needed
+                </p>
+                <?php if (in_array($userRole, ['Asset Director', 'System Admin']) && ($incidentStats['pending_authorization'] ?? 0) > 0): ?>
+                    <a href="?route=incidents&status=Pending Authorization" class="btn btn-sm btn-outline-info w-100 mt-2">
+                        <i class="bi bi-shield-check me-1"></i>Authorize Now
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authorized -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Authorized</h6>
+                        <h3 class="mb-0"><?= $incidentStats['authorized'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-tools me-1"></i>Ready for resolution
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolved -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-square text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Resolved</h6>
+                        <h3 class="mb-0"><?= $incidentStats['resolved'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clipboard-check me-1"></i>Ready for closure
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Incidents -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Critical</h6>
+                        <h3 class="mb-0"><?= $incidentStats['critical'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-lightning me-1"></i><?= $incidentStats['critical_overdue'] ?? 0 ?> overdue
+                </p>
+                <a href="?route=incidents&severity=critical" class="btn btn-sm btn-outline-danger w-100 mt-2">
+                    <i class="bi bi-lightning me-1"></i>View Critical
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Closed Incidents -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-archive text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Closed</h6>
+                        <h3 class="mb-0"><?= $incidentStats['closed'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar me-1"></i><?= $incidentStats['closed_this_month'] ?? 0 ?> this month
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Incidents -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-list-ul text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Incidents</h6>
+                        <h3 class="mb-0"><?= $incidentStats['total_incidents'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>All time
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MVA Workflow Info Banner -->
 <div class="alert alert-info mb-4">
-    <strong>MVA Workflow:</strong> <br>
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
     <span class="badge bg-primary">Maker</span> (Site Inventory Clerk) →
     <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
-    <span class="badge bg-success">Authorizer</span> (Asset Director) →
-    <span class="badge bg-secondary">Resolved</span> →
-    <span class="badge bg-dark">Closed</span>
+    <span class="badge bg-info">Authorizer</span> (Asset Director) →
+    <span class="badge bg-primary">Resolved</span> →
+    <span class="badge bg-secondary">Closed</span>
 </div>
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Verification</h6>
-                        <h3 class="mb-0"><?= $incidentStats['pending_verification'] ?? 0 ?></h3>
-                        <?php if (in_array($userRole, ['Project Manager', 'System Admin'])): ?>
-                            <small class="opacity-75">Requires your attention</small>
-                        <?php endif; ?>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clock display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <?php if (in_array($userRole, ['Project Manager', 'System Admin']) && ($incidentStats['pending_verification'] ?? 0) > 0): ?>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=incidents&status=Pending Verification" class="text-white text-decoration-none">
-                    <small><i class="bi bi-search me-1"></i>Review Now</small>
-                </a>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-warning text-dark h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Authorization</h6>
-                        <h3 class="mb-0"><?= $incidentStats['pending_authorization'] ?? 0 ?></h3>
-                        <?php if (in_array($userRole, ['Asset Director', 'System Admin'])): ?>
-                            <small class="opacity-75">Requires your approval</small>
-                        <?php endif; ?>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-hourglass-split display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <?php if (in_array($userRole, ['Asset Director', 'System Admin']) && ($incidentStats['pending_authorization'] ?? 0) > 0): ?>
-            <div class="card-footer bg-warning-dark">
-                <a href="?route=incidents&status=Pending Authorization" class="text-dark text-decoration-none">
-                    <small><i class="bi bi-shield-check me-1"></i>Authorize Now</small>
-                </a>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Authorized</h6>
-                        <h3 class="mb-0"><?= $incidentStats['authorized'] ?? 0 ?></h3>
-                        <small class="opacity-75">Ready for resolution</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=incidents&status=Authorized" class="text-white text-decoration-none">
-                    <small><i class="bi bi-tools me-1"></i>View Authorized</small>
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Resolved</h6>
-                        <h3 class="mb-0"><?= $incidentStats['resolved'] ?? 0 ?></h3>
-                        <small class="opacity-75">Ready for closure</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-square display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=incidents&status=Resolved" class="text-white text-decoration-none">
-                    <small><i class="bi bi-archive me-1"></i>Close Incidents</small>
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-danger text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Critical</h6>
-                        <h3 class="mb-0"><?= $incidentStats['critical'] ?? 0 ?></h3>
-                        <small class="opacity-75">Immediate attention</small>
-                        <?php if (isset($incidentStats['critical_overdue']) && $incidentStats['critical_overdue'] > 0): ?>
-                            <div class="mt-1">
-                                <small class="text-warning">
-                                    <i class="bi bi-exclamation-triangle me-1"></i><?= $incidentStats['critical_overdue'] ?> overdue
-                                </small>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle-fill display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-danger-dark">
-                <a href="?route=incidents&severity=critical" class="text-white text-decoration-none">
-                    <small><i class="bi bi-lightning me-1"></i>View Critical</small>
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-        <div class="card bg-dark text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Closed</h6>
-                        <h3 class="mb-0"><?= $incidentStats['closed'] ?? 0 ?></h3>
-                        <small class="opacity-75">Completed incidents</small>
-                        <?php if (isset($incidentStats['closed_this_month'])): ?>
-                            <div class="mt-1">
-                                <small class="opacity-75">
-                                    <i class="bi bi-calendar me-1"></i><?= $incidentStats['closed_this_month'] ?> this month
-                                </small>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-archive display-6"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-dark">
-                <a href="?route=incidents&status=Closed" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View Archive</small>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Role-Based Action Cards -->
-<?php if (in_array($userRole, ['Project Manager', 'Asset Director', 'Site Inventory Clerk'])): ?>
-<div class="row mb-4">
-    <?php if (in_array($userRole, ['Site Inventory Clerk', 'System Admin'])): ?>
-    <div class="col-md-4 mb-3">
-        <div class="card border-primary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Report New Incident
-                </h6>
-                <p class="card-text">As the Maker in the MVA workflow, you can initiate incident reports.</p>
-                <a href="?route=incidents/create" class="btn btn-primary">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Report Incident
-                </a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-    
-    <?php if (in_array($userRole, ['Project Manager', 'System Admin']) && ($incidentStats['pending_verification'] ?? 0) > 0): ?>
-    <div class="col-md-4 mb-3">
-        <div class="card border-warning">
-            <div class="card-body text-center">
-                <h6 class="card-title text-warning">
-                    <i class="bi bi-search me-2"></i>Verify Incidents
-                </h6>
-                <p class="card-text">You have <?= $incidentStats['pending_verification'] ?> incident(s) awaiting verification.</p>
-                <a href="?route=incidents&status=Pending Verification" class="btn btn-warning">
-                    <i class="bi bi-check-circle me-1"></i>Review Now
-                </a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-    
-    <?php if (in_array($userRole, ['Asset Director', 'System Admin']) && ($incidentStats['pending_authorization'] ?? 0) > 0): ?>
-    <div class="col-md-4 mb-3">
-        <div class="card border-success">
-            <div class="card-body text-center">
-                <h6 class="card-title text-success">
-                    <i class="bi bi-shield-check me-2"></i>Authorize Resolution
-                </h6>
-                <p class="card-text">You have <?= $incidentStats['pending_authorization'] ?> incident(s) requiring authorization.</p>
-                <a href="?route=incidents&status=Pending Authorization" class="btn btn-success">
-                    <i class="bi bi-person-check me-1"></i>Authorize Now
-                </a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
+<!-- Old role-based action cards removed - using standard pattern above -->
 
 <!-- Filters -->
 <div class="card mb-4">

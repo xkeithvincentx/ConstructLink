@@ -30,267 +30,178 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- Enhanced MVA Workflow Information -->
-<div class="card mb-4 border-info">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-            <h6 class="card-title mb-0">
-                <i class="bi bi-diagram-3 me-2"></i>MVA Workflow Status
-            </h6>
-            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-                <button class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#workflowDetails">
-                    <i class="bi bi-info-circle"></i> Details
-                </button>
-            <?php endif; ?>
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <!-- Pending Verification -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['pending_verification'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person me-1"></i>Project Manager review
+                </p>
+            </div>
         </div>
     </div>
-    <div class="card-body py-2">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="workflow-steps d-flex align-items-center flex-wrap gap-2">
-                    <div class="workflow-step">
-                        <span class="badge bg-primary position-relative">
-                            <i class="bi bi-person-plus me-1"></i>Maker
-                            <?php if (($borrowedToolStats['pending_verification'] ?? 0) > 0): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                                    <?= $borrowedToolStats['pending_verification'] ?>
-                                </span>
-                            <?php endif; ?>
-                        </span>
-                        <small class="text-muted d-block">Warehouseman</small>
+
+    <!-- Pending Approval -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-5"></i>
                     </div>
-                    
-                    <i class="bi bi-arrow-right text-muted"></i>
-                    
-                    <div class="workflow-step">
-                        <span class="badge bg-warning text-dark position-relative">
-                            <i class="bi bi-check-circle me-1"></i>Verifier
-                            <?php if (($borrowedToolStats['pending_verification'] ?? 0) > 0 && $auth->hasRole(['Project Manager'])): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    <?= $borrowedToolStats['pending_verification'] ?>
-                                </span>
-                            <?php endif; ?>
-                        </span>
-                        <small class="text-muted d-block">Project Manager</small>
-                    </div>
-                    
-                    <i class="bi bi-arrow-right text-muted"></i>
-                    
-                    <div class="workflow-step">
-                        <span class="badge bg-success position-relative">
-                            <i class="bi bi-shield-check me-1"></i>Authorizer
-                            <?php if (($borrowedToolStats['pending_approval'] ?? 0) > 0 && $auth->hasRole(['Asset Director', 'Finance Director'])): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    <?= $borrowedToolStats['pending_approval'] ?>
-                                </span>
-                            <?php endif; ?>
-                        </span>
-                        <small class="text-muted d-block">Asset/Finance Director</small>
-                    </div>
-                    
-                    <i class="bi bi-arrow-right text-muted"></i>
-                    
-                    <div class="workflow-step">
-                        <span class="badge bg-secondary position-relative">
-                            <i class="bi bi-tools me-1"></i>Borrowed
-                            <?php if (($borrowedToolStats['borrowed'] ?? 0) > 0): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
-                                    <?= $borrowedToolStats['borrowed'] ?>
-                                </span>
-                            <?php endif; ?>
-                        </span>
-                        <small class="text-muted d-block">Active</small>
-                    </div>
-                    
-                    <i class="bi bi-arrow-right text-muted"></i>
-                    
-                    <div class="workflow-step">
-                        <span class="badge bg-success">
-                            <i class="bi bi-check-square me-1"></i>Returned
-                        </span>
-                        <small class="text-success d-block">Complete</small>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Approval</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['pending_approval'] ?? 0 ?></h3>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-md-4 text-end">
-                <?php if (($borrowedToolStats['overdue'] ?? 0) > 0): ?>
-                    <div class="alert alert-danger py-1 px-2 mb-0 d-inline-block">
-                        <i class="bi bi-exclamation-triangle me-1"></i>
-                        <strong><?= $borrowedToolStats['overdue'] ?></strong> Overdue Tools
-                    </div>
-                <?php endif; ?>
-                
-                <?php 
-                $pendingCount = ($borrowedToolStats['pending_verification'] ?? 0) + ($borrowedToolStats['pending_approval'] ?? 0);
-                if ($pendingCount > 0 && $auth->hasRole(['System Admin', 'Project Manager', 'Asset Director', 'Finance Director'])): 
-                ?>
-                    <div class="alert alert-warning py-1 px-2 mb-0 d-inline-block ms-2">
-                        <i class="bi bi-clock me-1"></i>
-                        <strong><?= $pendingCount ?></strong> Pending Actions
-                    </div>
-                <?php endif; ?>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-check me-1"></i>Director approval needed
+                </p>
             </div>
         </div>
-        
-        <!-- Detailed Workflow Information (Collapsible) -->
-        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-            <div class="collapse mt-3" id="workflowDetails">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Role Responsibilities:</h6>
-                        <ul class="list-unstyled small">
-                            <li><strong>Warehouseman (Maker):</strong> Initiates tool borrowing requests</li>
-                            <li><strong>Project Manager (Verifier):</strong> Validates project need and borrower authorization</li>
-                            <li><strong>Asset/Finance Director (Authorizer):</strong> Approves based on asset value and policy</li>
-                        </ul>
+    </div>
+
+    <!-- Ready to Issue -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
-                    <div class="col-md-6">
-                        <h6 class="text-success">Process Guidelines:</h6>
-                        <ul class="list-unstyled small">
-                            <li><i class="bi bi-clock text-warning"></i> Verification: Within 24 hours</li>
-                            <li><i class="bi bi-shield-check text-success"></i> Approval: Within 48 hours</li>
-                            <li><i class="bi bi-exclamation-triangle text-danger"></i> Overdue follow-up required</li>
-                        </ul>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Ready to Issue</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['approved'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box-arrow-right me-1"></i>Approved for borrowing
+                </p>
             </div>
-        <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Currently Out -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-tools text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Currently Out</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['borrowed'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person-badge me-1"></i>Active borrows
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Tools -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Overdue</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['overdue'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock me-1"></i>Requires immediate action
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Returned -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-arrow-return-left text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Returned</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['returned'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar me-1"></i>This month
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canceled -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-x-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Canceled</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['canceled'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-slash-circle me-1"></i>Withdrawn requests
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Borrowings -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-list-ul text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Borrowings</h6>
+                        <h3 class="mb-0"><?= $borrowedToolStats['total_borrowings'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i>All time
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Role-Based Statistics Cards -->
-<div class="row mb-4">
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
-        <!-- Total Active Borrowings -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Active Borrowings</h6>
-                            <h3 class="mb-0"><?= ($borrowedToolStats['borrowed'] ?? 0) + ($borrowedToolStats['overdue'] ?? 0) ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-tools display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Asset Director'])): ?>
-        <!-- Pending Verification (for Verifiers) -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Pending Verification</h6>
-                            <h3 class="mb-0"><?= $borrowedToolStats['pending_verification'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-clock display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-        <!-- Pending Approval (for Authorizers) -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Pending Approval</h6>
-                            <h3 class="mb-0"><?= $borrowedToolStats['pending_approval'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-hourglass-split display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])): ?>
-        <!-- Approved for Borrowing -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Ready to Issue</h6>
-                            <h3 class="mb-0"><?= $borrowedToolStats['approved'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-check-circle display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Warehouseman'])): ?>
-        <!-- Currently Borrowed -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-secondary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Currently Out</h6>
-                            <h3 class="mb-0"><?= $borrowedToolStats['borrowed'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-box-arrow-up display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <!-- Overdue Tools (High Priority for All Roles) -->
-    <div class="col-xl-2 col-md-3 col-sm-6">
-        <div class="card bg-danger text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Overdue</h6>
-                        <h3 class="mb-0"><?= $borrowedToolStats['overdue'] ?? 0 ?></h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-        <!-- Monthly Return Rate -->
-        <div class="col-xl-2 col-md-3 col-sm-6">
-            <div class="card bg-dark text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Monthly Returns</h6>
-                            <h3 class="mb-0"><?= $borrowedToolStats['returned'] ?? 0 ?></h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-arrow-return-left display-6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
+<!-- MVA Workflow Info Banner -->
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
+    <span class="badge bg-primary">Maker</span> (Warehouseman) →
+    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
+    <span class="badge bg-info">Authorizer</span> (Asset/Finance Director) →
+    <span class="badge bg-success">Approved</span> →
+    <span class="badge bg-primary">Borrowed</span> →
+    <span class="badge bg-secondary">Returned</span>
 </div>
 
 <!-- Filters -->

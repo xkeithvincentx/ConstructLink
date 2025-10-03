@@ -22,218 +22,191 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- MVA Workflow Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <!-- Pending Verification -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Verification</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-clock-history text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
                         <h3 class="mb-0"><?= $maintenanceStats['pending_verification'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-person me-1"></i><?= $maintenanceStats['my_pending_verifications'] ?? 0 ?> for your review
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clock-history display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-warning-dark">
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person me-1"></i><?= $maintenanceStats['my_pending_verifications'] ?? 0 ?> for your review
+                </p>
                 <?php if (in_array($userRole, $roleConfig['maintenance/verify'] ?? []) && ($maintenanceStats['my_pending_verifications'] ?? 0) > 0): ?>
-                    <a href="?route=maintenance&status=Pending%20Verification" class="text-white text-decoration-none">
-                        <small><i class="bi bi-search me-1"></i>Verify Now</small>
+                    <a href="?route=maintenance&status=Pending%20Verification" class="btn btn-sm btn-outline-warning w-100 mt-2">
+                        <i class="bi bi-search me-1"></i>Verify Now
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">No pending verifications</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+
+    <!-- Pending Approval -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Approval</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-hourglass-split text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Pending Approval</h6>
                         <h3 class="mb-0"><?= $maintenanceStats['pending_approval'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-person-check me-1"></i><?= $maintenanceStats['my_pending_approvals'] ?? 0 ?> for your approval
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-hourglass-split display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-info-dark">
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-person-check me-1"></i><?= $maintenanceStats['my_pending_approvals'] ?? 0 ?> for your approval
+                </p>
                 <?php if (in_array($userRole, $roleConfig['maintenance/authorize'] ?? []) && ($maintenanceStats['my_pending_approvals'] ?? 0) > 0): ?>
-                    <a href="?route=maintenance&status=Pending%20Approval" class="text-white text-decoration-none">
-                        <small><i class="bi bi-check-circle me-1"></i>Approve Now</small>
+                    <a href="?route=maintenance&status=Pending%20Approval" class="btn btn-sm btn-outline-info w-100 mt-2">
+                        <i class="bi bi-check-circle me-1"></i>Approve Now
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">No pending approvals</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+
+    <!-- Approved / In Progress -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Maintenance</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-gear text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Active Maintenance</h6>
                         <h3 class="mb-0"><?= ($maintenanceStats['approved'] ?? 0) + ($maintenanceStats['in_progress'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-exclamation-triangle me-1"></i><?= $maintenanceStats['overdue'] ?? 0 ?> overdue
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-gear display-6"></i>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-primary-dark">
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= $maintenanceStats['overdue'] ?? 0 ?> overdue
+                </p>
                 <?php if (($maintenanceStats['overdue'] ?? 0) > 0): ?>
-                    <a href="?route=maintenance&overdue=1" class="text-white text-decoration-none">
-                        <small><i class="bi bi-exclamation-triangle me-1"></i>Review Overdue</small>
+                    <a href="?route=maintenance&overdue=1" class="btn btn-sm btn-outline-danger w-100 mt-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Review Overdue
                     </a>
-                <?php else: ?>
-                    <small class="text-white-50">All on schedule</small>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+
+    <!-- Completed -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Completed</h6>
-                        <h3 class="mb-0"><?= $maintenanceStats['completed'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-percent me-1"></i><?= $maintenanceStats['completion_rate'] ?? 0 ?>% completion rate
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle-fill display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Completed</h6>
+                        <h3 class="mb-0"><?= $maintenanceStats['completed'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-percent me-1"></i><?= $maintenanceStats['completion_rate'] ?? 0 ?>% completion rate
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=maintenance&status=completed" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Completed</small>
-                </a>
+        </div>
+    </div>
+
+    <!-- Preventive Maintenance -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-calendar-check text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Preventive Maintenance</h6>
+                        <h3 class="mb-0"><?= $maintenanceStats['preventive'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-clock me-1"></i><?= $maintenanceStats['preventive_due_soon'] ?? 0 ?> due within 7 days
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Corrective Maintenance -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-tools text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Corrective Maintenance</h6>
+                        <h3 class="mb-0"><?= $maintenanceStats['corrective'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= $maintenanceStats['urgent_corrective'] ?? 0 ?> urgent repairs
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Maintenance -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-lightning text-danger fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Emergency Maintenance</h6>
+                        <h3 class="mb-0"><?= $maintenanceStats['emergency'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-currency-dollar me-1"></i><?= formatCurrency($maintenanceStats['emergency_cost'] ?? 0) ?> spent
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canceled -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-x-circle text-secondary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Canceled Tasks</h6>
+                        <h3 class="mb-0"><?= $maintenanceStats['canceled'] ?? 0 ?></h3>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-slash-circle me-1"></i>Maintenance canceled
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Maintenance Type & Priority Cards -->
-<div class="row mb-4">
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card border-info h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-info">
-                    <i class="bi bi-calendar-check me-2"></i>Preventive Maintenance
-                </h6>
-                <h4 class="text-info mb-0"><?= $maintenanceStats['preventive'] ?? 0 ?></h4>
-                <small class="text-muted">Scheduled maintenance</small>
-                <?php if (($maintenanceStats['preventive_due_soon'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <small class="text-warning">
-                            <i class="bi bi-clock me-1"></i><?= $maintenanceStats['preventive_due_soon'] ?> due within 7 days
-                        </small>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 col-md-6 mb-3">
-        <div class="card border-warning h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-warning">
-                    <i class="bi bi-tools me-2"></i>Corrective Maintenance
-                </h6>
-                <h4 class="text-warning mb-0"><?= $maintenanceStats['corrective'] ?? 0 ?></h4>
-                <small class="text-muted">Repair and fixes</small>
-                <?php if (($maintenanceStats['urgent_corrective'] ?? 0) > 0): ?>
-                    <div class="mt-2">
-                        <small class="text-danger">
-                            <i class="bi bi-exclamation-triangle me-1"></i><?= $maintenanceStats['urgent_corrective'] ?> urgent repairs
-                        </small>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 col-md-12 mb-3">
-        <div class="card border-danger h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-danger">
-                    <i class="bi bi-lightning me-2"></i>Emergency Maintenance
-                </h6>
-                <h4 class="text-danger mb-0"><?= $maintenanceStats['emergency'] ?? 0 ?></h4>
-                <small class="text-muted">Critical repairs</small>
-                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
-                    <div class="mt-2">
-                        <small class="text-danger">
-                            <i class="bi bi-currency-dollar me-1"></i><?= formatCurrency($maintenanceStats['emergency_cost'] ?? 0) ?> spent
-                        </small>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Performance Metrics Row -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-secondary h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-secondary">
-                    <i class="bi bi-speedometer2 me-2"></i>Avg. Response Time
-                </h6>
-                <h4 class="text-secondary mb-0"><?= $maintenanceStats['avg_response_time_hours'] ?? 0 ?>h</h4>
-                <small class="text-muted">From request to start</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-primary h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-primary">
-                    <i class="bi bi-clock me-2"></i>Avg. Completion Time
-                </h6>
-                <h4 class="text-primary mb-0"><?= $maintenanceStats['avg_completion_time_hours'] ?? 0 ?>h</h4>
-                <small class="text-muted">Average repair duration</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-success h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-success">
-                    <i class="bi bi-graph-up me-2"></i>Equipment Uptime
-                </h6>
-                <h4 class="text-success mb-0"><?= $maintenanceStats['equipment_uptime_percentage'] ?? 0 ?>%</h4>
-                <small class="text-muted">Overall availability</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card border-warning h-100">
-            <div class="card-body text-center">
-                <h6 class="card-title text-warning">
-                    <i class="bi bi-x-circle me-2"></i>Canceled Tasks
-                </h6>
-                <h4 class="text-warning mb-0"><?= $maintenanceStats['canceled'] ?? 0 ?></h4>
-                <small class="text-muted">Maintenance canceled</small>
-            </div>
-        </div>
-    </div>
+<!-- MVA Workflow Info Banner -->
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
+    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
+    <span class="badge bg-info">Authorizer</span> (Asset Director) →
+    <span class="badge bg-primary">In Progress</span> →
+    <span class="badge bg-success">Completed</span>
 </div>
 
 <!-- Filters -->
