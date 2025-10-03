@@ -102,106 +102,102 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <!-- Role-Specific Asset Statistics Cards -->
 <?php if (in_array($userRole, ['Project Manager'])): ?>
 <!-- Project Manager Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Project Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box-seam text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Project Assets</h6>
                         <h3 class="mb-0"><?= $roleStats['total_project_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-building me-1"></i>Assets under management
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box-seam display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-building me-1"></i>Assets under management
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Assets</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View All Assets
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Available Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Available Assets</h6>
                         <h3 class="mb-0"><?= $roleStats['available_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-check-circle me-1"></i>Ready for deployment
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Ready for deployment
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets&status=available" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Available</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=available" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Available
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Utilization Rate</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-graph-up text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Utilization Rate</h6>
                         <h3 class="mb-0"><?= $roleStats['utilization_rate'] ?? 0 ?>%</h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-graph-up me-1"></i><?= $roleStats['assets_in_use'] ?? 0 ?> assets in use
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-graph-up display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i><?= $roleStats['assets_in_use'] ?? 0 ?> assets in use
+                </p>
             </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=assets&status=in_use" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View In Use</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=in_use" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View In Use
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card <?= ($roleStats['low_stock_alerts'] ?? 0) > 0 ? 'bg-warning' : 'bg-secondary' ?> text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['low_stock_alerts'] ?? 0) > 0 ? 'var(--warning-color)' : 'var(--neutral-color)' ?>;">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Stock Alerts</h6>
-                        <h3 class="mb-0"><?= $roleStats['low_stock_alerts'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Items need attention
-                        </small>
-                        <?php if (($roleStats['maintenance_pending'] ?? 0) > 0): ?>
-                            <div class="mt-1">
-                                <small class="opacity-75">
-                                    <i class="bi bi-wrench me-1"></i><?= $roleStats['maintenance_pending'] ?> maintenance due
-                                </small>
-                            </div>
-                        <?php endif; ?>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle <?= ($roleStats['low_stock_alerts'] ?? 0) > 0 ? 'text-warning' : 'text-secondary' ?> fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Stock Alerts</h6>
+                        <h3 class="mb-0"><?= $roleStats['low_stock_alerts'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Items need attention
+                    <?php if (($roleStats['maintenance_pending'] ?? 0) > 0): ?>
+                        <br><i class="bi bi-wrench me-1"></i><?= $roleStats['maintenance_pending'] ?> maintenance due
+                    <?php endif; ?>
+                </p>
             </div>
-            <div class="card-footer bg-warning-dark">
+            <div class="card-footer bg-light border-top">
                 <?php if (($roleStats['low_stock_alerts'] ?? 0) > 0): ?>
-                    <a href="?route=assets&asset_type=low_stock" class="text-white text-decoration-none">
-                        <small><i class="bi bi-eye me-1"></i>Review Alerts</small>
+                    <a href="?route=assets&asset_type=low_stock" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>Review Alerts
                     </a>
                 <?php else: ?>
-                    <small class="text-white-50">All levels optimal</small>
+                    <small class="text-muted">All levels optimal</small>
                 <?php endif; ?>
             </div>
         </div>
@@ -210,99 +206,99 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
 <?php elseif (in_array($userRole, ['Site Inventory Clerk'])): ?>
 <!-- Site Inventory Clerk Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Inventory Items</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box2 text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Inventory Items</h6>
                         <h3 class="mb-0"><?= $roleStats['total_inventory_items'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-box2 me-1"></i><?= number_format($roleStats['total_consumable_units'] ?? 0) ?> consumable units
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box2 display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box2 me-1"></i><?= number_format($roleStats['total_consumable_units'] ?? 0) ?> consumable units
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View Inventory</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Inventory
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Available</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Available</h6>
                         <h3 class="mb-0"><?= $roleStats['available_for_use'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-check-circle me-1"></i>Ready for issue
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Ready for issue
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets&status=available" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Available</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=available" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Available
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Today's Activity</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-activity text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Today's Activity</h6>
                         <h3 class="mb-0"><?= $roleStats['today_activities'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-calendar-day me-1"></i>Updates today
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-activity display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar-day me-1"></i>Updates today
+                </p>
             </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View Activity</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Activity
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card <?= ($roleStats['out_of_stock_items'] ?? 0) > 0 ? 'bg-danger' : (($roleStats['low_stock_items'] ?? 0) > 0 ? 'bg-warning' : 'bg-secondary') ?> text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['out_of_stock_items'] ?? 0) > 0 ? 'var(--danger-color)' : (($roleStats['low_stock_items'] ?? 0) > 0 ? 'var(--warning-color)' : 'var(--neutral-color)') ?>;">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Stock Issues</h6>
-                        <h3 class="mb-0"><?= ($roleStats['out_of_stock_items'] ?? 0) + ($roleStats['low_stock_items'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['out_of_stock_items'] ?? 0 ?> out, <?= $roleStats['low_stock_items'] ?? 0 ?> low
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle <?= ($roleStats['out_of_stock_items'] ?? 0) > 0 ? 'text-danger' : (($roleStats['low_stock_items'] ?? 0) > 0 ? 'text-warning' : 'text-secondary') ?> fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Stock Issues</h6>
+                        <h3 class="mb-0"><?= ($roleStats['out_of_stock_items'] ?? 0) + ($roleStats['low_stock_items'] ?? 0) ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['out_of_stock_items'] ?? 0 ?> out, <?= $roleStats['low_stock_items'] ?? 0 ?> low
+                </p>
             </div>
-            <div class="card-footer bg-warning-dark">
+            <div class="card-footer bg-light border-top">
                 <?php if (($roleStats['out_of_stock_items'] ?? 0) > 0 || ($roleStats['low_stock_items'] ?? 0) > 0): ?>
-                    <a href="?route=assets&asset_type=low_stock" class="text-white text-decoration-none">
-                        <small><i class="bi bi-eye me-1"></i>Review Stock</small>
+                    <a href="?route=assets&asset_type=low_stock" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>Review Stock
                     </a>
                 <?php else: ?>
-                    <small class="text-white-50">Stock levels good</small>
+                    <small class="text-muted">Stock levels good</small>
                 <?php endif; ?>
             </div>
         </div>
@@ -311,95 +307,95 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
 <?php elseif (in_array($userRole, ['Warehouseman'])): ?>
 <!-- Warehouseman Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Warehouse Items</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-building text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Warehouse Items</h6>
                         <h3 class="mb-0"><?= $roleStats['warehouse_items'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-building me-1"></i>Under your care
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-building me-1"></i>Under your care
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Items</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View All Items
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Ready to Dispatch</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-truck text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Ready to Dispatch</h6>
                         <h3 class="mb-0"><?= $roleStats['ready_for_dispatch'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-truck me-1"></i>Available for issue
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-truck display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-truck me-1"></i>Available for issue
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets&status=available" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Available</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=available" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Available
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Tools on Loan</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-tools text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Tools on Loan</h6>
                         <h3 class="mb-0"><?= $roleStats['tools_on_loan'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-tools me-1"></i><?= $roleStats['items_in_transit'] ?? 0 ?> in transit
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-tools display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-tools me-1"></i><?= $roleStats['items_in_transit'] ?? 0 ?> in transit
+                </p>
             </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=assets&status=borrowed" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Borrowed</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=borrowed" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Borrowed
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Today's Receipts</h6>
-                        <h3 class="mb-0"><?= $roleStats['today_receipts'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-box-arrow-in-down me-1"></i><?= $roleStats['reorder_alerts'] ?? 0 ?> need reorder
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-box-arrow-in-down text-warning fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box-arrow-in-down display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Today's Receipts</h6>
+                        <h3 class="mb-0"><?= $roleStats['today_receipts'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-box-arrow-in-down me-1"></i><?= $roleStats['reorder_alerts'] ?? 0 ?> need reorder
+                </p>
             </div>
-            <div class="card-footer bg-warning-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View Recent</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Recent
                 </a>
             </div>
         </div>
@@ -408,95 +404,95 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
 <?php elseif (in_array($userRole, ['System Admin'])): ?>
 <!-- System Admin Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">System Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-globe text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">System Assets</h6>
                         <h3 class="mb-0"><?= $roleStats['total_system_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-globe me-1"></i><?= $roleStats['active_projects'] ?? 0 ?> active projects
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-globe display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-globe me-1"></i><?= $roleStats['active_projects'] ?? 0 ?> active projects
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Assets</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View All Assets
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Value</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-currency-dollar text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Value</h6>
                         <h3 class="mb-0"><?= formatCurrency($roleStats['total_asset_value'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-currency-dollar me-1"></i>Avg: <?= formatCurrency($roleStats['avg_asset_value'] ?? 0) ?>
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-currency-dollar display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-currency-dollar me-1"></i>Avg: <?= formatCurrency($roleStats['avg_asset_value'] ?? 0) ?>
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-graph-up me-1"></i>View Analytics</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-graph-up me-1"></i>View Analytics
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Added This Week</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-plus-circle text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Added This Week</h6>
                         <h3 class="mb-0"><?= $roleStats['assets_added_week'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-calendar-week me-1"></i>New acquisitions
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-plus-circle display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar-week me-1"></i>New acquisitions
+                </p>
             </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Recent</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Recent
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-secondary text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Disposed Assets</h6>
-                        <h3 class="mb-0"><?= $roleStats['disposed_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-trash me-1"></i>End of lifecycle
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-trash text-secondary fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-trash display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Disposed Assets</h6>
+                        <h3 class="mb-0"><?= $roleStats['disposed_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-trash me-1"></i>End of lifecycle
+                </p>
             </div>
-            <div class="card-footer bg-secondary-dark">
-                <a href="?route=assets&status=disposed" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View Disposed</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=disposed" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Disposed
                 </a>
             </div>
         </div>
@@ -505,95 +501,95 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
 <?php elseif (in_array($userRole, ['Finance Director'])): ?>
 <!-- Finance Director Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Asset Investment</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-currency-dollar text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Asset Investment</h6>
                         <h3 class="mb-0"><?= formatCurrency($roleStats['total_asset_investment'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-building me-1"></i><?= $roleStats['projects_with_assets'] ?? 0 ?> projects
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-currency-dollar display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-building me-1"></i><?= $roleStats['projects_with_assets'] ?? 0 ?> projects
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View Portfolio</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Portfolio
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">High Value Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-gem text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">High Value Assets</h6>
                         <h3 class="mb-0"><?= $roleStats['high_value_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-gem me-1"></i>Above $10,000
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-gem display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-gem me-1"></i>Above $10,000
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-filter me-1"></i>View High Value</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View High Value
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Monthly Spend</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-graph-up text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Monthly Spend</h6>
                         <h3 class="mb-0"><?= formatCurrency($roleStats['monthly_acquisitions'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-calendar-month me-1"></i>This month's acquisitions
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-graph-up display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calendar-month me-1"></i>This month's acquisitions
+                </p>
             </div>
-            <div class="card-footer bg-info-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-calendar me-1"></i>View Recent</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-calendar me-1"></i>View Recent
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Avg. Cost</h6>
-                        <h3 class="mb-0"><?= formatCurrency($roleStats['avg_acquisition_cost'] ?? 0) ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-calculator me-1"></i><?= $roleStats['client_supplied_assets'] ?? 0 ?> client-supplied
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-calculator text-warning fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-calculator display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Avg. Cost</h6>
+                        <h3 class="mb-0"><?= formatCurrency($roleStats['avg_acquisition_cost'] ?? 0) ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-calculator me-1"></i><?= $roleStats['client_supplied_assets'] ?? 0 ?> client-supplied
+                </p>
             </div>
-            <div class="card-footer bg-warning-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-graph-up me-1"></i>View Analytics</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-graph-up me-1"></i>View Analytics
                 </a>
             </div>
         </div>
@@ -602,99 +598,99 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
 <?php elseif (in_array($userRole, ['Asset Director'])): ?>
 <!-- Asset Director Dashboard Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Managed Assets</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-shield-check text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Managed Assets</h6>
                         <h3 class="mb-0"><?= $roleStats['total_managed_assets'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-shield-check me-1"></i><?= $roleStats['projects_managed'] ?? 0 ?> projects
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-shield-check display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-check me-1"></i><?= $roleStats['projects_managed'] ?? 0 ?> projects
+                </p>
             </div>
-            <div class="card-footer bg-primary-dark">
-                <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Assets</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View All Assets
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Utilization Rate</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-speedometer2 text-success fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Utilization Rate</h6>
                         <h3 class="mb-0"><?= $roleStats['overall_utilization'] ?? 0 ?>%</h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-speedometer2 me-1"></i>Asset efficiency
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-speedometer2 display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-speedometer2 me-1"></i>Asset efficiency
+                </p>
             </div>
-            <div class="card-footer bg-success-dark">
-                <a href="?route=assets&status=in_use" class="text-white text-decoration-none">
-                    <small><i class="bi bi-graph-up me-1"></i>View Utilization</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=in_use" class="text-decoration-none small">
+                    <i class="bi bi-graph-up me-1"></i>View Utilization
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Maintenance Due</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-wrench text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Maintenance Due</h6>
                         <h3 class="mb-0"><?= $roleStats['maintenance_required'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-wrench me-1"></i>Require attention
-                        </small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-wrench display-6"></i>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-wrench me-1"></i>Require attention
+                </p>
             </div>
-            <div class="card-footer bg-warning-dark">
-                <a href="?route=assets&status=under_maintenance" class="text-white text-decoration-none">
-                    <small><i class="bi bi-tools me-1"></i>Schedule Maintenance</small>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets&status=under_maintenance" class="text-decoration-none small">
+                    <i class="bi bi-tools me-1"></i>Schedule Maintenance
                 </a>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card <?= ($roleStats['inventory_alerts'] ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' ?> text-white h-100">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['inventory_alerts'] ?? 0) > 0 ? 'var(--danger-color)' : 'var(--neutral-color)' ?>;">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Inventory Alerts</h6>
-                        <h3 class="mb-0"><?= $roleStats['inventory_alerts'] ?? 0 ?></h3>
-                        <small class="opacity-75">
-                            <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['retired_assets'] ?? 0 ?> retired
-                        </small>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-exclamation-triangle <?= ($roleStats['inventory_alerts'] ?? 0) > 0 ? 'text-danger' : 'text-secondary' ?> fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Inventory Alerts</h6>
+                        <h3 class="mb-0"><?= $roleStats['inventory_alerts'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['retired_assets'] ?? 0 ?> retired
+                </p>
             </div>
-            <div class="card-footer bg-danger-dark">
+            <div class="card-footer bg-light border-top">
                 <?php if (($roleStats['inventory_alerts'] ?? 0) > 0): ?>
-                    <a href="?route=assets&asset_type=low_stock" class="text-white text-decoration-none">
-                        <small><i class="bi bi-eye me-1"></i>Review Alerts</small>
+                    <a href="?route=assets&asset_type=low_stock" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>Review Alerts
                     </a>
                 <?php else: ?>
-                    <small class="text-white-50">All inventory optimal</small>
+                    <small class="text-muted">All inventory optimal</small>
                 <?php endif; ?>
             </div>
         </div>
