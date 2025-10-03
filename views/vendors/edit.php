@@ -12,23 +12,8 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-pencil me-2"></i>
-        Edit Vendor: <?= htmlspecialchars($vendor['name']) ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=vendors/view&id=<?= $vendor['id'] ?>" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i>Back to Vendor
-        </a>
-        <?php if ($auth->hasRole(['System Admin', 'Procurement Officer', 'Finance Director'])): ?>
-            <a href="?route=vendors/manageBanks&vendor_id=<?= $vendor['id'] ?>" class="btn btn-outline-info">
-                <i class="bi bi-bank me-1"></i>Manage Banks
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Messages -->
 <?php if (!empty($messages)): ?>

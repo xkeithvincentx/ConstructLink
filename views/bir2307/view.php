@@ -11,12 +11,9 @@ if (!defined('APP_ROOT')) {
 ?>
 
 <div class="container-fluid py-4">
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">BIR Form 2307</h2>
-            <p class="text-muted mb-0">Certificate of Creditable Tax Withheld at Source</p>
-        </div>
+    <!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <div class="d-flex gap-2">
             <a href="?route=bir2307/print-preview&id=<?= $form['id'] ?>" 
                target="_blank" 

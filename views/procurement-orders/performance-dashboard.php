@@ -8,23 +8,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-graph-up me-2"></i>
-        Procurement Performance Dashboard
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-funnel me-1"></i>Filters
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" onclick="showDateFilter()">Date Range</a></li>
-                <li><a class="dropdown-item" href="#" onclick="showProjectFilter()">By Project</a></li>
-                <li><a class="dropdown-item" href="#" onclick="showSupplierFilter()">By Supplier</a></li>
-            </ul>
-        </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <a href="?route=procurement-orders" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Back to Procurement Orders
         </a>

@@ -7,35 +7,9 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-shop me-2"></i>
-        <?= htmlspecialchars($vendor['name']) ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=vendors" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Vendors
-            </a>
-            <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
-                <div class="btn-group">
-                    <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-graph-up me-1"></i>Analytics
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="?route=vendors/performanceAnalysis&id=<?= $vendor['id'] ?>">
-                            <i class="bi bi-speedometer2 me-2"></i>Performance Analysis
-                        </a></li>
-                        <li><a class="dropdown-item" href="?route=vendors/riskAssessment&id=<?= $vendor['id'] ?>">
-                            <i class="bi bi-shield-exclamation me-2"></i>Risk Assessment
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="?route=vendors/vendorComparison&selected_vendors=<?= $vendor['id'] ?>">
-                            <i class="bi bi-bar-chart me-2"></i>Compare with Others
-                        </a></li>
-                    </ul>
-                </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
             <?php endif; ?>
             <?php if ($auth->hasRole(['System Admin', 'Procurement Officer'])): ?>
                 <a href="?route=vendors/edit&id=<?= $vendor['id'] ?>" class="btn btn-outline-warning">

@@ -7,23 +7,9 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye me-2"></i>
-        Procurement Order #<?= htmlspecialchars($procurementOrder['po_number'] ?? 'DRAFT-' . $procurementOrder['id']) ?>
-        <?php if (!empty($procurementOrder['is_retroactive']) && $procurementOrder['is_retroactive'] == 1): ?>
-            <span class="badge bg-warning ms-2" title="This PO was created for post-purchase documentation">
-                <i class="bi bi-clock-history me-1"></i>RETROACTIVE
-            </span>
-        <?php endif; ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=procurement-orders" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Procurement Orders
-            </a>
-        </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <?php if (in_array($user['role_name'], $roleConfig['procurement-orders/edit'] ?? []) && in_array($procurementOrder['status'], ['Draft', 'Pending'])): ?>
             <div class="btn-group me-2">
                 <a href="?route=procurement-orders/edit&id=<?= $procurementOrder['id'] ?>" class="btn btn-warning">

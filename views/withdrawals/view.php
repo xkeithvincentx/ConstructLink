@@ -32,43 +32,8 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
 }
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye me-2"></i>
-        Withdrawal Details #<?= $withdrawal['id'] ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=withdrawals" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Withdrawals
-        </a>
-        <?php if (canVerifyWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
-            <a href="?route=withdrawals/verify&id=<?= $withdrawal['id'] ?>" class="btn btn-warning ms-2">
-                <i class="bi bi-search me-1"></i>Verify
-            </a>
-        <?php endif; ?>
-        <?php if (canApproveWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
-            <a href="?route=withdrawals/approve&id=<?= $withdrawal['id'] ?>" class="btn btn-info ms-2">
-                <i class="bi bi-person-check me-1"></i>Approve
-            </a>
-        <?php endif; ?>
-        <?php if (canReleaseWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
-            <a href="?route=withdrawals/release&id=<?= $withdrawal['id'] ?>" class="btn btn-success ms-2">
-                <i class="bi bi-check-circle me-1"></i>Release
-            </a>
-        <?php endif; ?>
-        <?php if (canReturnWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
-            <a href="?route=withdrawals/return&id=<?= $withdrawal['id'] ?>" class="btn btn-primary ms-2">
-                <i class="bi bi-arrow-return-left me-1"></i>Return
-            </a>
-        <?php endif; ?>
-        <?php if (canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $user['id'])): ?>
-            <a href="?route=withdrawals/cancel&id=<?= $withdrawal['id'] ?>" class="btn btn-danger ms-2">
-                <i class="bi bi-x-circle me-1"></i>Cancel
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <div class="row">
     <div class="col-lg-8">

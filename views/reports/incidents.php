@@ -6,21 +6,9 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Incident Report
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-outline-success" onclick="exportReport()">
-                <i class="bi bi-download me-1"></i>Export CSV
-            </button>
-            <button type="button" class="btn btn-outline-primary" onclick="printReport()">
-                <i class="bi bi-printer me-1"></i>Print
-            </button>
-        </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <a href="?route=reports" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Back to Reports
         </a>

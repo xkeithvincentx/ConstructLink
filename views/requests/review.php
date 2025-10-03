@@ -11,18 +11,8 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye-fill me-2"></i>
-        Review Request #<?= $request['id'] ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=requests/view&id=<?= $request['id'] ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Request
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <?php if (in_array($user['role_name'], $roleConfig['requests/review'] ?? [])): ?>
     <div class="row">

@@ -7,24 +7,9 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-building me-2"></i>
-        <?= htmlspecialchars($project['name']) ?>
-        <?php if ($project['is_active']): ?>
-            <span class="badge bg-success ms-2">Active</span>
-        <?php else: ?>
-            <span class="badge bg-secondary ms-2">Inactive</span>
-        <?php endif; ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=projects" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Projects
-            </a>
-        </div>
-        
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <?php if ($auth->hasRole(['System Admin'])): ?>
             <div class="btn-group me-2">
                 <a href="?route=projects/edit&id=<?= $project['id'] ?>" class="btn btn-warning">

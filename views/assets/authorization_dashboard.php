@@ -7,18 +7,8 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-shield-check me-2 text-primary"></i>
-        Asset Authorization Dashboard
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=assets" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Assets
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Info Alert -->
 <div class="alert alert-info" role="alert">

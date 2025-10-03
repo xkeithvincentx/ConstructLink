@@ -9,17 +9,9 @@ include APP_ROOT . '/views/layouts/main.php';
 ?>
 
 <div class="container-fluid mt-4">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0 text-gray-800">
-                        <i class="fas fa-chart-line mr-2 text-primary"></i>
-                        <?= htmlspecialchars($pageHeader) ?>
-                    </h1>
-                    <p class="text-muted mb-0">Comprehensive performance metrics and trend analysis</p>
-                </div>
+    <!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
                 <div class="btn-group" role="group">
                     <a href="?route=vendors/intelligenceDashboard" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard

@@ -13,21 +13,9 @@ if (!$brandId) {
 }
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-award me-2"></i>
-        Brand Details
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=brands/edit&id=<?= htmlspecialchars($brandId) ?>" class="btn btn-primary">
-                <i class="bi bi-pencil me-1"></i>Edit Brand
-            </a>
-            <button class="btn btn-outline-danger" onclick="deleteBrand(<?= htmlspecialchars($brandId) ?>)" id="deleteBtn">
-                <i class="bi bi-trash me-1"></i>Delete
-            </button>
-        </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <a href="?route=brands" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Back to Brands
         </a>

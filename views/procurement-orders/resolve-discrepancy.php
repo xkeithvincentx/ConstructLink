@@ -19,18 +19,8 @@ $unresolvedItems = $procurementItemModel->getItemsWithUnresolvedDiscrepancies($p
 $discrepancySummary = $procurementItemModel->getDiscrepancySummary($procurementOrder['id']);
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Resolve Discrepancy
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=procurement-orders/view&id=<?= $procurementOrder['id'] ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Order
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Display Messages -->
 <?php if (!empty($errors)): ?>

@@ -13,18 +13,8 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 <?php if (in_array($user['role_name'], $roleConfig['procurement-orders/cancel'] ?? [])): ?>
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-x-circle me-2"></i>
-        Cancel Procurement Order
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=procurement-orders/view&id=<?= htmlspecialchars($order['id']) ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Order
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Messages -->
 <?php if (!empty($errors)): ?>

@@ -8,71 +8,8 @@ $user = $auth->getCurrentUser();
 
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye me-2"></i>
-        Borrowed Tool: <?= htmlspecialchars($borrowedTool['asset_name'] ?? 'Unknown') ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <?php
-        // Check user permissions for MVA workflow actions
-        $userRole = $user['role_name'] ?? '';
-        
-        // Determine if this is a critical tool for proper MVA workflow
-        $isCriticalTool = isset($borrowedTool['acquisition_cost']) && $borrowedTool['acquisition_cost'] > 50000;
-        
-        // Fixed MVA role assignments - proper segregation of duties
-        $canVerify = $isCriticalTool && in_array($userRole, ['System Admin', 'Project Manager']);
-        $canApprove = $isCriticalTool && in_array($userRole, ['System Admin', 'Asset Director', 'Finance Director']);
-        $canBorrow = in_array($userRole, ['System Admin', 'Warehouseman']);
-        $canReturn = in_array($userRole, ['System Admin', 'Warehouseman', 'Site Inventory Clerk', 'Asset Director']);
-        $canExtend = in_array($userRole, ['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk']);
-        $canCancel = in_array($userRole, ['System Admin', 'Project Manager', 'Asset Director', 'Warehouseman']) || 
-                     ($borrowedTool['issued_by'] == $user['id']);
-        ?>
-        
-        <?php if ($canVerify && $borrowedTool['status'] === 'Pending Verification'): ?>
-            <a href="?route=borrowed-tools/verify&id=<?= $borrowedTool['id'] ?>" class="btn btn-warning me-2">
-                <i class="bi bi-search me-1"></i>Verify
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($canApprove && $borrowedTool['status'] === 'Pending Approval'): ?>
-            <a href="?route=borrowed-tools/approve&id=<?= $borrowedTool['id'] ?>" class="btn btn-success me-2">
-                <i class="bi bi-person-check me-1"></i>Approve
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($canBorrow && $borrowedTool['status'] === 'Approved'): ?>
-            <a href="?route=borrowed-tools/borrow&id=<?= $borrowedTool['id'] ?>" class="btn btn-primary me-2">
-                <i class="bi bi-box-arrow-down me-1"></i>Mark as Borrowed
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($canReturn && $borrowedTool['status'] === 'Borrowed'): ?>
-            <a href="?route=borrowed-tools/return&id=<?= $borrowedTool['id'] ?>" class="btn btn-success me-2">
-                <i class="bi bi-arrow-return-left me-1"></i>Return Tool
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($canExtend && in_array($borrowedTool['status'], ['Borrowed', 'Overdue'])): ?>
-            <a href="?route=borrowed-tools/extend&id=<?= $borrowedTool['id'] ?>" class="btn btn-info me-2">
-                <i class="bi bi-calendar-plus me-1"></i>Extend Period
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($canCancel && in_array($borrowedTool['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
-            <a href="?route=borrowed-tools/cancel&id=<?= $borrowedTool['id'] ?>" class="btn btn-danger me-2">
-                <i class="bi bi-x-circle me-1"></i>Cancel
-            </a>
-        <?php endif; ?>
-        
-        <a href="?route=borrowed-tools" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Status Badge -->
 <div class="row mb-4">

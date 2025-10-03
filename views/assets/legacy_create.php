@@ -7,19 +7,13 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 pb-2 mb-3 border-bottom gap-2">
-    <h1 class="h2 mb-2 mb-md-0">
-        <i class="bi bi-plus-circle me-2 text-success"></i>
-        Add Legacy Asset
-    </h1>
-    <div class="btn-toolbar">
-        <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>
-            <span class="d-none d-sm-inline">Back to Assets</span>
-            <span class="d-sm-none">Back</span>
-        </a>
-    </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<div class="d-flex justify-content-end align-items-center mb-4">
+    <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>
+        <span class="d-none d-sm-inline">Back to Assets</span>
+        <span class="d-sm-none">Back</span>
+    </a>
 </div>
 
 <!-- Info Alert -->

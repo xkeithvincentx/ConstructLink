@@ -7,20 +7,18 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-pencil-square me-2"></i>
-        Edit Asset: <?= htmlspecialchars($asset['name'] ?? 'Unknown') ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=assets/view&id=<?= $asset['id'] ?? 0 ?>" class="btn btn-outline-info me-2">
-            <i class="bi bi-eye me-1"></i>View Asset
-        </a>
-        <a href="?route=assets" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Assets
-        </a>
-    </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<div class="d-flex justify-content-end align-items-center mb-4 gap-2">
+    <a href="?route=assets/view&id=<?= $asset['id'] ?? 0 ?>" class="btn btn-outline-info btn-sm">
+        <i class="bi bi-eye me-1"></i>
+        <span class="d-none d-sm-inline">View Asset</span>
+        <span class="d-sm-none">View</span>
+    </a>
+    <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>
+        <span class="d-none d-sm-inline">Back to Assets</span>
+        <span class="d-sm-none">Back</span>
+    </a>
 </div>
 
 <!-- Messages -->

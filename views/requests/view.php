@@ -11,19 +11,9 @@ $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-clipboard-check me-2"></i>
-        Request Details #<?= $request['id'] ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=requests" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Requests
-            </a>
-        </div>
-        
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <!-- Action Buttons -->
         <?php if ($request['status'] === 'Draft' && $request['requested_by'] == $user['id']): ?>
             <div class="btn-group me-2">

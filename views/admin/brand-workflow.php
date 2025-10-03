@@ -14,21 +14,8 @@ if (!in_array($user['role_name'], $allowedRoles)) {
 }
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-diagram-3 me-2"></i>
-        Brand Workflow Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button class="btn btn-outline-secondary me-2" onclick="refreshWorkflowData()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-        </button>
-        <button class="btn btn-primary" onclick="showBrandWorkflowStats()">
-            <i class="bi bi-graph-up me-1"></i>Statistics
-        </button>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Workflow Statistics Cards -->
 <div class="row mb-4" id="workflow-stats">

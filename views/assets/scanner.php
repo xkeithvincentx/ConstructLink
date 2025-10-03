@@ -19,17 +19,8 @@ $pageTitle = $pageTitle ?? 'Asset Scanner - ConstructLink™';
         </ol>
     </nav>
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
-            <i class="bi bi-qr-code-scan me-2"></i>Asset QR Scanner
-        </h1>
-        <div class="btn-toolbar">
-            <a href="?route=assets" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Assets
-            </a>
-        </div>
-    </div>
+    <!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
     <div class="row">
         <!-- Scanner Section -->

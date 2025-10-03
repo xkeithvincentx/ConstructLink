@@ -5,23 +5,8 @@ ob_start();
 $auth = Auth::getInstance();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-gear me-2"></i>
-        <?= htmlspecialchars($maker['name']) ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <?php if ($auth->hasRole(['System Admin', 'Procurement Officer'])): ?>
-            <a href="?route=makers/edit&id=<?= $maker['id'] ?>" class="btn btn-warning me-2">
-                <i class="bi bi-pencil me-1"></i>Edit
-            </a>
-        <?php endif; ?>
-        <a href="?route=makers" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Manufacturers
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Messages -->
 <?php if (isset($_GET['message'])): ?>

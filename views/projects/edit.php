@@ -6,18 +6,8 @@ $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-pencil-square me-2"></i>
-        Edit Project
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=projects" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Projects
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Display Messages -->
 <?php if (!empty($errors)): ?>

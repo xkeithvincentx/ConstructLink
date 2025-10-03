@@ -6,22 +6,9 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-journal-text me-2"></i>
-        System Logs
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=admin" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Admin
-            </a>
-            <button type="button" class="btn btn-outline-primary" onclick="refreshLogs()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-            </button>
-        </div>
-    </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
 </div>
 
 <!-- Log Statistics -->

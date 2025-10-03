@@ -6,37 +6,8 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-clipboard-data me-2"></i>
-        Procurement Order Details
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=procurement" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i>Back to Procurement
-        </a>
-        
-        <?php if (in_array($procurement['status'], ['Approved', 'Delivered']) && $auth->hasRole(['System Admin', 'Finance Director', 'Procurement Officer'])): ?>
-            <a href="?route=procurement/generatePO&id=<?= $procurement['id'] ?>" 
-               class="btn btn-outline-primary me-2" target="_blank">
-                <i class="bi bi-file-earmark-pdf me-1"></i>Generate PDF
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($procurement['status'] === 'Pending' && $auth->hasRole(['System Admin', 'Finance Director'])): ?>
-            <a href="?route=procurement/approve&id=<?= $procurement['id'] ?>" class="btn btn-success">
-                <i class="bi bi-check-circle me-1"></i>Review & Approve
-            </a>
-        <?php endif; ?>
-        
-        <?php if ($procurement['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman', 'Procurement Officer'])): ?>
-            <a href="?route=procurement/receive&id=<?= $procurement['id'] ?>" class="btn btn-info">
-                <i class="bi bi-box-arrow-in-down me-1"></i>Mark as Received
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Messages -->
 <?php if (isset($_GET['message'])): ?>

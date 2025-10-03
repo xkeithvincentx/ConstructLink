@@ -7,22 +7,9 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-tools me-2"></i>
-        Maintenance #<?= $maintenance['id'] ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="?route=maintenance" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Maintenance
-            </a>
-            <a href="?route=assets/view&id=<?= $maintenance['asset_id'] ?>" class="btn btn-outline-info">
-                <i class="bi bi-box me-1"></i>View Asset
-            </a>
-        </div>
-        
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
         <?php 
         // Load role configuration for MVA permissions
         $roleConfig = require APP_ROOT . '/config/roles.php';

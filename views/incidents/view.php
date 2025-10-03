@@ -9,43 +9,8 @@ $userRole = $user['role_name'] ?? 'Guest';
 
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Incident #<?= $incident['id'] ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <?php if (hasPermission('incidents/investigate') && $incident['status'] === 'Pending Verification'): ?>
-            <a href="?route=incidents/investigate&id=<?= $incident['id'] ?>" class="btn btn-warning me-2">
-                <i class="bi bi-check2-circle me-1"></i>Verify
-            </a>
-        <?php endif; ?>
-        <?php if (hasPermission('incidents/resolve') && $incident['status'] === 'Pending Authorization'): ?>
-            <a href="?route=incidents/resolve&id=<?= $incident['id'] ?>" class="btn btn-success me-2">
-                <i class="bi bi-check2-square me-1"></i>Authorize
-            </a>
-        <?php endif; ?>
-        <?php if (hasPermission('incidents/resolve') && in_array($incident['status'], ['Authorized', 'Pending Authorization'])): ?>
-            <a href="?route=incidents/resolve&id=<?= $incident['id'] ?>" class="btn btn-primary me-2">
-                <i class="bi bi-check-circle me-1"></i>Resolve
-            </a>
-        <?php endif; ?>
-        <?php if ($incident['status'] === 'Resolved' && $user['role_name'] === 'Asset Director'): ?>
-            <a href="?route=incidents/close&id=<?= $incident['id'] ?>" class="btn btn-dark me-2">
-                <i class="bi bi-x-circle me-1"></i>Close
-            </a>
-        <?php endif; ?>
-        <?php if (in_array($incident['status'], ['Pending Verification', 'Pending Authorization', 'Authorized']) && $user['role_name'] === 'Site Inventory Clerk'): ?>
-            <a href="?route=incidents/cancel&id=<?= $incident['id'] ?>" class="btn btn-danger me-2">
-                <i class="bi bi-x-circle me-1"></i>Cancel
-            </a>
-        <?php endif; ?>
-        <a href="?route=incidents" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Status Messages -->
 <?php include APP_ROOT . '/views/layouts/messages.php'; ?>

@@ -8,18 +8,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 $canEdit = in_array($user['role_name'], $roleConfig['procurement-orders/edit'] ?? []) && in_array($procurementOrder['status'], ['Draft', 'Pending']);
 ?>
 <?php if ($canEdit): ?>
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-pencil me-2"></i>
-        Edit Procurement Order #<?= htmlspecialchars($procurementOrder['po_number'] ?? 'DRAFT-' . $procurementOrder['id']) ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=procurement-orders/view&id=<?= $procurementOrder['id'] ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Order
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Error Messages -->
 <?php if (!empty($errors)): ?>

@@ -5,21 +5,8 @@ ob_start();
 $auth = Auth::getInstance();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-pencil me-2"></i>
-        Edit Manufacturer
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="?route=makers/view&id=<?= $maker['id'] ?>" class="btn btn-outline-info me-2">
-            <i class="bi bi-eye me-1"></i>View Details
-        </a>
-        <a href="?route=makers" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Manufacturers
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Error Messages -->
 <?php if (!empty($errors)): ?>

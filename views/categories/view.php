@@ -6,43 +6,9 @@ $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-tags me-2"></i>
-        <?= htmlspecialchars($category['name']) ?>
-        <?php 
-        $assetType = $category['asset_type'] ?? 'capital';
-        switch($assetType) {
-            case 'capital': 
-                echo '<span class="badge bg-primary ms-2">🔧 Capital Asset</span>';
-                break;
-            case 'inventory': 
-                echo '<span class="badge bg-info ms-2">📦 Inventory</span>';
-                break;
-            case 'expense': 
-                echo '<span class="badge bg-warning text-dark ms-2">💰 Direct Expense</span>';
-                break;
-            default:
-                echo '<span class="badge bg-secondary ms-2">Unknown</span>';
-        }
-        ?>
-        <?php if ($category['is_consumable']): ?>
-            <span class="badge bg-light text-dark ms-1">Consumable</span>
-        <?php endif; ?>
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <?php if ($auth->hasRole(['System Admin', 'Asset Director'])): ?>
-                <a href="?route=categories/edit&id=<?= $category['id'] ?>" class="btn btn-outline-warning">
-                    <i class="bi bi-pencil me-1"></i>Edit
-                </a>
-            <?php endif; ?>
-            <a href="?route=categories" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Back to Categories
-            </a>
-        </div>
-    </div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
+
 </div>
 
 <!-- Category Overview -->

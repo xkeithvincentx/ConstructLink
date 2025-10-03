@@ -19,21 +19,8 @@ $standardizer = AssetStandardizer::getInstance();
 $stats = $standardizer->getStatistics();
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-gear-fill me-2"></i>
-        Asset Standardization Management
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button class="btn btn-outline-primary me-2" onclick="refreshCache()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh Cache
-        </button>
-        <a href="?route=admin" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to Admin
-        </a>
-    </div>
-</div>
+<!-- Navigation Actions (No Header - handled by layout) -->
+<!-- Add navigation buttons here if needed -->
 
 <!-- Statistics Overview -->
 <div class="row mb-4">
