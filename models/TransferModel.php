@@ -366,7 +366,7 @@ class TransferModel extends BaseModel {
             
             // Update transfer status
             $updateResult = $this->update($transferId, [
-                'status' => 'canceled',
+                'status' => 'Canceled',
                 'notes' => $reason
             ]);
             
@@ -571,27 +571,27 @@ class TransferModel extends BaseModel {
     }
     
     /**
-     * Get transfer statistics with overdue returns support
+     * Get transfer statistics with overdue returns support and user-specific counts
      */
-    public function getTransferStatistics($dateFrom = null, $dateTo = null) {
+    public function getTransferStatistics($dateFrom = null, $dateTo = null, $userId = null) {
         try {
             $conditions = [];
             $params = [];
-            
+
             if ($dateFrom) {
                 $conditions[] = "transfer_date >= ?";
                 $params[] = $dateFrom;
             }
-            
+
             if ($dateTo) {
                 $conditions[] = "transfer_date <= ?";
                 $params[] = $dateTo;
             }
-            
+
             $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-            
+
             $sql = "
-                SELECT 
+                SELECT
                     COUNT(*) as total_transfers,
                     SUM(CASE WHEN status = 'Pending Verification' THEN 1 ELSE 0 END) as pending_verification,
                     SUM(CASE WHEN status = 'Pending Approval' THEN 1 ELSE 0 END) as pending_approval,
@@ -599,61 +599,99 @@ class TransferModel extends BaseModel {
                     SUM(CASE WHEN status = 'Received' THEN 1 ELSE 0 END) as received,
                     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
                     SUM(CASE WHEN status = 'Canceled' THEN 1 ELSE 0 END) as canceled,
-                    SUM(CASE WHEN transfer_type = 'temporary' THEN 1 ELSE 0 END) as temporary,
-                    SUM(CASE WHEN transfer_type = 'permanent' THEN 1 ELSE 0 END) as permanent,
+                    SUM(CASE WHEN transfer_type = 'temporary' THEN 1 ELSE 0 END) as temporary_transfers,
+                    SUM(CASE WHEN transfer_type = 'permanent' THEN 1 ELSE 0 END) as permanent_transfers,
                     SUM(CASE WHEN transfer_type = 'temporary' AND status = 'Completed' AND expected_return < CURDATE() AND return_status = 'not_returned' THEN 1 ELSE 0 END) as overdue_returns,
+                    SUM(CASE WHEN transfer_type = 'temporary' AND status = 'Completed' AND return_status = 'not_returned' THEN 1 ELSE 0 END) as pending_returns,
                     SUM(CASE WHEN transfer_type = 'temporary' AND return_status = 'returned' THEN 1 ELSE 0 END) as returned,
                     SUM(CASE WHEN return_status = 'in_return_transit' THEN 1 ELSE 0 END) as returns_in_transit,
-                    SUM(CASE WHEN return_status = 'in_return_transit' AND DATEDIFF(NOW(), return_initiation_date) > 3 THEN 1 ELSE 0 END) as overdue_return_transits
-                FROM transfers 
+                    SUM(CASE WHEN return_status = 'in_return_transit' AND DATEDIFF(NOW(), return_initiation_date) > 3 THEN 1 ELSE 0 END) as overdue_return_transits,
+                    ROUND((SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0)), 0) as completion_rate
+                FROM transfers
                 {$whereClause}
             ";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $result = $stmt->fetch();
-            
-            return $result ?: [
-                'total_transfers' => 0,
-                'pending_verification' => 0,
-                'pending_approval' => 0,
-                'approved' => 0,
-                'received' => 0,
-                'completed' => 0,
-                'canceled' => 0,
-                'temporary' => 0,
-                'permanent' => 0,
-                'overdue_returns' => 0,
-                'returned' => 0,
-                'returns_in_transit' => 0,
-                'overdue_return_transits' => 0
-            ];
-            
+
+            // Get user-specific statistics if userId is provided
+            if ($userId) {
+                // Get count of transfers pending verification where user is the target project manager
+                $userVerificationSql = "
+                    SELECT COUNT(*) as my_pending_verifications
+                    FROM transfers t
+                    LEFT JOIN projects pf ON t.from_project = pf.id
+                    WHERE t.status = 'Pending Verification'
+                      AND pf.project_manager_id = ?
+                ";
+                $stmt = $this->db->prepare($userVerificationSql);
+                $stmt->execute([$userId]);
+                $userStats = $stmt->fetch();
+                $result['my_pending_verifications'] = $userStats['my_pending_verifications'] ?? 0;
+
+                // For approvals - this would be for Asset Directors / Finance Directors
+                // Just count all pending approvals for now (they can approve all)
+                $result['my_pending_approvals'] = $result['pending_approval'] ?? 0;
+            } else {
+                $result['my_pending_verifications'] = 0;
+                $result['my_pending_approvals'] = 0;
+            }
+
+            // Calculate permanent transfer value if not included
+            if (!isset($result['permanent_transfer_value'])) {
+                $valueSql = "
+                    SELECT COALESCE(SUM(a.purchase_price), 0) as permanent_transfer_value
+                    FROM transfers t
+                    LEFT JOIN assets a ON t.asset_id = a.id
+                    WHERE t.transfer_type = 'permanent'
+                      AND t.status = 'Completed'
+                ";
+                $stmt = $this->db->prepare($valueSql);
+                $stmt->execute();
+                $valueResult = $stmt->fetch();
+                $result['permanent_transfer_value'] = $valueResult['permanent_transfer_value'] ?? 0;
+            }
+
+            return $result ?: $this->getDefaultStats();
+
         } catch (Exception $e) {
             error_log("Get transfer statistics error: " . $e->getMessage());
-            return [
-                'total_transfers' => 0,
-                'pending_verification' => 0,
-                'pending_approval' => 0,
-                'approved' => 0,
-                'received' => 0,
-                'completed' => 0,
-                'canceled' => 0,
-                'temporary' => 0,
-                'permanent' => 0,
-                'overdue_returns' => 0,
-                'returned' => 0,
-                'returns_in_transit' => 0,
-                'overdue_return_transits' => 0
-            ];
+            return $this->getDefaultStats();
         }
+    }
+
+    /**
+     * Get default statistics structure
+     */
+    private function getDefaultStats() {
+        return [
+            'total_transfers' => 0,
+            'pending_verification' => 0,
+            'pending_approval' => 0,
+            'approved' => 0,
+            'received' => 0,
+            'completed' => 0,
+            'canceled' => 0,
+            'temporary_transfers' => 0,
+            'permanent_transfers' => 0,
+            'overdue_returns' => 0,
+            'pending_returns' => 0,
+            'returned' => 0,
+            'returns_in_transit' => 0,
+            'overdue_return_transits' => 0,
+            'completion_rate' => 0,
+            'my_pending_verifications' => 0,
+            'my_pending_approvals' => 0,
+            'permanent_transfer_value' => 0
+        ];
     }
     
     /**
      * Get transfer statistics (alias for backward compatibility)
      */
-    public function getTransferStats($dateFrom = null, $dateTo = null) {
-        return $this->getTransferStatistics($dateFrom, $dateTo);
+    public function getTransferStats($dateFrom = null, $dateTo = null, $userId = null) {
+        return $this->getTransferStatistics($dateFrom, $dateTo, $userId);
     }
     
     /**

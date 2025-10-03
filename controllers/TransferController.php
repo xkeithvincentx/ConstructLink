@@ -81,8 +81,9 @@ class TransferController {
             $transfers = $result['data'] ?? [];
             $pagination = $result['pagination'] ?? [];
             
-            // Get transfer statistics
-            $transferStats = $this->transferModel->getTransferStatistics();
+            // Get transfer statistics (with user-specific counts)
+            $currentUser = $this->auth->getCurrentUser();
+            $transferStats = $this->transferModel->getTransferStatistics(null, null, $currentUser['id'] ?? null);
             
             // Get overdue returns
             $overdueReturns = $this->transferModel->getOverdueReturns();

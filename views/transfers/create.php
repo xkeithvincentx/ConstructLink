@@ -454,37 +454,54 @@ function transferForm() {
             const today = new Date().toISOString().split('T')[0];
             const transferDateInput = document.getElementById('transfer_date');
             transferDateInput.min = today;
-            
+
             // Initialize filtered assets
             this.filterAssets();
-            
-            // Initialize Select2 for to_project dropdown only
-            $('#to_project').select2({
+
+            // Build initial to_project dropdown options
+            const $toProject = $('#to_project');
+            $toProject.empty();
+            $toProject.append('<option value="">Select To Project</option>');
+            this.filteredToProjects.forEach(project => {
+                const option = new Option(project.name, project.id, false, false);
+                $toProject.append(option);
+            });
+
+            // Initialize Select2 for to_project dropdown
+            $toProject.select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Search for destination project...',
-                allowClear: true
+                allowClear: true,
+                width: '100%'
             });
-            
+
             // Sync Select2 with Alpine.js for to_project
-            $('#to_project').on('change', (e) => {
+            $toProject.on('change', (e) => {
                 this.formData.to_project = e.target.value;
                 this.validateProjects();
             });
-            
+
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.position-relative')) {
                     this.showDropdown = false;
                 }
             });
-            
+
+            // Watch from_project to update to_project dropdown
+            this.$watch('formData.from_project', (newValue, oldValue) => {
+                if (newValue && newValue !== oldValue) {
+                    this.updateToProjectDropdown();
+                }
+            });
+
             // Watch transfer type for temporary return date
             this.$watch('formData.transfer_type', (value) => {
                 if (value !== 'temporary') {
                     this.formData.expected_return = '';
                 }
             });
-            
+
             // Watch transfer date to update expected return minimum
             this.$watch('formData.transfer_date', (value) => {
                 const expectedReturnInput = document.getElementById('expected_return');
@@ -492,41 +509,58 @@ function transferForm() {
                     const nextDay = new Date(value);
                     nextDay.setDate(nextDay.getDate() + 1);
                     expectedReturnInput.min = nextDay.toISOString().split('T')[0];
-                    
+
                     if (this.formData.expected_return && this.formData.expected_return <= value) {
                         this.formData.expected_return = '';
                     }
                 }
             });
-            
+
         },
         
         
         updateToProjectDropdown() {
             // Save current selection
             const currentToProject = this.formData.to_project;
-            
-            // Rebuild to_project dropdown excluding from_project
-            $('#to_project').select2('destroy');
-            $('#to_project').empty();
-            $('#to_project').append('<option value="">Select To Project</option>');
-            
-            // Add filtered project options
+
+            // Destroy existing Select2 instance
+            if ($('#to_project').hasClass('select2-hidden-accessible')) {
+                $('#to_project').select2('destroy');
+            }
+
+            // Clear and rebuild dropdown with filtered options
+            const $toProject = $('#to_project');
+            $toProject.empty();
+            $toProject.append('<option value="">Select To Project</option>');
+
+            // Add only filtered projects (excluding from_project)
             this.filteredToProjects.forEach(project => {
-                $('#to_project').append(new Option(project.name, project.id, false, project.id == currentToProject));
+                const option = new Option(project.name, project.id, false, false);
+                $toProject.append(option);
             });
-            
+
             // Reinitialize Select2
-            $('#to_project').select2({
+            $toProject.select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Search for destination project...',
-                allowClear: true
+                allowClear: true,
+                width: '100%'
             });
-            
-            // Restore selected value if it's still valid
+
+            // Restore selection only if it's still in the filtered list
             if (currentToProject && this.filteredToProjects.find(p => p.id == currentToProject)) {
-                $('#to_project').val(currentToProject).trigger('change');
+                $toProject.val(currentToProject).trigger('change');
+            } else {
+                // Clear selection if from_project was selected as to_project
+                this.formData.to_project = '';
+                $toProject.val('').trigger('change');
             }
+
+            // Re-attach change handler
+            $toProject.off('change').on('change', (e) => {
+                this.formData.to_project = e.target.value;
+                this.validateProjects();
+            });
         },
         
         validateProjects() {
