@@ -1225,23 +1225,29 @@ class ApiController {
             $offset = max((int)($_GET['offset'] ?? 0), 0);
 
             $notifications = [];
+            $notificationModel = null;
 
-            // Get database notifications first
-            require_once APP_ROOT . '/models/NotificationModel.php';
-            $notificationModel = new NotificationModel();
-            $dbNotifications = $notificationModel->getUserNotifications($userId, $limit, $offset);
+            // Get database notifications first (if table exists)
+            try {
+                require_once APP_ROOT . '/models/NotificationModel.php';
+                $notificationModel = new NotificationModel();
+                $dbNotifications = $notificationModel->getUserNotifications($userId, $limit, $offset);
 
-            foreach ($dbNotifications as $dbNotif) {
-                $notifications[] = [
-                    'id' => $dbNotif['id'],
-                    'type' => $dbNotif['type'],
-                    'title' => $dbNotif['title'],
-                    'message' => $dbNotif['message'],
-                    'icon' => $this->getNotificationIcon($dbNotif['type']),
-                    'url' => $dbNotif['url'] ?? '#',
-                    'time' => $this->timeAgo($dbNotif['created_at']),
-                    'unread' => !$dbNotif['is_read']
-                ];
+                foreach ($dbNotifications as $dbNotif) {
+                    $notifications[] = [
+                        'id' => $dbNotif['id'],
+                        'type' => $dbNotif['type'],
+                        'title' => $dbNotif['title'],
+                        'message' => $dbNotif['message'],
+                        'icon' => $this->getNotificationIcon($dbNotif['type']),
+                        'url' => $dbNotif['url'] ?? '#',
+                        'time' => $this->timeAgo($dbNotif['created_at']),
+                        'unread' => !$dbNotif['is_read']
+                    ];
+                }
+            } catch (Exception $e) {
+                // Table might not exist yet - log and continue with system notifications only
+                error_log("NotificationModel error (table may not exist): " . $e->getMessage());
             }
             
             // Get overdue withdrawals
@@ -1373,8 +1379,10 @@ class ApiController {
             $totalCount = count($notifications);
             $unreadCount = count(array_filter($notifications, function($n) { return $n['unread']; }));
 
-            // Add database unread count
-            $unreadCount += $notificationModel->getUnreadCount($userId);
+            // Add database unread count (if model exists)
+            if ($notificationModel) {
+                $unreadCount += $notificationModel->getUnreadCount($userId);
+            }
             
             // Apply pagination
             $notifications = array_slice($notifications, $offset, $limit);
