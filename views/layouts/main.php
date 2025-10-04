@@ -237,10 +237,11 @@
                 notifications: [],
                 unreadCount: 0,
                 refreshInterval: null,
-                
+                isLoading: false,
+
                 init() {
-                    // Delay initial notification load to prevent conflicts on page load
-                    setTimeout(() => this.loadNotifications(), 1000);
+                    // Load notifications immediately but async
+                    this.loadNotifications();
                     // Clear any existing interval
                     if (this.refreshInterval) {
                         clearInterval(this.refreshInterval);
@@ -248,17 +249,32 @@
                     // Refresh notifications every 5 minutes
                     this.refreshInterval = setInterval(() => this.loadNotifications(), 300000);
                 },
-                
+
                 destroy() {
                     if (this.refreshInterval) {
                         clearInterval(this.refreshInterval);
                         this.refreshInterval = null;
                     }
                 },
-                
+
                 loadNotifications() {
-                    fetch(`${window.ConstructLink.baseUrl}/?route=api/notifications`)
-                        .then(response => response.json())
+                    // Don't reload if already loading
+                    if (this.isLoading) return;
+
+                    this.isLoading = true;
+
+                    fetch(`${window.ConstructLink.baseUrl}/?route=api/notifications`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             if (data.success) {
                                 this.notifications = data.notifications || [];
@@ -273,6 +289,9 @@
                             console.error('Notifications loading error:', error);
                             this.notifications = [];
                             this.unreadCount = 0;
+                        })
+                        .finally(() => {
+                            this.isLoading = false;
                         });
                 }
             }));
