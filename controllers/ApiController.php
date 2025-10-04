@@ -1250,13 +1250,16 @@ class ApiController {
                 error_log("NotificationModel error (table may not exist): " . $e->getMessage());
             }
             
-            // Get overdue withdrawals
+            // Get overdue withdrawals (limit to reduce load time)
             if (hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
                 try {
                     $withdrawalModel = new WithdrawalModel();
                     $overdueWithdrawals = $withdrawalModel->getOverdueWithdrawals();
-                    
+
+                    $count = 0;
                     foreach ($overdueWithdrawals as $withdrawal) {
+                        if ($count >= 3) break; // Limit to 3 withdrawal notifications
+
                         $notifications[] = [
                             'id' => 'withdrawal_' . $withdrawal['id'],
                             'type' => 'warning',
@@ -1267,21 +1270,28 @@ class ApiController {
                             'time' => $this->timeAgo($withdrawal['expected_return']),
                             'unread' => true
                         ];
+                        $count++;
                     }
                 } catch (Exception $e) {
                     error_log("Withdrawal notifications error: " . $e->getMessage());
                 }
             }
             
-            // Get overdue maintenance
-            if (hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
+            // Skip system notifications if we already have enough
+            $maxNotifications = $limit * 2; // Fetch 2x limit to have buffer
+
+            // Get overdue maintenance (limit to reduce load time)
+            if (count($notifications) < $maxNotifications && hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
                 try {
                     if (class_exists('MaintenanceModel')) {
                         $maintenanceModel = new MaintenanceModel();
                         if (method_exists($maintenanceModel, 'getOverdueMaintenance')) {
                             $overdueMaintenance = $maintenanceModel->getOverdueMaintenance();
-                            
+
+                            $count = 0;
                             foreach ($overdueMaintenance as $maintenance) {
+                                if ($count >= 2) break; // Limit to 2 maintenance notifications
+
                                 $notifications[] = [
                                     'id' => 'maintenance_' . $maintenance['id'],
                                     'type' => 'danger',
@@ -1292,6 +1302,7 @@ class ApiController {
                                     'time' => $this->timeAgo($maintenance['scheduled_date']),
                                     'unread' => true
                                 ];
+                                $count++;
                             }
                         }
                     }
@@ -1300,15 +1311,19 @@ class ApiController {
                 }
             }
             
-            // Get open incidents
-            if (hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
+            // Skip remaining notifications if we have enough - for performance
+            // Get open incidents (skip if already have enough)
+            if (count($notifications) < $maxNotifications && hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
                 try {
                     if (class_exists('IncidentModel')) {
                         $incidentModel = new IncidentModel();
                         if (method_exists($incidentModel, 'getOpenIncidents')) {
                             $openIncidents = $incidentModel->getOpenIncidents();
-                            
+
+                            $count = 0;
                             foreach ($openIncidents as $incident) {
+                                if ($count >= 2) break; // Limit to 2 incident notifications
+
                                 $notifications[] = [
                                     'id' => 'incident_' . $incident['id'],
                                     'type' => 'info',
@@ -1319,6 +1334,7 @@ class ApiController {
                                     'time' => $this->timeAgo($incident['reported_at']),
                                     'unread' => true
                                 ];
+                                $count++;
                             }
                         }
                     }
@@ -1326,17 +1342,20 @@ class ApiController {
                     error_log("Incident notifications error: " . $e->getMessage());
                 }
             }
-            
-            // Get delivery alerts for relevant roles
-            if (hasRole(['System Admin', 'Procurement Officer', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
+
+            // Get delivery alerts for relevant roles (skip if already have enough)
+            if (count($notifications) < $maxNotifications && hasRole(['System Admin', 'Procurement Officer', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
                 try {
                     if (class_exists('ProcurementOrderModel')) {
                         $procurementModel = new ProcurementOrderModel();
-                        
+
                         // Orders ready for delivery
                         if (hasRole(['System Admin', 'Procurement Officer', 'Asset Director'])) {
                             $readyForDelivery = $procurementModel->getOrdersReadyForDelivery();
+                            $count = 0;
                             foreach ($readyForDelivery as $order) {
+                                if ($count >= 2) break; // Limit to 2 delivery notifications
+
                                 $notifications[] = [
                                     'id' => 'delivery_ready_' . $order['id'],
                                     'type' => 'info',
@@ -1347,12 +1366,16 @@ class ApiController {
                                     'time' => $this->timeAgo($order['approved_at']),
                                     'unread' => true
                                 ];
+                                $count++;
                             }
                         }
-                        
+
                         // Orders awaiting receipt
                         $awaitingReceipt = $procurementModel->getOrdersForReceipt();
+                        $count = 0;
                         foreach ($awaitingReceipt as $order) {
+                            if ($count >= 2) break; // Limit to 2 receipt notifications
+
                             $notifications[] = [
                                 'id' => 'receipt_pending_' . $order['id'],
                                 'type' => 'warning',
@@ -1363,6 +1386,7 @@ class ApiController {
                                 'time' => $this->timeAgo($order['delivery_date']),
                                 'unread' => true
                             ];
+                            $count++;
                         }
                     }
                 } catch (Exception $e) {

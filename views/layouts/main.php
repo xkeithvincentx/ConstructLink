@@ -263,13 +263,19 @@
 
                     this.isLoading = true;
 
-                    fetch(`${window.ConstructLink.baseUrl}/?route=api/notifications`, {
+                    // Create abort controller for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+                    fetch(`${window.ConstructLink.baseUrl}/?route=api/notifications&limit=5`, {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json'
-                        }
+                        },
+                        signal: controller.signal
                     })
                         .then(response => {
+                            clearTimeout(timeoutId);
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }
@@ -286,7 +292,12 @@
                             }
                         })
                         .catch(error => {
-                            console.error('Notifications loading error:', error);
+                            clearTimeout(timeoutId);
+                            if (error.name === 'AbortError') {
+                                console.warn('Notifications request timeout - continuing without notifications');
+                            } else {
+                                console.error('Notifications loading error:', error);
+                            }
                             this.notifications = [];
                             this.unreadCount = 0;
                         })
