@@ -729,7 +729,7 @@ class TransferModel extends BaseModel {
             // Calculate permanent transfer value if not included
             if (!isset($result['permanent_transfer_value'])) {
                 $valueSql = "
-                    SELECT COALESCE(SUM(a.purchase_price), 0) as permanent_transfer_value
+                    SELECT COALESCE(SUM(a.acquisition_cost), 0) as permanent_transfer_value
                     FROM transfers t
                     LEFT JOIN assets a ON t.asset_id = a.id
                     WHERE t.transfer_type = 'permanent'
