@@ -499,7 +499,7 @@ class EmailActionController {
         // Email action doesn't require login, but viewing details does
         require_once APP_ROOT . '/core/Auth.php';
         $auth = Auth::getInstance();
-        $isLoggedIn = $auth->isLoggedIn();
+        $isLoggedIn = $auth->isAuthenticated();
 
         $id = $routeId ?? $transferId;
         if ($id && $isLoggedIn) {
