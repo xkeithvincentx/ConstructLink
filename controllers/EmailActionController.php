@@ -4,6 +4,10 @@
  * Handles one-click actions from email links
  */
 
+require_once APP_ROOT . '/core/EmailActionToken.php';
+require_once APP_ROOT . '/models/TransferModel.php';
+require_once APP_ROOT . '/models/ProcurementOrderModel.php';
+
 class EmailActionController {
     private $tokenManager;
     private $transferModel;
