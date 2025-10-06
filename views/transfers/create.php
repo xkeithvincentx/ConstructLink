@@ -498,28 +498,18 @@ function transferForm() {
             // Initialize filtered assets
             this.filterAssets();
 
-            // Build initial to_project dropdown options
-            const $toProject = $('#to_project');
-            $toProject.empty();
-            $toProject.append('<option value="">Select To Project</option>');
-            this.filteredToProjects.forEach(project => {
-                const option = new Option(project.name, project.id, false, false);
-                $toProject.append(option);
-            });
-
-            // Initialize Select2 for to_project dropdown
-            $toProject.select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Search for destination project...',
-                allowClear: true,
-                width: '100%'
-            });
-
-            // Sync Select2 with Alpine.js for to_project
-            $toProject.on('change', (e) => {
-                this.formData.to_project = e.target.value;
-                this.validateProjects();
-            });
+            // Initialize Select2 when jQuery is ready
+            if (typeof $ !== 'undefined') {
+                this.initializeSelect2();
+            } else {
+                // Wait for jQuery to load, then initialize
+                const checkJQuery = setInterval(() => {
+                    if (typeof $ !== 'undefined') {
+                        clearInterval(checkJQuery);
+                        this.initializeSelect2();
+                    }
+                }, 50);
+            }
 
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
@@ -556,6 +546,31 @@ function transferForm() {
                 }
             });
 
+        },
+
+        initializeSelect2() {
+            // Build initial to_project dropdown options
+            const $toProject = $('#to_project');
+            $toProject.empty();
+            $toProject.append('<option value="">Select To Project</option>');
+            this.filteredToProjects.forEach(project => {
+                const option = new Option(project.name, project.id, false, false);
+                $toProject.append(option);
+            });
+
+            // Initialize Select2 for to_project dropdown
+            $toProject.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Search for destination project...',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Sync Select2 with Alpine.js for to_project
+            $toProject.on('change', (e) => {
+                this.formData.to_project = e.target.value;
+                this.validateProjects();
+            });
         },
         
         
