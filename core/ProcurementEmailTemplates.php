@@ -1,7 +1,7 @@
 <?php
 /**
  * ConstructLink™ Procurement Order Email Templates
- * Example implementation using generic workflow templates
+ * Procurement-specific email notifications using generic workflow templates
  */
 
 require_once APP_ROOT . '/core/WorkflowEmailTemplates.php';
@@ -9,57 +9,97 @@ require_once APP_ROOT . '/core/WorkflowEmailTemplates.php';
 class ProcurementEmailTemplates extends WorkflowEmailTemplates {
 
     /**
-     * Send procurement order approval request
+     * Send approval request email to Finance Director
      *
-     * @param array $order Procurement order data
-     * @param array $user Approver user data
+     * @param array $order Procurement order data with items
+     * @param array $user Finance Director user data
      * @return array Result
      */
     public function sendApprovalRequest($order, $user) {
+        $itemCount = isset($order['items']) ? count($order['items']) : ($order['item_count'] ?? 0);
+
         return $this->sendActionRequest([
             'user' => $user,
             'action_type' => 'procurement_approve',
             'related_id' => $order['id'],
             'title' => 'Procurement Order Approval Required',
-            'message' => 'A new procurement order requires your approval.',
+            'message' => 'A new procurement order requires your approval for budget authorization.',
             'details' => [
                 'PO Number' => $order['po_number'],
-                'Supplier' => $order['supplier_name'],
-                'Total Amount' => '₱' . number_format($order['total_amount'], 2),
-                'Items' => $order['item_count'] . ' item(s)',
-                'Requested By' => $order['requested_by_name'],
-                'Department' => $order['department'] ?? 'N/A',
-                'Priority' => ucfirst($order['priority'] ?? 'Normal')
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Project' => $order['project_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Items' => $itemCount . ' item(s)',
+                'Requested By' => $order['requested_by_name'] ?? 'N/A',
+                'Date Needed' => isset($order['date_needed']) ? date('M j, Y', strtotime($order['date_needed'])) : 'N/A'
             ],
-            'button_text' => 'Approve Order',
+            'button_text' => 'Review & Approve',
             'button_color' => '#28a745',
+            'additional_info' => 'Please review the order details and budget allocation before approving.',
             'subject_suffix' => "PO {$order['po_number']}"
         ]);
     }
 
     /**
-     * Send procurement order verification request
+     * Send schedule delivery request to Procurement Officer
      *
      * @param array $order Procurement order data
-     * @param array $user Verifier user data
+     * @param array $user Procurement Officer user data
      * @return array Result
      */
-    public function sendVerificationRequest($order, $user) {
+    public function sendScheduleDeliveryRequest($order, $user) {
         return $this->sendActionRequest([
             'user' => $user,
-            'action_type' => 'procurement_verify',
+            'action_type' => 'procurement_schedule',
             'related_id' => $order['id'],
-            'title' => 'Procurement Order Verification Required',
-            'message' => 'A procurement order requires your verification before approval.',
+            'title' => 'Schedule Procurement Delivery',
+            'message' => 'An approved procurement order is ready for delivery scheduling.',
             'details' => [
                 'PO Number' => $order['po_number'],
-                'Supplier' => $order['supplier_name'],
-                'Total Amount' => '₱' . number_format($order['total_amount'], 2),
-                'Items' => $order['item_count'] . ' item(s)',
-                'Requested By' => $order['requested_by_name']
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Project' => $order['project_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Approved By' => $order['approved_by_name'] ?? 'N/A',
+                'Date Needed' => isset($order['date_needed']) ? date('M j, Y', strtotime($order['date_needed'])) : 'N/A'
             ],
-            'button_text' => 'Verify Order',
+            'button_text' => 'Schedule Delivery',
             'button_color' => '#007bff',
+            'additional_info' => 'Please coordinate with the vendor and schedule the delivery date.',
+            'subject_suffix' => "PO {$order['po_number']}"
+        ]);
+    }
+
+    /**
+     * Send delivery notification to Warehouseman
+     *
+     * @param array $order Procurement order data
+     * @param array $user Warehouseman user data
+     * @return array Result
+     */
+    public function sendDeliveryNotification($order, $user) {
+        $scheduledDate = isset($order['scheduled_delivery_date']) ? date('M j, Y', strtotime($order['scheduled_delivery_date'])) : 'TBD';
+
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'procurement_receive',
+            'related_id' => $order['id'],
+            'title' => 'Procurement Delivery - Receipt Confirmation Required',
+            'message' => 'Items from a procurement order have been delivered and require receipt confirmation.',
+            'details' => [
+                'PO Number' => $order['po_number'],
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Delivery Location' => $order['delivery_location'] ?? 'Warehouse',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Items to Receive' => ($order['item_count'] ?? 0) . ' item(s)',
+                'Scheduled Delivery' => $scheduledDate,
+                'Tracking Number' => $order['tracking_number'] ?? 'N/A'
+            ],
+            'button_text' => 'Confirm Receipt',
+            'button_color' => '#28a745',
+            'additional_info' => 'Please inspect all items upon receipt and confirm delivery. Report any discrepancies immediately.',
             'subject_suffix' => "PO {$order['po_number']}"
         ]);
     }
@@ -77,13 +117,16 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
         return $this->sendCompletionNotification([
             'users' => $users,
             'title' => 'Procurement Order Completed',
-            'message' => 'The following procurement order has been successfully completed and delivered:',
+            'message' => 'The following procurement order has been successfully completed and items received:',
             'details' => [
                 'PO Number' => $order['po_number'],
-                'Supplier' => $order['supplier_name'],
-                'Total Amount' => '₱' . number_format($order['total_amount'], 2),
-                'Items Received' => $order['item_count'] . ' item(s)',
-                'Completed Date' => date('M j, Y')
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Project' => $order['project_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Items Received' => ($order['item_count'] ?? 0) . ' item(s)',
+                'Received By' => $order['received_by_name'] ?? 'N/A',
+                'Completion Date' => isset($order['received_at']) ? date('M j, Y g:i A', strtotime($order['received_at'])) : date('M j, Y g:i A')
             ],
             'alert_type' => 'success',
             'view_link' => "{$baseUrl}/?route=procurement-orders/view&id={$order['id']}",
@@ -93,7 +136,7 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
     }
 
     /**
-     * Send procurement order status update
+     * Send procurement order status update notification
      *
      * @param array $order Procurement order data
      * @param array $user User to notify
@@ -106,11 +149,14 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
 
         // Determine next step based on status
         $nextSteps = [
-            'Pending Verification' => 'Awaiting verification by Procurement Officer',
-            'Pending Approval' => 'Awaiting approval by Finance Director',
-            'Approved' => 'Order has been sent to supplier',
+            'Pending' => 'Awaiting approval by Finance Director',
+            'Reviewed' => 'Under review for approval',
+            'Approved' => 'Ready for delivery scheduling',
+            'Scheduled for Delivery' => 'Awaiting delivery from vendor',
             'In Transit' => 'Items are being delivered',
-            'Received' => 'Items received and pending inspection'
+            'Delivered' => 'Awaiting receipt confirmation by Warehouseman',
+            'For Revision' => 'Procurement Officer will revise the order',
+            'Rejected' => 'Order has been rejected and closed'
         ];
 
         return parent::sendStatusUpdate([
@@ -119,9 +165,10 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
             'message' => $message,
             'details' => [
                 'PO Number' => $order['po_number'],
-                'Supplier' => $order['supplier_name'],
-                'Total Amount' => '₱' . number_format($order['total_amount'], 2),
-                'Items' => $order['item_count'] . ' item(s)'
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Items' => ($order['item_count'] ?? 0) . ' item(s)'
             ],
             'status' => $order['status'],
             'next_step' => $nextSteps[$order['status']] ?? null,
@@ -130,29 +177,70 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
     }
 
     /**
-     * Send delivery notification
+     * Send rejection notification to requester
      *
      * @param array $order Procurement order data
-     * @param array $user Warehouse personnel
+     * @param array $user Requester user data
+     * @param string $rejectionReason Reason for rejection
      * @return array Result
      */
-    public function sendDeliveryNotification($order, $user) {
-        return $this->sendActionRequest([
-            'user' => $user,
-            'action_type' => 'procurement_receive',
-            'related_id' => $order['id'],
-            'title' => 'Procurement Order Delivery - Receipt Confirmation',
-            'message' => 'Items from a procurement order have arrived and require receipt confirmation.',
+    public function sendRejectionNotification($order, $user, $rejectionReason = null) {
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+
+        $message = "Your procurement order has been rejected.";
+        if ($rejectionReason) {
+            $message .= " <br><br><strong>Reason:</strong> " . htmlspecialchars($rejectionReason);
+        }
+
+        return $this->sendCompletionNotification([
+            'users' => [$user],
+            'title' => 'Procurement Order Rejected',
+            'message' => $message,
             'details' => [
                 'PO Number' => $order['po_number'],
-                'Supplier' => $order['supplier_name'],
-                'Total Amount' => '₱' . number_format($order['total_amount'], 2),
-                'Items to Receive' => $order['item_count'] . ' item(s)',
-                'Delivery Date' => date('M j, Y')
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Rejected By' => $order['approved_by_name'] ?? 'N/A',
+                'Rejection Date' => date('M j, Y')
             ],
-            'button_text' => 'Confirm Receipt',
-            'button_color' => '#28a745',
-            'additional_info' => 'Please inspect items upon receipt and confirm delivery.',
+            'alert_type' => 'warning',
+            'view_link' => "{$baseUrl}/?route=procurement-orders/view&id={$order['id']}",
+            'view_link_text' => 'View Order Details',
+            'subject_suffix' => "PO {$order['po_number']}"
+        ]);
+    }
+
+    /**
+     * Send revision request notification to Procurement Officer
+     *
+     * @param array $order Procurement order data
+     * @param array $user Procurement Officer user data
+     * @param string $revisionNotes Notes for revision
+     * @return array Result
+     */
+    public function sendRevisionRequest($order, $user, $revisionNotes = null) {
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+
+        $message = "The procurement order requires revision before approval.";
+        if ($revisionNotes) {
+            $message .= " <br><br><strong>Revision Notes:</strong> " . htmlspecialchars($revisionNotes);
+        }
+
+        return $this->sendCompletionNotification([
+            'users' => [$user],
+            'title' => 'Procurement Order Requires Revision',
+            'message' => $message,
+            'details' => [
+                'PO Number' => $order['po_number'],
+                'Title' => $order['title'] ?? 'N/A',
+                'Vendor' => $order['vendor_name'] ?? 'N/A',
+                'Total Amount' => '₱' . number_format($order['net_total'] ?? 0, 2),
+                'Reviewed By' => $order['approved_by_name'] ?? 'N/A'
+            ],
+            'alert_type' => 'warning',
+            'view_link' => "{$baseUrl}/?route=procurement-orders/view&id={$order['id']}",
+            'view_link_text' => 'Review & Revise Order',
             'subject_suffix' => "PO {$order['po_number']}"
         ]);
     }

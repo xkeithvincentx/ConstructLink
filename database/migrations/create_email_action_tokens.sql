@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS email_action_tokens (
     id INT PRIMARY KEY AUTO_INCREMENT,
     token VARCHAR(64) UNIQUE NOT NULL COMMENT 'Secure random token',
-    action_type ENUM('transfer_verify', 'transfer_approve', 'transfer_dispatch', 'transfer_receive', 'transfer_return_receive', 'transfer_cancel') NOT NULL,
+    action_type ENUM('transfer_verify', 'transfer_approve', 'transfer_dispatch', 'transfer_receive', 'transfer_return_receive', 'transfer_cancel', 'procurement_approve', 'procurement_schedule', 'procurement_receive') NOT NULL,
     related_id INT NOT NULL COMMENT 'ID of the transfer/entity',
     user_id INT NOT NULL COMMENT 'User who should perform the action',
     expires_at TIMESTAMP NOT NULL COMMENT 'Token expiration (24-48 hours)',

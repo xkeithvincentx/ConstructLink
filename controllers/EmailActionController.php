@@ -7,10 +7,12 @@
 class EmailActionController {
     private $tokenManager;
     private $transferModel;
+    private $procurementModel;
 
     public function __construct() {
         $this->tokenManager = new EmailActionToken();
         $this->transferModel = new TransferModel();
+        $this->procurementModel = new ProcurementOrderModel();
     }
 
     /**
@@ -61,6 +63,18 @@ class EmailActionController {
 
             case 'transfer_return_receive':
                 $this->handleReceiveReturn($tokenData, $user);
+                break;
+
+            case 'procurement_approve':
+                $this->handleApproveProcurement($tokenData, $user);
+                break;
+
+            case 'procurement_schedule':
+                $this->handleScheduleProcurement($tokenData, $user);
+                break;
+
+            case 'procurement_receive':
+                $this->handleReceiveProcurement($tokenData, $user);
                 break;
 
             default:
@@ -315,19 +329,175 @@ class EmailActionController {
     }
 
     /**
+     * Handle procurement order approval via email
+     */
+    private function handleApproveProcurement($tokenData, $user) {
+        $orderId = $tokenData['related_id'];
+
+        // Get order details
+        $order = $this->procurementModel->getProcurementOrderWithDetails($orderId);
+
+        if (!$order) {
+            $this->showError('Order Not Found', 'The procurement order could not be found.');
+            return;
+        }
+
+        // Check if order is in correct status
+        if ($order['status'] !== 'Pending' && $order['status'] !== 'Reviewed') {
+            $this->showSuccess(
+                'Already Processed',
+                "This procurement order has already been processed. Current status: <strong>{$order['status']}</strong>",
+                null,
+                null,
+                'procurement-orders/view',
+                $orderId
+            );
+            return;
+        }
+
+        // Perform approval
+        $result = $this->procurementModel->updateStatus(
+            $orderId,
+            'Approved',
+            $user['id'],
+            'Approved via email action link'
+        );
+
+        if ($result['success']) {
+            // Mark token as used
+            $this->tokenManager->markTokenAsUsed($tokenData['token'], $this->getClientIP());
+
+            // Invalidate other tokens for this action
+            $this->tokenManager->invalidateTokensForAction('procurement_approve', $orderId);
+
+            $this->showSuccess(
+                'Procurement Order Approved Successfully',
+                "Thank you, <strong>{$user['full_name']}</strong>. The procurement order has been approved.",
+                null,
+                'The Procurement Officer will be notified to schedule delivery.',
+                'procurement-orders/view',
+                $orderId
+            );
+        } else {
+            $this->showError('Approval Failed', $result['message']);
+        }
+    }
+
+    /**
+     * Handle procurement delivery scheduling via email
+     */
+    private function handleScheduleProcurement($tokenData, $user) {
+        $orderId = $tokenData['related_id'];
+
+        // Get order details
+        $order = $this->procurementModel->getProcurementOrderWithDetails($orderId);
+
+        if (!$order) {
+            $this->showError('Order Not Found', 'The procurement order could not be found.');
+            return;
+        }
+
+        // Check if order is in correct status
+        if ($order['status'] !== 'Approved') {
+            $this->showSuccess(
+                'Already Processed',
+                "This procurement order has already been scheduled. Current status: <strong>{$order['status']}</strong>",
+                null,
+                null,
+                'procurement-orders/view',
+                $orderId
+            );
+            return;
+        }
+
+        // This action just acknowledges - actual scheduling happens in the system
+        // Mark token as used
+        $this->tokenManager->markTokenAsUsed($tokenData['token'], $this->getClientIP());
+
+        // Invalidate other tokens for this action
+        $this->tokenManager->invalidateTokensForAction('procurement_schedule', $orderId);
+
+        $this->showSuccess(
+            'Scheduling Acknowledged',
+            "Thank you, <strong>{$user['full_name']}</strong>. Please log in to the system to schedule the delivery date and coordinate with the vendor.",
+            null,
+            'You can set the scheduled delivery date and tracking information in the order details.',
+            'procurement-orders/view',
+            $orderId
+        );
+    }
+
+    /**
+     * Handle procurement receipt confirmation via email
+     */
+    private function handleReceiveProcurement($tokenData, $user) {
+        $orderId = $tokenData['related_id'];
+
+        // Get order details
+        $order = $this->procurementModel->getProcurementOrderWithDetails($orderId);
+
+        if (!$order) {
+            $this->showError('Order Not Found', 'The procurement order could not be found.');
+            return;
+        }
+
+        // Check if order is in correct status
+        if ($order['status'] !== 'Delivered') {
+            $this->showSuccess(
+                'Already Processed',
+                "This procurement order has already been received. Current status: <strong>{$order['status']}</strong>",
+                null,
+                null,
+                'procurement-orders/view',
+                $orderId
+            );
+            return;
+        }
+
+        // Perform receipt confirmation
+        $result = $this->procurementModel->updateStatus(
+            $orderId,
+            'Received',
+            $user['id'],
+            'Items received and confirmed via email action link'
+        );
+
+        if ($result['success']) {
+            // Mark token as used
+            $this->tokenManager->markTokenAsUsed($tokenData['token'], $this->getClientIP());
+
+            // Invalidate other tokens for this action
+            $this->tokenManager->invalidateTokensForAction('procurement_receive', $orderId);
+
+            $this->showSuccess(
+                'Items Received Successfully',
+                "Thank you, <strong>{$user['full_name']}</strong>. The procurement order has been marked as received and completed.",
+                null,
+                'All parties have been notified of the successful delivery completion.',
+                'procurement-orders/view',
+                $orderId
+            );
+        } else {
+            $this->showError('Receipt Failed', $result['message']);
+        }
+    }
+
+    /**
      * Display success page
      */
-    private function showSuccess($title, $message, $transferId = null, $additionalInfo = null) {
+    private function showSuccess($title, $message, $transferId = null, $additionalInfo = null, $route = 'transfers/view', $routeId = null) {
         $pageTitle = 'Action Successful - ConstructLink™';
         $icon = 'bi-check-circle-fill';
         $iconColor = 'text-success';
         $actionButton = '';
 
-        if ($transferId) {
+        $id = $routeId ?? $transferId;
+        if ($id) {
+            $viewText = strpos($route, 'procurement') !== false ? 'View Order Details' : 'View Transfer Details';
             $actionButton = "
                 <div class=\"mt-4\">
-                    <a href=\"?route=transfers/view&id={$transferId}\" class=\"btn btn-primary btn-lg\">
-                        <i class=\"bi bi-eye me-2\"></i>View Transfer Details
+                    <a href=\"?route={$route}&id={$id}\" class=\"btn btn-primary btn-lg\">
+                        <i class=\"bi bi-eye me-2\"></i>{$viewText}
                     </a>
                 </div>
             ";
