@@ -100,8 +100,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- Role-Specific Asset Statistics Cards -->
-<?php if (in_array($userRole, ['Project Manager'])): ?>
-<!-- Project Manager Dashboard Cards -->
 <!-- Mobile: Collapsible, Desktop: Always visible -->
 <div class="mb-4">
     <!-- Mobile Toggle Button -->
@@ -113,7 +111,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 
     <!-- Collapsible on mobile, always visible on desktop -->
     <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+
+    <!-- Project Manager Dashboard Cards -->
+    <?php if (in_array($userRole, ['Project Manager'])): ?>
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -212,25 +213,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <?php endif; ?>
             </div>
         </div>
+        </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php elseif (in_array($userRole, ['Site Inventory Clerk'])): ?>
-<!-- Site Inventory Clerk Dashboard Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+    <?php elseif (in_array($userRole, ['Site Inventory Clerk'])): ?>
+    <!-- Site Inventory Clerk Dashboard Cards -->
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -328,23 +317,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php elseif (in_array($userRole, ['Warehouseman'])): ?>
-<!-- Warehouseman Dashboard Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+    <?php elseif (in_array($userRole, ['Warehouseman'])): ?>
+    <!-- Warehouseman Dashboard Cards -->
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -438,23 +414,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php elseif (in_array($userRole, ['System Admin'])): ?>
-<!-- System Admin Dashboard Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+    <?php elseif (in_array($userRole, ['System Admin'])): ?>
+    <!-- System Admin Dashboard Cards -->
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -548,23 +511,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php elseif (in_array($userRole, ['Finance Director'])): ?>
-<!-- Finance Director Dashboard Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+    <?php elseif (in_array($userRole, ['Finance Director'])): ?>
+    <!-- Finance Director Dashboard Cards -->
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -658,23 +608,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php elseif (in_array($userRole, ['Asset Director'])): ?>
-<!-- Asset Director Dashboard Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row g-3">
+    <?php elseif (in_array($userRole, ['Asset Director'])): ?>
+    <!-- Asset Director Dashboard Cards -->
+    <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -772,23 +709,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
 
-<?php else: ?>
-<!-- Default Asset Status Statistics Cards (for Procurement Officer and other roles) -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-<div class="row">
+    <?php else: ?>
+    <!-- Default Asset Status Statistics Cards (for Procurement Officer and other roles) -->
+    <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-primary text-white h-100">
             <div class="card-body">
@@ -916,9 +840,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div><!-- End row -->
+
+    <?php endif; ?>
     </div><!-- End collapse -->
 </div><!-- End statistics section -->
-<?php endif; ?>
 
 <!-- MVA Workflow Statistics Cards - Only for roles that manage approvals -->
 <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
