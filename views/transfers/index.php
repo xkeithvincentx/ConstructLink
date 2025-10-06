@@ -726,24 +726,39 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <nav aria-label="Transfers pagination" class="mt-4">
                     <ul class="pagination justify-content-center">
                         <?php if ($pagination['current_page'] > 1): ?>
+                            <?php
+                            $prevParams = $_GET;
+                            unset($prevParams['route']);
+                            $prevParams['page'] = $pagination['current_page'] - 1;
+                            ?>
                             <li class="page-item">
-                                <a class="page-link" href="?route=transfers&page=<?= $pagination['current_page'] - 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
+                                <a class="page-link" href="?route=transfers&<?= http_build_query($prevParams) ?>">
                                     Previous
                                 </a>
                             </li>
                         <?php endif; ?>
-                        
+
                         <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
+                            <?php
+                            $pageParams = $_GET;
+                            unset($pageParams['route']);
+                            $pageParams['page'] = $i;
+                            ?>
                             <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                                <a class="page-link" href="?route=transfers&page=<?= $i ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
+                                <a class="page-link" href="?route=transfers&<?= http_build_query($pageParams) ?>">
                                     <?= $i ?>
                                 </a>
                             </li>
                         <?php endfor; ?>
-                        
+
                         <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                            <?php
+                            $nextParams = $_GET;
+                            unset($nextParams['route']);
+                            $nextParams['page'] = $pagination['current_page'] + 1;
+                            ?>
                             <li class="page-item">
-                                <a class="page-link" href="?route=transfers&page=<?= $pagination['current_page'] + 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
+                                <a class="page-link" href="?route=transfers&<?= http_build_query($nextParams) ?>">
                                     Next
                                 </a>
                             </li>
