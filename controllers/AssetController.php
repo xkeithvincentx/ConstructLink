@@ -1,21 +1,47 @@
 <?php
 /**
- * ConstructLink™ Asset Controller - Enhanced with Procurement Integration
- * Handles comprehensive asset management with project-level visibility and procurement linking
+ * ConstructLink™ Inventory Controller (AssetController)
+ *
+ * IMPORTANT DATABASE MAPPING:
+ * - Frontend: "Inventory Management" / "Inventory Items"
+ * - Backend: AssetController.php / AssetModel.php
+ * - Database: `assets` table (contains both Capital Assets and Consumable Inventory)
+ * - Routes: ?route=assets (kept for backward compatibility)
+ *
+ * TERMINOLOGY GUIDE:
+ * - User sees: "Inventory", "Inventory Items", "Inventory Management"
+ * - Code uses: Asset* classes (AssetController, AssetModel, assets table)
+ * - Why: Database uses "assets" table, but frontend displays "Inventory" to avoid confusion
+ *
+ * INVENTORY TYPES:
+ * 1. Capital Assets (Depreciable Equipment)
+ *    - Tracked by status: available, in_use, borrowed, under_maintenance
+ *    - Categories where asset_type = 'capital' OR is_consumable = 0
+ *    - Examples: Equipment, Tools, Vehicles
+ *
+ * 2. Consumable Inventory (Materials/Supplies)
+ *    - Tracked by quantity: available_quantity, quantity
+ *    - Categories where asset_type = 'inventory' OR is_consumable = 1
+ *    - Examples: Electrical Supplies, Construction Materials
+ *
+ * RELATED FILES:
+ * - Model: models/AssetModel.php (database operations on `assets` table)
+ * - Views: views/assets/*.php (displays "Inventory" to users)
+ * - Database: `assets` table, `categories` table (has is_consumable and asset_type fields)
  */
 
 class AssetController {
     private $auth;
     private $assetModel;
     private $db;
-    
+
     public function __construct() {
         $this->auth = Auth::getInstance();
         $this->assetModel = new AssetModel();
-        
+
         // Initialize database connection using Database class
         $this->db = Database::getInstance()->getConnection();
-        
+
         // Ensure user is authenticated
         if (!$this->auth->isAuthenticated()) {
             $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
@@ -86,11 +112,11 @@ class AssetController {
             $makers = $makerModel->findAll([], 'name ASC');
             $vendors = $vendorModel->findAll([], 'name ASC');
             
-            $pageTitle = 'Assets - ConstructLink™';
-            $pageHeader = 'Asset Management';
+            $pageTitle = 'Inventory - ConstructLink™';
+            $pageHeader = 'Inventory Management';
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Assets', 'url' => '?route=assets']
+                ['title' => 'Inventory', 'url' => '?route=assets']
             ];
             
             // Pass auth instance to view
@@ -176,11 +202,11 @@ class AssetController {
                 $borrowHistory = [];
             }
             
-            $pageTitle = 'Asset Details - ' . $asset['name'];
-            $pageHeader = 'Asset: ' . $asset['ref'];
+            $pageTitle = 'Inventory Details - ' . $asset['name'];
+            $pageHeader = 'Item: ' . $asset['ref'];
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Assets', 'url' => '?route=assets'],
+                ['title' => 'Inventory', 'url' => '?route=assets'],
                 ['title' => 'View Details', 'url' => '?route=assets/view&id=' . $assetId]
             ];
             

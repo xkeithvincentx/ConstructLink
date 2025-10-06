@@ -1,4 +1,13 @@
 <?php
+/**
+ * Inventory Management Index View
+ *
+ * DATABASE MAPPING NOTE:
+ * - This view displays "Inventory" to users
+ * - Backend uses AssetController and `assets` database table
+ * - See controllers/AssetController.php header for full mapping documentation
+ */
+
 // Start output buffering to capture content
 ob_start();
 
@@ -15,7 +24,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <?php if (in_array($userRole, $roleConfig['assets/create'] ?? [])): ?>
             <a href="?route=assets/create" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>
-                <span class="d-none d-sm-inline">Add Asset</span>
+                <span class="d-none d-sm-inline">Add Item</span>
                 <span class="d-sm-none">Add</span>
             </a>
         <?php endif; ?>
@@ -74,17 +83,17 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php if (isset($_GET['message'])): ?>
     <?php if ($_GET['message'] === 'asset_created'): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset created successfully!
+            <i class="bi bi-check-circle me-2"></i>Inventory item created successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php elseif ($_GET['message'] === 'asset_updated'): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset updated successfully!
+            <i class="bi bi-check-circle me-2"></i>Inventory item updated successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php elseif ($_GET['message'] === 'asset_deleted'): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>Asset deleted successfully!
+            <i class="bi bi-check-circle me-2"></i>Inventory item deleted successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
@@ -93,13 +102,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php if (isset($_GET['error'])): ?>
     <?php if ($_GET['error'] === 'export_failed'): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>Failed to export assets. Please try again.
+            <i class="bi bi-exclamation-triangle me-2"></i>Failed to export inventory. Please try again.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
 <?php endif; ?>
 
-<!-- Role-Specific Asset Statistics Cards -->
+<!-- Role-Specific Inventory Statistics Cards -->
 <!-- Mobile: Collapsible, Desktop: Always visible -->
 <div class="mb-4">
     <!-- Mobile Toggle Button -->
@@ -123,17 +132,17 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-box-seam text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Project Assets</h6>
+                        <h6 class="text-muted mb-1 small">Project Inventory</h6>
                         <h3 class="mb-0"><?= $roleStats['total_project_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-building me-1"></i>Assets under management
+                    <i class="bi bi-building me-1"></i>Items under management
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
                 <a href="?route=assets" class="text-decoration-none small">
-                    <i class="bi bi-eye me-1"></i>View All Assets
+                    <i class="bi bi-eye me-1"></i>View All Items
                 </a>
             </div>
         </div>
@@ -146,7 +155,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Available Assets</h6>
+                        <h6 class="text-muted mb-1 small">Available Stock</h6>
                         <h3 class="mb-0"><?= $roleStats['available_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
@@ -1254,10 +1263,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div><!-- End filters section -->
 
-<!-- Assets Table -->
+<!-- Inventory Table -->
 <div class="card">
     <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-        <h6 class="card-title mb-0">Assets</h6>
+        <h6 class="card-title mb-0">Inventory</h6>
         <div class="d-flex flex-wrap gap-2">
             <?php if (in_array($userRole, $roleConfig['assets/export'] ?? [])): ?>
                 <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
@@ -1411,7 +1420,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <thead class="table-light">
                         <tr>
                             <th class="text-nowrap">Reference</th>
-                            <th>Asset</th>
+                            <th>Item</th>
                             <th class="d-none d-md-table-cell">Category</th>
                             <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
                             <th class="d-none d-lg-table-cell">Project</th>

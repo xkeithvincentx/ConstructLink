@@ -1,4 +1,13 @@
 <?php
+/**
+ * Inventory Item Details View
+ *
+ * DATABASE MAPPING NOTE:
+ * - This view displays "Inventory Item" to users
+ * - Backend uses AssetController and `assets` database table
+ * - See controllers/AssetController.php header for full mapping documentation
+ */
+
 // Start output buffering to capture content
 ob_start();
 
@@ -11,20 +20,20 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <div class="d-flex justify-content-end align-items-center mb-4">
     <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>
-        <span class="d-none d-sm-inline">Back to Assets</span>
+        <span class="d-none d-sm-inline">Back to Inventory</span>
         <span class="d-sm-none">Back</span>
     </a>
 </div>
 
 <div class="row">
     <div class="col-lg-8">
-        <!-- Asset Information -->
+        <!-- Item Information -->
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>Asset Information
+                    <i class="bi bi-info-circle me-2"></i>Item Information
                     <?php if (!empty($asset['asset_source']) && $asset['asset_source'] === 'legacy'): ?>
-                        <span class="badge bg-warning ms-2">Legacy Asset</span>
+                        <span class="badge bg-warning ms-2">Legacy Item</span>
                     <?php elseif (!empty($asset['standardized_name']) || !empty($asset['standardized_brand'])): ?>
                         <span class="badge bg-success ms-2">Standardized</span>
                     <?php endif; ?>

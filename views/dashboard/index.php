@@ -58,7 +58,7 @@ ob_start();
                             
                         case 'Asset Director':
                             $quickActions = [
-                                ['icon' => 'bi-box-seam', 'text' => 'Verify Assets', 'route' => 'procurement-orders?status=Pending', 'color' => 'primary'],
+                                ['icon' => 'bi-box-seam', 'text' => 'Verify Inventory', 'route' => 'procurement-orders?status=Pending', 'color' => 'primary'],
                                 ['icon' => 'bi-exclamation-triangle', 'text' => 'Resolve Incidents', 'route' => 'incidents?status=Pending+Authorization', 'color' => 'danger'],
                                 ['icon' => 'bi-tools', 'text' => 'Maintenance', 'route' => 'maintenance', 'color' => 'warning'],
                                 ['icon' => 'bi-qr-code-scan', 'text' => 'QR Scanner', 'route' => 'assets/scanner', 'color' => 'info'],
@@ -88,7 +88,7 @@ ob_start();
                                 ['icon' => 'bi-clipboard-check', 'text' => 'Review Requests', 'route' => 'requests?status=Submitted', 'color' => 'primary'],
                                 ['icon' => 'bi-check2-square', 'text' => 'Approve Withdrawals', 'route' => 'withdrawals?status=Pending+Approval', 'color' => 'success'],
                                 ['icon' => 'bi-arrow-left-right', 'text' => 'Verify Transfers', 'route' => 'transfers?status=Pending+Verification', 'color' => 'info'],
-                                ['icon' => 'bi-box', 'text' => 'Project Assets', 'route' => 'assets', 'color' => 'secondary'],
+                                ['icon' => 'bi-box', 'text' => 'Project Inventory', 'route' => 'assets', 'color' => 'secondary'],
                             ];
                             break;
                             
@@ -127,13 +127,13 @@ ob_start();
 
 <!-- Main Statistics Cards (Common for all roles) -->
 <div class="row mb-4">
-    <!-- Total Assets -->
+    <!-- Total Inventory -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <p class="text-muted mb-1 small">Total Assets</p>
+                        <p class="text-muted mb-1 small">Total Inventory</p>
                         <h3 class="mb-0"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h3>
                     </div>
                     <div class="text-muted" style="opacity: 0.3;">
@@ -148,7 +148,7 @@ ob_start();
         </div>
     </div>
 
-    <!-- Available Assets -->
+    <!-- Available Stock -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">

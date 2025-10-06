@@ -36,38 +36,45 @@ $navigationMenu = getNavigationMenu($userRole);
                 </a>
             </li>
             
-            <!-- Assets Section -->
+            <!-- Inventory Section (Assets in navigation config) -->
             <?php if (isset($navigationMenu['Assets'])): ?>
             <li class="nav-item">
                 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
-                    <span>Assets</span>
+                    <span>Inventory</span>
                 </h6>
             </li>
-            
+
             <?php if (is_array($navigationMenu['Assets'])): ?>
                 <?php foreach ($navigationMenu['Assets'] as $label => $url): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= isRouteActive($currentRoute, $url) ? 'active' : '' ?>" 
+                    <a class="nav-link <?= isRouteActive($currentRoute, $url) ? 'active' : '' ?>"
                        href="<?= htmlspecialchars($url) ?>">
                         <?php
+                        // Map old labels to new inventory terminology
                         $icons = [
                             'View Assets' => 'bi bi-box',
+                            'View Inventory' => 'bi bi-box',
                             'Add Asset' => 'bi bi-plus-circle',
-                            'Asset Scanner' => 'bi bi-qr-code-scan'
+                            'Add Item' => 'bi bi-plus-circle',
+                            'Asset Scanner' => 'bi bi-qr-code-scan',
+                            'Inventory Scanner' => 'bi bi-qr-code-scan'
                         ];
                         $icon = $icons[$label] ?? 'bi bi-circle';
+
+                        // Convert old terminology to new
+                        $displayLabel = str_replace(['Asset', 'Assets'], ['Item', 'Inventory'], $label);
                         ?>
                         <i class="<?= $icon ?> me-2"></i>
-                        <?= htmlspecialchars($label) ?>
+                        <?= htmlspecialchars($displayLabel) ?>
                     </a>
                 </li>
                 <?php endforeach; ?>
             <?php else: ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= isRouteActive($currentRoute, $navigationMenu['Assets']) ? 'active' : '' ?>" 
+                    <a class="nav-link <?= isRouteActive($currentRoute, $navigationMenu['Assets']) ? 'active' : '' ?>"
                        href="<?= htmlspecialchars($navigationMenu['Assets']) ?>">
                         <i class="bi bi-box me-2"></i>
-                        Assets
+                        Inventory
                     </a>
                 </li>
             <?php endif; ?>
@@ -244,7 +251,7 @@ $navigationMenu = getNavigationMenu($userRole);
             <h6 class="text-muted mb-3">Quick Stats</h6>
             
             <div class="d-flex justify-content-between mb-2">
-                <small class="text-muted">Total Assets</small>
+                <small class="text-muted">Total Inventory</small>
                 <small class="fw-bold" x-text="stats.total_assets || '-'" ></small>
             </div>
             
