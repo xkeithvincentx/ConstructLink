@@ -960,13 +960,35 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send email notification to FROM Project Manager to receive return
+            require_once APP_ROOT . '/models/ProjectModel.php';
+            require_once APP_ROOT . '/models/UserModel.php';
+
+            $projectModel = new ProjectModel();
+            $userModel = new UserModel();
+
+            $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+            if ($fromProjectPM) {
+                $pmUser = $userModel->find($fromProjectPM);
+                if ($pmUser) {
+                    require_once APP_ROOT . '/core/TransferEmailTemplates.php';
+                    $emailTemplates = new TransferEmailTemplates();
+
+                    // Get updated transfer with all details
+                    $transferWithDetails = $this->getTransferWithDetails($transferId);
+                    if ($transferWithDetails) {
+                        $emailTemplates->sendReturnReceiptRequest($transferWithDetails, $pmUser);
+                    }
+                }
+            }
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
                 'message' => 'Return process initiated successfully - Asset is now in transit'
             ];
-            
+
         } catch (Exception $e) {
             $this->rollback();
             error_log("Transfer return initiation error: " . $e->getMessage());
@@ -1056,13 +1078,48 @@ class TransferModel extends BaseModel {
             }
             
             $this->commit();
-            
+
+            // Send completion notification to all involved parties
+            require_once APP_ROOT . '/models/UserModel.php';
+
+            $userModel = new UserModel();
+            $usersToNotify = [];
+
+            // Notify initiator (TO PM who requested the transfer)
+            if ($transfer['initiated_by']) {
+                $initiator = $userModel->find($transfer['initiated_by']);
+                if ($initiator) $usersToNotify[] = $initiator;
+            }
+
+            // Notify return initiator (TO PM who initiated return)
+            if ($transfer['return_initiated_by'] && $transfer['return_initiated_by'] != $transfer['initiated_by']) {
+                $returnInitiator = $userModel->find($transfer['return_initiated_by']);
+                if ($returnInitiator) $usersToNotify[] = $returnInitiator;
+            }
+
+            // Notify FROM PM (who received the return)
+            if ($receivedBy && $receivedBy != $transfer['initiated_by']) {
+                $receiver = $userModel->find($receivedBy);
+                if ($receiver) $usersToNotify[] = $receiver;
+            }
+
+            if (!empty($usersToNotify)) {
+                require_once APP_ROOT . '/core/TransferEmailTemplates.php';
+                $emailTemplates = new TransferEmailTemplates();
+
+                // Get updated transfer with all details
+                $transferWithDetails = $this->getTransferWithDetails($transferId);
+                if ($transferWithDetails) {
+                    $emailTemplates->sendReturnCompletedNotification($transferWithDetails, $usersToNotify);
+                }
+            }
+
             return [
-                'success' => true, 
+                'success' => true,
                 'transfer' => $updateResult,
                 'message' => 'Asset return completed successfully - Asset is now available at origin project'
             ];
-            
+
         } catch (Exception $e) {
             $this->rollback();
             error_log("Transfer return receipt error: " . $e->getMessage());

@@ -59,6 +59,10 @@ class EmailActionController {
                 $this->handleReceiveTransfer($tokenData, $user);
                 break;
 
+            case 'transfer_return_receive':
+                $this->handleReceiveReturn($tokenData, $user);
+                break;
+
             default:
                 $this->showError('Unknown Action', 'The requested action type is not supported.');
                 break;
@@ -258,6 +262,55 @@ class EmailActionController {
             );
         } else {
             $this->showError('Receipt Failed', $result['message']);
+        }
+    }
+
+    /**
+     * Handle return receipt confirmation via email
+     */
+    private function handleReceiveReturn($tokenData, $user) {
+        $transferId = $tokenData['related_id'];
+
+        // Get transfer details
+        $transfer = $this->transferModel->getTransferWithDetails($transferId);
+
+        if (!$transfer) {
+            $this->showError('Transfer Not Found', 'The transfer request could not be found.');
+            return;
+        }
+
+        // Check if return is in correct status
+        if ($transfer['return_status'] !== 'in_return_transit') {
+            $this->showSuccess(
+                'Already Processed',
+                "This return has already been completed. Current return status: <strong>{$transfer['return_status']}</strong>",
+                $transferId
+            );
+            return;
+        }
+
+        // Perform return receipt
+        $result = $this->transferModel->receiveReturn(
+            $transferId,
+            $user['id'],
+            'Return received via email action link'
+        );
+
+        if ($result['success']) {
+            // Mark token as used
+            $this->tokenManager->markTokenAsUsed($tokenData['token'], $this->getClientIP());
+
+            // Invalidate other tokens for this action
+            $this->tokenManager->invalidateTokensForAction('transfer_return_receive', $transferId);
+
+            $this->showSuccess(
+                'Return Completed Successfully',
+                "Thank you, <strong>{$user['full_name']}</strong>. The asset has been returned and is now available at your project.",
+                $transferId,
+                'All parties have been notified of the successful return completion.'
+            );
+        } else {
+            $this->showError('Return Receipt Failed', $result['message']);
         }
     }
 

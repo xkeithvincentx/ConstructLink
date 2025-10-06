@@ -183,5 +183,71 @@ class TransferEmailTemplates extends WorkflowEmailTemplates {
             'view_link' => "{$baseUrl}/?route=transfers/view&id={$transfer['id']}"
         ]);
     }
+
+    /**
+     * Send return confirmation request to FROM Project Manager
+     * (After TO PM initiates return, FROM PM needs to confirm receipt)
+     *
+     * @param array $transfer Transfer data with details
+     * @param array $user FROM Project Manager user data
+     * @return array Result
+     */
+    public function sendReturnReceiptRequest($transfer, $user) {
+        $returnInitiationDate = isset($transfer['return_initiation_date']) ? date('M j, Y', strtotime($transfer['return_initiation_date'])) : 'N/A';
+
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'transfer_return_receive',
+            'related_id' => $transfer['id'],
+            'title' => 'Asset Return - Receipt Confirmation Required',
+            'message' => 'A temporary transfer asset is being returned to your project and requires receipt confirmation.',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From (Currently At)' => $transfer['to_project_name'],
+                'To (Your Project - Origin)' => $transfer['from_project_name'],
+                'Type' => 'Temporary (Return)',
+                'Return Initiated By' => $transfer['return_initiated_by_name'] ?? 'N/A',
+                'Return Initiated' => $returnInitiationDate,
+                'Original Transfer Date' => date('M j, Y', strtotime($transfer['transfer_date']))
+            ],
+            'button_text' => 'Confirm Return Receipt',
+            'button_color' => '#28a745',
+            'additional_info' => 'Please confirm receipt once the asset has arrived back at your project.',
+            'subject_suffix' => "Transfer #{$transfer['id']} - Return"
+        ]);
+    }
+
+    /**
+     * Send return completion notification (no action required)
+     *
+     * @param array $transfer Transfer data with details
+     * @param array $users Array of users to notify
+     * @return array Result
+     */
+    public function sendReturnCompletedNotification($transfer, $users) {
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+
+        return $this->sendCompletionNotification([
+            'users' => $users,
+            'title' => 'Asset Return Completed Successfully',
+            'message' => 'The temporary transfer asset has been successfully returned to its origin project:',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'Returned From' => $transfer['to_project_name'],
+                'Returned To' => $transfer['from_project_name'],
+                'Return Completed' => date('M j, Y g:i A'),
+                'Original Transfer' => date('M j, Y', strtotime($transfer['transfer_date'])),
+                'Days Borrowed' => isset($transfer['actual_return']) && isset($transfer['transfer_date'])
+                    ? (strtotime($transfer['actual_return']) - strtotime($transfer['transfer_date'])) / 86400 . ' days'
+                    : 'N/A'
+            ],
+            'alert_type' => 'success',
+            'view_link' => "{$baseUrl}/?route=transfers/view&id={$transfer['id']}",
+            'view_link_text' => 'View Transfer Details',
+            'subject_suffix' => "Transfer #{$transfer['id']} - Return Complete"
+        ]);
+    }
 }
 ?>
