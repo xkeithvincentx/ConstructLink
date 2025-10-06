@@ -159,7 +159,7 @@ class ProcurementEmailTemplates extends WorkflowEmailTemplates {
             'Rejected' => 'Order has been rejected and closed'
         ];
 
-        return parent::sendStatusUpdate([
+        return parent::sendStatusUpdateEmail([
             'user' => $user,
             'title' => 'Procurement Order Status Update',
             'message' => $message,

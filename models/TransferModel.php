@@ -75,8 +75,8 @@ class TransferModel extends BaseModel {
             
             // Get initiator role for smart workflow
             $userModel = new UserModel();
-            $initiator = $userModel->find($data['initiated_by']);
-            $initiatorRole = $initiator ? $initiator['role_name'] : '';
+            $initiator = $userModel->getUserWithRole($data['initiated_by']);
+            $initiatorRole = $initiator ? ($initiator['role_name'] ?? '') : '';
             
             // Smart workflow logic based on initiator role
             if (in_array($initiatorRole, ['Finance Director', 'Asset Director'])) {

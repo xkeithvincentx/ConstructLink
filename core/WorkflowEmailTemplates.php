@@ -230,7 +230,7 @@ class WorkflowEmailTemplates {
      *   - view_link: Optional link to view details
      * @return array Result
      */
-    public function sendStatusUpdate($config) {
+    protected function sendStatusUpdateEmail($config) {
         // Validate required fields
         $required = ['user', 'title', 'message', 'status'];
         foreach ($required as $field) {

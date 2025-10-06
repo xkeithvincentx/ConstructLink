@@ -169,7 +169,7 @@ class TransferEmailTemplates extends WorkflowEmailTemplates {
         $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
         $message = $statusMessage ?? "The status of your transfer request has been updated.";
 
-        return parent::sendStatusUpdate([
+        return parent::sendStatusUpdateEmail([
             'user' => $user,
             'title' => 'Transfer Status Update',
             'message' => $message,
