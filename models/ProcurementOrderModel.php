@@ -92,6 +92,11 @@ class ProcurementOrderModel extends BaseModel {
             // Log activity
             $this->logActivity('procurement_order_created', 'Procurement order created: ' . $orderData['po_number'], 'procurement_orders', $procurementOrder['id']);
 
+            // Send email notification if status is Pending
+            if ($procurementOrder['status'] === 'Pending') {
+                $this->sendProcurementNotification($procurementOrder['id'], 'created', $orderData['requested_by']);
+            }
+
             $this->commit();
             return ['success' => true, 'procurement_order' => $procurementOrder];
 
@@ -297,6 +302,9 @@ class ProcurementOrderModel extends BaseModel {
 
             // Log the status change
             $this->logProcurementActivity($id, $userId, 'status_change', null, $status, "Status changed to {$status}");
+
+            // Send email notification based on status change
+            $this->sendProcurementNotification($id, 'status_changed', $userId, $status);
 
             $this->commit();
             return ['success' => true, 'message' => 'Status updated successfully'];
@@ -2099,6 +2107,97 @@ class ProcurementOrderModel extends BaseModel {
     }
     
 
+
+    /**
+     * Send procurement order email notifications
+     */
+    private function sendProcurementNotification($orderId, $action, $actorId, $newStatus = null) {
+        try {
+            require_once APP_ROOT . '/core/ProcurementEmailTemplates.php';
+            $emailTemplates = new ProcurementEmailTemplates();
+
+            $userModel = new UserModel();
+            $order = $this->getProcurementOrderWithDetails($orderId);
+
+            if (!$order) {
+                error_log("Cannot send procurement notification: Order #{$orderId} not found");
+                return;
+            }
+
+            switch ($action) {
+                case 'created':
+                    // Send approval request to Finance Director
+                    if ($order['status'] === 'Pending') {
+                        $financeDirectors = $userModel->getUsersByRole('Finance Director');
+                        foreach ($financeDirectors as $director) {
+                            $emailTemplates->sendApprovalRequest($order, $director);
+                        }
+                    }
+                    break;
+
+                case 'status_changed':
+                    if ($newStatus === 'Approved') {
+                        // Send schedule delivery request to Procurement Officer
+                        $procurementOfficers = $userModel->getUsersByRole('Procurement Officer');
+                        foreach ($procurementOfficers as $officer) {
+                            $emailTemplates->sendScheduleDeliveryRequest($order, $officer);
+                        }
+                    } elseif ($newStatus === 'Delivered') {
+                        // Send delivery notification to Warehouseman
+                        $warehousemen = $userModel->getUsersByRole('Warehouseman');
+                        foreach ($warehousemen as $warehouseman) {
+                            $emailTemplates->sendDeliveryNotification($order, $warehouseman);
+                        }
+                    } elseif ($newStatus === 'Received') {
+                        // Send completion notification to all parties
+                        $usersToNotify = [];
+
+                        // Add requester
+                        if ($order['requested_by']) {
+                            $requester = $userModel->find($order['requested_by']);
+                            if ($requester) $usersToNotify[] = $requester;
+                        }
+
+                        // Add approver
+                        if ($order['approved_by']) {
+                            $approver = $userModel->find($order['approved_by']);
+                            if ($approver) $usersToNotify[] = $approver;
+                        }
+
+                        // Add receiver
+                        if ($order['received_by'] && $order['received_by'] != $actorId) {
+                            $receiver = $userModel->find($order['received_by']);
+                            if ($receiver) $usersToNotify[] = $receiver;
+                        }
+
+                        if (!empty($usersToNotify)) {
+                            $emailTemplates->sendCompletedNotification($order, $usersToNotify);
+                        }
+                    } elseif ($newStatus === 'Rejected') {
+                        // Send rejection notification to requester
+                        if ($order['requested_by']) {
+                            $requester = $userModel->find($order['requested_by']);
+                            if ($requester) {
+                                $emailTemplates->sendRejectionNotification($order, $requester, $order['notes'] ?? null);
+                            }
+                        }
+                    } elseif ($newStatus === 'For Revision') {
+                        // Send revision request to Procurement Officer or requester
+                        if ($order['requested_by']) {
+                            $requester = $userModel->find($order['requested_by']);
+                            if ($requester) {
+                                $emailTemplates->sendRevisionRequest($order, $requester, $order['notes'] ?? null);
+                            }
+                        }
+                    }
+                    break;
+            }
+
+        } catch (Exception $e) {
+            error_log("Procurement notification error: " . $e->getMessage());
+            // Don't throw - email failures shouldn't break procurement operations
+        }
+    }
 
     /**
      * Log general activity

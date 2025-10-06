@@ -1630,6 +1630,15 @@ $routes = [
         'action' => 'index',
         'auth' => true,
         'roles' => getRolesFor('procurement-orders/view')
+    ],
+
+    // =================================================================
+    // EMAIL ACTION ROUTES (No Auth Required - Token-based)
+    // =================================================================
+    'email-action' => [
+        'controller' => 'EmailActionController',
+        'action' => 'index',
+        'auth' => false // Token-based authentication, no login required
     ]
 ];
 
