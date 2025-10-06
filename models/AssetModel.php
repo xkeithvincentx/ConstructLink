@@ -2156,34 +2156,24 @@ class AssetModel extends BaseModel {
 
     /**
      * Get Warehouseman specific statistics
+     * Note: Warehouseman manages ALL assets in the warehouse, not project-specific
      */
     private function getWarehousemanStats($projectId) {
-        $conditions = [];
-        $params = [];
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-        
+        // Warehouseman sees ALL assets regardless of project assignment
         $sql = "
-            SELECT 
-                COUNT(*) as warehouse_items,
-                SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as ready_for_dispatch,
-                SUM(CASE WHEN a.status = 'borrowed' THEN 1 ELSE 0 END) as tools_on_loan,
-                SUM(CASE WHEN a.status = 'in_transit' THEN 1 ELSE 0 END) as items_in_transit,
+            SELECT
+                COUNT(*) as total_inventory,
+                SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_stock,
+                SUM(CASE WHEN a.status IN ('borrowed', 'in_use') THEN 1 ELSE 0 END) as items_borrowed,
+                SUM(CASE WHEN a.status = 'under_maintenance' THEN 1 ELSE 0 END) as under_maintenance,
                 COUNT(CASE WHEN DATE(a.created_at) = CURDATE() THEN 1 END) as today_receipts,
-                SUM(CASE WHEN c.is_consumable = 1 AND a.available_quantity <= (a.quantity * 0.2) 
-                    AND a.available_quantity > 0 THEN 1 ELSE 0 END) as reorder_alerts
+                SUM(CASE WHEN c.is_consumable = 1 AND a.available_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock
             FROM assets a
             LEFT JOIN categories c ON a.category_id = c.id
-            {$whereClause}
         ";
-        
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 

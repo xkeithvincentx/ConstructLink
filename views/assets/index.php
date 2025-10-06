@@ -326,15 +326,15 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-building text-primary fs-5"></i>
+                        <i class="bi bi-boxes text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Warehouse Inventory</h6>
-                        <h3 class="mb-0"><?= $roleStats['warehouse_inventory'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Total Inventory</h6>
+                        <h3 class="mb-0"><?= $roleStats['total_inventory'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-building me-1"></i>Total items under your care
+                    <i class="bi bi-building me-1"></i>All assets in warehouse
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -376,7 +376,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-1 small">Items Borrowed</h6>
-                        <h3 class="mb-0"><?= $roleStats['tools_on_loan'] ?? 0 ?></h3>
+                        <h3 class="mb-0"><?= $roleStats['items_borrowed'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
@@ -391,29 +391,29 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
     <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['reorder_alerts'] ?? 0) > 0 ? 'var(--warning-color)' : 'var(--neutral-color)' ?>;">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['out_of_stock'] ?? 0) > 0 ? 'var(--danger-color)' : 'var(--neutral-color)' ?>;">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-exclamation-triangle <?= ($roleStats['reorder_alerts'] ?? 0) > 0 ? 'text-warning' : 'text-secondary' ?> fs-5"></i>
+                        <i class="bi bi-exclamation-circle <?= ($roleStats['out_of_stock'] ?? 0) > 0 ? 'text-danger' : 'text-secondary' ?> fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Low Stock Alerts</h6>
-                        <h3 class="mb-0"><?= $roleStats['reorder_alerts'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Out of Stock</h6>
+                        <h3 class="mb-0"><?= $roleStats['out_of_stock'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['pending_verification'] ?? 0 ?> pending verification
+                    <i class="bi bi-tools me-1"></i><?= $roleStats['under_maintenance'] ?? 0 ?> under maintenance
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
-                <?php if (($roleStats['reorder_alerts'] ?? 0) > 0): ?>
-                    <a href="?route=assets&asset_type=low_stock" class="text-decoration-none small">
-                        <i class="bi bi-eye me-1"></i>Review Alerts
+                <?php if (($roleStats['out_of_stock'] ?? 0) > 0): ?>
+                    <a href="?route=assets&asset_type=out_of_stock" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>View Out of Stock
                     </a>
                 <?php else: ?>
                     <span class="text-muted small">
-                        <i class="bi bi-check-circle me-1"></i>All stock levels good
+                        <i class="bi bi-check-circle me-1"></i>All items in stock
                     </span>
                 <?php endif; ?>
             </div>
