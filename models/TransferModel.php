@@ -970,8 +970,8 @@ class TransferModel extends BaseModel {
 
             $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
             if ($fromProjectPM) {
-                $pmUser = $userModel->find($fromProjectPM);
-                if ($pmUser) {
+                $pmUser = $userModel->getUserWithRole($fromProjectPM);
+                if ($pmUser && !empty($pmUser['email'])) {
                     require_once APP_ROOT . '/core/TransferEmailTemplates.php';
                     $emailTemplates = new TransferEmailTemplates();
 
@@ -1087,20 +1087,20 @@ class TransferModel extends BaseModel {
 
             // Notify initiator (TO PM who requested the transfer)
             if ($transfer['initiated_by']) {
-                $initiator = $userModel->find($transfer['initiated_by']);
-                if ($initiator) $usersToNotify[] = $initiator;
+                $initiator = $userModel->getUserWithRole($transfer['initiated_by']);
+                if ($initiator && !empty($initiator['email'])) $usersToNotify[] = $initiator;
             }
 
             // Notify return initiator (TO PM who initiated return)
             if ($transfer['return_initiated_by'] && $transfer['return_initiated_by'] != $transfer['initiated_by']) {
-                $returnInitiator = $userModel->find($transfer['return_initiated_by']);
-                if ($returnInitiator) $usersToNotify[] = $returnInitiator;
+                $returnInitiator = $userModel->getUserWithRole($transfer['return_initiated_by']);
+                if ($returnInitiator && !empty($returnInitiator['email'])) $usersToNotify[] = $returnInitiator;
             }
 
             // Notify FROM PM (who received the return)
             if ($receivedBy && $receivedBy != $transfer['initiated_by']) {
-                $receiver = $userModel->find($receivedBy);
-                if ($receiver) $usersToNotify[] = $receiver;
+                $receiver = $userModel->getUserWithRole($receivedBy);
+                if ($receiver && !empty($receiver['email'])) $usersToNotify[] = $receiver;
             }
 
             if (!empty($usersToNotify)) {
@@ -1321,8 +1321,8 @@ class TransferModel extends BaseModel {
                             $recipients[] = $fromProjectPM;
 
                             // Send email with one-click verification link
-                            $pmUser = $userModel->find($fromProjectPM);
-                            if ($pmUser) {
+                            $pmUser = $userModel->getUserWithRole($fromProjectPM);
+                            if ($pmUser && !empty($pmUser['email'])) {
                                 $emailTemplates->sendVerificationRequest($transfer, $pmUser);
                             }
                         }
@@ -1367,8 +1367,8 @@ class TransferModel extends BaseModel {
                         $recipients[] = $fromProjectPM;
 
                         // Send email with one-click dispatch link
-                        $pmUser = $userModel->find($fromProjectPM);
-                        if ($pmUser) {
+                        $pmUser = $userModel->getUserWithRole($fromProjectPM);
+                        if ($pmUser && !empty($pmUser['email'])) {
                             $emailTemplates->sendDispatchRequest($transfer, $pmUser);
                         }
                     }
@@ -1389,8 +1389,8 @@ class TransferModel extends BaseModel {
                         $recipients[] = $toProjectPM;
 
                         // Send email with one-click receive link
-                        $pmUser = $userModel->find($toProjectPM);
-                        if ($pmUser) {
+                        $pmUser = $userModel->getUserWithRole($toProjectPM);
+                        if ($pmUser && !empty($pmUser['email'])) {
                             $emailTemplates->sendReceiveRequest($transfer, $pmUser);
                         }
                     }
