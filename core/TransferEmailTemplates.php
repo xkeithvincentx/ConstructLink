@@ -1,81 +1,40 @@
 <?php
 /**
  * ConstructLink™ Transfer Email Templates
- * Pre-defined email templates for transfer workflow notifications
+ * Transfer-specific email notifications using generic workflow templates
  */
 
-class TransferEmailTemplates {
-    private $emailService;
-    private $tokenManager;
+require_once APP_ROOT . '/core/WorkflowEmailTemplates.php';
 
-    public function __construct() {
-        $this->emailService = EmailService::getInstance();
-        $this->tokenManager = new EmailActionToken();
-    }
+class TransferEmailTemplates extends WorkflowEmailTemplates {
 
     /**
-     * Send verification request email to Project Manager
+     * Send verification request email to FROM Project Manager
      *
      * @param array $transfer Transfer data with details
-     * @param array $user Project Manager user data
+     * @param array $user FROM Project Manager user data
      * @return array Result
      */
     public function sendVerificationRequest($transfer, $user) {
-        if (empty($user['email'])) {
-            return ['success' => false, 'message' => 'User has no email address'];
-        }
-
-        // Generate one-click verification token
-        $tokenResult = $this->tokenManager->generateToken(
-            'transfer_verify',
-            $transfer['id'],
-            $user['id'],
-            48 // 48 hours expiration
-        );
-
-        if (!$tokenResult['success']) {
-            return $tokenResult;
-        }
-
-        $title = "Transfer Verification Required";
-        $content = "
-            <p>Dear {$user['full_name']},</p>
-
-            <p>A new asset transfer request requires your verification:</p>
-
-            <div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;\">
-                <p style=\"margin: 5px 0;\"><strong>Transfer ID:</strong> #{$transfer['id']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Asset:</strong> {$transfer['asset_ref']} - {$transfer['asset_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>From:</strong> {$transfer['from_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>To:</strong> {$transfer['to_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Type:</strong> " . ucfirst($transfer['transfer_type']) . "</p>
-                <p style=\"margin: 5px 0;\"><strong>Requested By:</strong> {$transfer['initiated_by_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Reason:</strong> {$transfer['reason']}</p>
-            </div>
-
-            <p>Click the button below to verify this transfer request. No login required - this is a secure one-time link.</p>
-
-            <p style=\"color: #6c757d; font-size: 14px; margin-top: 20px;\">
-                <strong>Note:</strong> This link will expire in 48 hours.
-            </p>
-        ";
-
-        $actions = [
-            [
-                'text' => 'Verify Transfer',
-                'url' => $tokenResult['url'],
-                'color' => '#28a745'
-            ]
-        ];
-
-        $htmlBody = $this->emailService->renderTemplate($title, $content, $actions);
-
-        return $this->emailService->send(
-            $user['email'],
-            "ConstructLink™: {$title} - Transfer #{$transfer['id']}",
-            $htmlBody,
-            $user['full_name']
-        );
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'transfer_verify',
+            'related_id' => $transfer['id'],
+            'title' => 'Transfer Verification Required',
+            'message' => 'A new asset transfer request requires your verification. The requesting project needs this asset transferred from your project.',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From (Your Project)' => $transfer['from_project_name'],
+                'To (Requesting Project)' => $transfer['to_project_name'],
+                'Type' => ucfirst($transfer['transfer_type']),
+                'Requested By' => $transfer['initiated_by_name'],
+                'Reason' => $transfer['reason']
+            ],
+            'button_text' => 'Verify Transfer',
+            'button_color' => '#28a745',
+            'subject_suffix' => "Transfer #{$transfer['id']}"
+        ]);
     }
 
     /**
@@ -86,62 +45,26 @@ class TransferEmailTemplates {
      * @return array Result
      */
     public function sendApprovalRequest($transfer, $user) {
-        if (empty($user['email'])) {
-            return ['success' => false, 'message' => 'User has no email address'];
-        }
-
-        // Generate one-click approval token
-        $tokenResult = $this->tokenManager->generateToken(
-            'transfer_approve',
-            $transfer['id'],
-            $user['id'],
-            48 // 48 hours expiration
-        );
-
-        if (!$tokenResult['success']) {
-            return $tokenResult;
-        }
-
-        $title = "Transfer Approval Required";
-        $content = "
-            <p>Dear {$user['full_name']},</p>
-
-            <p>A verified asset transfer request requires your approval:</p>
-
-            <div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;\">
-                <p style=\"margin: 5px 0;\"><strong>Transfer ID:</strong> #{$transfer['id']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Asset:</strong> {$transfer['asset_ref']} - {$transfer['asset_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>From:</strong> {$transfer['from_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>To:</strong> {$transfer['to_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Type:</strong> " . ucfirst($transfer['transfer_type']) . "</p>
-                <p style=\"margin: 5px 0;\"><strong>Requested By:</strong> {$transfer['initiated_by_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Verified By:</strong> {$transfer['verified_by_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Reason:</strong> {$transfer['reason']}</p>
-            </div>
-
-            <p>Click the button below to approve this transfer request. No login required - this is a secure one-time link.</p>
-
-            <p style=\"color: #6c757d; font-size: 14px; margin-top: 20px;\">
-                <strong>Note:</strong> This link will expire in 48 hours.
-            </p>
-        ";
-
-        $actions = [
-            [
-                'text' => 'Approve Transfer',
-                'url' => $tokenResult['url'],
-                'color' => '#007bff'
-            ]
-        ];
-
-        $htmlBody = $this->emailService->renderTemplate($title, $content, $actions);
-
-        return $this->emailService->send(
-            $user['email'],
-            "ConstructLink™: {$title} - Transfer #{$transfer['id']}",
-            $htmlBody,
-            $user['full_name']
-        );
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'transfer_approve',
+            'related_id' => $transfer['id'],
+            'title' => 'Transfer Approval Required',
+            'message' => 'A verified asset transfer request requires your approval.',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From' => $transfer['from_project_name'],
+                'To' => $transfer['to_project_name'],
+                'Type' => ucfirst($transfer['transfer_type']),
+                'Requested By' => $transfer['initiated_by_name'],
+                'Verified By' => $transfer['verified_by_name'] ?? 'N/A',
+                'Reason' => $transfer['reason']
+            ],
+            'button_text' => 'Approve Transfer',
+            'button_color' => '#007bff',
+            'subject_suffix' => "Transfer #{$transfer['id']}"
+        ]);
     }
 
     /**
@@ -152,62 +75,25 @@ class TransferEmailTemplates {
      * @return array Result
      */
     public function sendDispatchRequest($transfer, $user) {
-        if (empty($user['email'])) {
-            return ['success' => false, 'message' => 'User has no email address'];
-        }
-
-        // Generate one-click dispatch token
-        $tokenResult = $this->tokenManager->generateToken(
-            'transfer_dispatch',
-            $transfer['id'],
-            $user['id'],
-            48 // 48 hours expiration
-        );
-
-        if (!$tokenResult['success']) {
-            return $tokenResult;
-        }
-
-        $title = "Asset Dispatch Confirmation Required";
-        $content = "
-            <p>Dear {$user['full_name']},</p>
-
-            <p>An approved transfer requires you to confirm asset dispatch:</p>
-
-            <div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;\">
-                <p style=\"margin: 5px 0;\"><strong>Transfer ID:</strong> #{$transfer['id']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Asset:</strong> {$transfer['asset_ref']} - {$transfer['asset_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>From:</strong> {$transfer['from_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>To:</strong> {$transfer['to_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Type:</strong> " . ucfirst($transfer['transfer_type']) . "</p>
-                <p style=\"margin: 5px 0;\"><strong>Approved By:</strong> {$transfer['approved_by_name']}</p>
-            </div>
-
-            <p>Please confirm that the asset has been dispatched and is on its way to the destination project.</p>
-
-            <p>Click the button below to confirm dispatch. No login required - this is a secure one-time link.</p>
-
-            <p style=\"color: #6c757d; font-size: 14px; margin-top: 20px;\">
-                <strong>Note:</strong> This link will expire in 48 hours.
-            </p>
-        ";
-
-        $actions = [
-            [
-                'text' => 'Confirm Dispatch',
-                'url' => $tokenResult['url'],
-                'color' => '#ffc107'
-            ]
-        ];
-
-        $htmlBody = $this->emailService->renderTemplate($title, $content, $actions);
-
-        return $this->emailService->send(
-            $user['email'],
-            "ConstructLink™: {$title} - Transfer #{$transfer['id']}",
-            $htmlBody,
-            $user['full_name']
-        );
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'transfer_dispatch',
+            'related_id' => $transfer['id'],
+            'title' => 'Asset Dispatch Confirmation Required',
+            'message' => 'An approved transfer requires you to confirm that the asset has been dispatched from your project.',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From (Your Project)' => $transfer['from_project_name'],
+                'To (Destination)' => $transfer['to_project_name'],
+                'Type' => ucfirst($transfer['transfer_type']),
+                'Approved By' => $transfer['approved_by_name'] ?? 'N/A'
+            ],
+            'button_text' => 'Confirm Dispatch',
+            'button_color' => '#ffc107',
+            'additional_info' => 'Please confirm that the asset has been packed and sent to the destination project.',
+            'subject_suffix' => "Transfer #{$transfer['id']}"
+        ]);
     }
 
     /**
@@ -218,63 +104,28 @@ class TransferEmailTemplates {
      * @return array Result
      */
     public function sendReceiveRequest($transfer, $user) {
-        if (empty($user['email'])) {
-            return ['success' => false, 'message' => 'User has no email address'];
-        }
+        $dispatchDate = isset($transfer['dispatch_date']) ? date('M j, Y', strtotime($transfer['dispatch_date'])) : 'N/A';
 
-        // Generate one-click receive token
-        $tokenResult = $this->tokenManager->generateToken(
-            'transfer_receive',
-            $transfer['id'],
-            $user['id'],
-            48 // 48 hours expiration
-        );
-
-        if (!$tokenResult['success']) {
-            return $tokenResult;
-        }
-
-        $title = "Asset Arrival - Receipt Confirmation Required";
-        $content = "
-            <p>Dear {$user['full_name']},</p>
-
-            <p>An asset is in transit to your project and requires receipt confirmation:</p>
-
-            <div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;\">
-                <p style=\"margin: 5px 0;\"><strong>Transfer ID:</strong> #{$transfer['id']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Asset:</strong> {$transfer['asset_ref']} - {$transfer['asset_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>From:</strong> {$transfer['from_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>To:</strong> {$transfer['to_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Type:</strong> " . ucfirst($transfer['transfer_type']) . "</p>
-                <p style=\"margin: 5px 0;\"><strong>Dispatched By:</strong> {$transfer['dispatched_by_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Dispatch Date:</strong> " . date('M j, Y', strtotime($transfer['dispatch_date'])) . "</p>
-            </div>
-
-            <p>Please confirm receipt once the asset has arrived at your project location.</p>
-
-            <p>Click the button below to confirm receipt and complete the transfer. No login required - this is a secure one-time link.</p>
-
-            <p style=\"color: #6c757d; font-size: 14px; margin-top: 20px;\">
-                <strong>Note:</strong> This link will expire in 48 hours.
-            </p>
-        ";
-
-        $actions = [
-            [
-                'text' => 'Confirm Receipt',
-                'url' => $tokenResult['url'],
-                'color' => '#28a745'
-            ]
-        ];
-
-        $htmlBody = $this->emailService->renderTemplate($title, $content, $actions);
-
-        return $this->emailService->send(
-            $user['email'],
-            "ConstructLink™: {$title} - Transfer #{$transfer['id']}",
-            $htmlBody,
-            $user['full_name']
-        );
+        return $this->sendActionRequest([
+            'user' => $user,
+            'action_type' => 'transfer_receive',
+            'related_id' => $transfer['id'],
+            'title' => 'Asset Arrival - Receipt Confirmation Required',
+            'message' => 'An asset is in transit to your project and requires receipt confirmation.',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From' => $transfer['from_project_name'],
+                'To (Your Project)' => $transfer['to_project_name'],
+                'Type' => ucfirst($transfer['transfer_type']),
+                'Dispatched By' => $transfer['dispatched_by_name'] ?? 'N/A',
+                'Dispatch Date' => $dispatchDate
+            ],
+            'button_text' => 'Confirm Receipt',
+            'button_color' => '#28a745',
+            'additional_info' => 'Please confirm receipt once the asset has arrived at your project location.',
+            'subject_suffix' => "Transfer #{$transfer['id']}"
+        ]);
     }
 
     /**
@@ -285,58 +136,52 @@ class TransferEmailTemplates {
      * @return array Result
      */
     public function sendCompletedNotification($transfer, $users) {
-        $title = "Transfer Completed Successfully";
-        $content = "
-            <p>The following asset transfer has been completed successfully:</p>
-
-            <div style=\"background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 5px; margin: 20px 0;\">
-                <p style=\"margin: 5px 0;\"><strong>Transfer ID:</strong> #{$transfer['id']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Asset:</strong> {$transfer['asset_ref']} - {$transfer['asset_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>From:</strong> {$transfer['from_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>To:</strong> {$transfer['to_project_name']}</p>
-                <p style=\"margin: 5px 0;\"><strong>Type:</strong> " . ucfirst($transfer['transfer_type']) . "</p>
-                <p style=\"margin: 5px 0;\"><strong>Completed:</strong> " . date('M j, Y g:i A') . "</p>
-            </div>
-
-            <p>The asset has been successfully transferred and all parties have been notified.</p>
-        ";
-
         $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-        $actions = [
-            [
-                'text' => 'View Transfer Details',
-                'url' => "{$baseUrl}/?route=transfers/view&id={$transfer['id']}",
-                'color' => '#007bff'
-            ]
-        ];
 
-        $htmlBody = $this->emailService->renderTemplate($title, $content, $actions);
+        return $this->sendCompletionNotification([
+            'users' => $users,
+            'title' => 'Transfer Completed Successfully',
+            'message' => 'The following asset transfer has been completed successfully:',
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From' => $transfer['from_project_name'],
+                'To' => $transfer['to_project_name'],
+                'Type' => ucfirst($transfer['transfer_type']),
+                'Completed' => date('M j, Y g:i A')
+            ],
+            'alert_type' => 'success',
+            'view_link' => "{$baseUrl}/?route=transfers/view&id={$transfer['id']}",
+            'view_link_text' => 'View Transfer Details',
+            'subject_suffix' => "Transfer #{$transfer['id']}"
+        ]);
+    }
 
-        $recipients = [];
-        foreach ($users as $user) {
-            if (!empty($user['email'])) {
-                $recipients[] = [
-                    'email' => $user['email'],
-                    'name' => $user['full_name']
-                ];
-            }
-        }
+    /**
+     * Send transfer status update notification
+     *
+     * @param array $transfer Transfer data
+     * @param array $user User to notify
+     * @param string $statusMessage Custom status message
+     * @return array Result
+     */
+    public function sendStatusUpdate($transfer, $user, $statusMessage = null) {
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+        $message = $statusMessage ?? "The status of your transfer request has been updated.";
 
-        if (empty($recipients)) {
-            return ['success' => false, 'message' => 'No recipients with email addresses'];
-        }
-
-        // Send to all recipients
-        foreach ($recipients as $recipient) {
-            $this->emailService->send(
-                $recipient['email'],
-                "ConstructLink™: {$title} - Transfer #{$transfer['id']}",
-                $htmlBody,
-                $recipient['name']
-            );
-        }
-
-        return ['success' => true, 'message' => 'Notifications sent'];
+        return parent::sendStatusUpdate([
+            'user' => $user,
+            'title' => 'Transfer Status Update',
+            'message' => $message,
+            'details' => [
+                'Transfer ID' => "#{$transfer['id']}",
+                'Asset' => "{$transfer['asset_ref']} - {$transfer['asset_name']}",
+                'From' => $transfer['from_project_name'],
+                'To' => $transfer['to_project_name']
+            ],
+            'status' => $transfer['status'],
+            'view_link' => "{$baseUrl}/?route=transfers/view&id={$transfer['id']}"
+        ]);
     }
 }
 ?>
