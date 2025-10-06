@@ -82,7 +82,18 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+        <div class="row g-3">
     <!-- Pending Verification -->
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
@@ -252,10 +263,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+        </div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
-<!-- MVA Workflow Info Banner -->
-<div class="alert alert-info mb-4">
+<!-- MVA Workflow Info Banner (Hidden on mobile to save space) -->
+<div class="alert alert-info mb-4 d-none d-md-block">
     <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
     <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
     <span class="badge bg-info">Authorizer</span> (Asset Director) →
@@ -288,13 +301,36 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- Filters -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h6 class="card-title mb-0">
-            <i class="bi bi-funnel me-2"></i>Filters
-        </h6>
+<!-- Mobile: Modal, Desktop: Card -->
+<div class="mb-4">
+    <!-- Mobile Filter Button (Sticky) -->
+    <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3" style="z-index: 1020;">
+        <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+            <i class="bi bi-funnel me-1"></i>
+            Filters
+            <?php
+            $activeFilters = 0;
+            if (!empty($_GET['status'])) $activeFilters++;
+            if (!empty($_GET['transfer_type'])) $activeFilters++;
+            if (!empty($_GET['from_project'])) $activeFilters++;
+            if (!empty($_GET['to_project'])) $activeFilters++;
+            if (!empty($_GET['date_from'])) $activeFilters++;
+            if (!empty($_GET['date_to'])) $activeFilters++;
+            if (!empty($_GET['search'])) $activeFilters++;
+            if ($activeFilters > 0): ?>
+                <span class="badge bg-warning text-dark ms-1"><?= $activeFilters ?></span>
+            <?php endif; ?>
+        </button>
     </div>
-    <div class="card-body">
+
+    <!-- Desktop: Card (always visible) -->
+    <div class="card d-none d-md-block">
+        <div class="card-header">
+            <h6 class="card-title mb-0">
+                <i class="bi bi-funnel me-2"></i>Filters
+            </h6>
+        </div>
+        <div class="card-body">
         <form method="GET" action="?route=transfers" class="row g-3">
             <div class="col-md-2">
                 <label for="status" class="form-label">Status</label>
@@ -369,8 +405,95 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </a>
             </div>
         </form>
+        </div><!-- End card-body -->
+    </div><!-- End card (desktop) -->
+
+    <!-- Mobile: Offcanvas Filters -->
+    <div class="offcanvas offcanvas-bottom d-md-none" tabindex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel" style="height: 85vh;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="filterOffcanvasLabel">
+                <i class="bi bi-funnel me-2"></i>Filter Transfers
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="GET" action="?route=transfers" id="mobileFilterForm">
+                <div class="mb-3">
+                    <label for="mobile_status" class="form-label">Status</label>
+                    <select class="form-select" id="mobile_status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="Pending Verification" <?= ($_GET['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>Pending Verification</option>
+                        <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>Pending Approval</option>
+                        <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>Approved</option>
+                        <option value="In Transit" <?= ($_GET['status'] ?? '') === 'In Transit' ? 'selected' : '' ?>>In Transit</option>
+                        <option value="Completed" <?= ($_GET['status'] ?? '') === 'Completed' ? 'selected' : '' ?>>Completed</option>
+                        <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>Canceled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_transfer_type" class="form-label">Type</label>
+                    <select class="form-select" id="mobile_transfer_type" name="transfer_type">
+                        <option value="">All Types</option>
+                        <option value="temporary" <?= ($_GET['transfer_type'] ?? '') === 'temporary' ? 'selected' : '' ?>>Temporary</option>
+                        <option value="permanent" <?= ($_GET['transfer_type'] ?? '') === 'permanent' ? 'selected' : '' ?>>Permanent</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_from_project" class="form-label">From Project</label>
+                    <select class="form-select" id="mobile_from_project" name="from_project">
+                        <option value="">All Projects</option>
+                        <?php if (isset($projects) && is_array($projects)): ?>
+                            <?php foreach ($projects as $project): ?>
+                                <option value="<?= $project['id'] ?>"
+                                        <?= ($_GET['from_project'] ?? '') == $project['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($project['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_to_project" class="form-label">To Project</label>
+                    <select class="form-select" id="mobile_to_project" name="to_project">
+                        <option value="">All Projects</option>
+                        <?php if (isset($projects) && is_array($projects)): ?>
+                            <?php foreach ($projects as $project): ?>
+                                <option value="<?= $project['id'] ?>"
+                                        <?= ($_GET['to_project'] ?? '') == $project['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($project['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="mobile_date_from" name="date_from"
+                           value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="mobile_date_to" name="date_to"
+                           value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="mobile_search" name="search"
+                           placeholder="Search by asset name, reference, or reason..."
+                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Apply Filters
+                    </button>
+                    <a href="?route=transfers" class="btn btn-outline-secondary flex-grow-1">
+                        <i class="bi bi-x-circle me-1"></i>Clear All
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+</div><!-- End filters section -->
 
 <!-- Transfers Table -->
 <div class="card">
