@@ -257,7 +257,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 <?php else: ?>
                                     <!-- Restricted access for other roles - current user's project only -->
                                     <?php 
-                                    $userProjectId = $currentUser['project_id'] ?? null;
+                                    $userProjectId = $user['current_project_id'] ?? null;
                                     $userProject = null;
                                     if ($userProjectId && !empty($projects)) {
                                         foreach ($projects as $project) {
