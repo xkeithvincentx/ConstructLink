@@ -380,7 +380,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-arrow-left-right me-1"></i><?= $roleStats['items_in_transit'] ?? 0 ?> in transit
+                    <i class="bi bi-box-arrow-right me-1"></i>Currently in use by projects
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
