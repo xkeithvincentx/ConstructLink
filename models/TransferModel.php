@@ -1327,6 +1327,20 @@ class TransferModel extends BaseModel {
                             }
                         }
                     } else if ($transfer['status'] === 'Pending Approval') {
+                        // Status is Pending Approval (smart workflow skipped verification)
+                        // Still notify FROM Project Manager about the transfer
+                        $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+                        if ($fromProjectPM) {
+                            $recipients[] = $fromProjectPM;
+
+                            // Send informational email (status update, no action needed)
+                            $pmUser = $userModel->getUserWithRole($fromProjectPM);
+                            if ($pmUser && !empty($pmUser['email'])) {
+                                $statusMessage = "A transfer request has been created for {$assetName} ({$assetRef}) from your project to {$toProject}. This transfer has been automatically verified and is now pending approval.";
+                                $emailTemplates->sendStatusUpdate($transfer, $pmUser, $statusMessage);
+                            }
+                        }
+
                         // Notify approvers
                         $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
                         foreach ($approvers as $approver) {
