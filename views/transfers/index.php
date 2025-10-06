@@ -400,7 +400,119 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <?php endif; ?>
             </div>
         <?php else: ?>
-            <div class="table-responsive">
+            <!-- Mobile Card View (visible on small screens) -->
+            <div class="d-md-none">
+                <?php foreach ($transfers as $transfer): ?>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="text-decoration-none fw-bold">
+                                        #<?= $transfer['id'] ?>
+                                    </a>
+                                    <span class="ms-2 badge <?= ($transfer['transfer_type'] === 'permanent') ? 'bg-warning' : 'bg-info' ?>">
+                                        <?= ucfirst($transfer['transfer_type']) ?>
+                                    </span>
+                                </div>
+                                <?php
+                                $statusClasses = [
+                                    'Pending Verification' => 'bg-warning',
+                                    'Pending Approval' => 'bg-info',
+                                    'Approved' => 'bg-success',
+                                    'In Transit' => 'bg-primary',
+                                    'Received' => 'bg-secondary',
+                                    'Completed' => 'bg-dark',
+                                    'Canceled' => 'bg-danger'
+                                ];
+                                $statusClass = $statusClasses[$transfer['status']] ?? 'bg-secondary';
+                                ?>
+                                <span class="badge <?= $statusClass ?>"><?= $transfer['status'] ?></span>
+                            </div>
+
+                            <!-- Asset Info -->
+                            <div class="mb-2">
+                                <div class="fw-medium"><?= htmlspecialchars($transfer['asset_name']) ?></div>
+                                <small class="text-muted"><?= htmlspecialchars($transfer['asset_ref']) ?></small>
+                            </div>
+
+                            <!-- From → To -->
+                            <div class="mb-2">
+                                <small class="text-muted d-block mb-1">Transfer Route</small>
+                                <div class="d-flex align-items-center flex-wrap gap-1">
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($transfer['from_project_name']) ?></span>
+                                    <i class="bi bi-arrow-right text-muted"></i>
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($transfer['to_project_name']) ?></span>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <?php
+                            // Get permission roles
+                            $verifyRoles = $roleConfig['transfers/verify'] ?? [];
+                            $approveRoles = $roleConfig['transfers/approve'] ?? [];
+                            $receiveRoles = $roleConfig['transfers/receive'] ?? [];
+                            $completeRoles = $roleConfig['transfers/complete'] ?? [];
+                            $returnRoles = $roleConfig['transfers/returnAsset'] ?? [];
+                            $cancelRoles = $roleConfig['transfers/cancel'] ?? [];
+                            ?>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="?route=transfers/view&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-primary flex-grow-1">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+
+                                <?php if (canVerifyTransfer($transfer, $user)): ?>
+                                    <a href="?route=transfers/verify&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-warning flex-grow-1">
+                                        <i class="bi bi-search me-1"></i>Verify
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (in_array($userRole, $approveRoles) && $transfer['status'] === 'Pending Approval'): ?>
+                                    <a href="?route=transfers/approve&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-success flex-grow-1">
+                                        <i class="bi bi-check-circle me-1"></i>Approve
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (canDispatchTransfer($transfer, $user)): ?>
+                                    <a href="?route=transfers/dispatch&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-primary flex-grow-1">
+                                        <i class="bi bi-send me-1"></i>Dispatch
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (canReceiveTransfer($transfer, $user)): ?>
+                                    <a href="?route=transfers/receive&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-success flex-grow-1">
+                                        <i class="bi bi-check-circle me-1"></i>Receive
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (in_array($userRole, $returnRoles) &&
+                                          $transfer['transfer_type'] === 'temporary' &&
+                                          $transfer['status'] === 'Completed' &&
+                                          ($transfer['return_status'] ?? 'not_returned') === 'not_returned'): ?>
+                                    <a href="?route=transfers/returnAsset&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-secondary flex-grow-1">
+                                        <i class="bi bi-arrow-return-left me-1"></i>Return
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (canReceiveReturn($transfer, $user)): ?>
+                                    <a href="?route=transfers/receive-return&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-warning flex-grow-1">
+                                        <i class="bi bi-box-arrow-in-down me-1"></i>Receive Return
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (in_array($userRole, $cancelRoles) && in_array($transfer['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'In Transit'])): ?>
+                                    <a href="?route=transfers/cancel&id=<?= $transfer['id'] ?>" class="btn btn-sm btn-danger flex-grow-1">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Desktop Table View (hidden on small screens) -->
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover" id="transfersTable">
                     <thead>
                         <tr>
@@ -426,14 +538,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     </a>
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2">
-                                            <i class="bi bi-box text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-medium"><?= htmlspecialchars($transfer['asset_name']) ?></div>
-                                            <small class="text-muted"><?= htmlspecialchars($transfer['asset_ref']) ?></small>
-                                        </div>
+                                    <div>
+                                        <div class="fw-medium"><?= htmlspecialchars($transfer['asset_name']) ?></div>
+                                        <small class="text-muted"><?= htmlspecialchars($transfer['asset_ref']) ?></small>
                                     </div>
                                 </td>
                                 <td>
