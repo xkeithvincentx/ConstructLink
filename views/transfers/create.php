@@ -10,6 +10,9 @@ ob_start();
 $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $userCurrentProjectId = $user['current_project_id'] ?? null;
+
+// Debug logging
+error_log("Transfer Create - User Role: {$userRole}, Current Project ID: " . ($userCurrentProjectId ?? 'null'));
 ?>
 
 <!-- Action Buttons (No Header - handled by layout) -->
@@ -398,6 +401,11 @@ function transferForm() {
         },
         
         selectAsset(asset) {
+            console.log('=== selectAsset Debug ===');
+            console.log('Current User Role:', this.currentUserRole);
+            console.log('Current User Project ID:', this.currentUserProjectId);
+            console.log('Selected Asset Project ID:', asset.project_id);
+
             this.formData.asset_id = asset.id;
             this.selectedAssetInfo = asset;
             this.searchText = `${asset.ref} - ${asset.name}`;
@@ -413,22 +421,32 @@ function transferForm() {
                 // Auto-fill to_project for Project Managers
                 // Finance/Asset Directors can select any project
                 if (this.currentUserRole === 'Project Manager' && this.currentUserProjectId) {
+                    console.log('PM Auto-fill Logic: Checking if should auto-fill');
                     // Only auto-fill if user's project is different from from_project
                     if (this.currentUserProjectId != asset.project_id) {
+                        console.log('Auto-filling TO project with:', this.currentUserProjectId);
                         this.formData.to_project = String(this.currentUserProjectId);
-                        $('#to_project').val(this.currentUserProjectId).trigger('change');
+                        if (typeof $ !== 'undefined' && $('#to_project').length) {
+                            $('#to_project').val(this.currentUserProjectId).trigger('change');
+                        }
                         this.autoFilledToProject = true;
                     } else {
+                        console.log('Cannot auto-fill: User project same as FROM project');
                         // If user's project is the same as from_project, clear to_project
                         this.formData.to_project = '';
-                        $('#to_project').val('').trigger('change');
+                        if (typeof $ !== 'undefined' && $('#to_project').length) {
+                            $('#to_project').val('').trigger('change');
+                        }
                         this.autoFilledToProject = false;
                     }
                 } else {
+                    console.log('Not PM or no current project - skipping auto-fill');
                     // Clear to_project if it's the same as from_project
                     if (this.formData.to_project == asset.project_id) {
                         this.formData.to_project = '';
-                        $('#to_project').val('').trigger('change');
+                        if (typeof $ !== 'undefined' && $('#to_project').length) {
+                            $('#to_project').val('').trigger('change');
+                        }
                     }
                     this.autoFilledToProject = false;
                 }
@@ -446,7 +464,9 @@ function transferForm() {
             this.filterAssets();
 
             // Reset to_project dropdown
-            $('#to_project').val('').trigger('change');
+            if (typeof $ !== 'undefined' && $('#to_project').length) {
+                $('#to_project').val('').trigger('change');
+            }
         },
         
         navigateDown() {
@@ -540,6 +560,11 @@ function transferForm() {
         
         
         updateToProjectDropdown() {
+            if (typeof $ === 'undefined') {
+                console.log('jQuery not loaded yet, skipping Select2 update');
+                return;
+            }
+
             // Save current selection
             const currentToProject = this.formData.to_project;
 
@@ -587,7 +612,9 @@ function transferForm() {
             if (this.formData.from_project && this.formData.to_project && this.formData.from_project === this.formData.to_project) {
                 alert('Source and destination projects must be different');
                 this.formData.to_project = '';
-                $('#to_project').val('').trigger('change');
+                if (typeof $ !== 'undefined' && $('#to_project').length) {
+                    $('#to_project').val('').trigger('change');
+                }
             }
         }
     }
