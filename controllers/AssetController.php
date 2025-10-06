@@ -62,32 +62,29 @@ class AssetController {
             // Enhance asset data with consumable info and units
             $assets = $this->enhanceAssetData($assets);
             
-            // Get role-specific asset statistics for dashboard cards
+            // Get role-specific asset statistics for dashboard cards (from database)
             $currentProjectId = $currentUser['current_project_id'] ?? null;
             $roleStats = $this->assetModel->getRoleSpecificStatistics($userRole, $currentProjectId);
-            
+
             // Get asset statistics for dashboard cards (fallback/legacy)
             $assetStats = $this->assetModel->getAssetStatistics();
-            
+
             // Get MVA workflow statistics
             $workflowStats = $this->assetModel->getWorkflowStatistics();
-            
+
             // Get overdue assets for alerts
             $overdueAssets = $this->assetModel->getOverdueAssets('withdrawal');
-            
+
             // Get filter options
             $categoryModel = new CategoryModel();
             $projectModel = new ProjectModel();
             $makerModel = new MakerModel();
             $vendorModel = new VendorModel();
-            
+
             $categories = $categoryModel->getActiveCategories();
             $projects = $projectModel->getActiveProjects();
             $makers = $makerModel->findAll([], 'name ASC');
             $vendors = $vendorModel->findAll([], 'name ASC');
-            
-            // Generate role-specific statistics for cards
-            $roleStats = $this->generateRoleBasedStats($userRole, $assets);
             
             $pageTitle = 'Assets - ConstructLink™';
             $pageHeader = 'Asset Management';
