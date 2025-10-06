@@ -1227,10 +1227,12 @@ class TransferModel extends BaseModel {
             require_once APP_ROOT . '/models/NotificationModel.php';
             require_once APP_ROOT . '/models/ProjectModel.php';
             require_once APP_ROOT . '/models/UserModel.php';
+            require_once APP_ROOT . '/core/TransferEmailTemplates.php';
 
             $notificationModel = new NotificationModel();
             $projectModel = new ProjectModel();
             $userModel = new UserModel();
+            $emailTemplates = new TransferEmailTemplates();
 
             // Get transfer details
             $transfer = $this->getTransferWithDetails($transferId);
@@ -1260,12 +1262,21 @@ class TransferModel extends BaseModel {
                         $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
                         if ($fromProjectPM) {
                             $recipients[] = $fromProjectPM;
+
+                            // Send email with one-click verification link
+                            $pmUser = $userModel->find($fromProjectPM);
+                            if ($pmUser) {
+                                $emailTemplates->sendVerificationRequest($transfer, $pmUser);
+                            }
                         }
                     } else if ($transfer['status'] === 'Pending Approval') {
                         // Notify approvers
                         $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
                         foreach ($approvers as $approver) {
                             $recipients[] = $approver['id'];
+
+                            // Send email with one-click approval link
+                            $emailTemplates->sendApprovalRequest($transfer, $approver);
                         }
                     }
                     break;
@@ -1278,6 +1289,9 @@ class TransferModel extends BaseModel {
                     $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
                     foreach ($approvers as $approver) {
                         $recipients[] = $approver['id'];
+
+                        // Send email with one-click approval link
+                        $emailTemplates->sendApprovalRequest($transfer, $approver);
                     }
 
                     // Notify initiator
@@ -1294,6 +1308,12 @@ class TransferModel extends BaseModel {
                     $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
                     if ($fromProjectPM) {
                         $recipients[] = $fromProjectPM;
+
+                        // Send email with one-click dispatch link
+                        $pmUser = $userModel->find($fromProjectPM);
+                        if ($pmUser) {
+                            $emailTemplates->sendDispatchRequest($transfer, $pmUser);
+                        }
                     }
 
                     // Notify initiator
@@ -1310,6 +1330,12 @@ class TransferModel extends BaseModel {
                     $toProjectPM = $projectModel->find($transfer['to_project'])['project_manager_id'] ?? null;
                     if ($toProjectPM) {
                         $recipients[] = $toProjectPM;
+
+                        // Send email with one-click receive link
+                        $pmUser = $userModel->find($toProjectPM);
+                        if ($pmUser) {
+                            $emailTemplates->sendReceiveRequest($transfer, $pmUser);
+                        }
                     }
 
                     // Notify initiator
