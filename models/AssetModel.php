@@ -2157,6 +2157,7 @@ class AssetModel extends BaseModel {
     /**
      * Get Warehouseman specific statistics
      * Warehouseman sees assets for their assigned project
+     * Handles both Capital Assets (Depreciable Equipment) and Consumable Inventory
      */
     private function getWarehousemanStats($projectId) {
         $conditions = [];
@@ -2172,14 +2173,25 @@ class AssetModel extends BaseModel {
 
         $sql = "
             SELECT
-                COUNT(*) as total_inventory,
-                SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_stock,
-                SUM(CASE WHEN a.status IN ('borrowed', 'in_use') THEN 1 ELSE 0 END) as items_borrowed,
-                SUM(CASE WHEN a.status = 'under_maintenance' THEN 1 ELSE 0 END) as under_maintenance,
-                SUM(CASE WHEN a.status = 'in_transit' THEN 1 ELSE 0 END) as in_transit,
+                -- Total counts
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN c.asset_type = 'capital' THEN 1 END) as total_capital_assets,
+                COUNT(CASE WHEN c.asset_type = 'inventory' OR c.is_consumable = 1 THEN 1 END) as total_inventory_items,
+
+                -- Capital Assets (Depreciable Equipment) - tracked by status
+                SUM(CASE WHEN c.asset_type = 'capital' AND a.status = 'available' THEN 1 ELSE 0 END) as capital_available,
+                SUM(CASE WHEN c.asset_type = 'capital' AND a.status IN ('borrowed', 'in_use') THEN 1 ELSE 0 END) as capital_in_use,
+                SUM(CASE WHEN c.asset_type = 'capital' AND a.status = 'under_maintenance' THEN 1 ELSE 0 END) as capital_maintenance,
+
+                -- Consumable Inventory - tracked by quantity
+                SUM(CASE WHEN (c.asset_type = 'inventory' OR c.is_consumable = 1) AND a.available_quantity > 0 THEN a.available_quantity ELSE 0 END) as consumable_units_available,
+                SUM(CASE WHEN (c.asset_type = 'inventory' OR c.is_consumable = 1) THEN a.quantity ELSE 0 END) as consumable_units_total,
+                COUNT(CASE WHEN (c.asset_type = 'inventory' OR c.is_consumable = 1) AND a.available_quantity = 0 THEN 1 END) as consumable_out_of_stock,
+                COUNT(CASE WHEN (c.asset_type = 'inventory' OR c.is_consumable = 1) AND a.available_quantity > 0 THEN 1 END) as consumable_in_stock,
+
+                -- Combined metrics
                 COUNT(CASE WHEN DATE(a.created_at) = CURDATE() THEN 1 END) as today_receipts,
-                SUM(CASE WHEN c.is_consumable = 1 AND a.available_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock,
-                SUM(CASE WHEN c.is_consumable = 1 AND a.available_quantity > 0 THEN a.available_quantity ELSE 0 END) as total_consumable_units
+                SUM(CASE WHEN a.status = 'in_transit' THEN 1 ELSE 0 END) as in_transit
             FROM assets a
             LEFT JOIN categories c ON a.category_id = c.id
             {$whereClause}

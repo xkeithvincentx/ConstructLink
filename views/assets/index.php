@@ -319,8 +319,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 </div><!-- End row -->
 
     <?php elseif (in_array($userRole, ['Warehouseman'])): ?>
-    <!-- Warehouseman Dashboard Cards -->
+    <!-- Warehouseman Dashboard Cards - Capital Assets & Consumable Inventory -->
     <div class="row g-3 mb-4">
+    <!-- Card 1: Total Items (Capital + Inventory) -->
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -329,12 +330,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-boxes text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Total Inventory</h6>
-                        <h3 class="mb-0"><?= $roleStats['total_inventory'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Total Items</h6>
+                        <h3 class="mb-0"><?= $roleStats['total_items'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-building me-1"></i>All assets in warehouse
+                    <i class="bi bi-gear me-1"></i><?= $roleStats['total_capital_assets'] ?? 0 ?> equipment,
+                    <i class="bi bi-stack ms-1 me-1"></i><?= $roleStats['total_inventory_items'] ?? 0 ?> inventory
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -344,6 +346,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
+
+    <!-- Card 2: Available (Capital Equipment + Consumable Units) -->
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
@@ -353,11 +357,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-1 small">Available Stock</h6>
-                        <h3 class="mb-0"><?= $roleStats['available_stock'] ?? 0 ?></h3>
+                        <h3 class="mb-0"><?= $roleStats['capital_available'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-check-circle me-1"></i>Ready for issue
+                    <i class="bi bi-gear me-1"></i>Equipment ready |
+                    <i class="bi bi-box ms-1 me-1"></i><?= number_format($roleStats['consumable_units_available'] ?? 0) ?> units
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -367,6 +372,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
+
+    <!-- Card 3: Capital Equipment In Use -->
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
@@ -375,12 +382,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-box-arrow-right text-info fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Items Borrowed</h6>
-                        <h3 class="mb-0"><?= $roleStats['items_borrowed'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Equipment In Use</h6>
+                        <h3 class="mb-0"><?= $roleStats['capital_in_use'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-box-arrow-right me-1"></i>Currently in use by projects
+                    <i class="bi bi-tools me-1"></i><?= $roleStats['capital_maintenance'] ?? 0 ?> under maintenance
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -390,24 +397,27 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
+
+    <!-- Card 4: Consumable Inventory Status -->
     <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['out_of_stock'] ?? 0) > 0 ? 'var(--danger-color)' : 'var(--neutral-color)' ?>;">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['consumable_out_of_stock'] ?? 0) > 0 ? 'var(--danger-color)' : 'var(--neutral-color)' ?>;">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-exclamation-circle <?= ($roleStats['out_of_stock'] ?? 0) > 0 ? 'text-danger' : 'text-secondary' ?> fs-5"></i>
+                        <i class="bi bi-stack <?= ($roleStats['consumable_out_of_stock'] ?? 0) > 0 ? 'text-danger' : 'text-secondary' ?> fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Out of Stock</h6>
-                        <h3 class="mb-0"><?= $roleStats['out_of_stock'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Inventory Status</h6>
+                        <h3 class="mb-0"><?= $roleStats['consumable_in_stock'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-tools me-1"></i><?= $roleStats['under_maintenance'] ?? 0 ?> under maintenance
+                    <i class="bi bi-check-circle me-1"></i>In stock |
+                    <i class="bi bi-exclamation-circle ms-1 me-1 <?= ($roleStats['consumable_out_of_stock'] ?? 0) > 0 ? 'text-danger' : '' ?>"></i><?= $roleStats['consumable_out_of_stock'] ?? 0 ?> out of stock
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
-                <?php if (($roleStats['out_of_stock'] ?? 0) > 0): ?>
+                <?php if (($roleStats['consumable_out_of_stock'] ?? 0) > 0): ?>
                     <a href="?route=assets&asset_type=out_of_stock" class="text-decoration-none small">
                         <i class="bi bi-eye me-1"></i>View Out of Stock
                     </a>
