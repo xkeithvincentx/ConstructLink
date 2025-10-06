@@ -16,6 +16,9 @@ define('APP_ROOT', __DIR__);
 define('APP_VERSION', '1.0.0');
 define('APP_NAME', 'ConstructLink™');
 
+// Include Composer autoloader for third-party packages
+require_once APP_ROOT . '/vendor/autoload.php';
+
 // Include configuration and autoloader
 require_once APP_ROOT . '/config/config.php';
 require_once APP_ROOT . '/core/Autoloader.php';

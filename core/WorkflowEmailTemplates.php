@@ -4,6 +4,9 @@
  * Reusable email notification system for all workflows (Transfers, Procurement, Maintenance, etc.)
  */
 
+require_once APP_ROOT . '/core/EmailService.php';
+require_once APP_ROOT . '/core/EmailActionToken.php';
+
 class WorkflowEmailTemplates {
     protected $emailService;
     protected $tokenManager;
