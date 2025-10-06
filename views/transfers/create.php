@@ -9,6 +9,7 @@ ob_start();
 
 $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
+$userCurrentProjectId = $user['current_project_id'] ?? null;
 ?>
 
 <!-- Action Buttons (No Header - handled by layout) -->
@@ -166,8 +167,11 @@ $userRole = $user['role_name'] ?? 'Guest';
                                     <option :value="project.id" x-text="project.name"></option>
                                 </template>
                             </select>
-                            <div class="form-text" x-show="formData.from_project">
+                            <div class="form-text" x-show="formData.from_project && !autoFilledToProject">
                                 <i class="bi bi-info-circle me-1"></i>Source project excluded from list
+                            </div>
+                            <div class="form-text text-success" x-show="autoFilledToProject">
+                                <i class="bi bi-check-circle me-1"></i>Auto-filled with your assigned project
                             </div>
                             <div class="invalid-feedback">Please select the destination project.</div>
                         </div>
@@ -281,10 +285,10 @@ $userRole = $user['role_name'] ?? 'Guest';
                             <strong>Streamlined Process:</strong> As a <?= htmlspecialchars($userRole) ?>, your transfers will be automatically processed through all approval steps!
                         </small>
                     </div>
-                    <div class="alert alert-warning p-2 mb-3" x-show="currentUserRole === 'Project Manager'">
+                    <div class="alert alert-info p-2 mb-3" x-show="currentUserRole === 'Project Manager'">
                         <small>
-                            <i class="bi bi-info-circle me-1"></i>
-                            <strong>Simplified Process:</strong> As a Project Manager, verification is automatic - only Finance/Asset Director approval needed.
+                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                            <strong>Auto-Fill:</strong> As a Project Manager, the destination project will automatically be set to your assigned project when you select an asset.
                         </small>
                     </div>
                     <ul class="list-unstyled small">
@@ -367,7 +371,9 @@ function transferForm() {
         showDropdown: false,
         highlightedIndex: -1,
         currentUserRole: '<?= htmlspecialchars($userRole) ?>',
-        
+        currentUserProjectId: <?= $userCurrentProjectId ? json_encode($userCurrentProjectId) : 'null' ?>,
+        autoFilledToProject: false,
+
         // Computed property for filtered to projects
         get filteredToProjects() {
             if (!this.formData.from_project) {
@@ -396,18 +402,35 @@ function transferForm() {
             this.selectedAssetInfo = asset;
             this.searchText = `${asset.ref} - ${asset.name}`;
             this.showDropdown = false;
-            
+
             // Auto-populate from project
             if (asset.project_id) {
                 this.formData.from_project = String(asset.project_id);
-                
+
                 // Update to_project dropdown to exclude from_project
                 this.updateToProjectDropdown();
-                
-                // Clear to_project if it's the same as from_project
-                if (this.formData.to_project == asset.project_id) {
-                    this.formData.to_project = '';
-                    $('#to_project').val('').trigger('change');
+
+                // Auto-fill to_project for Project Managers
+                // Finance/Asset Directors can select any project
+                if (this.currentUserRole === 'Project Manager' && this.currentUserProjectId) {
+                    // Only auto-fill if user's project is different from from_project
+                    if (this.currentUserProjectId != asset.project_id) {
+                        this.formData.to_project = String(this.currentUserProjectId);
+                        $('#to_project').val(this.currentUserProjectId).trigger('change');
+                        this.autoFilledToProject = true;
+                    } else {
+                        // If user's project is the same as from_project, clear to_project
+                        this.formData.to_project = '';
+                        $('#to_project').val('').trigger('change');
+                        this.autoFilledToProject = false;
+                    }
+                } else {
+                    // Clear to_project if it's the same as from_project
+                    if (this.formData.to_project == asset.project_id) {
+                        this.formData.to_project = '';
+                        $('#to_project').val('').trigger('change');
+                    }
+                    this.autoFilledToProject = false;
                 }
             }
         },
@@ -419,8 +442,9 @@ function transferForm() {
             this.formData.from_project = '';
             this.formData.to_project = '';
             this.showDropdown = false;
+            this.autoFilledToProject = false;
             this.filterAssets();
-            
+
             // Reset to_project dropdown
             $('#to_project').val('').trigger('change');
         },
