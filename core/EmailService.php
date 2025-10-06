@@ -43,7 +43,14 @@ class EmailService {
             $this->mailer->SMTPAuth = true;
             $this->mailer->Username = MAIL_USERNAME;
             $this->mailer->Password = MAIL_PASSWORD;
-            $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+
+            // Auto-detect encryption based on port
+            if (MAIL_PORT == 465) {
+                $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL for port 465
+            } else {
+                $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // TLS for port 587
+            }
+
             $this->mailer->Port = MAIL_PORT;
             $this->mailer->CharSet = 'UTF-8';
 
@@ -192,7 +199,7 @@ class EmailService {
             ";
         }
 
-        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 
         $html = "
         <!DOCTYPE html>
