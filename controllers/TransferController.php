@@ -185,16 +185,14 @@ class TransferController {
                     if ($result['success']) {
                         $currentUser = $this->auth->getCurrentUser();
                         $userRole = $currentUser['role_name'] ?? '';
-                        
+
                         // Different success messages based on workflow
                         if (in_array($userRole, ['Finance Director', 'Asset Director'])) {
                             $message = 'transfer_streamlined';
-                        } elseif ($userRole === 'Project Manager') {
-                            $message = 'transfer_simplified';
                         } else {
                             $message = 'transfer_created';
                         }
-                        
+
                         header('Location: ?route=transfers/view&id=' . $result['transfer']['id'] . '&message=' . $message);
                         exit;
                     } else {

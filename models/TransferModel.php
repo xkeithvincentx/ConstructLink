@@ -88,13 +88,9 @@ class TransferModel extends BaseModel {
                 $data['approval_date'] = date('Y-m-d H:i:s');
                 $data['received_by'] = $data['initiated_by'];
                 $data['receipt_date'] = date('Y-m-d H:i:s');
-            } elseif ($initiatorRole === 'Project Manager') {
-                // Project Manager - skip verification, go to approval
-                $data['status'] = 'Pending Approval';
-                $data['verified_by'] = $data['initiated_by'];
-                $data['verification_date'] = date('Y-m-d H:i:s');
             } else {
-                // Other roles - standard MVA workflow
+                // All other roles (including Project Manager) - standard MVA workflow
+                // FROM Project Manager must verify, then Finance/Asset Director approves
                 $data['status'] = 'Pending Verification';
             }
             
@@ -1314,7 +1310,7 @@ class TransferModel extends BaseModel {
                     $title = 'New Transfer Request Created';
                     $message = "Transfer request for {$assetName} ({$assetRef}) from {$fromProject} to {$toProject} has been created and requires verification.";
 
-                    // Notify verifiers (Project Managers)
+                    // Notify FROM Project Manager for verification
                     if ($transfer['status'] === 'Pending Verification') {
                         $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
                         if ($fromProjectPM) {
@@ -1326,30 +1322,9 @@ class TransferModel extends BaseModel {
                                 $emailTemplates->sendVerificationRequest($transfer, $pmUser);
                             }
                         }
-                    } else if ($transfer['status'] === 'Pending Approval') {
-                        // Status is Pending Approval (smart workflow skipped verification)
-                        // Still notify FROM Project Manager about the transfer
-                        $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
-                        if ($fromProjectPM) {
-                            $recipients[] = $fromProjectPM;
-
-                            // Send informational email (status update, no action needed)
-                            $pmUser = $userModel->getUserWithRole($fromProjectPM);
-                            if ($pmUser && !empty($pmUser['email'])) {
-                                $statusMessage = "A transfer request has been created for {$assetName} ({$assetRef}) from your project to {$toProject}. This transfer has been automatically verified and is now pending approval.";
-                                $emailTemplates->sendStatusUpdate($transfer, $pmUser, $statusMessage);
-                            }
-                        }
-
-                        // Notify approvers
-                        $approvers = $userModel->getUsersByRole(['Finance Director', 'Asset Director']);
-                        foreach ($approvers as $approver) {
-                            $recipients[] = $approver['id'];
-
-                            // Send email with one-click approval link
-                            $emailTemplates->sendApprovalRequest($transfer, $approver);
-                        }
                     }
+                    // Note: For Finance/Asset Director initiated transfers, status is 'Received' (completed)
+                    // No email needed on creation as they completed it themselves
                     break;
 
                 case 'verified':
