@@ -1277,6 +1277,8 @@ class TransferModel extends BaseModel {
      */
     private function sendTransferNotification($transferId, $action, $actorId) {
         try {
+            error_log("sendTransferNotification START: transferId={$transferId}, action={$action}, actorId={$actorId}");
+
             require_once APP_ROOT . '/models/NotificationModel.php';
             require_once APP_ROOT . '/models/ProjectModel.php';
             require_once APP_ROOT . '/models/UserModel.php';
@@ -1290,8 +1292,11 @@ class TransferModel extends BaseModel {
             // Get transfer details
             $transfer = $this->getTransferWithDetails($transferId);
             if (!$transfer) {
+                error_log("sendTransferNotification ERROR: Transfer not found");
                 return false;
             }
+
+            error_log("sendTransferNotification: Transfer status = {$transfer['status']}");
 
             $assetName = $transfer['asset_name'] ?? 'Asset';
             $assetRef = $transfer['asset_ref'] ?? '';
@@ -1312,16 +1317,29 @@ class TransferModel extends BaseModel {
 
                     // Notify FROM Project Manager for verification
                     if ($transfer['status'] === 'Pending Verification') {
+                        error_log("sendTransferNotification: Status is Pending Verification - sending email");
                         $fromProjectPM = $projectModel->find($transfer['from_project'])['project_manager_id'] ?? null;
+                        error_log("sendTransferNotification: FROM PM ID = " . ($fromProjectPM ?? 'NULL'));
+
                         if ($fromProjectPM) {
                             $recipients[] = $fromProjectPM;
 
                             // Send email with one-click verification link
                             $pmUser = $userModel->getUserWithRole($fromProjectPM);
+                            error_log("sendTransferNotification: PM User email = " . ($pmUser['email'] ?? 'NULL'));
+
                             if ($pmUser && !empty($pmUser['email'])) {
-                                $emailTemplates->sendVerificationRequest($transfer, $pmUser);
+                                error_log("sendTransferNotification: Calling sendVerificationRequest");
+                                $emailResult = $emailTemplates->sendVerificationRequest($transfer, $pmUser);
+                                error_log("sendTransferNotification: Email result = " . json_encode($emailResult));
+                            } else {
+                                error_log("sendTransferNotification: PM has no email - skipping");
                             }
+                        } else {
+                            error_log("sendTransferNotification: FROM Project has no PM assigned");
                         }
+                    } else {
+                        error_log("sendTransferNotification: Status is '{$transfer['status']}' - not Pending Verification, skipping email");
                     }
                     // Note: For Finance/Asset Director initiated transfers, status is 'Received' (completed)
                     // No email needed on creation as they completed it themselves
