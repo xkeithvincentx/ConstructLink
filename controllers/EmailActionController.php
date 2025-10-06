@@ -495,13 +495,29 @@ class EmailActionController {
         $iconColor = 'text-success';
         $actionButton = '';
 
+        // Only show "View Details" button if user is logged in
+        // Email action doesn't require login, but viewing details does
+        require_once APP_ROOT . '/core/Auth.php';
+        $auth = Auth::getInstance();
+        $isLoggedIn = $auth->isLoggedIn();
+
         $id = $routeId ?? $transferId;
-        if ($id) {
+        if ($id && $isLoggedIn) {
             $viewText = strpos($route, 'procurement') !== false ? 'View Order Details' : 'View Transfer Details';
             $actionButton = "
                 <div class=\"mt-4\">
                     <a href=\"?route={$route}&id={$id}\" class=\"btn btn-primary btn-lg\">
                         <i class=\"bi bi-eye me-2\"></i>{$viewText}
+                    </a>
+                </div>
+            ";
+        } elseif ($id && !$isLoggedIn) {
+            // Show login button instead
+            $actionButton = "
+                <div class=\"mt-4\">
+                    <p class=\"text-muted mb-3\">To view full details, please log in to the system.</p>
+                    <a href=\"?route=login\" class=\"btn btn-primary btn-lg\">
+                        <i class=\"bi bi-box-arrow-in-right me-2\"></i>Login to View Details
                     </a>
                 </div>
             ";

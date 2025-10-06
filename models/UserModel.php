@@ -719,17 +719,43 @@ class UserModel extends BaseModel {
     /**
      * Get users by role
      */
-    public function getUsersByRole() {
+    /**
+     * Get users by role name(s)
+     * @param string|array $roleNames Single role name or array of role names
+     * @return array Array of users with role information
+     */
+    public function getUsersByRole($roleNames = null) {
+        // If no role names provided, return role statistics (backward compatibility)
+        if ($roleNames === null) {
+            $sql = "
+                SELECT r.name as role_name, COUNT(u.id) as user_count
+                FROM roles r
+                LEFT JOIN users u ON r.id = u.role_id AND u.is_active = 1
+                GROUP BY r.id, r.name
+                ORDER BY user_count DESC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll();
+        }
+
+        // Get users by role name(s)
+        $roleNames = is_array($roleNames) ? $roleNames : [$roleNames];
+        $placeholders = str_repeat('?,', count($roleNames) - 1) . '?';
+
         $sql = "
-            SELECT r.name as role_name, COUNT(u.id) as user_count
-            FROM roles r
-            LEFT JOIN users u ON r.id = u.role_id AND u.is_active = 1
-            GROUP BY r.id, r.name
-            ORDER BY user_count DESC
+            SELECT u.*, r.name as role_name, r.description as role_description,
+                   p.name as project_name, p.code as project_code
+            FROM users u
+            INNER JOIN roles r ON u.role_id = r.id
+            LEFT JOIN projects p ON u.current_project_id = p.id
+            WHERE r.name IN ({$placeholders}) AND u.is_active = 1
+            ORDER BY u.full_name ASC
         ";
-        
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute();
+        $stmt->execute($roleNames);
         return $stmt->fetchAll();
     }
     
