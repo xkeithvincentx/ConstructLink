@@ -329,12 +329,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-building text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Warehouse Items</h6>
-                        <h3 class="mb-0"><?= $roleStats['warehouse_items'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Warehouse Inventory</h6>
+                        <h3 class="mb-0"><?= $roleStats['warehouse_inventory'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-building me-1"></i>Under your care
+                    <i class="bi bi-building me-1"></i>Total items under your care
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -349,15 +349,15 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-truck text-success fs-5"></i>
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Ready to Dispatch</h6>
-                        <h3 class="mb-0"><?= $roleStats['ready_for_dispatch'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Available Stock</h6>
+                        <h3 class="mb-0"><?= $roleStats['available_stock'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-truck me-1"></i>Available for issue
+                    <i class="bi bi-check-circle me-1"></i>Ready for issue
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -372,44 +372,50 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-tools text-info fs-5"></i>
+                        <i class="bi bi-box-arrow-right text-info fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Tools on Loan</h6>
+                        <h6 class="text-muted mb-1 small">Items Borrowed</h6>
                         <h3 class="mb-0"><?= $roleStats['tools_on_loan'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-tools me-1"></i><?= $roleStats['items_in_transit'] ?? 0 ?> in transit
+                    <i class="bi bi-arrow-left-right me-1"></i><?= $roleStats['items_in_transit'] ?? 0 ?> in transit
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
-                <a href="?route=assets&status=borrowed" class="text-decoration-none small">
-                    <i class="bi bi-filter me-1"></i>View Borrowed
+                <a href="?route=assets&status=in_use" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View In Use
                 </a>
             </div>
         </div>
     </div>
     <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+        <div class="card h-100" style="border-left: 4px solid <?= ($roleStats['reorder_alerts'] ?? 0) > 0 ? 'var(--warning-color)' : 'var(--neutral-color)' ?>;">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-box-arrow-in-down text-warning fs-5"></i>
+                        <i class="bi bi-exclamation-triangle <?= ($roleStats['reorder_alerts'] ?? 0) > 0 ? 'text-warning' : 'text-secondary' ?> fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Today's Receipts</h6>
-                        <h3 class="mb-0"><?= $roleStats['today_receipts'] ?? 0 ?></h3>
+                        <h6 class="text-muted mb-1 small">Low Stock Alerts</h6>
+                        <h3 class="mb-0"><?= $roleStats['reorder_alerts'] ?? 0 ?></h3>
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-box-arrow-in-down me-1"></i><?= $roleStats['reorder_alerts'] ?? 0 ?> need reorder
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= $roleStats['pending_verification'] ?? 0 ?> pending verification
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
-                <a href="?route=assets" class="text-decoration-none small">
-                    <i class="bi bi-eye me-1"></i>View Recent
-                </a>
+                <?php if (($roleStats['reorder_alerts'] ?? 0) > 0): ?>
+                    <a href="?route=assets&asset_type=low_stock" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>Review Alerts
+                    </a>
+                <?php else: ?>
+                    <span class="text-muted small">
+                        <i class="bi bi-check-circle me-1"></i>All stock levels good
+                    </span>
+                <?php endif; ?>
             </div>
         </div>
     </div>
