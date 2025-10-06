@@ -102,7 +102,18 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <!-- Role-Specific Asset Statistics Cards -->
 <?php if (in_array($userRole, ['Project Manager'])): ?>
 <!-- Project Manager Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -202,11 +213,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php elseif (in_array($userRole, ['Site Inventory Clerk'])): ?>
 <!-- Site Inventory Clerk Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -303,11 +327,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php elseif (in_array($userRole, ['Warehouseman'])): ?>
 <!-- Warehouseman Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -400,11 +437,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php elseif (in_array($userRole, ['System Admin'])): ?>
 <!-- System Admin Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -497,11 +547,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php elseif (in_array($userRole, ['Finance Director'])): ?>
 <!-- Finance Director Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -594,11 +657,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php elseif (in_array($userRole, ['Asset Director'])): ?>
 <!-- Asset Director Dashboard Cards -->
-<div class="row g-3 mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row g-3">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
@@ -695,11 +771,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 
 <?php else: ?>
 <!-- Default Asset Status Statistics Cards (for Procurement Officer and other roles) -->
-<div class="row mb-4">
+<!-- Mobile: Collapsible, Desktop: Always visible -->
+<div class="mb-4">
+    <!-- Mobile Toggle Button -->
+    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse" aria-expanded="false" aria-controls="statsCollapse">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        <span>View Statistics</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <!-- Collapsible on mobile, always visible on desktop -->
+    <div class="collapse d-md-block" id="statsCollapse">
+<div class="row">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-primary text-white h-100">
             <div class="card-body">
@@ -826,7 +915,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-</div>
+</div><!-- End row -->
+    </div><!-- End collapse -->
+</div><!-- End statistics section -->
 <?php endif; ?>
 
 <!-- MVA Workflow Statistics Cards - Only for roles that manage approvals -->
@@ -968,13 +1059,36 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- Filters -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h6 class="card-title mb-0">
-            <i class="bi bi-funnel me-2"></i>Filters
-        </h6>
+<!-- Mobile: Offcanvas, Desktop: Card -->
+<div class="mb-4">
+    <!-- Mobile Filter Button (Sticky) -->
+    <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3" style="z-index: 1020;">
+        <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+            <i class="bi bi-funnel me-1"></i>
+            Filters
+            <?php
+            $activeFilters = 0;
+            if (!empty($_GET['status'])) $activeFilters++;
+            if (!empty($_GET['category_id'])) $activeFilters++;
+            if (!empty($_GET['project_id'])) $activeFilters++;
+            if (!empty($_GET['maker_id'])) $activeFilters++;
+            if (!empty($_GET['asset_type'])) $activeFilters++;
+            if (!empty($_GET['workflow_status'])) $activeFilters++;
+            if (!empty($_GET['search'])) $activeFilters++;
+            if ($activeFilters > 0): ?>
+                <span class="badge bg-warning text-dark ms-1"><?= $activeFilters ?></span>
+            <?php endif; ?>
+        </button>
     </div>
-    <div class="card-body p-3">
+
+    <!-- Desktop: Card (always visible) -->
+    <div class="card d-none d-md-block">
+        <div class="card-header">
+            <h6 class="card-title mb-0">
+                <i class="bi bi-funnel me-2"></i>Filters
+            </h6>
+        </div>
+        <div class="card-body p-3">
         <form method="GET" action="" class="row g-3">
             <input type="hidden" name="route" value="assets">
             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
@@ -1086,8 +1200,118 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </a>
             </div>
         </form>
+        </div><!-- End card-body -->
+    </div><!-- End card (desktop) -->
+
+    <!-- Mobile: Offcanvas Filters -->
+    <div class="offcanvas offcanvas-bottom d-md-none" tabindex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel" style="height: 85vh;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="filterOffcanvasLabel">
+                <i class="bi bi-funnel me-2"></i>Filter Assets
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="GET" action="" id="mobileFilterForm">
+                <input type="hidden" name="route" value="assets">
+                <div class="mb-3">
+                    <label for="mobile_status" class="form-label">Status</label>
+                    <select class="form-select" id="mobile_status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="available" <?= ($_GET['status'] ?? '') === 'available' ? 'selected' : '' ?>>Available</option>
+                        <option value="in_use" <?= ($_GET['status'] ?? '') === 'in_use' ? 'selected' : '' ?>>In Use</option>
+                        <option value="borrowed" <?= ($_GET['status'] ?? '') === 'borrowed' ? 'selected' : '' ?>>Borrowed</option>
+                        <option value="in_transit" <?= ($_GET['status'] ?? '') === 'in_transit' ? 'selected' : '' ?>>In Transit</option>
+                        <option value="under_maintenance" <?= ($_GET['status'] ?? '') === 'under_maintenance' ? 'selected' : '' ?>>Under Maintenance</option>
+                        <option value="retired" <?= ($_GET['status'] ?? '') === 'retired' ? 'selected' : '' ?>>Retired</option>
+                        <option value="disposed" <?= ($_GET['status'] ?? '') === 'disposed' ? 'selected' : '' ?>>Disposed</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_category_id" class="form-label">Category</label>
+                    <select class="form-select" id="mobile_category_id" name="category_id">
+                        <option value="">All Categories</option>
+                        <?php if (isset($categories) && is_array($categories)): ?>
+                            <?php foreach ($categories as $category): ?>
+                                <option value="<?= $category['id'] ?>"
+                                        <?= ($_GET['category_id'] ?? '') == $category['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($category['name'] ?? 'Unknown') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                <div class="mb-3">
+                    <label for="mobile_project_id" class="form-label">Project</label>
+                    <select class="form-select" id="mobile_project_id" name="project_id">
+                        <option value="">All Projects</option>
+                        <?php if (isset($projects) && is_array($projects)): ?>
+                            <?php foreach ($projects as $project): ?>
+                                <option value="<?= $project['id'] ?>"
+                                        <?= ($_GET['project_id'] ?? '') == $project['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($project['name'] ?? 'Unknown') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+                <div class="mb-3">
+                    <label for="mobile_maker_id" class="form-label">Manufacturer</label>
+                    <select class="form-select" id="mobile_maker_id" name="maker_id">
+                        <option value="">All Manufacturers</option>
+                        <?php if (isset($makers) && is_array($makers)): ?>
+                            <?php foreach ($makers as $maker): ?>
+                                <option value="<?= $maker['id'] ?>"
+                                        <?= ($_GET['maker_id'] ?? '') == $maker['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($maker['name'] ?? 'Unknown') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="mobile_asset_type" class="form-label">Asset Type</label>
+                    <select class="form-select" id="mobile_asset_type" name="asset_type">
+                        <option value="">All Types</option>
+                        <option value="consumable" <?= ($_GET['asset_type'] ?? '') === 'consumable' ? 'selected' : '' ?>>Consumable</option>
+                        <option value="non_consumable" <?= ($_GET['asset_type'] ?? '') === 'non_consumable' ? 'selected' : '' ?>>Non-Consumable</option>
+                        <option value="low_stock" <?= ($_GET['asset_type'] ?? '') === 'low_stock' ? 'selected' : '' ?>>Low Stock</option>
+                        <option value="out_of_stock" <?= ($_GET['asset_type'] ?? '') === 'out_of_stock' ? 'selected' : '' ?>>Out of Stock</option>
+                    </select>
+                </div>
+                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
+                <div class="mb-3">
+                    <label for="mobile_workflow_status" class="form-label">Workflow Status</label>
+                    <select class="form-select" id="mobile_workflow_status" name="workflow_status">
+                        <option value="">All Workflow Status</option>
+                        <option value="draft" <?= ($_GET['workflow_status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
+                        <option value="pending_verification" <?= ($_GET['workflow_status'] ?? '') === 'pending_verification' ? 'selected' : '' ?>>Pending Verification</option>
+                        <option value="pending_authorization" <?= ($_GET['workflow_status'] ?? '') === 'pending_authorization' ? 'selected' : '' ?>>Pending Authorization</option>
+                        <option value="approved" <?= ($_GET['workflow_status'] ?? '') === 'approved' ? 'selected' : '' ?>>Approved</option>
+                        <option value="rejected" <?= ($_GET['workflow_status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                    </select>
+                </div>
+                <?php endif; ?>
+                <div class="mb-3">
+                    <label for="mobile_search" class="form-label">Enhanced Search</label>
+                    <input type="text" class="form-control" id="mobile_search" name="search"
+                           placeholder="Search by asset name, reference, serial number, or disciplines..."
+                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Apply Filters
+                    </button>
+                    <a href="?route=assets" class="btn btn-outline-secondary flex-grow-1">
+                        <i class="bi bi-x-circle me-1"></i>Clear All
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+</div><!-- End filters section -->
 
 <!-- Assets Table -->
 <div class="card">
@@ -1119,7 +1343,129 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <?php endif; ?>
             </div>
         <?php else: ?>
-            <div class="table-responsive">
+            <!-- Mobile Card View (visible on small screens) -->
+            <div class="d-md-none">
+                <?php foreach ($assets as $asset): ?>
+                    <?php
+                    // Get asset data for mobile view
+                    $status = $asset['status'] ?? 'available';
+                    $statusClasses = [
+                        'available' => 'bg-success',
+                        'in_use' => 'bg-primary',
+                        'borrowed' => 'bg-info',
+                        'in_transit' => 'bg-warning',
+                        'under_maintenance' => 'bg-secondary',
+                        'retired' => 'bg-dark',
+                        'disposed' => 'bg-danger'
+                    ];
+                    $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                    $quantity = (int)($asset['quantity'] ?? 1);
+                    $availableQuantity = (int)($asset['available_quantity'] ?? 1);
+                    $isConsumable = isset($asset['is_consumable']) && $asset['is_consumable'] == 1;
+                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                    $assetSource = $asset['asset_source'] ?? 'manual';
+                    ?>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="text-decoration-none fw-bold">
+                                        <?= htmlspecialchars($asset['ref'] ?? 'N/A') ?>
+                                    </a>
+                                    <?php if (!empty($asset['qr_code'])): ?>
+                                        <i class="bi bi-qr-code text-primary ms-1" title="QR Code Available"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="badge <?= $statusClass ?>"><?= ucfirst($status) ?></span>
+                            </div>
+
+                            <!-- Asset Name -->
+                            <div class="mb-2">
+                                <div class="fw-medium"><?= htmlspecialchars($asset['name'] ?? 'Unknown') ?></div>
+                                <?php if (!empty($asset['serial_number'])): ?>
+                                    <small class="text-muted">S/N: <?= htmlspecialchars($asset['serial_number']) ?></small>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Category and Location/Project -->
+                            <div class="mb-2">
+                                <small class="text-muted d-block mb-1">Category</small>
+                                <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['category_name'] ?? 'N/A') ?></span>
+                                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                                    <small class="text-muted d-block mt-2 mb-1">Project</small>
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['project_name'] ?? 'N/A') ?></span>
+                                <?php else: ?>
+                                    <small class="text-muted d-block mt-2 mb-1">Location</small>
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['location'] ?? 'Warehouse') ?></span>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="mb-2">
+                                <small class="text-muted">Quantity: </small>
+                                <strong><?= number_format($availableQuantity) ?> / <?= number_format($quantity) ?></strong>
+                                <small class="text-muted"><?= htmlspecialchars($asset['unit'] ?? 'pcs') ?></small>
+                                <?php if ($isConsumable && $availableQuantity == 0): ?>
+                                    <span class="badge bg-danger ms-1">Out of stock</span>
+                                <?php elseif ($isConsumable && $availableQuantity <= ($quantity * 0.2)): ?>
+                                    <span class="badge bg-warning text-dark ms-1">Low stock</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex gap-2 flex-wrap mt-3">
+                                <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="btn btn-sm btn-primary flex-grow-1">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+
+                                <?php
+                                // Show workflow-specific actions for legacy assets
+                                if ($assetSource === 'legacy'):
+                                    if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
+                                ?>
+                                    <button type="button" class="btn btn-sm btn-warning flex-grow-1"
+                                            onclick="openEnhancedVerification(<?= $asset['id'] ?>);">
+                                        <i class="bi bi-shield-check me-1"></i>Verify
+                                    </button>
+                                <?php
+                                    elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
+                                ?>
+                                    <button type="button" class="btn btn-sm btn-info flex-grow-1"
+                                            onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);">
+                                        <i class="bi bi-shield-check me-1"></i>Authorize
+                                    </button>
+                                <?php
+                                    endif;
+                                endif;
+                                ?>
+
+                                <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
+                                    <a href="?route=assets/edit&id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-warning flex-grow-1">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
+                                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-success flex-grow-1">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Withdraw
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1"
+                                            onclick="deleteAsset(<?= $asset['id'] ?>)">
+                                        <i class="bi bi-trash me-1"></i>Delete
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Desktop Table View (hidden on small screens) -->
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover table-sm" id="assetsTable">
                     <thead class="table-light">
                         <tr>
@@ -1155,16 +1501,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2">
-                                            <i class="bi bi-box text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-medium"><?= htmlspecialchars($asset['name'] ?? 'Unknown') ?></div>
-                                            <?php if (!empty($asset['serial_number'])): ?>
-                                                <small class="text-muted">S/N: <?= htmlspecialchars($asset['serial_number']) ?></small>
-                                            <?php endif; ?>
-                                        </div>
+                                    <div>
+                                        <div class="fw-medium"><?= htmlspecialchars($asset['name'] ?? 'Unknown') ?></div>
+                                        <?php if (!empty($asset['serial_number'])): ?>
+                                            <small class="text-muted">S/N: <?= htmlspecialchars($asset['serial_number']) ?></small>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">
