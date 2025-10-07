@@ -1,4 +1,13 @@
 <?php
+/**
+ * Create Inventory Item View
+ *
+ * DATABASE MAPPING NOTE:
+ * - This view displays "Inventory Item" / "Item" to users
+ * - Backend uses AssetController and `assets` database table
+ * - See controllers/AssetController.php header for full mapping documentation
+ */
+
 // Start output buffering to capture content
 ob_start();
 
@@ -11,7 +20,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <div class="d-flex justify-content-end align-items-center mb-4">
     <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>
-        <span class="d-none d-sm-inline">Back to Assets</span>
+        <span class="d-none d-sm-inline">Back to Inventory</span>
         <span class="d-sm-none">Back</span>
     </a>
 </div>
@@ -40,15 +49,15 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <?php if (!in_array($user['role_name'], $roleConfig['assets/create'] ?? [])): ?>
-    <div class="alert alert-danger mt-4">You do not have permission to create a new asset.</div>
+    <div class="alert alert-danger mt-4">You do not have permission to create a new inventory item.</div>
 <?php else: ?>
 <div class="row">
     <div class="col-lg-8 col-xl-9">
-        <!-- Asset Creation Form -->
+        <!-- Item Creation Form -->
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-form-check me-2"></i>Asset Information
+                    <i class="bi bi-form-check me-2"></i>Item Information
                 </h6>
             </div>
             <div class="card-body">
@@ -68,18 +77,18 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="ref" class="form-label">Asset Reference</label>
-                                <input type="text" class="form-control" id="ref" name="ref" 
+                                <label for="ref" class="form-label">Item Reference</label>
+                                <input type="text" class="form-control" id="ref" name="ref"
                                        value="<?= htmlspecialchars($formData['ref'] ?? '') ?>"
                                        placeholder="Leave blank to auto-generate">
                                 <div class="form-text">Leave blank to auto-generate with system prefix</div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-8">
                             <div class="mb-3">
                                 <label for="name" class="form-label">
-                                    Asset Name <span class="text-danger">*</span>
+                                    Item Name <span class="text-danger">*</span>
                                     <small class="text-muted ms-2">Auto-generated from equipment selection</small>
                                 </label>
                                 <div class="input-group">
@@ -558,7 +567,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <i class="bi bi-x-circle me-1"></i>Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle me-1"></i>Create Asset
+                            <i class="bi bi-check-circle me-1"></i>Create Item
                         </button>
                     </div>
                 </form>
@@ -567,18 +576,18 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
     
     <div class="col-lg-4 col-xl-3">
-        <!-- Asset Creation Guidelines -->
+        <!-- Item Creation Guidelines -->
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-lightbulb me-2"></i>Asset Creation Guidelines
+                    <i class="bi bi-lightbulb me-2"></i>Item Creation Guidelines
                 </h6>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Asset reference will be auto-generated if left blank
+                        Item reference will be auto-generated if left blank
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
@@ -590,7 +599,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        Include detailed specifications for technical assets
+                        Include detailed specifications for technical items
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success me-2"></i>
@@ -598,12 +607,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </li>
                     <li class="mb-0">
                         <i class="bi bi-check-circle text-success me-2"></i>
-                        New assets are set to "Available" status
+                        New items are set to "Available" status
                     </li>
                 </ul>
             </div>
         </div>
-        
+
         <!-- Required Fields -->
         <div class="card mt-3">
             <div class="card-header">
@@ -613,7 +622,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-body">
                 <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1">• Asset Name</li>
+                    <li class="mb-1">• Item Name</li>
                     <li class="mb-1">• Category</li>
                     <li class="mb-1">• Project Assignment</li>
                     <li class="mb-0">• Acquired Date</li>
@@ -1449,7 +1458,7 @@ function initializeQuickEntry() {
         <div class="card bg-light border-primary mb-4">
             <div class="card-header bg-primary text-white py-2">
                 <h6 class="mb-0">
-                    <i class="bi bi-lightning me-2"></i>Asset Quick Entry
+                    <i class="bi bi-lightning me-2"></i>Item Quick Entry
                     <small class="ms-2 opacity-75">Click to auto-fill common items</small>
                 </h6>
             </div>
@@ -1668,26 +1677,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const helpContent = `
                 <div class="row">
                     <div class="col-12">
-                        <h6><i class="bi bi-info-circle me-2"></i>Asset Creation Help</h6>
-                        <p>This form includes intelligent features to help you create standardized assets:</p>
-                        
-                        <h6><i class="bi bi-spell-check me-2"></i>Smart Asset Names</h6>
+                        <h6><i class="bi bi-info-circle me-2"></i>Item Creation Help</h6>
+                        <p>This form includes intelligent features to help you create standardized inventory items:</p>
+
+                        <h6><i class="bi bi-spell-check me-2"></i>Smart Item Names</h6>
                         <ul>
-                            <li>Start typing an asset name to see suggestions</li>
+                            <li>Start typing an item name to see suggestions</li>
                             <li>The system will detect and correct common spelling mistakes</li>
-                            <li>Green icon means the asset is recognized</li>
+                            <li>Green icon means the item is recognized</li>
                             <li>Yellow icon means partial match - please verify</li>
                         </ul>
-                        
+
                         <h6><i class="bi bi-building me-2"></i>Brand Standardization</h6>
                         <ul>
                             <li>Brand names are automatically standardized (e.g., "dewalt" becomes "DeWalt")</li>
                             <li>The system suggests similar brands if exact match is not found</li>
                         </ul>
-                        
+
                         <h6><i class="bi bi-diagram-3 me-2"></i>Multi-Disciplinary Classification</h6>
                         <ul>
-                            <li>Select which engineering disciplines use this asset</li>
+                            <li>Select which engineering disciplines use this item</li>
                             <li>This helps with better organization and searchability</li>
                         </ul>
                         

@@ -348,12 +348,12 @@ class AssetController {
             $procurements = [];
         }
         
-        $pageTitle = 'Create Asset - ConstructLink™';
-        $pageHeader = 'Create New Asset';
+        $pageTitle = 'Create Inventory Item - ConstructLink™';
+        $pageHeader = 'Create New Item';
         $breadcrumbs = [
             ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-            ['title' => 'Assets', 'url' => '?route=assets'],
-            ['title' => 'Create Asset', 'url' => '?route=assets/create']
+            ['title' => 'Inventory', 'url' => '?route=assets'],
+            ['title' => 'Create Item', 'url' => '?route=assets/create']
         ];
         
         include APP_ROOT . '/views/assets/create.php';
