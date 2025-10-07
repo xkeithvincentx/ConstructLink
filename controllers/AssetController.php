@@ -914,12 +914,12 @@ class AssetController {
             $brandStmt = $db->query($brandQuery);
             $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $pageTitle = 'Add Legacy Asset - ConstructLink™';
-            $pageHeader = 'Add Legacy Asset';
+            $pageTitle = 'Add Legacy Item - ConstructLink™';
+            $pageHeader = 'Add Legacy Item';
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Assets', 'url' => '?route=assets'],
-                ['title' => 'Add Legacy Asset', 'url' => '?route=assets/legacy-create']
+                ['title' => 'Inventory', 'url' => '?route=assets'],
+                ['title' => 'Add Legacy Item', 'url' => '?route=assets/legacy-create']
             ];
             
             include APP_ROOT . '/views/assets/legacy_create.php';

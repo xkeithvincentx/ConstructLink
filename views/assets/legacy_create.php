@@ -1,4 +1,13 @@
 <?php
+/**
+ * Add Legacy Inventory Item View
+ *
+ * DATABASE MAPPING NOTE:
+ * - This view displays "Legacy Item" / "Legacy Inventory Item" to users
+ * - Backend uses AssetController and `assets` database table
+ * - See controllers/AssetController.php header for full mapping documentation
+ */
+
 // Start output buffering to capture content
 ob_start();
 
@@ -11,7 +20,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <div class="d-flex justify-content-end align-items-center mb-4">
     <a href="?route=assets" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i>
-        <span class="d-none d-sm-inline">Back to Assets</span>
+        <span class="d-none d-sm-inline">Back to Inventory</span>
         <span class="d-sm-none">Back</span>
     </a>
 </div>
@@ -19,11 +28,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <!-- Info Alert -->
 <div class="alert alert-info" role="alert">
     <h6 class="alert-heading">
-        <i class="bi bi-info-circle me-2"></i>Legacy Asset Entry
+        <i class="bi bi-info-circle me-2"></i>Legacy Item Entry
     </h6>
     <p class="mb-0">
-        Use this form to quickly add existing assets that are already on the project site. 
-        Assets will be pending verification by the Site Inventory Clerk before final authorization.
+        Use this form to quickly add existing inventory items that are already on the project site.
+        Items will be pending verification by the Site Inventory Clerk before final authorization.
     </p>
 </div>
 
@@ -51,14 +60,14 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <?php if (!in_array($user['role_name'], $roleConfig['assets/legacy-create'] ?? [])): ?>
-    <div class="alert alert-danger mt-4">You do not have permission to create legacy assets.</div>
+    <div class="alert alert-danger mt-4">You do not have permission to create legacy inventory items.</div>
 <?php else: ?>
 <div class="row">
     <div class="col-lg-8 col-xl-9">
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-clipboard me-1"></i>Legacy Asset Information
+                    <i class="bi bi-clipboard me-1"></i>Legacy Item Information
                 </h6>
             </div>
             <div class="card-body">
@@ -109,11 +118,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             </div>
                         </div>
                         
-                        <!-- Intelligent Asset Name Generation -->
+                        <!-- Intelligent Item Name Generation -->
                         <div class="col-12">
                             <div class="mb-3">
-                                <label for="asset_name" class="form-label">Asset Name</label>
-                                
+                                <label for="asset_name" class="form-label">Item Name</label>
+
                                 <!-- Name Preview -->
                                 <div id="name-preview" class="alert alert-success d-none" style="margin-bottom: 0.5rem;">
                                     <div class="d-flex align-items-center justify-content-between">
@@ -127,9 +136,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="asset_name" name="name" 
+                                    <input type="text" class="form-control" id="asset_name" name="name"
                                            value="<?= htmlspecialchars($formData['name'] ?? '') ?>"
                                            placeholder="Name will be generated automatically or enter custom name"
                                            maxlength="200">
@@ -137,10 +146,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 </div>
-                                
+
                                 <div class="form-text">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    Asset name is automatically generated from your selections above. Click the pencil to edit manually.
+                                    Item name is automatically generated from your selections above. Click the pencil to edit manually.
                                 </div>
                                 
                                 <!-- Hidden fields for intelligent naming -->
@@ -598,7 +607,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <i class="bi bi-arrow-left me-1"></i>Cancel
                                 </button>
                                 <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-check me-1"></i>Add Legacy Asset
+                                    <i class="bi bi-check me-1"></i>Add Legacy Item
                                 </button>
                             </div>
                         </div>
@@ -607,7 +616,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4 col-xl-3">
         <!-- Help Card -->
         <div class="card">
@@ -617,8 +626,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </h6>
             </div>
             <div class="card-body">
-                <h6 class="text-success">What is a Legacy Asset?</h6>
-                <p class="small">Legacy assets are items that already exist on the project site before the ConstructLink system was implemented.</p>
+                <h6 class="text-success">What is a Legacy Item?</h6>
+                <p class="small">Legacy items are inventory that already exists on the project site before the ConstructLink system was implemented.</p>
                 
                 <h6 class="text-primary">Workflow Process:</h6>
                 <ol class="small">
@@ -3054,12 +3063,12 @@ document.addEventListener('DOMContentLoaded', function() {
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Add Legacy Asset - ConstructLink™';
-$pageHeader = 'Add Legacy Asset';
+$pageTitle = 'Add Legacy Item - ConstructLink™';
+$pageHeader = 'Add Legacy Item';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Assets', 'url' => '?route=assets'],
-    ['title' => 'Add Legacy Asset', 'url' => '?route=assets/legacy-create']
+    ['title' => 'Inventory', 'url' => '?route=assets'],
+    ['title' => 'Add Legacy Item', 'url' => '?route=assets/legacy-create']
 ];
 
 // Include main layout
