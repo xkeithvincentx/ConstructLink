@@ -2828,11 +2828,11 @@ const userRole = '<?= htmlspecialchars($user['role_name'] ?? '', ENT_QUOTES, 'UT
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Assets - ConstructLink™';
-$pageHeader = 'Asset Management';
+$pageTitle = 'Inventory - ConstructLink™';
+$pageHeader = 'Inventory Management';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Assets', 'url' => '?route=assets']
+    ['title' => 'Inventory', 'url' => '?route=assets']
 ];
 
 // Include main layout
