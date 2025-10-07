@@ -183,7 +183,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-graph-up me-1"></i><?= $roleStats['assets_in_use'] ?? 0 ?> assets in use
+                    <i class="bi bi-graph-up me-1"></i><?= $roleStats['assets_in_use'] ?? 0 ?> items in use
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -451,7 +451,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-globe text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">System Assets</h6>
+                        <h6 class="text-muted mb-1 small">System Inventory</h6>
                         <h3 class="mb-0"><?= $roleStats['total_system_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
@@ -461,7 +461,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-footer bg-light border-top">
                 <a href="?route=assets" class="text-decoration-none small">
-                    <i class="bi bi-eye me-1"></i>View All Assets
+                    <i class="bi bi-eye me-1"></i>View All Items
                 </a>
             </div>
         </div>
@@ -520,7 +520,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-trash text-secondary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Disposed Assets</h6>
+                        <h6 class="text-muted mb-1 small">Disposed Items</h6>
                         <h3 class="mb-0"><?= $roleStats['disposed_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
@@ -571,7 +571,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-gem text-success fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">High Value Assets</h6>
+                        <h6 class="text-muted mb-1 small">High Value Items</h6>
                         <h3 class="mb-0"><?= $roleStats['high_value_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
@@ -645,7 +645,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <i class="bi bi-shield-check text-primary fs-5"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Managed Assets</h6>
+                        <h6 class="text-muted mb-1 small">Managed Inventory</h6>
                         <h3 class="mb-0"><?= $roleStats['total_managed_assets'] ?? 0 ?></h3>
                     </div>
                 </div>
@@ -655,7 +655,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-footer bg-light border-top">
                 <a href="?route=assets" class="text-decoration-none small">
-                    <i class="bi bi-eye me-1"></i>View All Assets
+                    <i class="bi bi-eye me-1"></i>View All Items
                 </a>
             </div>
         </div>
@@ -673,7 +673,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                 </div>
                 <p class="text-muted mb-0 small">
-                    <i class="bi bi-speedometer2 me-1"></i>Asset efficiency
+                    <i class="bi bi-speedometer2 me-1"></i>Inventory efficiency
                 </p>
             </div>
             <div class="card-footer bg-light border-top">
@@ -736,14 +736,14 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 </div><!-- End row -->
 
     <?php else: ?>
-    <!-- Default Asset Status Statistics Cards (for Procurement Officer and other roles) -->
+    <!-- Default Inventory Status Statistics Cards (for Procurement Officer and other roles) -->
     <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-primary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="card-title">Total Assets</h6>
+                        <h6 class="card-title">Total Inventory</h6>
                         <h3 class="mb-0"><?= $assetStats['total_assets'] ?? 0 ?></h3>
                         <?php if (isset($assetStats['total_quantity']) && $assetStats['total_quantity'] > $assetStats['total_assets']): ?>
                             <small class="opacity-75">
@@ -765,7 +765,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-footer bg-primary-dark">
                 <a href="?route=assets" class="text-white text-decoration-none">
-                    <small><i class="bi bi-eye me-1"></i>View All Assets</small>
+                    <small><i class="bi bi-eye me-1"></i>View All Items</small>
                 </a>
             </div>
         </div>
@@ -880,7 +880,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <i class="bi bi-clock-history me-2"></i>Pending Verification
                 </h6>
                 <h4 class="text-warning mb-0"><?= $workflowStats['pending_verification'] ?? 0 ?></h4>
-                <small class="text-muted">Assets awaiting Asset Director review</small>
+                <small class="text-muted">Items awaiting Asset Director review</small>
                 <?php if (in_array($userRole, ['Asset Director', 'System Admin']) && ($workflowStats['pending_verification'] ?? 0) > 0): ?>
                     <div class="mt-2">
                         <a href="?route=assets&workflow_status=pending_verification" class="btn btn-sm btn-outline-warning">
@@ -898,7 +898,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <i class="bi bi-person-check me-2"></i>Pending Authorization
                 </h6>
                 <h4 class="text-info mb-0"><?= $workflowStats['pending_authorization'] ?? 0 ?></h4>
-                <small class="text-muted">Assets awaiting Finance Director approval</small>
+                <small class="text-muted">Items awaiting Finance Director approval</small>
                 <?php if (in_array($userRole, ['Finance Director', 'System Admin']) && ($workflowStats['pending_authorization'] ?? 0) > 0): ?>
                     <div class="mt-2">
                         <a href="?route=assets&workflow_status=pending_authorization" class="btn btn-sm btn-outline-info">
@@ -913,10 +913,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <div class="card border-success">
             <div class="card-body text-center">
                 <h6 class="card-title text-success">
-                    <i class="bi bi-check-circle-fill me-2"></i>Approved Assets
+                    <i class="bi bi-check-circle-fill me-2"></i>Approved Items
                 </h6>
                 <h4 class="text-success mb-0"><?= $workflowStats['approved'] ?? 0 ?></h4>
-                <small class="text-muted">Assets ready for deployment</small>
+                <small class="text-muted">Items ready for deployment</small>
                 <?php if (($workflowStats['approved'] ?? 0) > 0): ?>
                     <div class="mt-2">
                         <small class="text-success">
@@ -932,10 +932,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <div class="card border-danger">
             <div class="card-body text-center">
                 <h6 class="card-title text-danger">
-                    <i class="bi bi-x-circle me-2"></i>Rejected Assets
+                    <i class="bi bi-x-circle me-2"></i>Rejected Items
                 </h6>
                 <h4 class="text-danger mb-0"><?= $workflowStats['rejected'] ?? 0 ?></h4>
-                <small class="text-muted">Assets requiring attention</small>
+                <small class="text-muted">Items requiring attention</small>
                 <?php if (($workflowStats['rejected'] ?? 0) > 0): ?>
                     <div class="mt-2">
                         <a href="?route=assets&workflow_status=rejected" class="btn btn-sm btn-outline-danger">
@@ -953,9 +953,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php if (!empty($assetsDueForMaintenance)): ?>
     <div class="alert alert-warning" role="alert">
         <h6 class="alert-heading">
-            <i class="bi bi-exclamation-triangle me-2"></i>Assets Due for Maintenance
+            <i class="bi bi-exclamation-triangle me-2"></i>Items Due for Maintenance
         </h6>
-        <p class="mb-2">There are <?= count($assetsDueForMaintenance) ?> asset(s) that require maintenance attention:</p>
+        <p class="mb-2">There are <?= count($assetsDueForMaintenance) ?> item(s) that require maintenance attention:</p>
         <ul class="mb-0">
             <?php foreach (array_slice($assetsDueForMaintenance, 0, 3) as $asset): ?>
                 <li>
@@ -979,7 +979,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <i class="bi bi-exclamation-circle me-2"></i>Out of Stock Alert
         </h6>
         <p class="mb-2">
-            <strong><?= $assetStats['out_of_stock_count'] ?></strong> consumable asset(s) are completely out of stock and need immediate replenishment.
+            <strong><?= $assetStats['out_of_stock_count'] ?></strong> consumable item(s) are completely out of stock and need immediate replenishment.
         </p>
         <a href="?route=assets&asset_type=out_of_stock" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-eye me-1"></i>View Out of Stock Items
@@ -993,7 +993,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <i class="bi bi-exclamation-triangle me-2"></i>Low Stock Warning
         </h6>
         <p class="mb-2">
-            <strong><?= $assetStats['low_stock_count'] ?></strong> consumable asset(s) are running low on stock (below 20% of total quantity).
+            <strong><?= $assetStats['low_stock_count'] ?></strong> consumable item(s) are running low on stock (below 20% of total quantity).
         </p>
         <div class="d-flex gap-2">
             <a href="?route=assets&asset_type=low_stock" class="btn btn-sm btn-outline-warning">
@@ -1284,11 +1284,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <?php if (empty($assets)): ?>
             <div class="text-center py-5">
                 <i class="bi bi-box-seam display-1 text-muted"></i>
-                <h5 class="mt-3 text-muted">No assets found</h5>
-                <p class="text-muted">Try adjusting your filters or add your first asset to the system.</p>
+                <h5 class="mt-3 text-muted">No inventory items found</h5>
+                <p class="text-muted">Try adjusting your filters or add your first item to the system.</p>
                 <?php if (in_array($userRole, $roleConfig['assets/create'] ?? [])): ?>
                     <a href="?route=assets/create" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Add First Asset
+                        <i class="bi bi-plus-circle me-1"></i>Add First Item
                     </a>
                 <?php endif; ?>
             </div>
