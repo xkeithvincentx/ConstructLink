@@ -106,69 +106,93 @@
                             </div>
 
                             <!-- Actions -->
-                            <div class="d-flex gap-2 flex-wrap mt-3">
+                            <div class="d-flex gap-2 mt-3">
+                                <!-- Primary View Button -->
                                 <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="btn btn-sm btn-primary flex-grow-1">
-                                    <i class="bi bi-eye me-1"></i>View
+                                    <i class="bi bi-eye me-1"></i>View Details
                                 </a>
 
-                                <?php
-                                // Show workflow-specific actions for legacy assets
-                                if ($assetSource === 'legacy'):
-                                    if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
-                                ?>
-                                    <button type="button" class="btn btn-sm btn-warning flex-grow-1"
-                                            onclick="openEnhancedVerification(<?= $asset['id'] ?>);">
-                                        <i class="bi bi-shield-check me-1"></i>Verify
+                                <!-- Actions Dropdown -->
+                                <div class="btn-group">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
                                     </button>
-                                <?php
-                                    elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
-                                ?>
-                                    <button type="button" class="btn btn-sm btn-info flex-grow-1"
-                                            onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);">
-                                        <i class="bi bi-shield-check me-1"></i>Authorize
-                                    </button>
-                                <?php
-                                    endif;
-                                endif;
-                                ?>
-
-                                <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
-                                    <a href="?route=assets/edit&id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-secondary flex-grow-1">
-                                        <i class="bi bi-pencil me-1"></i>Edit
-                                    </a>
-                                <?php endif; ?>
-
-                                <?php
-                                // Show appropriate action based on asset type
-                                if ($status === 'available'):
-                                    if ($isConsumable):
-                                        // Consumable items: Show Withdraw button
-                                        if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
-                                ?>
-                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-success flex-grow-1">
-                                                <i class="bi bi-box-arrow-right me-1"></i>Withdraw
-                                            </a>
-                                <?php
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <?php
+                                        // Workflow actions for legacy assets
+                                        if ($assetSource === 'legacy'):
+                                            if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
+                                        ?>
+                                            <li>
+                                                <a class="dropdown-item text-warning"
+                                                   href="#"
+                                                   onclick="event.preventDefault(); openEnhancedVerification(<?= $asset['id'] ?>);">
+                                                    <i class="bi bi-shield-check me-2"></i>Verify Item
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        <?php
+                                            elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
+                                        ?>
+                                            <li>
+                                                <a class="dropdown-item text-info"
+                                                   href="#"
+                                                   onclick="event.preventDefault(); openEnhancedAuthorization(<?= $asset['id'] ?>);">
+                                                    <i class="bi bi-shield-check me-2"></i>Authorize Item
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        <?php
+                                            endif;
                                         endif;
-                                    else:
-                                        // Capital Assets (equipment): Show Borrow button
-                                        if (in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
-                                ?>
-                                            <a href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-info flex-grow-1">
-                                                <i class="bi bi-clock-history me-1"></i>Borrow
-                                            </a>
-                                <?php
-                                        endif;
-                                    endif;
-                                endif;
-                                ?>
+                                        ?>
 
-                                <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
-                                    <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1"
-                                            onclick="deleteAsset(<?= $asset['id'] ?>)">
-                                        <i class="bi bi-trash me-1"></i>Delete
-                                    </button>
-                                <?php endif; ?>
+                                        <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
+                                            <li>
+                                                <a class="dropdown-item" href="?route=assets/edit&id=<?= $asset['id'] ?>">
+                                                    <i class="bi bi-pencil me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                        <?php endif; ?>
+
+                                        <?php
+                                        // Borrow/Withdraw actions based on asset type
+                                        if ($status === 'available'):
+                                            if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
+                                        ?>
+                                            <li>
+                                                <a class="dropdown-item text-success" href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>">
+                                                    <i class="bi bi-box-arrow-right me-2"></i>Withdraw
+                                                </a>
+                                            </li>
+                                        <?php
+                                            elseif (!$isConsumable && in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
+                                        ?>
+                                            <li>
+                                                <a class="dropdown-item text-info" href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>">
+                                                    <i class="bi bi-clock-history me-2"></i>Borrow
+                                                </a>
+                                            </li>
+                                        <?php
+                                            endif;
+                                        endif;
+                                        ?>
+
+                                        <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger"
+                                                   href="#"
+                                                   onclick="event.preventDefault(); deleteAsset(<?= $asset['id'] ?>);">
+                                                    <i class="bi bi-trash me-2"></i>Delete
+                                                </a>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -197,7 +221,7 @@
                             <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
                             <th class="d-none d-lg-table-cell text-end">Value</th>
                             <?php endif; ?>
-                            <th class="text-center" style="min-width: 200px; width: 250px;">Actions</th>
+                            <th class="text-center" style="width: 80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -411,97 +435,107 @@
                                     <?php endif; ?>
                                 </td>
                                 <?php endif; ?>
-                                <td class="text-nowrap">
+                                <td class="text-center">
                                     <?php
-                                    // Show workflow-specific actions for legacy assets
+                                    // Get asset data for actions
                                     $assetSource = $asset['asset_source'] ?? 'manual';
                                     $workflowStatus = $asset['workflow_status'] ?? 'approved';
                                     ?>
 
-                                    <div class="d-flex gap-1 justify-content-center">
-                                        <!-- Always show View button first -->
+                                    <div class="btn-group">
+                                        <!-- Primary View Button -->
                                         <a href="?route=assets/view&id=<?= $asset['id'] ?>"
-                                           class="btn btn-primary btn-sm"
-                                           title="View Details"
-                                           style="min-width: 70px;">
-                                            <i class="bi bi-eye me-1"></i>View
+                                           class="btn btn-primary btn-sm">
+                                            <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <?php
-                                        // Workflow buttons - ONLY for legacy assets pending review
-                                        if ($assetSource === 'legacy'):
-                                            if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
-                                        ?>
-                                            <!-- Enhanced Verification Button -->
-                                            <button type="button"
-                                                    class="btn btn-warning btn-sm"
-                                                    onclick="openEnhancedVerification(<?= $asset['id'] ?>);"
-                                                    title="Open Enhanced Verification Workflow"
-                                                    style="min-width: 90px;">
-                                                <i class="bi bi-shield-check me-1"></i>Verify
-                                            </button>
-                                        <?php
-                                            elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
-                                        ?>
-                                            <!-- Enhanced Authorization Button -->
-                                            <button type="button"
-                                                    class="btn btn-info btn-sm"
-                                                    onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);"
-                                                    title="Open Enhanced Authorization Workflow"
-                                                    style="min-width: 100px;">
-                                                <i class="bi bi-shield-check me-1"></i>Authorize
-                                            </button>
-                                        <?php
-                                            endif;
-                                        endif;
-                                        ?>
+                                        <!-- Actions Dropdown -->
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                            <span class="visually-hidden">Toggle Dropdown</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <!-- View Details -->
+                                            <li>
+                                                <a class="dropdown-item" href="?route=assets/view&id=<?= $asset['id'] ?>">
+                                                    <i class="bi bi-eye me-2"></i>View Details
+                                                </a>
+                                            </li>
 
-                                        <!-- Standard action buttons (Edit, Borrow/Withdraw, Delete) -->
-                                        <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
-                                            <a href="?route=assets/edit&id=<?= $asset['id'] ?>"
-                                               class="btn btn-outline-secondary btn-sm"
-                                               title="Edit Item">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                        <?php endif; ?>
-
-                                        <?php
-                                        // Show appropriate action based on asset type
-                                        if ($status === 'available'):
-                                            if ($isConsumable):
-                                                // Consumable items: Show Withdraw button
-                                                if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
-                                        ?>
-                                                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>"
-                                                       class="btn btn-outline-success btn-sm"
-                                                       title="Withdraw Consumable Item">
-                                                        <i class="bi bi-box-arrow-right"></i>
+                                            <?php
+                                            // Workflow actions for legacy assets
+                                            if ($assetSource === 'legacy'):
+                                                if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
+                                            ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-warning"
+                                                       href="#"
+                                                       onclick="event.preventDefault(); openEnhancedVerification(<?= $asset['id'] ?>);">
+                                                        <i class="bi bi-shield-check me-2"></i>Verify Item
                                                     </a>
-                                        <?php
-                                                endif;
-                                            else:
-                                                // Capital Assets (equipment): Show Borrow button
-                                                if (in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
-                                        ?>
-                                                    <a href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>"
-                                                       class="btn btn-outline-info btn-sm"
-                                                       title="Borrow Equipment">
-                                                        <i class="bi bi-clock-history"></i>
+                                                </li>
+                                            <?php
+                                                elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
+                                            ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-info"
+                                                       href="#"
+                                                       onclick="event.preventDefault(); openEnhancedAuthorization(<?= $asset['id'] ?>);">
+                                                        <i class="bi bi-shield-check me-2"></i>Authorize Item
                                                     </a>
-                                        <?php
+                                                </li>
+                                            <?php
                                                 endif;
                                             endif;
-                                        endif;
-                                        ?>
+                                            ?>
 
-                                        <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
-                                            <button type="button"
-                                                    class="btn btn-outline-danger btn-sm"
-                                                    onclick="deleteAsset(<?= $asset['id'] ?>)"
-                                                    title="Delete Item">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                            <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="?route=assets/edit&id=<?= $asset['id'] ?>">
+                                                        <i class="bi bi-pencil me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                            <?php endif; ?>
+
+                                            <?php
+                                            // Borrow/Withdraw actions based on asset type
+                                            if ($status === 'available'):
+                                                if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
+                                            ?>
+                                                <li>
+                                                    <a class="dropdown-item text-success" href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>">
+                                                        <i class="bi bi-box-arrow-right me-2"></i>Withdraw
+                                                    </a>
+                                                </li>
+                                            <?php
+                                                elseif (!$isConsumable && in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
+                                            ?>
+                                                <li>
+                                                    <a class="dropdown-item text-info" href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>">
+                                                        <i class="bi bi-clock-history me-2"></i>Borrow
+                                                    </a>
+                                                </li>
+                                            <?php
+                                                endif;
+                                            endif;
+                                            ?>
+
+                                            <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger"
+                                                       href="#"
+                                                       onclick="event.preventDefault(); deleteAsset(<?= $asset['id'] ?>);">
+                                                        <i class="bi bi-trash me-2"></i>Delete
+                                                    </a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>
