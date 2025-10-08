@@ -94,7 +94,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="name" name="name" 
                                            value="<?= htmlspecialchars($formData['name'] ?? '') ?>" 
-                                           placeholder="Select equipment type and subtype to auto-generate name..."
+                                           placeholder="Select item type and subtype to auto-generate name..."
                                            readonly>
                                     <button type="button" class="btn btn-outline-secondary" id="edit-name-btn" title="Edit name manually">
                                         <i class="bi bi-pencil"></i>
@@ -145,7 +145,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <div class="mb-3">
                                 <label for="category_id" class="form-label">
                                     Category <span class="text-danger">*</span>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all equipment types">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all item types">
                                         <i class="bi bi-arrow-clockwise"></i> Reset
                                     </button>
                                 </label>
@@ -200,22 +200,22 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <div class="col-12">
                             <h6 class="text-success border-bottom pb-2 mb-3">
                                 <i class="bi bi-cpu me-1"></i>Intelligent Equipment Classification
-                                <small class="text-muted ms-2">Smart equipment type selection with auto-naming</small>
+                                <small class="text-muted ms-2">Smart item type selection with auto-naming</small>
                             </h6>
                         </div>
                         
-                        <!-- Equipment Type Selection -->
+                        <!-- Item Type Selection -->
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="equipment_type_id" class="form-label">
-                                    Equipment Type <span class="text-danger">*</span>
+                                    Item Type <span class="text-danger">*</span>
                                     <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-equipment-btn" title="Clear equipment selection and reset to all types">
                                         <i class="bi bi-x-circle"></i> Clear
                                     </button>
                                     <i class="bi bi-info-circle ms-1" title="Main equipment category (e.g., Drill, Grinder, Welder)"></i>
                                 </label>
                                 <select class="form-select" id="equipment_type_id" name="equipment_type_id" required>
-                                    <option value="">Select Equipment Type</option>
+                                    <option value="">Select Item Type</option>
                                 </select>
                                 <div class="form-text">What type of equipment is this?</div>
                             </div>
@@ -471,7 +471,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <option value="l" <?= ($formData['unit'] ?? '') === 'l' ? 'selected' : '' ?>>Liter</option>
                                     <option value="lot" <?= ($formData['unit'] ?? '') === 'lot' ? 'selected' : '' ?>>Lot</option>
                                 </select>
-                                <div class="form-text">Auto-selected based on equipment type</div>
+                                <div class="form-text">Auto-selected based on item type</div>
                             </div>
                         </div>
                         
@@ -946,11 +946,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentGeneratedName = '';
     let currentNameComponents = {};
     
-    // Initialize all equipment types storage
+    // Initialize all item types storage
     let allEquipmentTypes = [];
-    let equipmentTypeToCategory = {}; // Map equipment type ID to category data
+    let equipmentTypeToCategory = {}; // Map item type ID to category data
     
-    // Load all equipment types on page load
+    // Load all item types on page load
     loadAllEquipmentTypes();
     
     function loadAllEquipmentTypes() {
@@ -959,20 +959,20 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success && data.data) {
                     allEquipmentTypes = data.data;
-                    console.log('Loaded equipment types:', allEquipmentTypes.length);
+                    console.log('Loaded item types:', allEquipmentTypes.length);
                     
-                    // Build equipment type to category mapping
+                    // Build item type to category mapping
                     data.data.forEach(type => {
                         equipmentTypeToCategory[type.id] = {
                             categoryId: type.category_id,
                             categoryName: type.category_name
                         };
                     });
-                    console.log('Built equipment type to category mapping:', equipmentTypeToCategory);
+                    console.log('Built item type to category mapping:', equipmentTypeToCategory);
                 }
             })
             .catch(error => {
-                console.error('Error loading all equipment types:', error);
+                console.error('Error loading all item types:', error);
             });
     }
     
@@ -1008,21 +1008,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Filter equipment types by category
+    // Filter item types by category
     function filterEquipmentTypesByCategory(categoryId) {
         if (!categoryId) {
             clearEquipmentTypes();
             return;
         }
         
-        // Filter equipment types for the selected category
+        // Filter item types for the selected category
         const filteredTypes = allEquipmentTypes.filter(type => type.category_id == categoryId);
         console.log('Filtering by category', categoryId, '- found', filteredTypes.length, 'types');
         populateEquipmentTypes(filteredTypes);
     }
     
     function populateEquipmentTypes(equipmentTypes) {
-        equipmentTypeSelect.innerHTML = '<option value="">Select Equipment Type</option>';
+        equipmentTypeSelect.innerHTML = '<option value="">Select Item Type</option>';
         equipmentTypes.forEach(type => {
             const option = document.createElement('option');
             option.value = type.id;
@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideNamePreview();
     }
     
-    // Load subtypes when equipment type changes and auto-select category
+    // Load subtypes when item type changes and auto-select category
     equipmentTypeSelect.addEventListener('change', function() {
         const equipmentTypeId = this.value;
         const selectedOption = this.options[this.selectedIndex];
@@ -1079,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => {
-                    console.error('Create form: Error loading equipment type details:', error);
+                    console.error('Create form: Error loading item type details:', error);
                 });
         }
         
@@ -1254,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         editNameBtn.title = 'Confirm manual edit';
         editNameBtn.onclick = function() {
             nameInput.readOnly = true;
-            nameInput.placeholder = 'Select equipment type and subtype to auto-generate name...';
+            nameInput.placeholder = 'Select item type and subtype to auto-generate name...';
             editNameBtn.innerHTML = '<i class="bi bi-pencil"></i>';
             editNameBtn.title = 'Edit name manually';
             editNameBtn.onclick = arguments.callee.caller;
@@ -1283,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function clearEquipmentTypes() {
-        equipmentTypeSelect.innerHTML = '<option value="">Select Equipment Type</option>';
+        equipmentTypeSelect.innerHTML = '<option value="">Select Item Type</option>';
     }
     
     function clearSubtypes() {
@@ -1330,7 +1330,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Intelligent Unit Auto-Population
     window.updateIntelligentUnit = function(equipmentTypeId, subtypeId = null) {
-        console.log('Updating intelligent unit for equipment type:', equipmentTypeId, 'subtype:', subtypeId);
+        console.log('Updating intelligent unit for item type:', equipmentTypeId, 'subtype:', subtypeId);
         
         if (!equipmentTypeId) return;
         
@@ -1506,7 +1506,7 @@ function initializeQuickEntry() {
     }
 }
 
-// Quick fill equipment type for create form
+// Quick fill item type for create form
 function quickFillEquipment(equipmentName) {
     console.log('Quick fill equipment called with:', equipmentName);
     const equipmentSelect = document.getElementById('equipment_type_id');
@@ -1518,7 +1518,7 @@ function quickFillEquipment(equipmentName) {
     
     console.log('Equipment select found, options count:', equipmentSelect.options.length);
     
-    // Find the equipment type option
+    // Find the item type option
     let found = false;
     for (let option of equipmentSelect.options) {
         console.log('Checking option:', option.textContent, 'against', equipmentName);
@@ -1561,7 +1561,7 @@ function quickFillEquipment(equipmentName) {
     }
     
     if (!found) {
-        console.warn(`No equipment type found matching: ${equipmentName}`);
+        console.warn(`No item type found matching: ${equipmentName}`);
         console.log('Available options:');
         for (let option of equipmentSelect.options) {
             if (option.value) console.log(' - ', option.textContent);
@@ -1593,7 +1593,7 @@ document.addEventListener('click', function(e) {
         $('#unit').val('pcs');
         
         // Show notification
-        showAutoSelectionMessage('All selections cleared - showing all equipment types');
+        showAutoSelectionMessage('All selections cleared - showing all item types');
         return false;
     }
     
@@ -1620,7 +1620,7 @@ document.addEventListener('click', function(e) {
             window.preventCategoryAutoSelection = false;
         }, 200);
         
-        showAutoSelectionMessage('Equipment and category cleared - showing all equipment types');
+        showAutoSelectionMessage('Equipment and category cleared - showing all item types');
         return false;
     }
     
@@ -2635,8 +2635,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Bidirectional clearing - handle Select2 clear events
         $('#category_id').on('select2:clear', function() {
-            console.log('Category cleared via Select2 - clearing equipment type');
-            // Clear equipment type when category is cleared
+            console.log('Category cleared via Select2 - clearing item type');
+            // Clear item type when category is cleared
             $('#equipment_type_id').val('').trigger('change');
             // Clear subtypes and name preview
             $('#subtype_id').val('');
@@ -2649,7 +2649,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Equipment type cleared via Select2 - clearing category');
             // Set flag to prevent auto-category selection during clearing
             window.preventCategoryAutoSelection = true;
-            // Clear category when equipment type is cleared
+            // Clear category when item type is cleared
             $('#category_id').val('').trigger('change');
             // Clear subtypes and name preview
             $('#subtype_id').val('');

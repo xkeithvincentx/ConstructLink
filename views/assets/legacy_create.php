@@ -86,34 +86,34 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="equipment_type_id" class="form-label">
-                                    Equipment Type <span class="text-danger">*</span>
+                                    Item Type <span class="text-danger">*</span>
                                     <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-equipment-btn" title="Clear equipment selection and reset to all types">
                                         <i class="bi bi-arrow-clockwise"></i> Clear
                                     </button>
                                 </label>
                                 <select class="form-select" id="equipment_type_id" name="equipment_type_id" required>
                                     <option value="">Type to search equipment...</option>
-                                    <!-- Populated with all equipment types for intelligent search -->
+                                    <!-- Populated with all item types for intelligent search -->
                                 </select>
                                 <div class="form-text">
                                     <i class="bi bi-lightbulb text-warning"></i>
                                     Start typing equipment name (e.g., "drill", "hammer") - category will be auto-selected
                                 </div>
                                 <div class="invalid-feedback">
-                                    Please select an equipment type.
+                                    Please select an item type.
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="subtype_id" class="form-label">Equipment Subtype <span class="text-danger" id="subtype-required-asterisk" style="display: none;">*</span></label>
+                                <label for="subtype_id" class="form-label">Item Subtype <span class="text-danger" id="subtype-required-asterisk" style="display: none;">*</span></label>
                                 <select class="form-select" id="subtype_id" name="subtype_id">
                                     <option value="">Select Subtype</option>
-                                    <!-- Populated dynamically based on equipment type -->
+                                    <!-- Populated dynamically based on item type -->
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please select an equipment subtype.
+                                    Please select an item subtype.
                                 </div>
                             </div>
                         </div>
@@ -179,7 +179,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <div class="mb-3">
                                 <label for="category_id" class="form-label">
                                     Category <span class="text-danger">*</span>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all equipment types">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all item types">
                                         <i class="bi bi-arrow-clockwise"></i> Reset
                                     </button>
                                 </label>
@@ -849,15 +849,15 @@ function updateQuantityField() {
 // Initialize intelligent naming system
 let currentGeneratedName = '';
 let isManualEdit = false;
-let allEquipmentTypes = []; // Store all equipment types for filtering
-let equipmentTypeToCategory = {}; // Map equipment type ID to category data
+let allEquipmentTypes = []; // Store all item types for filtering
+let equipmentTypeToCategory = {}; // Map item type ID to category data
 
 function initializeIntelligentNaming() {
     const categorySelect = document.getElementById('category_id');
     const equipmentTypeSelect = document.getElementById('equipment_type_id');
     const subtypeSelect = document.getElementById('subtype_id');
     
-    // Load all equipment types for intelligent search on page load
+    // Load all item types for intelligent search on page load
     loadAllEquipmentTypes();
     
     // Initialize clear buttons
@@ -905,7 +905,7 @@ function initializeIntelligentNaming() {
                         }
                     })
                     .catch(error => {
-                        console.error('Legacy form: Error loading equipment type details:', error);
+                        console.error('Legacy form: Error loading item type details:', error);
                     });
                 
                 // Continue with existing functionality
@@ -984,7 +984,7 @@ window.loadSubtypes = function(equipmentTypeId) {
     
     if (!equipmentTypeId) {
         subtypeSelect.innerHTML = '<option value="">Select Subtype</option>';
-        // No equipment type selected - make subtype optional
+        // No item type selected - make subtype optional
         subtypeSelect.removeAttribute('required');
         const subtypeAsterisk = document.getElementById('subtype-required-asterisk');
         if (subtypeAsterisk) subtypeAsterisk.style.display = 'none';
@@ -993,7 +993,7 @@ window.loadSubtypes = function(equipmentTypeId) {
 
     subtypeSelect.innerHTML = '<option value="">Loading...</option>';
     
-    console.log('🔧 Loading subtypes for equipment type:', equipmentTypeId);
+    console.log('🔧 Loading subtypes for item type:', equipmentTypeId);
     const apiUrl = `?route=api/intelligent-naming&action=subtypes&equipment_type_id=${equipmentTypeId}`;
     console.log('🔧 API URL:', apiUrl);
     
@@ -1179,7 +1179,7 @@ function initializeClearButtons() {
         clearCategoryBtn._clearInitialized = true;
     }
     
-    // Clear Equipment Type Button - Bidirectional Reset (Clear both equipment and category)
+    // Clear Item Type Button - Bidirectional Reset (Clear both equipment and category)
     if (clearEquipmentBtn) {
         // Check if already initialized
         if (clearEquipmentBtn._clearInitialized) {
@@ -1194,7 +1194,7 @@ function initializeClearButtons() {
             // Prevent auto-category selection during this operation
             window.preventCategoryAutoSelection = true;
             
-            // Clear equipment type selection
+            // Clear item type selection
             equipmentTypeSelect.value = '';
             
             // Clear category selection (bidirectional)
@@ -1210,7 +1210,7 @@ function initializeClearButtons() {
             const unitSelect = document.getElementById('unit');
             if (unitSelect) unitSelect.value = 'pcs';
             
-            // Show all equipment types (no category filter)
+            // Show all item types (no category filter)
             if (allEquipmentTypes && allEquipmentTypes.length > 0) {
                 populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
             } else {
@@ -1236,7 +1236,7 @@ function initializeClearButtons() {
             }, 200);
             
             // Show reset notification
-            showResetNotification('Equipment and category cleared - showing all equipment types');
+            showResetNotification('Equipment and category cleared - showing all item types');
         });
         
         // Mark as initialized
@@ -1272,7 +1272,7 @@ window.testCategoryReset = function() {
     const unitSelect = document.getElementById('unit');
     if (unitSelect) unitSelect.value = 'pcs';
     
-    // Reload equipment types
+    // Reload item types
     if (allEquipmentTypes && allEquipmentTypes.length > 0) {
         populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
     } else {
@@ -1321,14 +1321,14 @@ document.addEventListener('click', function(e) {
         const unitSelect = document.getElementById('unit');
         if (unitSelect) unitSelect.value = 'pcs';
         
-        // Reload equipment types
+        // Reload item types
         if (allEquipmentTypes && allEquipmentTypes.length > 0) {
             populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
         } else {
             loadAllEquipmentTypes();
         }
         
-        showResetNotification('All selections cleared - showing all equipment types');
+        showResetNotification('All selections cleared - showing all item types');
         return false;
     }
     
@@ -1366,7 +1366,7 @@ document.addEventListener('click', function(e) {
         const unitSelect = document.getElementById('unit');
         if (unitSelect) unitSelect.value = 'pcs';
         
-        // Reload equipment types
+        // Reload item types
         if (allEquipmentTypes && allEquipmentTypes.length > 0) {
             populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
         }
@@ -1376,7 +1376,7 @@ document.addEventListener('click', function(e) {
             window.preventCategoryAutoSelection = false;
         }, 200);
         
-        showResetNotification('Equipment and category cleared - showing all equipment types');
+        showResetNotification('Equipment and category cleared - showing all item types');
         return false;
     }
     
@@ -1427,7 +1427,7 @@ function showResetNotification(message) {
     }, 4000);
 }
 
-// Load all equipment types for intelligent search
+// Load all item types for intelligent search
 window.loadAllEquipmentTypes = function() {
     const equipmentTypeSelect = document.getElementById('equipment_type_id');
     
@@ -1435,30 +1435,30 @@ window.loadAllEquipmentTypes = function() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data) {
-                // Store all equipment types for filtering
+                // Store all item types for filtering
                 allEquipmentTypes = data.data;
-                console.log('Loaded equipment types:', allEquipmentTypes.length);
+                console.log('Loaded item types:', allEquipmentTypes.length);
                 
-                // Build equipment type to category mapping
+                // Build item type to category mapping
                 data.data.forEach(type => {
                     equipmentTypeToCategory[type.id] = {
                         categoryId: type.category_id,
                         categoryName: type.category_name
                     };
                 });
-                console.log('Built equipment type to category mapping:', equipmentTypeToCategory);
+                console.log('Built item type to category mapping:', equipmentTypeToCategory);
                 
-                // Initially show all equipment types
+                // Initially show all item types
                 populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
             }
         })
         .catch(error => {
-            console.error('Error loading all equipment types:', error);
+            console.error('Error loading all item types:', error);
         });
 }
 
-// Populate equipment type dropdown with given types
-function populateEquipmentTypeDropdown(types, placeholder = 'Select Equipment Type') {
+// Populate item type dropdown with given types
+function populateEquipmentTypeDropdown(types, placeholder = 'Select Item Type') {
     const equipmentTypeSelect = document.getElementById('equipment_type_id');
     equipmentTypeSelect.innerHTML = `<option value="">${placeholder}</option>`;
     
@@ -1474,21 +1474,21 @@ function populateEquipmentTypeDropdown(types, placeholder = 'Select Equipment Ty
         equipmentTypeSelect.appendChild(option);
     });
     
-    console.log('Populated dropdown with', types.length, 'equipment types');
+    console.log('Populated dropdown with', types.length, 'item types');
 }
 
-// Filter equipment types by category
+// Filter item types by category
 window.filterEquipmentTypesByCategory = function(categoryId) {
     if (!categoryId) {
-        // Show all equipment types when no category selected
+        // Show all item types when no category selected
         populateEquipmentTypeDropdown(allEquipmentTypes, 'Type to search equipment...');
         return;
     }
     
-    // Filter equipment types for the selected category
+    // Filter item types for the selected category
     const filteredTypes = allEquipmentTypes.filter(type => type.category_id == categoryId);
     console.log('Filtering by category', categoryId, '- found', filteredTypes.length, 'types');
-    populateEquipmentTypeDropdown(filteredTypes, 'Select Equipment Type');
+    populateEquipmentTypeDropdown(filteredTypes, 'Select Item Type');
 }
 
 // Show auto-selection success message
@@ -1521,7 +1521,7 @@ function showAutoSelectionMessage(message) {
 
 // Intelligent Unit Auto-Population
 window.updateIntelligentUnit = function(equipmentTypeId, subtypeId = null) {
-    console.log('Updating intelligent unit for equipment type:', equipmentTypeId, 'subtype:', subtypeId);
+    console.log('Updating intelligent unit for item type:', equipmentTypeId, 'subtype:', subtypeId);
     
     if (!equipmentTypeId) return;
     
@@ -1606,7 +1606,7 @@ function showUnitAutoSelectionMessage(unit) {
     }, 3000);
 }
 
-// Update quantity handling based on equipment type
+// Update quantity handling based on item type
 function updateQuantityHandling(equipmentTypeId) {
     const quantityInput = document.getElementById('quantity');
     const quantityHelp = document.getElementById('quantity-help');
@@ -1624,12 +1624,12 @@ function updateQuantityHandling(equipmentTypeId) {
         if (element) element.style.display = 'none';
     });
     
-    // Define equipment types that allow bulk quantities (non-serialized, identical items)
+    // Define item types that allow bulk quantities (non-serialized, identical items)
     const bulkAllowedTypes = [
         'Hammer', 'Screwdriver', 'Wrench', 'Pliers', 'Hand Saw', 'Measuring Tool', 'Trowel'
     ];
     
-    // Define equipment types that require serial tracking (expensive, unique items)
+    // Define item types that require serial tracking (expensive, unique items)
     const serializedTypes = [
         'Drill', 'Grinder', 'Saw', 'Sander', 'Router', 'Impact Tool', 'Nail Gun',
         'Arc Welder', 'Gas Welder', 'Plasma Cutter', 'Spot Welder', 'Multi-Process Welder'
@@ -1679,7 +1679,7 @@ function updateQuantityHandling(equipmentTypeId) {
         quantityInput.classList.remove('border-primary', 'border-warning');
     }
     
-    // Always hide bulk panel when equipment type changes
+    // Always hide bulk panel when item type changes
     const bulkPanel = document.getElementById('bulk-entry-panel');
     if (bulkPanel) {
         bulkPanel.style.display = 'none';
@@ -1851,7 +1851,7 @@ function initializeQuickEntry() {
     }
 }
 
-// Quick fill equipment type
+// Quick fill item type
 function quickFillEquipment(equipmentName) {
     console.log('Quick fill equipment called with:', equipmentName);
     const equipmentSelect = document.getElementById('equipment_type_id');
@@ -1863,7 +1863,7 @@ function quickFillEquipment(equipmentName) {
     
     console.log('Equipment select found, options count:', equipmentSelect.options.length);
     
-    // Find the equipment type option
+    // Find the item type option
     let found = false;
     for (let option of equipmentSelect.options) {
         console.log('Checking option:', option.textContent, 'against', equipmentName);
@@ -1905,7 +1905,7 @@ function quickFillEquipment(equipmentName) {
     }
     
     if (!found) {
-        console.warn(`No equipment type found matching: ${equipmentName}`);
+        console.warn(`No item type found matching: ${equipmentName}`);
         console.log('Available options:');
         for (let option of equipmentSelect.options) {
             if (option.value) console.log(' - ', option.textContent);
@@ -2875,23 +2875,23 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#project_id').val(selectedProject).trigger('change.select2');
         }
         
-        // Equipment Type dropdown
+        // Item Type dropdown
         $('#equipment_type_id').select2({
             theme: 'bootstrap-5',
-            placeholder: 'Select Equipment Type',
+            placeholder: 'Select Item Type',
             allowClear: true,
             width: '100%',
             minimumResultsForSearch: 0
         });
         
-        // Add Select2 event handler for equipment type to trigger native change events
+        // Add Select2 event handler for item type to trigger native change events
         $('#equipment_type_id').on('select2:select', function() {
-            console.log('Select2 equipment type selected:', this.value);
+            console.log('Select2 item type selected:', this.value);
             this.dispatchEvent(new Event('change', { bubbles: true }));
         });
         
         $('#equipment_type_id').on('select2:clear', function() {
-            console.log('Select2 equipment type cleared');
+            console.log('Select2 item type cleared');
             this.dispatchEvent(new Event('change', { bubbles: true }));
         });
         
@@ -2975,12 +2975,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle dynamic discipline loading
     $('#category_id').on('change.select2', function() {
-        // Reinitialize equipment type dropdown after AJAX load
+        // Reinitialize item type dropdown after AJAX load
         setTimeout(function() {
             $('#equipment_type_id').select2('destroy');
             $('#equipment_type_id').select2({
                 theme: 'bootstrap-5',
-                placeholder: 'Select Equipment Type',
+                placeholder: 'Select Item Type',
                 allowClear: true,
                 width: '100%',
                 minimumResultsForSearch: 0
@@ -2988,12 +2988,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Re-attach event handlers after reinitialization
             $('#equipment_type_id').on('select2:select', function() {
-                console.log('Select2 equipment type selected after reinit:', this.value);
+                console.log('Select2 item type selected after reinit:', this.value);
                 this.dispatchEvent(new Event('change', { bubbles: true }));
             });
             
             $('#equipment_type_id').on('select2:clear', function() {
-                console.log('Select2 equipment type cleared after reinit');
+                console.log('Select2 item type cleared after reinit');
                 this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         }, 500);
@@ -3012,7 +3012,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     });
     
-    // Handle equipment type changes
+    // Handle item type changes
     $('#equipment_type_id').on('change', function() {
         const equipmentTypeId = this.value;
         

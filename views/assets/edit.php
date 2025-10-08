@@ -157,7 +157,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <div class="mb-3">
                                 <label for="category_id" class="form-label">
                                     Category <span class="text-danger">*</span>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all equipment types">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-category-btn" title="Clear category to see all item types">
                                         <i class="bi bi-arrow-clockwise"></i> Reset
                                     </button>
                                 </label>
@@ -184,21 +184,21 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="equipment_type_id" class="form-label">
-                                    Equipment Type
+                                    Item Type
                                     <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clear-equipment-btn" title="Clear equipment selection">
                                         <i class="bi bi-x-circle"></i> Clear
                                     </button>
                                 </label>
                                 <select class="form-select" id="equipment_type_id" name="equipment_type_id">
-                                    <option value="">Select Equipment Type</option>
+                                    <option value="">Select Item Type</option>
                                 </select>
-                                <div class="form-text">Specific equipment type for legacy assets</div>
+                                <div class="form-text">Specific item type for legacy assets</div>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="subtype_id" class="form-label">Equipment Subtype</label>
+                                <label for="subtype_id" class="form-label">Item Subtype</label>
                                 <select class="form-select" id="subtype_id" name="subtype_id">
                                     <option value="">Select Subtype</option>
                                 </select>
@@ -711,14 +711,14 @@ function initializeEquipmentClassification() {
     const equipmentTypeSelect = document.getElementById('equipment_type_id');
     const subtypeSelect = document.getElementById('subtype_id');
     
-    // Load equipment types when category changes
+    // Load item types when category changes
     if (categorySelect) {
         categorySelect.addEventListener('change', function() {
             const categoryId = this.value;
             loadEquipmentTypes(categoryId);
         });
         
-        // Load initial equipment types if category is already selected
+        // Load initial item types if category is already selected
         if (categorySelect.value) {
             loadEquipmentTypes(categorySelect.value);
         }
@@ -756,7 +756,7 @@ function initializeEquipmentClassification() {
                         }
                     })
                     .catch(error => {
-                        console.error('Edit form: Error loading equipment type details:', error);
+                        console.error('Edit form: Error loading item type details:', error);
                     });
                 
                 // Continue with existing functionality
@@ -775,7 +775,7 @@ function initializeEquipmentClassification() {
     setTimeout(() => {
         console.log('Initializing edit form dropdowns with existing data...');
         if (categorySelect && categorySelect.value) {
-            console.log('Loading equipment types for existing category:', categorySelect.value);
+            console.log('Loading item types for existing category:', categorySelect.value);
             loadEquipmentTypes(categorySelect.value);
         }
         if (equipmentTypeSelect && equipmentTypeSelect.value) {
@@ -812,13 +812,13 @@ function initializeEquipmentClassification() {
     }
 }
 
-// Load equipment types based on category
+// Load item types based on category
 function loadEquipmentTypes(categoryId) {
     const equipmentTypeSelect = document.getElementById('equipment_type_id');
     const subtypeSelect = document.getElementById('subtype_id');
     
     if (!categoryId) {
-        equipmentTypeSelect.innerHTML = '<option value="">Select Equipment Type</option>';
+        equipmentTypeSelect.innerHTML = '<option value="">Select Item Type</option>';
         subtypeSelect.innerHTML = '<option value="">Select Subtype</option>';
         return;
     }
@@ -829,7 +829,7 @@ function loadEquipmentTypes(categoryId) {
     fetch(`?route=api/equipment-types&category_id=${categoryId}`)
         .then(response => response.json())
         .then(data => {
-            equipmentTypeSelect.innerHTML = '<option value="">Select Equipment Type</option>';
+            equipmentTypeSelect.innerHTML = '<option value="">Select Item Type</option>';
             
             if (data.success && data.data) {
                 data.data.forEach(equipmentType => {
@@ -837,7 +837,7 @@ function loadEquipmentTypes(categoryId) {
                     option.value = equipmentType.id;
                     option.textContent = equipmentType.name;
                     
-                    // Check if this equipment type should be selected
+                    // Check if this item type should be selected
                     const currentEquipmentTypeId = '<?= $asset['equipment_type_id'] ?? '' ?>';
                     if (currentEquipmentTypeId && equipmentType.id == currentEquipmentTypeId) {
                         option.selected = true;
@@ -846,7 +846,7 @@ function loadEquipmentTypes(categoryId) {
                     equipmentTypeSelect.appendChild(option);
                 });
                 
-                // Reinitialize Select2 for equipment type after loading options
+                // Reinitialize Select2 for item type after loading options
                 setTimeout(() => {
                     if (window.jQuery && equipmentTypeSelect.options.length > 1) {
                         const $equipmentSelect = window.jQuery('#equipment_type_id');
@@ -855,7 +855,7 @@ function loadEquipmentTypes(categoryId) {
                         }
                         $equipmentSelect.select2({
                             theme: 'bootstrap-5',
-                            placeholder: 'Select Equipment Type',
+                            placeholder: 'Select Item Type',
                             allowClear: true,
                             width: '100%',
                             minimumResultsForSearch: 0
@@ -873,19 +873,19 @@ function loadEquipmentTypes(categoryId) {
                     }
                 }, 100);
                 
-                // If we had a selected equipment type, load its subtypes
+                // If we had a selected item type, load its subtypes
                 if (equipmentTypeSelect.value) {
                     loadSubtypes(equipmentTypeSelect.value);
                 }
             }
         })
         .catch(error => {
-            console.error('Error loading equipment types:', error);
-            equipmentTypeSelect.innerHTML = '<option value="">Error loading equipment types</option>';
+            console.error('Error loading item types:', error);
+            equipmentTypeSelect.innerHTML = '<option value="">Error loading item types</option>';
         });
 }
 
-// Load subtypes based on equipment type
+// Load subtypes based on item type
 function loadSubtypes(equipmentTypeId) {
     const subtypeSelect = document.getElementById('subtype_id');
     
@@ -905,8 +905,8 @@ function loadSubtypes(equipmentTypeId) {
             if (data.success && data.data) {
                 if (data.data.length === 0) {
                     // No subtypes available - show helpful message
-                    subtypeSelect.innerHTML = '<option value="">No subtypes available for this equipment type</option>';
-                    console.log('🔧 No subtypes found for equipment type:', equipmentTypeId);
+                    subtypeSelect.innerHTML = '<option value="">No subtypes available for this item type</option>';
+                    console.log('🔧 No subtypes found for item type:', equipmentTypeId);
                     return;
                 }
                 
@@ -967,7 +967,7 @@ function initializeClearButtons() {
             categorySelect.value = '';
             
             // Clear equipment classification 
-            equipmentTypeSelect.innerHTML = '<option value="">Select Equipment Type</option>';
+            equipmentTypeSelect.innerHTML = '<option value="">Select Item Type</option>';
             subtypeSelect.innerHTML = '<option value="">Select Subtype</option>';
             
             // Handle Select2
@@ -1088,7 +1088,7 @@ function hideNameRegeneration() {
 
 // Intelligent unit auto-population (like creation forms)
 function updateIntelligentUnit(equipmentTypeId, subtypeId = null) {
-    console.log('Updating intelligent unit for edit form - equipment type:', equipmentTypeId, 'subtype:', subtypeId);
+    console.log('Updating intelligent unit for edit form - item type:', equipmentTypeId, 'subtype:', subtypeId);
     
     const unitSelect = document.getElementById('unit');
     if (!unitSelect || !equipmentTypeId) return;
@@ -1221,10 +1221,10 @@ function initializeSelect2() {
         $('#project_id').val(selectedProject).trigger('change.select2');
     }
 
-    // Equipment Type dropdown
+    // Item Type dropdown
     $('#equipment_type_id').select2({
         theme: 'bootstrap-5',
-        placeholder: 'Select Equipment Type',
+        placeholder: 'Select Item Type',
         allowClear: true,
         width: '100%',
         minimumResultsForSearch: 0
@@ -1339,19 +1339,19 @@ function initializeSelect2() {
     });
     
     $('#equipment_type_id').on('select2:select', function() {
-        console.log('Select2 equipment type selected:', this.value);
+        console.log('Select2 item type selected:', this.value);
         this.dispatchEvent(new Event('change', { bubbles: true }));
     });
     
     $('#equipment_type_id').on('select2:clear', function() {
-        console.log('Select2 equipment type cleared');
+        console.log('Select2 item type cleared');
         this.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
     // Add Select2 clear event handlers (bidirectional clearing like creation forms)
     $('#category_id').on('select2:clear', function() {
         console.log('Category cleared via Select2 in edit form');
-        // Clear equipment type when category is cleared
+        // Clear item type when category is cleared
         $('#equipment_type_id').val('').trigger('change');
         $('#subtype_id').val('').trigger('change');
     });
@@ -1378,14 +1378,14 @@ function initializeSelect2() {
 function reinitializeSelect2ForDynamicDropdowns() {
     console.log('Reinitializing Select2 for dynamic dropdowns...');
     
-    // Reinitialize equipment type dropdown if it has options now
+    // Reinitialize item type dropdown if it has options now
     const equipmentTypeSelect = $('#equipment_type_id');
     if (equipmentTypeSelect.length && equipmentTypeSelect.find('option').length > 1) {
-        console.log('Reinitializing equipment type dropdown with', equipmentTypeSelect.find('option').length, 'options');
+        console.log('Reinitializing item type dropdown with', equipmentTypeSelect.find('option').length, 'options');
         equipmentTypeSelect.select2('destroy');
         equipmentTypeSelect.select2({
             theme: 'bootstrap-5',
-            placeholder: 'Select Equipment Type',
+            placeholder: 'Select Item Type',
             allowClear: true,
             width: '100%',
             minimumResultsForSearch: 0
