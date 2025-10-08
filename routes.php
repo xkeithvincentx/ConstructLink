@@ -1291,6 +1291,12 @@ $routes = [
         'auth' => true,
         'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk', 'Asset Director']
     ],
+    'api/assets/mark-tags-printed' => [
+        'controller' => 'AssetTagController',
+        'action' => 'markTagsPrinted',
+        'auth' => true,
+        'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk', 'Asset Director']
+    ],
     'api/assets/mark-tags-applied' => [
         'controller' => 'AssetTagController',
         'action' => 'markTagsApplied',

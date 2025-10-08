@@ -646,7 +646,50 @@ class AssetTagController {
             echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
         }
     }
-    
+
+    /**
+     * Mark tags as printed (AJAX) - called after user prints QR tags
+     */
+    public function markTagsPrinted() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $assetIdsString = $_POST['asset_ids'] ?? '';
+        $assetIds = array_filter(array_map('intval', explode(',', $assetIdsString)));
+
+        if (empty($assetIds)) {
+            echo json_encode(['success' => false, 'message' => 'No assets selected']);
+            return;
+        }
+
+        try {
+            $updatedCount = 0;
+
+            foreach ($assetIds as $assetId) {
+                if ($this->markTagAsPrinted($assetId)) {
+                    $updatedCount++;
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Marked {$updatedCount} tag(s) as printed",
+                'updated_count' => $updatedCount
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Mark tags printed API error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Server error']);
+        }
+    }
+
     /**
      * Mark tags as applied (AJAX)
      */

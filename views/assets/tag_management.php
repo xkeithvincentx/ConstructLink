@@ -439,7 +439,42 @@ function generateQR(assetId) {
 
 // Print single tag
 function printSingleTag(assetId) {
-    window.open(`?route=assets/print-tag&id=${assetId}`, '_blank');
+    const printWindow = window.open(`?route=assets/print-tag&id=${assetId}`, '_blank');
+
+    // Detect when print is complete and mark as printed
+    if (printWindow) {
+        // Poll for window load, then set up print detection
+        const pollInterval = setInterval(() => {
+            try {
+                if (printWindow.document && printWindow.document.readyState === 'complete') {
+                    clearInterval(pollInterval);
+
+                    // Set up afterprint event on the print window
+                    printWindow.onafterprint = function() {
+                        markTagAsPrinted(assetId);
+                    };
+
+                    // Fallback: also detect when window closes (user either printed or cancelled)
+                    const checkClosed = setInterval(() => {
+                        if (printWindow.closed) {
+                            clearInterval(checkClosed);
+                            // Give a short delay to see if onafterprint fired
+                            setTimeout(() => {
+                                // Only mark if window was open for more than 2 seconds (user likely printed)
+                                if (Date.now() - startTime > 2000) {
+                                    markTagAsPrinted(assetId);
+                                }
+                            }, 500);
+                        }
+                    }, 500);
+
+                    const startTime = Date.now();
+                }
+            } catch (e) {
+                // Cross-origin or access denied - ignore
+            }
+        }, 100);
+    }
 }
 
 // Preview tag
@@ -468,16 +503,99 @@ function printFromPreview() {
 function bulkPrintTags() {
     const checkedBoxes = document.querySelectorAll('.asset-checkbox:checked');
     const assetIds = Array.from(checkedBoxes).map(cb => cb.value);
-    
+
     if (assetIds.length === 0) {
         alert('Please select assets to print tags for');
         return;
     }
-    
+
     const params = new URLSearchParams();
     assetIds.forEach(id => params.append('ids[]', id));
-    
-    window.open(`?route=assets/print-tags&${params.toString()}`, '_blank');
+
+    const printWindow = window.open(`?route=assets/print-tags&${params.toString()}`, '_blank');
+
+    // Detect when print is complete and mark all as printed
+    if (printWindow) {
+        // Poll for window load, then set up print detection
+        const pollInterval = setInterval(() => {
+            try {
+                if (printWindow.document && printWindow.document.readyState === 'complete') {
+                    clearInterval(pollInterval);
+
+                    // Set up afterprint event on the print window
+                    printWindow.onafterprint = function() {
+                        markBulkTagsAsPrinted(assetIds);
+                    };
+
+                    // Fallback: also detect when window closes (user either printed or cancelled)
+                    const checkClosed = setInterval(() => {
+                        if (printWindow.closed) {
+                            clearInterval(checkClosed);
+                            // Give a short delay to see if onafterprint fired
+                            setTimeout(() => {
+                                // Only mark if window was open for more than 2 seconds (user likely printed)
+                                if (Date.now() - startTime > 2000) {
+                                    markBulkTagsAsPrinted(assetIds);
+                                }
+                            }, 500);
+                        }
+                    }, 500);
+
+                    const startTime = Date.now();
+                }
+            } catch (e) {
+                // Cross-origin or access denied - ignore
+            }
+        }, 100);
+    }
+}
+
+// Mark single tag as printed
+function markTagAsPrinted(assetId) {
+    fetch(`?route=api/assets/mark-tags-printed`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: `asset_ids=${assetId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload to show updated status
+            location.reload();
+        } else {
+            console.error('Failed to update tag status:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Mark bulk tags as printed
+function markBulkTagsAsPrinted(assetIds) {
+    fetch(`?route=api/assets/mark-tags-printed`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: `asset_ids=${assetIds.join(',')}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload to show updated status
+            location.reload();
+        } else {
+            console.error('Failed to update tag status:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
 // Mark as applied
