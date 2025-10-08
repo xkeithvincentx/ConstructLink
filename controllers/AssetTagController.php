@@ -633,17 +633,17 @@ class AssetTagController {
                 }
             }
             
-            $result = $this->generateQRCode($assetId);
-            
-            if ($result) {
+            try {
+                $this->generateQRCode($assetId);
                 echo json_encode(['success' => true, 'message' => 'QR code generated successfully']);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to generate QR code']);
+            } catch (Exception $e) {
+                // Return specific error message to user
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             }
-            
+
         } catch (Exception $e) {
             error_log("Generate QR API error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Server error']);
+            echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
         }
     }
     
@@ -900,36 +900,46 @@ class AssetTagController {
     private function generateQRCode($assetId) {
         try {
             $asset = $this->assetModel->find($assetId);
-            if (!$asset) return false;
-            
+            if (!$asset) {
+                throw new Exception('Asset not found');
+            }
+
+            // Check if asset is consumable - QR codes only for capital assets
+            if (isset($asset['is_consumable']) && $asset['is_consumable'] == 1) {
+                throw new Exception('QR codes are not applicable for consumable items');
+            }
+
             // Use SecureLink if available
             if (class_exists('SecureLink')) {
                 $secureLink = SecureLink::getInstance();
                 $result = $secureLink->generateAssetQR($assetId, $asset['ref']);
-                
-                if ($result['success']) {
+
+                if ($result && isset($result['success']) && $result['success']) {
                     $qrCode = $result['qr_data'];
                 } else {
-                    return false;
+                    $errorMsg = $result['message'] ?? 'SecureLink QR generation failed';
+                    throw new Exception($errorMsg);
                 }
             } else {
-                // Fallback: simple QR code data
+                // Fallback: simple QR code data using asset reference
                 $qrCode = base64_encode($asset['ref'] . '|' . time());
             }
-            
+
             // Update asset with QR code
             $updateResult = $this->assetModel->update($assetId, ['qr_code' => $qrCode]);
-            
-            if ($updateResult) {
-                // Log QR generation
-                $this->logTagAction($assetId, 'generated', null, 'QR code generated');
+
+            if (!$updateResult) {
+                throw new Exception('Failed to save QR code to database');
             }
-            
-            return $updateResult;
-            
+
+            // Log QR generation
+            $this->logTagAction($assetId, 'generated', null, 'QR code generated');
+
+            return true;
+
         } catch (Exception $e) {
-            error_log("Generate QR code error: " . $e->getMessage());
-            return false;
+            error_log("Generate QR code error for asset $assetId: " . $e->getMessage());
+            throw $e; // Re-throw to provide specific error message
         }
     }
     
