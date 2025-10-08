@@ -34,86 +34,159 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <!-- QR Tag Overview Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">QR Generated</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-qr-code text-info fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">QR Generated</h6>
                         <h3 class="mb-0" id="qrGeneratedCount"><?= $tagStats['qr_generated'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-qr-code fs-2"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-qr-code me-1"></i>Codes created
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets/tag-management&status=needs_printing" class="text-decoration-none small">
+                    <i class="bi bi-filter me-1"></i>View Generated
+                </a>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Need Printing</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-printer text-warning fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Need Printing</h6>
                         <h3 class="mb-0" id="needsPrintingCount"><?= $tagStats['needs_printing'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-printer fs-2"></i>
-                    </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-printer me-1"></i>Ready to print
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets/tag-management&status=needs_printing" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Pending
+                </a>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Need Application</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-hand-index text-primary fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Need Application</h6>
                         <h3 class="mb-0" id="needsApplicationCount"><?= $tagStats['needs_application'] ?? 0 ?></h3>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-hand-index fs-2"></i>
+                </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-hand-index me-1"></i>Apply to items
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets/tag-management&status=needs_application" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Printed
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100" style="border-left: 4px solid <?= ($tagStats['needs_verification'] ?? 0) > 0 ? 'var(--danger-color)' : 'var(--neutral-color)' ?>;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-shield-check <?= ($tagStats['needs_verification'] ?? 0) > 0 ? 'text-danger' : 'text-secondary' ?> fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Need Verification</h6>
+                        <h3 class="mb-0" id="needsVerificationCount"><?= $tagStats['needs_verification'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-shield-check me-1"></i>Await verification
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <?php if (($tagStats['needs_verification'] ?? 0) > 0): ?>
+                    <a href="?route=assets/tag-management&status=needs_verification" class="text-decoration-none small">
+                        <i class="bi bi-eye me-1"></i>Review Tags
+                    </a>
+                <?php else: ?>
+                    <small class="text-muted">All verified</small>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Second Row of Statistics -->
-<div class="row mb-4">
+<div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="card bg-danger text-white">
+        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Need Verification</h6>
-                        <h3 class="mb-0" id="needsVerificationCount"><?= $tagStats['needs_verification'] ?? 0 ?></h3>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-shield-check fs-2"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Fully Tagged</h6>
+                        <h3 class="mb-0" id="fullyTaggedCount"><?= $tagStats['fully_tagged'] ?? 0 ?></h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>Complete workflow
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <a href="?route=assets/tag-management&status=fully_tagged" class="text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View Completed
+                </a>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
-        <div class="card bg-success text-white">
+        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Fully Tagged</h6>
-                        <h3 class="mb-0" id="fullyTaggedCount"><?= $tagStats['fully_tagged'] ?? 0 ?></h3>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle bg-light p-2 me-3">
+                        <i class="bi bi-graph-up text-secondary fs-5"></i>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle fs-2"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Total Progress</h6>
+                        <h3 class="mb-0">
+                            <?php
+                            $totalAssets = $tagStats['qr_generated'] ?? 0;
+                            $completed = $tagStats['fully_tagged'] ?? 0;
+                            $percentage = $totalAssets > 0 ? round(($completed / $totalAssets) * 100, 1) : 0;
+                            echo $percentage . '%';
+                            ?>
+                        </h3>
                     </div>
                 </div>
+                <p class="text-muted mb-0 small">
+                    <i class="bi bi-graph-up me-1"></i><?= $tagStats['fully_tagged'] ?? 0 ?> of <?= $tagStats['qr_generated'] ?? 0 ?> tagged
+                </p>
+            </div>
+            <div class="card-footer bg-light border-top">
+                <small class="text-muted">Tagging completion rate</small>
             </div>
         </div>
     </div>
@@ -123,7 +196,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php if (in_array($user['role_name'] ?? '', ['Project Manager', 'Site Inventory Clerk', 'Warehouseman']) && empty($user['current_project_id'])): ?>
 <div class="alert alert-warning">
     <i class="bi bi-exclamation-triangle me-2"></i>
-    <strong>No Project Assigned:</strong> You are not currently assigned to a project. Please contact your administrator to assign you to a project to access asset tag management.
+    <strong>No Project Assigned:</strong> You are not currently assigned to a project. Please contact your administrator to assign you to a project to access item tag management.
 </div>
 <?php endif; ?>
 
@@ -134,7 +207,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     Status Filter: <?= htmlspecialchars($_GET['status'] ?? 'none') ?><br>
     Project ID Filter: <?= htmlspecialchars($_GET['project_id'] ?? 'none') ?><br>
     Search Filter: <?= htmlspecialchars($_GET['search'] ?? 'none') ?><br>
-    Assets Count: <?= count($assets ?? []) ?>
+    Items Count: <?= count($assets ?? []) ?>
 </div>
 <?php endif; ?>
 
@@ -166,7 +239,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </select>
             <?php endif; ?>
             
-            <input type="text" name="search" class="form-control" placeholder="Search assets..." 
+            <input type="text" name="search" class="form-control" placeholder="Search items..." 
                    value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" style="width: 200px;" 
                    onkeypress="if(event.key==='Enter'){this.form.submit();}">
             
@@ -212,11 +285,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- Assets Table -->
+<!-- Items Table -->
 <div class="card">
     <div class="card-header">
         <h6 class="card-title mb-0">
-            <i class="bi bi-list me-2"></i>Assets QR Tag Status
+            <i class="bi bi-list me-2"></i>Items QR Tag Status
         </h6>
     </div>
     <div class="card-body">
@@ -227,7 +300,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <th width="30">
                             <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
                         </th>
-                        <th>Asset</th>
+                        <th>Item</th>
                         <th>Category</th>
                         <th>Project</th>
                         <th>QR Status</th>
@@ -270,67 +343,77 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div class="d-flex flex-column gap-1">
-                                        <!-- Printed Status -->
-                                        <?php if (!empty($asset['qr_tag_printed'])): ?>
-                                            <span class="badge bg-info" title="Printed: <?= $asset['qr_tag_printed'] ?>">
-                                                <i class="bi bi-printer me-1"></i>Printed
-                                            </span>
-                                        <?php elseif (!empty($asset['qr_code'])): ?>
-                                            <span class="badge bg-warning">
-                                                <i class="bi bi-printer me-1"></i>Needs Print
-                                            </span>
-                                        <?php endif; ?>
-                                        
-                                        <!-- Applied Status -->
-                                        <?php if (!empty($asset['qr_tag_applied'])): ?>
-                                            <span class="badge bg-primary" title="Applied: <?= $asset['qr_tag_applied'] ?>">
-                                                <i class="bi bi-hand-index me-1"></i>Applied
-                                            </span>
-                                        <?php elseif (!empty($asset['qr_tag_printed'])): ?>
-                                            <span class="badge bg-warning">
-                                                <i class="bi bi-hand-index me-1"></i>Needs Application
-                                            </span>
-                                        <?php endif; ?>
-                                        
-                                        <!-- Verified Status -->
-                                        <?php if (!empty($asset['qr_tag_verified'])): ?>
-                                            <span class="badge bg-success" title="Verified: <?= $asset['qr_tag_verified'] ?>">
-                                                <i class="bi bi-check-circle me-1"></i>Verified
-                                            </span>
-                                        <?php elseif (!empty($asset['qr_tag_applied'])): ?>
-                                            <span class="badge bg-warning">
-                                                <i class="bi bi-check-circle me-1"></i>Needs Verification
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
+                                    <?php
+                                    // Show only the current status in the workflow
+                                    // Verified > Applied > Printed > Needs Print
+                                    if (!empty($asset['qr_tag_verified'])):
+                                    ?>
+                                        <span class="badge bg-success" title="Verified: <?= $asset['qr_tag_verified'] ?>">
+                                            <i class="bi bi-check-circle me-1"></i>Verified
+                                        </span>
+                                    <?php elseif (!empty($asset['qr_tag_applied'])): ?>
+                                        <span class="badge bg-primary" title="Applied: <?= $asset['qr_tag_applied'] ?>">
+                                            <i class="bi bi-hand-index me-1"></i>Applied
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Needs Verification</small>
+                                    <?php elseif (!empty($asset['qr_tag_printed'])): ?>
+                                        <span class="badge bg-info" title="Printed: <?= $asset['qr_tag_printed'] ?>">
+                                            <i class="bi bi-printer me-1"></i>Printed
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Needs Application</small>
+                                    <?php elseif (!empty($asset['qr_code'])): ?>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-qr-code me-1"></i>Generated
+                                        </span>
+                                        <small class="text-muted d-block mt-1">Needs Printing</small>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-dash-circle me-1"></i>Not Generated
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <?php if (empty($asset['qr_code'])): ?>
-                                            <button type="button" class="btn btn-outline-primary" 
+                                            <button type="button" class="btn btn-outline-primary"
                                                     onclick="generateQR(<?= $asset['id'] ?>)"
                                                     title="Generate QR Code">
                                                 <i class="bi bi-qr-code"></i>
                                             </button>
                                         <?php endif; ?>
-                                        
+
                                         <?php if (!empty($asset['qr_code'])): ?>
-                                            <button type="button" class="btn btn-outline-success" 
+                                            <button type="button" class="btn btn-outline-success"
                                                     onclick="printSingleTag(<?= $asset['id'] ?>)"
                                                     title="Print Tag">
                                                 <i class="bi bi-printer"></i>
                                             </button>
-                                            
-                                            <button type="button" class="btn btn-outline-info" 
+
+                                            <button type="button" class="btn btn-outline-info"
                                                     onclick="previewTag(<?= $asset['id'] ?>)"
                                                     title="Preview Tag">
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         <?php endif; ?>
-                                        
-                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>" 
-                                           class="btn btn-outline-secondary" title="View Asset">
+
+                                        <?php if (!empty($asset['qr_tag_printed']) && empty($asset['qr_tag_applied']) && $canApply): ?>
+                                            <button type="button" class="btn btn-outline-warning"
+                                                    onclick="markSingleAsApplied(<?= $asset['id'] ?>)"
+                                                    title="Mark as Applied">
+                                                <i class="bi bi-hand-index"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($asset['qr_tag_applied']) && empty($asset['qr_tag_verified']) && $canVerify): ?>
+                                            <button type="button" class="btn btn-outline-primary"
+                                                    onclick="markSingleAsVerified(<?= $asset['id'] ?>)"
+                                                    title="Mark as Verified">
+                                                <i class="bi bi-shield-check"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>"
+                                           class="btn btn-outline-secondary" title="View Item">
                                             <i class="bi bi-box-arrow-up-right"></i>
                                         </a>
                                     </div>
@@ -341,7 +424,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <tr>
                             <td colspan="7" class="text-center py-4">
                                 <i class="bi bi-inbox fs-1 text-muted"></i>
-                                <p class="text-muted mt-2">No assets found matching the current filters.</p>
+                                <p class="text-muted mt-2">No items found matching the current filters.</p>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -351,11 +434,19 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         
         <!-- Pagination -->
         <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-            <nav aria-label="Assets pagination" class="mt-3">
+            <nav aria-label="Items pagination" class="mt-3">
                 <ul class="pagination justify-content-center">
                     <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                         <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?route=assets/tag-management&page=<?= $i ?>&<?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
+                            <?php
+                            // Build query string preserving all filters except page and route
+                            $queryParams = $_GET;
+                            unset($queryParams['page']);
+                            unset($queryParams['route']);
+                            $queryParams['page'] = $i;
+                            $queryString = http_build_query($queryParams);
+                            ?>
+                            <a class="page-link" href="?route=assets/tag-management&<?= $queryString ?>">
                                 <?= $i ?>
                             </a>
                         </li>
@@ -413,7 +504,7 @@ function updateBulkButtons() {
     if (markVerifiedBtn) markVerifiedBtn.disabled = checkedBoxes.length === 0;
 }
 
-// Generate QR code for asset
+// Generate QR code for item
 function generateQR(assetId) {
     fetch(`?route=api/assets/generate-qr`, {
         method: 'POST',
@@ -505,7 +596,7 @@ function bulkPrintTags() {
     const assetIds = Array.from(checkedBoxes).map(cb => cb.value);
 
     if (assetIds.length === 0) {
-        alert('Please select assets to print tags for');
+        alert('Please select items to print tags for');
         return;
     }
 
@@ -598,20 +689,48 @@ function markBulkTagsAsPrinted(assetIds) {
     });
 }
 
-// Mark as applied
+// Mark single tag as applied
+function markSingleAsApplied(assetId) {
+    if (!confirm('Mark this QR tag as applied to the item?')) {
+        return;
+    }
+
+    fetch(`?route=api/assets/mark-tags-applied`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: `asset_ids=${assetId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to mark tag as applied: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating tag status');
+    });
+}
+
+// Mark as applied (bulk)
 function markAsApplied() {
     const checkedBoxes = document.querySelectorAll('.asset-checkbox:checked');
     const assetIds = Array.from(checkedBoxes).map(cb => cb.value);
-    
+
     if (assetIds.length === 0) {
-        alert('Please select assets to mark as applied');
+        alert('Please select items to mark as applied');
         return;
     }
-    
-    if (!confirm(`Mark ${assetIds.length} asset(s) as having QR tags applied?`)) {
+
+    if (!confirm(`Mark ${assetIds.length} item(s) as having QR tags applied?`)) {
         return;
     }
-    
+
     fetch(`?route=api/assets/mark-tags-applied`, {
         method: 'POST',
         headers: {
@@ -634,20 +753,48 @@ function markAsApplied() {
     });
 }
 
-// Mark as verified
+// Mark single tag as verified
+function markSingleAsVerified(assetId) {
+    if (!confirm('Mark this QR tag as verified?')) {
+        return;
+    }
+
+    fetch(`?route=api/assets/verify-tags`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: `asset_ids=${assetId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to verify tag: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while verifying tag');
+    });
+}
+
+// Mark as verified (bulk)
 function markAsVerified() {
     const checkedBoxes = document.querySelectorAll('.asset-checkbox:checked');
     const assetIds = Array.from(checkedBoxes).map(cb => cb.value);
-    
+
     if (assetIds.length === 0) {
-        alert('Please select assets to mark as verified');
+        alert('Please select items to mark as verified');
         return;
     }
-    
-    if (!confirm(`Mark ${assetIds.length} asset(s) as having QR tags verified?`)) {
+
+    if (!confirm(`Mark ${assetIds.length} item(s) as having QR tags verified?`)) {
         return;
     }
-    
+
     fetch(`?route=api/assets/verify-tags`, {
         method: 'POST',
         headers: {
@@ -696,7 +843,7 @@ $pageTitle = 'QR Tag Management - ConstructLink™';
 $pageHeader = 'QR Tag Management';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Assets', 'url' => '?route=assets'],
+    ['title' => 'Inventory', 'url' => '?route=assets'],
     ['title' => 'QR Tag Management', 'url' => '?route=assets/tag-management']
 ];
 

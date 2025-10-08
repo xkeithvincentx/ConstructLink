@@ -531,22 +531,27 @@
             <!-- Asset Reference -->
             <div class="asset-ref">
                 <?php
+                // ISO standard asset references can be up to 50 characters
+                // Adjust max length per tag size to accommodate longer references
                 $refLengthMap = [
-                    'micro' => 8,
-                    'compact' => 10,
-                    'standard' => 15,
-                    'industrial' => 18,
-                    'materials' => 20,
-                    'infrastructure' => 25,
+                    'micro' => 12,           // Compact tags need tight limits
+                    'compact' => 18,         // Small equipment tags
+                    'standard' => 28,        // Standard capital asset tags
+                    'industrial' => 35,      // Large equipment tags
+                    'materials' => 32,       // Wide format materials tags
+                    'infrastructure' => 45,  // Large infrastructure tags
                     // Legacy support
-                    'small' => 10,
-                    'medium' => 15,
-                    'large' => 18,
-                    'consumable' => 20
+                    'small' => 18,
+                    'medium' => 28,
+                    'large' => 35,
+                    'consumable' => 32
                 ];
-                $maxLength = $refLengthMap[$tagSize] ?? 15;
+                $maxLength = $refLengthMap[$tagSize] ?? 28;
+                $displayRef = strlen($asset['ref']) > $maxLength
+                    ? substr($asset['ref'], 0, $maxLength - 3) . '...'
+                    : $asset['ref'];
                 ?>
-                REF: <?= htmlspecialchars(substr($asset['ref'], 0, $maxLength)) ?>
+                <?= htmlspecialchars($displayRef) ?>
             </div>
             
             <!-- Asset Name -->

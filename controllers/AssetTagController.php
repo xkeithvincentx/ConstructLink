@@ -236,25 +236,31 @@ class AssetTagController {
         $qrData = $asset['ref'];
         $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$qrSize}x{$qrSize}&data=" . urlencode($qrData);
         
-        // Ref length mapping
+        // ISO standard asset references can be up to 50 characters
+        // Ref length mapping - adjusted for longer references
         $refLengthMap = [
-            'micro' => 8,
-            'compact' => 10,
-            'standard' => 15,
-            'industrial' => 18,
-            'materials' => 20,
-            'infrastructure' => 25,
+            'micro' => 12,           // Compact tags need tight limits
+            'compact' => 18,         // Small equipment tags
+            'standard' => 28,        // Standard capital asset tags
+            'industrial' => 35,      // Large equipment tags
+            'materials' => 32,       // Wide format materials tags
+            'infrastructure' => 45,  // Large infrastructure tags
             // Legacy support
-            'small' => 10,
-            'medium' => 15,
-            'large' => 18,
-            'consumable' => 20
+            'small' => 18,
+            'medium' => 28,
+            'large' => 35,
+            'consumable' => 32
         ];
-        $maxLength = $refLengthMap[$tagSize] ?? 15;
-        
+        $maxLength = $refLengthMap[$tagSize] ?? 28;
+
+        // Smart truncation for long references
+        $displayRef = strlen($asset['ref']) > $maxLength
+            ? substr($asset['ref'], 0, $maxLength - 3) . '...'
+            : $asset['ref'];
+
         // Status indicator
         $statusClass = 'status-' . str_replace('_', '-', $asset['status'] ?? 'available');
-        
+
         $html = '
         <div style="text-align: center; padding: 20px;">
             <div class="qr-tag tag-' . htmlspecialchars($tagSize) . '" style="
@@ -275,7 +281,7 @@ class AssetTagController {
                     margin-bottom: 8px;
                     font-size: ' . ($tagSize === 'micro' ? '8px' : ($tagSize === 'compact' ? '10px' : ($tagSize === 'standard' ? '12px' : ($tagSize === 'industrial' ? '16px' : ($tagSize === 'materials' ? '14px' : '20px'))))) . ';
                 ">SecureLink™</div>
-                
+
                 <!-- QR Code -->
                 <div style="
                     background: #f8f9fa;
@@ -289,7 +295,7 @@ class AssetTagController {
                 ">
                     <img src="' . $qrCodeUrl . '" alt="QR Code" style="max-width: 100%; max-height: 100%;">
                 </div>
-                
+
                 <!-- Asset Reference -->
                 <div style="
                     font-weight: bold;
@@ -297,7 +303,7 @@ class AssetTagController {
                     word-wrap: break-word;
                     font-size: ' . ($tagSize === 'micro' ? '12px' : ($tagSize === 'compact' ? '16px' : ($tagSize === 'standard' ? '20px' : ($tagSize === 'industrial' ? '24px' : ($tagSize === 'materials' ? '22px' : '28px'))))) . ';
                 ">
-                    REF: ' . htmlspecialchars(substr($asset['ref'], 0, $maxLength)) . '
+                    ' . htmlspecialchars($displayRef) . '
                 </div>
                 
                 <!-- Asset Name -->

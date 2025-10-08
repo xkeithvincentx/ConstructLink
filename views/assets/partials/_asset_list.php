@@ -392,55 +392,39 @@ function pluralizeUnit($quantity, $unit) {
                                     <?php endif; ?>
                                 </td>
                                 <td class="d-none d-xl-table-cell text-center">
-                                    <?php 
-                                    // QR Tag Status Indicators
+                                    <?php
+                                    // QR Tag Status - Show only current status in workflow
+                                    // Verified > Applied > Printed > Generated > Not Generated
                                     $hasQR = !empty($asset['qr_code']);
                                     $isPrinted = !empty($asset['qr_tag_printed']);
                                     $isApplied = !empty($asset['qr_tag_applied']);
                                     $isVerified = !empty($asset['qr_tag_verified']);
                                     ?>
-                                    
-                                    <div class="d-flex flex-column gap-1">
-                                        <?php if ($hasQR): ?>
-                                            <small class="text-success">
-                                                <i class="bi bi-qr-code me-1"></i>QR Generated
-                                            </small>
-                                            
-                                            <?php if ($isPrinted): ?>
-                                                <small class="text-info">
-                                                    <i class="bi bi-printer me-1"></i>Printed
-                                                </small>
-                                            <?php else: ?>
-                                                <small class="text-warning">
-                                                    <i class="bi bi-printer me-1"></i>Need Print
-                                                </small>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($isApplied): ?>
-                                                <small class="text-primary">
-                                                    <i class="bi bi-hand-index me-1"></i>Applied
-                                                </small>
-                                            <?php elseif ($isPrinted): ?>
-                                                <small class="text-warning">
-                                                    <i class="bi bi-hand-index me-1"></i>Need Apply
-                                                </small>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($isVerified): ?>
-                                                <small class="text-success">
-                                                    <i class="bi bi-check-circle me-1"></i>Verified
-                                                </small>
-                                            <?php elseif ($isApplied): ?>
-                                                <small class="text-warning">
-                                                    <i class="bi bi-check-circle me-1"></i>Need Verify
-                                                </small>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <small class="text-danger">
-                                                <i class="bi bi-x-circle me-1"></i>No QR Code
-                                            </small>
-                                        <?php endif; ?>
-                                    </div>
+
+                                    <?php if ($isVerified): ?>
+                                        <small class="text-success fw-bold">
+                                            <i class="bi bi-check-circle me-1"></i>Verified
+                                        </small>
+                                    <?php elseif ($isApplied): ?>
+                                        <small class="text-primary fw-bold">
+                                            <i class="bi bi-hand-index me-1"></i>Applied
+                                        </small>
+                                        <small class="text-muted">Need Verify</small>
+                                    <?php elseif ($isPrinted): ?>
+                                        <small class="text-info fw-bold">
+                                            <i class="bi bi-printer me-1"></i>Printed
+                                        </small>
+                                        <small class="text-muted">Need Apply</small>
+                                    <?php elseif ($hasQR): ?>
+                                        <small class="text-warning fw-bold">
+                                            <i class="bi bi-qr-code me-1"></i>Generated
+                                        </small>
+                                        <small class="text-muted">Need Print</small>
+                                    <?php else: ?>
+                                        <small class="text-danger">
+                                            <i class="bi bi-dash-circle me-1"></i>No QR
+                                        </small>
+                                    <?php endif; ?>
                                 </td>
                                 <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
                                 <td class="d-none d-xxl-table-cell text-center">

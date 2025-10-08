@@ -2039,68 +2039,91 @@ class AssetController {
     private function checkEditPermissions($userRole, $userId, $asset) {
         $workflowStatus = $asset['workflow_status'] ?? '';
         $assetMakerId = $asset['made_by'] ?? 0;
-        
+        $assetSource = $asset['asset_source'] ?? 'manual';
+
         // System Admin and Asset Director can always edit
         if (in_array($userRole, ['System Admin', 'Asset Director'])) {
             return ['allowed' => true, 'message' => ''];
         }
-        
+
         // Check permissions based on workflow status
         switch ($workflowStatus) {
             case 'draft':
             case 'pending_verification':
-                // Site Inventory Clerks can edit their own assets before verification
-                if ($userRole === 'Site Inventory Clerk') {
+                // Warehouseman can only edit their own legacy assets in draft/pending stages
+                if ($userRole === 'Warehouseman' && $assetSource === 'legacy') {
                     if ($assetMakerId == $userId) {
                         return ['allowed' => true, 'message' => ''];
                     } else {
                         return [
-                            'allowed' => false, 
-                            'message' => 'You can only edit assets that you created. This asset was created by someone else.'
+                            'allowed' => false,
+                            'message' => 'You can only edit legacy items that you created.'
                         ];
                     }
                 }
-                
+
+                // Site Inventory Clerks can edit ANY asset during verification (to correct Warehouseman errors)
+                if ($userRole === 'Site Inventory Clerk') {
+                    return [
+                        'allowed' => true,
+                        'message' => '',
+                        'correction_role' => true // Flag that this is a correction by verifier
+                    ];
+                }
+
                 // Procurement Officers can edit during these stages
                 if ($userRole === 'Procurement Officer') {
                     return ['allowed' => true, 'message' => ''];
                 }
-                
+
                 break;
-                
+
             case 'pending_authorization':
+                // Site Inventory Clerk can still correct during authorization stage (before final approval)
+                if ($userRole === 'Site Inventory Clerk') {
+                    return [
+                        'allowed' => true,
+                        'message' => '',
+                        'correction_role' => true
+                    ];
+                }
+
                 // Project Managers can edit during authorization review
                 if ($userRole === 'Project Manager') {
-                    return ['allowed' => true, 'message' => ''];
+                    return [
+                        'allowed' => true,
+                        'message' => '',
+                        'correction_role' => true
+                    ];
                 }
-                
+
                 // Procurement Officers can still edit
                 if ($userRole === 'Procurement Officer') {
                     return ['allowed' => true, 'message' => ''];
                 }
-                
+
                 break;
-                
+
             case 'approved':
             case 'authorized':
                 // Only Asset Director and System Admin can edit approved assets
                 return [
                     'allowed' => false,
-                    'message' => 'This asset has been approved and cannot be edited. Please contact the Asset Director if changes are needed, or submit a change request through the system.'
+                    'message' => 'This item has been approved and cannot be edited. Please contact the Asset Director if changes are needed, or submit a change request through the system.'
                 ];
-                
+
             default:
                 // Unknown status - be restrictive
                 return [
                     'allowed' => false,
-                    'message' => 'Asset has unknown status. Please contact system administrator.'
+                    'message' => 'Item has unknown status. Please contact system administrator.'
                 ];
         }
-        
+
         // Default deny for roles not explicitly allowed
         return [
             'allowed' => false,
-            'message' => 'Your role (' . $userRole . ') does not have permission to edit assets in this workflow stage (' . $workflowStatus . ').'
+            'message' => 'Your role (' . $userRole . ') does not have permission to edit items in this workflow stage (' . $workflowStatus . ').'
         ];
     }
     
