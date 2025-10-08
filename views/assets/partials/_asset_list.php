@@ -3,7 +3,44 @@
  * Asset List Partial
  * Displays asset table/cards with pagination (mobile + desktop views)
  */
+
+// Helper function to properly pluralize units
+function pluralizeUnit($quantity, $unit) {
+    $quantity = (int)$quantity;
+
+    // Units that don't change in plural (mass nouns)
+    $unchangeable = ['kg', 'lbs', 'liters', 'gallons', 'meters', 'm', 'ft'];
+    if (in_array(strtolower($unit), $unchangeable)) {
+        return $unit;
+    }
+
+    // Special plural forms
+    $specialPlurals = [
+        'pc' => 'pcs',
+        'piece' => 'pieces',
+        'box' => 'boxes',
+        'bag' => 'bags',
+        'roll' => 'rolls',
+        'bottle' => 'bottles',
+        'can' => 'cans',
+        'pack' => 'packs',
+        'set' => 'sets',
+        'unit' => 'units'
+    ];
+
+    $lowerUnit = strtolower($unit);
+
+    // Return singular or plural based on quantity
+    if ($quantity == 1) {
+        // For quantity of 1, use singular
+        return array_search($lowerUnit, array_map('strtolower', $specialPlurals)) ?: $unit;
+    } else {
+        // For quantity > 1, use plural
+        return $specialPlurals[$lowerUnit] ?? $unit;
+    }
+}
 ?>
+
 
 <!-- Inventory Table -->
 <div class="card">
@@ -105,7 +142,7 @@
                             <div class="mb-2">
                                 <small class="text-muted">Quantity: </small>
                                 <strong><?= number_format($availableQuantity) ?> / <?= number_format($quantity) ?></strong>
-                                <small class="text-muted"><?= htmlspecialchars($asset['unit'] ?? 'pcs') ?></small>
+                                <small class="text-muted"><?= htmlspecialchars(pluralizeUnit($quantity, $asset['unit'] ?? 'pc')) ?></small>
                                 <?php if ($isConsumable && $availableQuantity == 0): ?>
                                     <span class="badge bg-danger ms-1">Out of stock</span>
                                 <?php elseif ($isConsumable && $availableQuantity <= ($quantity * 0.2)): ?>
@@ -277,10 +314,10 @@
                                     // Get asset quantity information
                                     $quantity = (int)($asset['quantity'] ?? 1);
                                     $availableQuantity = (int)($asset['available_quantity'] ?? 1);
-                                    $unit = $asset['unit'] ?? 'pcs';
+                                    $unit = $asset['unit'] ?? 'pc';
                                     $isConsumable = isset($asset['is_consumable']) && $asset['is_consumable'] == 1;
                                     ?>
-                                    
+
                                     <?php if ($isConsumable): ?>
                                         <div class="d-flex flex-column align-items-center">
                                             <div class="mb-1">
@@ -289,10 +326,10 @@
                                             </div>
                                             <div class="text-center">
                                                 <small class="text-muted d-block d-sm-none">
-                                                    <?= htmlspecialchars($unit) ?>
+                                                    <?= htmlspecialchars(pluralizeUnit($quantity, $unit)) ?>
                                                 </small>
                                                 <small class="text-muted d-none d-sm-block">
-                                                    Available / Total <?= htmlspecialchars($unit) ?>
+                                                    Available / Total <?= htmlspecialchars(pluralizeUnit($quantity, $unit)) ?>
                                                 </small>
                                                 <?php if ($availableQuantity == 0): ?>
                                                     <small class="text-danger">
@@ -312,7 +349,7 @@
                                         </div>
                                     <?php else: ?>
                                         <div class="text-center">
-                                            <span class="badge bg-light text-dark">1 <?= htmlspecialchars($unit) ?></span>
+                                            <span class="badge bg-light text-dark">1 <?= htmlspecialchars(pluralizeUnit(1, $unit)) ?></span>
                                             <small class="text-muted d-block d-none d-sm-block">Individual item</small>
                                         </div>
                                     <?php endif; ?>
