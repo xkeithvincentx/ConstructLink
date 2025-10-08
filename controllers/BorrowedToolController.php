@@ -203,13 +203,18 @@ class BorrowedToolController {
         $errors = [];
         $messages = [];
         $formData = [];
-        
+
+        // Pre-fill asset_id if passed from asset index page
+        if (isset($_GET['asset_id']) && is_numeric($_GET['asset_id'])) {
+            $formData['asset_id'] = (int)$_GET['asset_id'];
+        }
+
         // Check if user has an assigned project
         $currentUser = $this->auth->getCurrentUser();
         if (!$currentUser['current_project_id']) {
             $errors[] = 'You must be assigned to a project to borrow tools. Please contact your administrator.';
         }
-        
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             CSRFProtection::validateRequest();
             
