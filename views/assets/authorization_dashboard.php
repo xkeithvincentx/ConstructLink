@@ -55,10 +55,25 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <div class="d-flex justify-content-between">
                     <div>
                         <h6 class="card-title">Pending Authorization</h6>
-                        <h3 class="mb-0" id="pendingCount">-</h3>
+                        <h3 class="mb-0"><?= $workflowStats['pending_authorization'] ?? 0 ?></h3>
                     </div>
                     <div class="align-self-center">
                         <i class="bi bi-shield-exclamation fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending Verification</h6>
+                        <h3 class="mb-0"><?= $workflowStats['pending_verification'] ?? 0 ?></h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock-history fs-2"></i>
                     </div>
                 </div>
             </div>
@@ -69,8 +84,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="card-title">Authorized Today</h6>
-                        <h3 class="mb-0" id="authorizedTodayCount">-</h3>
+                        <h6 class="card-title">Approved Legacy</h6>
+                        <h3 class="mb-0"><?= $workflowStats['approved_legacy'] ?? 0 ?></h3>
                     </div>
                     <div class="align-self-center">
                         <i class="bi bi-shield-check fs-2"></i>
@@ -84,23 +99,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h6 class="card-title">This Week</h6>
-                        <h3 class="mb-0" id="weekCount">-</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-calendar-week fs-2"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Assets</h6>
-                        <h3 class="mb-0" id="totalCount">-</h3>
+                        <h6 class="card-title">Total Legacy Items</h6>
+                        <h3 class="mb-0"><?= $workflowStats['total_legacy'] ?? 0 ?></h3>
                     </div>
                     <div class="align-self-center">
                         <i class="bi bi-collection fs-2"></i>
@@ -187,20 +187,57 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </tr>
                 </thead>
                 <tbody id="pendingAuthorizationBody">
-                    <!-- Dynamic content will be loaded here -->
+                    <?php if (!empty($pendingAssets)): ?>
+                        <?php foreach ($pendingAssets as $asset): ?>
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input asset-checkbox"
+                                           value="<?= $asset['id'] ?>" onchange="updateSelectedAssets()">
+                                </td>
+                                <td>
+                                    <strong><?= htmlspecialchars($asset['name']) ?></strong><br>
+                                    <small class="text-muted">REF: <?= htmlspecialchars($asset['ref']) ?></small>
+                                </td>
+                                <td><?= htmlspecialchars($asset['brand'] ?? 'N/A') ?></td>
+                                <td><?= htmlspecialchars($asset['maker_name'] ?? 'N/A') ?></td>
+                                <td><?= htmlspecialchars($asset['category_name'] ?? 'N/A') ?></td>
+                                <td>
+                                    <?php if (!empty($asset['sub_location'])): ?>
+                                        <?= htmlspecialchars($asset['sub_location']) ?>
+                                    <?php elseif (!empty($asset['location'])): ?>
+                                        <?= htmlspecialchars($asset['location']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Not set</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars($asset['quantity'] ?? 1) ?> <?= htmlspecialchars($asset['unit'] ?? 'pc') ?></td>
+                                <td><?= htmlspecialchars($asset['verified_by_username'] ?? 'Unknown') ?></td>
+                                <td><?= !empty($asset['verified_at']) ? date('M d, Y', strtotime($asset['verified_at'])) : 'N/A' ?></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>"
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-success"
+                                                onclick="authorizeAsset(<?= $asset['id'] ?>)" title="Authorize">
+                                            <i class="bi bi-shield-check"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <i class="bi bi-shield-check text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-2">No items pending authorization</h5>
+                                <p class="text-muted">All verified items have been authorized!</p>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
-        </div>
-        <div id="loadingMessage" class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2 text-muted">Loading assets ready for authorization...</p>
-        </div>
-        <div id="noDataMessage" class="text-center py-4" style="display: none;">
-            <i class="bi bi-shield-check text-muted" style="font-size: 3rem;"></i>
-            <h5 class="text-muted mt-2">No assets pending authorization</h5>
-            <p class="text-muted">All verified assets have been authorized!</p>
         </div>
     </div>
 </div>
