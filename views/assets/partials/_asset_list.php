@@ -41,21 +41,29 @@
                     <?php
                     // Get asset data for mobile view
                     $status = $asset['status'] ?? 'available';
-                    $statusClasses = [
-                        'available' => 'bg-success',
-                        'in_use' => 'bg-primary',
-                        'borrowed' => 'bg-info',
-                        'in_transit' => 'bg-warning',
-                        'under_maintenance' => 'bg-secondary',
-                        'retired' => 'bg-dark',
-                        'disposed' => 'bg-danger'
-                    ];
-                    $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                    $assetSource = $asset['asset_source'] ?? 'manual';
+                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
                     $quantity = (int)($asset['quantity'] ?? 1);
                     $availableQuantity = (int)($asset['available_quantity'] ?? 1);
                     $isConsumable = isset($asset['is_consumable']) && $asset['is_consumable'] == 1;
-                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
-                    $assetSource = $asset['asset_source'] ?? 'manual';
+
+                    // Override status display for pending legacy assets
+                    if ($assetSource === 'legacy' && $workflowStatus !== 'approved'):
+                        $displayStatus = $workflowStatus === 'pending_verification' ? 'Pending Verification' : 'Pending Authorization';
+                        $statusClass = 'bg-warning text-dark';
+                    else:
+                        $statusClasses = [
+                            'available' => 'bg-success',
+                            'in_use' => 'bg-primary',
+                            'borrowed' => 'bg-info',
+                            'in_transit' => 'bg-warning',
+                            'under_maintenance' => 'bg-secondary',
+                            'retired' => 'bg-dark',
+                            'disposed' => 'bg-danger'
+                        ];
+                        $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                        $displayStatus = ucfirst(str_replace('_', ' ', $status));
+                    endif;
                     ?>
                     <div class="card mb-3">
                         <div class="card-body">
@@ -69,7 +77,7 @@
                                         <i class="bi bi-qr-code text-primary ms-1" title="QR Code Available"></i>
                                     <?php endif; ?>
                                 </div>
-                                <span class="badge <?= $statusClass ?>"><?= ucfirst($status) ?></span>
+                                <span class="badge <?= $statusClass ?>"><?= $displayStatus ?></span>
                             </div>
 
                             <!-- Asset Name -->
@@ -159,8 +167,11 @@
                                         <?php endif; ?>
 
                                         <?php
-                                        // Borrow/Withdraw actions based on asset type
-                                        if ($status === 'available'):
+                                        // Borrow/Withdraw actions - only for approved assets
+                                        // Legacy assets must be approved before they can be borrowed/withdrawn
+                                        $isApproved = ($assetSource === 'manual') || ($assetSource === 'legacy' && $workflowStatus === 'approved');
+
+                                        if ($status === 'available' && $isApproved):
                                             if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
                                         ?>
                                             <li>
@@ -309,20 +320,30 @@
                                 <td class="text-center">
                                     <?php
                                     $status = $asset['status'] ?? 'unknown';
-                                    $statusClasses = [
-                                        'available' => 'bg-success',
-                                        'in_use' => 'bg-primary',
-                                        'borrowed' => 'bg-info',
-                                        'under_maintenance' => 'bg-warning',
-                                        'retired' => 'bg-secondary',
-                                        'disposed' => 'bg-dark'
-                                    ];
-                                    $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
+
+                                    // Override status display for pending legacy assets
+                                    if ($assetSource === 'legacy' && $workflowStatus !== 'approved'):
+                                        $displayStatus = $workflowStatus === 'pending_verification' ? 'Pending Verification' : 'Pending Authorization';
+                                        $statusClass = 'bg-warning text-dark';
+                                    else:
+                                        $statusClasses = [
+                                            'available' => 'bg-success',
+                                            'in_use' => 'bg-primary',
+                                            'borrowed' => 'bg-info',
+                                            'under_maintenance' => 'bg-warning',
+                                            'retired' => 'bg-secondary',
+                                            'disposed' => 'bg-dark'
+                                        ];
+                                        $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                                        $displayStatus = ucfirst(str_replace('_', ' ', $status));
+                                    endif;
                                     ?>
                                     <span class="badge <?= $statusClass ?>">
-                                        <?= ucfirst(str_replace('_', ' ', $status)) ?>
+                                        <?= $displayStatus ?>
                                     </span>
-                                    
+
                                     <?php if ($isConsumable && $availableQuantity == 0): ?>
                                         <small class="text-danger d-block">
                                             <i class="bi bi-exclamation-circle me-1"></i>Out of stock
@@ -503,8 +524,11 @@
                                             <?php endif; ?>
 
                                             <?php
-                                            // Borrow/Withdraw actions based on asset type
-                                            if ($status === 'available'):
+                                            // Borrow/Withdraw actions - only for approved assets
+                                            // Legacy assets must be approved before they can be borrowed/withdrawn
+                                            $isApproved = ($assetSource === 'manual') || ($assetSource === 'legacy' && $workflowStatus === 'approved');
+
+                                            if ($status === 'available' && $isApproved):
                                                 if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
                                             ?>
                                                 <li>
