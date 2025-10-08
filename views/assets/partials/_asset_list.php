@@ -133,16 +133,35 @@
                                 ?>
 
                                 <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
-                                    <a href="?route=assets/edit&id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-warning flex-grow-1">
+                                    <a href="?route=assets/edit&id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-secondary flex-grow-1">
                                         <i class="bi bi-pencil me-1"></i>Edit
                                     </a>
                                 <?php endif; ?>
 
-                                <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
-                                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-success flex-grow-1">
-                                        <i class="bi bi-box-arrow-right me-1"></i>Withdraw
-                                    </a>
-                                <?php endif; ?>
+                                <?php
+                                // Show appropriate action based on asset type
+                                if ($status === 'available'):
+                                    if ($isConsumable):
+                                        // Consumable items: Show Withdraw button
+                                        if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
+                                ?>
+                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-success flex-grow-1">
+                                                <i class="bi bi-box-arrow-right me-1"></i>Withdraw
+                                            </a>
+                                <?php
+                                        endif;
+                                    else:
+                                        // Capital Assets (equipment): Show Borrow button
+                                        if (in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
+                                ?>
+                                            <a href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-info flex-grow-1">
+                                                <i class="bi bi-clock-history me-1"></i>Borrow
+                                            </a>
+                                <?php
+                                        endif;
+                                    endif;
+                                endif;
+                                ?>
 
                                 <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
                                     <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1"
@@ -437,7 +456,7 @@
                                         endif;
                                         ?>
 
-                                        <!-- Standard action buttons (Edit, Withdraw, Delete) -->
+                                        <!-- Standard action buttons (Edit, Borrow/Withdraw, Delete) -->
                                         <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
                                             <a href="?route=assets/edit&id=<?= $asset['id'] ?>"
                                                class="btn btn-outline-secondary btn-sm"
@@ -446,13 +465,34 @@
                                             </a>
                                         <?php endif; ?>
 
-                                        <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
-                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>"
-                                               class="btn btn-outline-success btn-sm"
-                                               title="Withdraw Item">
-                                                <i class="bi bi-box-arrow-right"></i>
-                                            </a>
-                                        <?php endif; ?>
+                                        <?php
+                                        // Show appropriate action based on asset type
+                                        if ($status === 'available'):
+                                            if ($isConsumable):
+                                                // Consumable items: Show Withdraw button
+                                                if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
+                                        ?>
+                                                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>"
+                                                       class="btn btn-outline-success btn-sm"
+                                                       title="Withdraw Consumable Item">
+                                                        <i class="bi bi-box-arrow-right"></i>
+                                                    </a>
+                                        <?php
+                                                endif;
+                                            else:
+                                                // Capital Assets (equipment): Show Borrow button
+                                                if (in_array($userRole, $roleConfig['borrowed-tools/create'] ?? [])):
+                                        ?>
+                                                    <a href="?route=borrowed-tools/create&asset_id=<?= $asset['id'] ?>"
+                                                       class="btn btn-outline-info btn-sm"
+                                                       title="Borrow Equipment">
+                                                        <i class="bi bi-clock-history"></i>
+                                                    </a>
+                                        <?php
+                                                endif;
+                                            endif;
+                                        endif;
+                                        ?>
 
                                         <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
                                             <button type="button"
