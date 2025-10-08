@@ -1,0 +1,532 @@
+<?php
+/**
+ * Asset List Partial
+ * Displays asset table/cards with pagination (mobile + desktop views)
+ */
+?>
+
+<!-- Inventory Table -->
+<div class="card">
+    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+        <h6 class="card-title mb-0">Inventory</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <?php if (in_array($userRole, $roleConfig['assets/export'] ?? [])): ?>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel me-1"></i>
+                    <span class="d-none d-md-inline">Export</span>
+                </button>
+            <?php endif; ?>
+            <button class="btn btn-sm btn-outline-secondary" onclick="printTable()">
+                <i class="bi bi-printer me-1"></i>
+                <span class="d-none d-md-inline">Print</span>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <?php if (empty($assets)): ?>
+            <div class="text-center py-5">
+                <i class="bi bi-box-seam display-1 text-muted"></i>
+                <h5 class="mt-3 text-muted">No inventory items found</h5>
+                <p class="text-muted">Try adjusting your filters or add your first item to the system.</p>
+                <?php if (in_array($userRole, $roleConfig['assets/create'] ?? [])): ?>
+                    <a href="?route=assets/create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Add First Item
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <!-- Mobile Card View (visible on small screens) -->
+            <div class="d-md-none">
+                <?php foreach ($assets as $asset): ?>
+                    <?php
+                    // Get asset data for mobile view
+                    $status = $asset['status'] ?? 'available';
+                    $statusClasses = [
+                        'available' => 'bg-success',
+                        'in_use' => 'bg-primary',
+                        'borrowed' => 'bg-info',
+                        'in_transit' => 'bg-warning',
+                        'under_maintenance' => 'bg-secondary',
+                        'retired' => 'bg-dark',
+                        'disposed' => 'bg-danger'
+                    ];
+                    $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                    $quantity = (int)($asset['quantity'] ?? 1);
+                    $availableQuantity = (int)($asset['available_quantity'] ?? 1);
+                    $isConsumable = isset($asset['is_consumable']) && $asset['is_consumable'] == 1;
+                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                    $assetSource = $asset['asset_source'] ?? 'manual';
+                    ?>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="text-decoration-none fw-bold">
+                                        <?= htmlspecialchars($asset['ref'] ?? 'N/A') ?>
+                                    </a>
+                                    <?php if (!empty($asset['qr_code'])): ?>
+                                        <i class="bi bi-qr-code text-primary ms-1" title="QR Code Available"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="badge <?= $statusClass ?>"><?= ucfirst($status) ?></span>
+                            </div>
+
+                            <!-- Asset Name -->
+                            <div class="mb-2">
+                                <div class="fw-medium"><?= htmlspecialchars($asset['name'] ?? 'Unknown') ?></div>
+                                <?php if (!empty($asset['serial_number'])): ?>
+                                    <small class="text-muted">S/N: <?= htmlspecialchars($asset['serial_number']) ?></small>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Category and Location/Project -->
+                            <div class="mb-2">
+                                <small class="text-muted d-block mb-1">Category</small>
+                                <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['category_name'] ?? 'N/A') ?></span>
+                                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                                    <small class="text-muted d-block mt-2 mb-1">Project</small>
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['project_name'] ?? 'N/A') ?></span>
+                                <?php else: ?>
+                                    <small class="text-muted d-block mt-2 mb-1">Location</small>
+                                    <span class="badge bg-light text-dark"><?= htmlspecialchars($asset['location'] ?? 'Warehouse') ?></span>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="mb-2">
+                                <small class="text-muted">Quantity: </small>
+                                <strong><?= number_format($availableQuantity) ?> / <?= number_format($quantity) ?></strong>
+                                <small class="text-muted"><?= htmlspecialchars($asset['unit'] ?? 'pcs') ?></small>
+                                <?php if ($isConsumable && $availableQuantity == 0): ?>
+                                    <span class="badge bg-danger ms-1">Out of stock</span>
+                                <?php elseif ($isConsumable && $availableQuantity <= ($quantity * 0.2)): ?>
+                                    <span class="badge bg-warning text-dark ms-1">Low stock</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex gap-2 flex-wrap mt-3">
+                                <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="btn btn-sm btn-primary flex-grow-1">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+
+                                <?php
+                                // Show workflow-specific actions for legacy assets
+                                if ($assetSource === 'legacy'):
+                                    if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
+                                ?>
+                                    <button type="button" class="btn btn-sm btn-warning flex-grow-1"
+                                            onclick="openEnhancedVerification(<?= $asset['id'] ?>);">
+                                        <i class="bi bi-shield-check me-1"></i>Verify
+                                    </button>
+                                <?php
+                                    elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
+                                ?>
+                                    <button type="button" class="btn btn-sm btn-info flex-grow-1"
+                                            onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);">
+                                        <i class="bi bi-shield-check me-1"></i>Authorize
+                                    </button>
+                                <?php
+                                    endif;
+                                endif;
+                                ?>
+
+                                <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
+                                    <a href="?route=assets/edit&id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-warning flex-grow-1">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
+                                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-sm btn-outline-success flex-grow-1">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Withdraw
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1"
+                                            onclick="deleteAsset(<?= $asset['id'] ?>)">
+                                        <i class="bi bi-trash me-1"></i>Delete
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Desktop Table View (hidden on small screens) -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover table-sm" id="assetsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-nowrap">Reference</th>
+                            <th>Item</th>
+                            <th class="d-none d-md-table-cell">Category</th>
+                            <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                            <th class="d-none d-lg-table-cell">Project</th>
+                            <?php else: ?>
+                            <th class="d-none d-lg-table-cell">Location</th>
+                            <?php endif; ?>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-center">Status</th>
+                            <th class="d-none d-xl-table-cell text-center">QR Tag</th>
+                            <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
+                            <th class="d-none d-xxl-table-cell text-center">Workflow</th>
+                            <?php endif; ?>
+                            <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
+                            <th class="d-none d-lg-table-cell text-end">Value</th>
+                            <?php endif; ?>
+                            <th class="text-center" style="min-width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($assets as $asset): ?>
+                            <tr>
+                                <td>
+                                    <a href="?route=assets/view&id=<?= $asset['id'] ?>" class="text-decoration-none">
+                                        <strong><?= htmlspecialchars($asset['ref'] ?? 'N/A') ?></strong>
+                                    </a>
+                                    <?php if (!empty($asset['qr_code'])): ?>
+                                        <i class="bi bi-qr-code text-primary ms-1" title="QR Code Available"></i>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-medium"><?= htmlspecialchars($asset['name'] ?? 'Unknown') ?></div>
+                                        <?php if (!empty($asset['serial_number'])): ?>
+                                            <small class="text-muted">S/N: <?= htmlspecialchars($asset['serial_number']) ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge bg-light text-dark">
+                                        <?= htmlspecialchars($asset['category_name'] ?? 'N/A') ?>
+                                    </span>
+                                </td>
+                                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])): ?>
+                                <td class="d-none d-lg-table-cell">
+                                    <span class="badge bg-light text-dark">
+                                        <?= htmlspecialchars($asset['project_name'] ?? 'N/A') ?>
+                                    </span>
+                                </td>
+                                <?php else: ?>
+                                <td class="d-none d-lg-table-cell">
+                                    <span class="badge bg-light text-dark">
+                                        <?= htmlspecialchars($asset['location'] ?? 'Warehouse') ?>
+                                    </span>
+                                </td>
+                                <?php endif; ?>
+                                <td class="text-center">
+                                    <?php
+                                    // Get asset quantity information
+                                    $quantity = (int)($asset['quantity'] ?? 1);
+                                    $availableQuantity = (int)($asset['available_quantity'] ?? 1);
+                                    $unit = $asset['unit'] ?? 'pcs';
+                                    $isConsumable = isset($asset['is_consumable']) && $asset['is_consumable'] == 1;
+                                    ?>
+                                    
+                                    <?php if ($isConsumable): ?>
+                                        <div class="d-flex flex-column align-items-center">
+                                            <div class="mb-1">
+                                                <span class="badge bg-primary"><?= number_format($availableQuantity) ?></span>
+                                                <span class="text-muted">/ <?= number_format($quantity) ?></span>
+                                            </div>
+                                            <div class="text-center">
+                                                <small class="text-muted d-block d-sm-none">
+                                                    <?= htmlspecialchars($unit) ?>
+                                                </small>
+                                                <small class="text-muted d-none d-sm-block">
+                                                    Available / Total <?= htmlspecialchars($unit) ?>
+                                                </small>
+                                                <?php if ($availableQuantity == 0): ?>
+                                                    <small class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>Out of stock
+                                                    </small>
+                                                <?php elseif ($availableQuantity < $quantity): ?>
+                                                    <small class="text-warning">
+                                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                                        <?= number_format($quantity - $availableQuantity) ?> in use
+                                                    </small>
+                                                <?php elseif ($availableQuantity <= ($quantity * 0.2)): ?>
+                                                    <small class="text-warning">
+                                                        <i class="bi bi-exclamation-triangle me-1"></i>Low stock
+                                                    </small>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="text-center">
+                                            <span class="badge bg-light text-dark">1 <?= htmlspecialchars($unit) ?></span>
+                                            <small class="text-muted d-block d-none d-sm-block">Individual item</small>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <?php
+                                    $status = $asset['status'] ?? 'unknown';
+                                    $statusClasses = [
+                                        'available' => 'bg-success',
+                                        'in_use' => 'bg-primary',
+                                        'borrowed' => 'bg-info',
+                                        'under_maintenance' => 'bg-warning',
+                                        'retired' => 'bg-secondary',
+                                        'disposed' => 'bg-dark'
+                                    ];
+                                    $statusClass = $statusClasses[$status] ?? 'bg-secondary';
+                                    ?>
+                                    <span class="badge <?= $statusClass ?>">
+                                        <?= ucfirst(str_replace('_', ' ', $status)) ?>
+                                    </span>
+                                    
+                                    <?php if ($isConsumable && $availableQuantity == 0): ?>
+                                        <small class="text-danger d-block">
+                                            <i class="bi bi-exclamation-circle me-1"></i>Out of stock
+                                        </small>
+                                    <?php elseif ($isConsumable && $availableQuantity <= ($quantity * 0.2)): ?>
+                                        <small class="text-warning d-block">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>Low stock
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="d-none d-xl-table-cell text-center">
+                                    <?php 
+                                    // QR Tag Status Indicators
+                                    $hasQR = !empty($asset['qr_code']);
+                                    $isPrinted = !empty($asset['qr_tag_printed']);
+                                    $isApplied = !empty($asset['qr_tag_applied']);
+                                    $isVerified = !empty($asset['qr_tag_verified']);
+                                    ?>
+                                    
+                                    <div class="d-flex flex-column gap-1">
+                                        <?php if ($hasQR): ?>
+                                            <small class="text-success">
+                                                <i class="bi bi-qr-code me-1"></i>QR Generated
+                                            </small>
+                                            
+                                            <?php if ($isPrinted): ?>
+                                                <small class="text-info">
+                                                    <i class="bi bi-printer me-1"></i>Printed
+                                                </small>
+                                            <?php else: ?>
+                                                <small class="text-warning">
+                                                    <i class="bi bi-printer me-1"></i>Need Print
+                                                </small>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($isApplied): ?>
+                                                <small class="text-primary">
+                                                    <i class="bi bi-hand-index me-1"></i>Applied
+                                                </small>
+                                            <?php elseif ($isPrinted): ?>
+                                                <small class="text-warning">
+                                                    <i class="bi bi-hand-index me-1"></i>Need Apply
+                                                </small>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($isVerified): ?>
+                                                <small class="text-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Verified
+                                                </small>
+                                            <?php elseif ($isApplied): ?>
+                                                <small class="text-warning">
+                                                    <i class="bi bi-check-circle me-1"></i>Need Verify
+                                                </small>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <small class="text-danger">
+                                                <i class="bi bi-x-circle me-1"></i>No QR Code
+                                            </small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
+                                <td class="d-none d-xxl-table-cell text-center">
+                                    <?php
+                                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    
+                                    // Only show workflow status for legacy assets
+                                    if ($assetSource === 'legacy'):
+                                        $workflowClasses = [
+                                            'draft' => 'bg-secondary',
+                                            'pending_verification' => 'bg-warning',
+                                            'pending_authorization' => 'bg-info',
+                                            'approved' => 'bg-success'
+                                        ];
+                                        $workflowClass = $workflowClasses[$workflowStatus] ?? 'bg-secondary';
+                                        $workflowText = [
+                                            'draft' => 'Draft',
+                                            'pending_verification' => 'Pending Verification',
+                                            'pending_authorization' => 'Pending Authorization', 
+                                            'approved' => 'Approved'
+                                        ];
+                                        $statusText = $workflowText[$workflowStatus] ?? 'Unknown';
+                                    ?>
+                                        <span class="badge <?= $workflowClass ?>" title="Legacy asset workflow status">
+                                            <i class="bi bi-gear me-1"></i><?= $statusText ?>
+                                        </span>
+                                        <?php if ($workflowStatus === 'pending_verification'): ?>
+                                            <small class="text-warning d-block">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Needs verification
+                                            </small>
+                                        <?php elseif ($workflowStatus === 'pending_authorization'): ?>
+                                            <small class="text-info d-block">
+                                                <i class="bi bi-shield-exclamation me-1"></i>Needs authorization
+                                            </small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="badge bg-light text-dark" title="Standard asset">
+                                            <i class="bi bi-check-circle me-1"></i>Standard
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php endif; ?>
+                                <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
+                                <td class="d-none d-lg-table-cell text-end">
+                                    <?php if ($asset['acquisition_cost']): ?>
+                                        <strong><?= formatCurrency($asset['acquisition_cost']) ?></strong>
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php endif; ?>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>" 
+                                           class="btn btn-outline-primary btn-sm" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        
+                                        <?php 
+                                        // Show workflow-specific actions for legacy assets
+                                        $assetSource = $asset['asset_source'] ?? 'manual';
+                                        $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                                        
+                                        // Debug: Add HTML comment for debugging
+                                        echo "<!-- DEBUG: Asset ID {$asset['id']} - Source: $assetSource, Status: $workflowStatus, UserRole: $userRole -->\n";
+                                        
+                                        if ($assetSource === 'legacy'):
+                                            if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
+                                                echo "<!-- DEBUG: Rendering VERIFY button for asset {$asset['id']} -->\n";
+                                        ?>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-warning btn-sm" 
+                                                            onclick="openEnhancedVerification(<?= $asset['id'] ?>);" 
+                                                            title="Enhanced Verification Review"
+                                                            data-asset-id="<?= $asset['id'] ?>"
+                                                            data-action="enhanced-verify">
+                                                        <i class="bi bi-shield-check me-1"></i>Review
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                            onclick="console.log('Quick verify button clicked for asset <?= $asset['id'] ?>'); verifyAsset(<?= $asset['id'] ?>);" 
+                                                            title="Quick Verify"
+                                                            data-asset-id="<?= $asset['id'] ?>"
+                                                            data-action="verify">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </div>
+                                        <?php 
+                                            elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
+                                                echo "<!-- DEBUG: Rendering AUTHORIZE button for asset {$asset['id']} -->\n";
+                                        ?>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-info btn-sm" 
+                                                            onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);" 
+                                                            title="Enhanced Authorization Review"
+                                                            data-asset-id="<?= $asset['id'] ?>"
+                                                            data-action="enhanced-authorize">
+                                                        <i class="bi bi-shield-check me-1"></i>Review
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                                            onclick="console.log('Quick authorize button clicked for asset <?= $asset['id'] ?>'); authorizeAsset(<?= $asset['id'] ?>);" 
+                                                            title="Quick Authorize"
+                                                            data-asset-id="<?= $asset['id'] ?>"
+                                                            data-action="authorize">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </div>
+                                        <?php 
+                                            else:
+                                                echo "<!-- DEBUG: No workflow button for asset {$asset['id']} - Status: $workflowStatus, CanVerify: " . (in_array($userRole, $roleConfig['assets/legacy-verify'] ?? []) ? 'YES' : 'NO') . ", CanAuthorize: " . (in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? []) ? 'YES' : 'NO') . " -->\n";
+                                            endif;
+                                        else:
+                                            echo "<!-- DEBUG: Not a legacy asset - Asset {$asset['id']} is $assetSource -->\n";
+                                        endif;
+                                        ?>
+                                        
+                                        <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
+                                            <a href="?route=assets/edit&id=<?= $asset['id'] ?>" 
+                                               class="btn btn-outline-warning btn-sm" title="Edit Asset">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
+                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" 
+                                               class="btn btn-outline-success btn-sm" title="Withdraw Asset">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="deleteAsset(<?= $asset['id'] ?>)" title="Delete Asset">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+                <nav aria-label="Assets pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <?php if ($pagination['current_page'] > 1): ?>
+                            <li class="page-item">
+                                <?php 
+                                $prevParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
+                                $prevParams['page'] = $pagination['current_page'] - 1;
+                                ?>
+                                <a class="page-link" href="?route=assets&<?= http_build_query($prevParams) ?>">
+                                    Previous
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
+                            <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
+                                <?php 
+                                $pageParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
+                                $pageParams['page'] = $i;
+                                ?>
+                                <a class="page-link" href="?route=assets&<?= http_build_query($pageParams) ?>">
+                                    <?= $i ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                            <li class="page-item">
+                                <?php 
+                                $nextParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
+                                $nextParams['page'] = $pagination['current_page'] + 1;
+                                ?>
+                                <a class="page-link" href="?route=assets&<?= http_build_query($nextParams) ?>">
+                                    Next
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
