@@ -178,7 +178,7 @@
                             <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
                             <th class="d-none d-lg-table-cell text-end">Value</th>
                             <?php endif; ?>
-                            <th class="text-center" style="min-width: 120px;">Actions</th>
+                            <th class="text-center" style="min-width: 200px; width: 250px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -392,87 +392,73 @@
                                     <?php endif; ?>
                                 </td>
                                 <?php endif; ?>
-                                <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>" 
-                                           class="btn btn-outline-primary btn-sm" title="View Details">
-                                            <i class="bi bi-eye"></i>
+                                <td class="text-nowrap">
+                                    <?php
+                                    // Show workflow-specific actions for legacy assets
+                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                                    ?>
+
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        <!-- Always show View button first -->
+                                        <a href="?route=assets/view&id=<?= $asset['id'] ?>"
+                                           class="btn btn-primary btn-sm"
+                                           title="View Details"
+                                           style="min-width: 70px;">
+                                            <i class="bi bi-eye me-1"></i>View
                                         </a>
-                                        
-                                        <?php 
-                                        // Show workflow-specific actions for legacy assets
-                                        $assetSource = $asset['asset_source'] ?? 'manual';
-                                        $workflowStatus = $asset['workflow_status'] ?? 'approved';
-                                        
-                                        // Debug: Add HTML comment for debugging
-                                        echo "<!-- DEBUG: Asset ID {$asset['id']} - Source: $assetSource, Status: $workflowStatus, UserRole: $userRole -->\n";
-                                        
+
+                                        <?php
+                                        // Workflow buttons - ONLY for legacy assets pending review
                                         if ($assetSource === 'legacy'):
                                             if ($workflowStatus === 'pending_verification' && in_array($userRole, $roleConfig['assets/legacy-verify'] ?? [])):
-                                                echo "<!-- DEBUG: Rendering VERIFY button for asset {$asset['id']} -->\n";
                                         ?>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-warning btn-sm" 
-                                                            onclick="openEnhancedVerification(<?= $asset['id'] ?>);" 
-                                                            title="Enhanced Verification Review"
-                                                            data-asset-id="<?= $asset['id'] ?>"
-                                                            data-action="enhanced-verify">
-                                                        <i class="bi bi-shield-check me-1"></i>Review
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm" 
-                                                            onclick="console.log('Quick verify button clicked for asset <?= $asset['id'] ?>'); verifyAsset(<?= $asset['id'] ?>);" 
-                                                            title="Quick Verify"
-                                                            data-asset-id="<?= $asset['id'] ?>"
-                                                            data-action="verify">
-                                                        <i class="bi bi-check-circle"></i>
-                                                    </button>
-                                                </div>
-                                        <?php 
+                                            <!-- Enhanced Verification Button -->
+                                            <button type="button"
+                                                    class="btn btn-warning btn-sm"
+                                                    onclick="openEnhancedVerification(<?= $asset['id'] ?>);"
+                                                    title="Open Enhanced Verification Workflow"
+                                                    style="min-width: 90px;">
+                                                <i class="bi bi-shield-check me-1"></i>Verify
+                                            </button>
+                                        <?php
                                             elseif ($workflowStatus === 'pending_authorization' && in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? [])):
-                                                echo "<!-- DEBUG: Rendering AUTHORIZE button for asset {$asset['id']} -->\n";
                                         ?>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-info btn-sm" 
-                                                            onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);" 
-                                                            title="Enhanced Authorization Review"
-                                                            data-asset-id="<?= $asset['id'] ?>"
-                                                            data-action="enhanced-authorize">
-                                                        <i class="bi bi-shield-check me-1"></i>Review
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm" 
-                                                            onclick="console.log('Quick authorize button clicked for asset <?= $asset['id'] ?>'); authorizeAsset(<?= $asset['id'] ?>);" 
-                                                            title="Quick Authorize"
-                                                            data-asset-id="<?= $asset['id'] ?>"
-                                                            data-action="authorize">
-                                                        <i class="bi bi-check-circle"></i>
-                                                    </button>
-                                                </div>
-                                        <?php 
-                                            else:
-                                                echo "<!-- DEBUG: No workflow button for asset {$asset['id']} - Status: $workflowStatus, CanVerify: " . (in_array($userRole, $roleConfig['assets/legacy-verify'] ?? []) ? 'YES' : 'NO') . ", CanAuthorize: " . (in_array($userRole, $roleConfig['assets/legacy-authorize'] ?? []) ? 'YES' : 'NO') . " -->\n";
+                                            <!-- Enhanced Authorization Button -->
+                                            <button type="button"
+                                                    class="btn btn-info btn-sm"
+                                                    onclick="openEnhancedAuthorization(<?= $asset['id'] ?>);"
+                                                    title="Open Enhanced Authorization Workflow"
+                                                    style="min-width: 100px;">
+                                                <i class="bi bi-shield-check me-1"></i>Authorize
+                                            </button>
+                                        <?php
                                             endif;
-                                        else:
-                                            echo "<!-- DEBUG: Not a legacy asset - Asset {$asset['id']} is $assetSource -->\n";
                                         endif;
                                         ?>
-                                        
+
+                                        <!-- Standard action buttons (Edit, Withdraw, Delete) -->
                                         <?php if (in_array($userRole, $roleConfig['assets/edit'] ?? [])): ?>
-                                            <a href="?route=assets/edit&id=<?= $asset['id'] ?>" 
-                                               class="btn btn-outline-warning btn-sm" title="Edit Asset">
+                                            <a href="?route=assets/edit&id=<?= $asset['id'] ?>"
+                                               class="btn btn-outline-secondary btn-sm"
+                                               title="Edit Item">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                         <?php endif; ?>
-                                        
+
                                         <?php if ($status === 'available' && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
-                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" 
-                                               class="btn btn-outline-success btn-sm" title="Withdraw Asset">
+                                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>"
+                                               class="btn btn-outline-success btn-sm"
+                                               title="Withdraw Item">
                                                 <i class="bi bi-box-arrow-right"></i>
                                             </a>
                                         <?php endif; ?>
-                                        
+
                                         <?php if (in_array($userRole, $roleConfig['assets/delete'] ?? [])): ?>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                    onclick="deleteAsset(<?= $asset['id'] ?>)" title="Delete Asset">
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    onclick="deleteAsset(<?= $asset['id'] ?>)"
+                                                    title="Delete Item">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         <?php endif; ?>
