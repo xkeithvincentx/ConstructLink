@@ -303,44 +303,16 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 let pendingAssets = [];
 let selectedAssets = [];
 
+// CSRF Token
+const CSRFTokenValue = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
 // Initialize dashboard on load
 document.addEventListener('DOMContentLoaded', function() {
-    loadStatistics();
-    loadPendingAssets();
     initializeEventListeners();
 });
 
-// Load dashboard statistics
-function loadStatistics() {
-    // This would be AJAX calls in real implementation
-    document.getElementById('pendingCount').textContent = '0';
-    document.getElementById('verifiedTodayCount').textContent = '0';
-    document.getElementById('weekCount').textContent = '0';
-    document.getElementById('totalCount').textContent = '0';
-}
-
-// Load pending assets
-function loadPendingAssets() {
-    const locationFilter = document.getElementById('locationFilter').value;
-    
-    // Show loading
-    document.getElementById('loadingMessage').style.display = 'block';
-    document.getElementById('noDataMessage').style.display = 'none';
-    
-    // This would be an AJAX call in real implementation
-    setTimeout(() => {
-        document.getElementById('loadingMessage').style.display = 'none';
-        document.getElementById('noDataMessage').style.display = 'block';
-        
-        // Update pending count
-        document.getElementById('pendingCount').textContent = pendingAssets.length;
-    }, 1000);
-}
-
 // Initialize event listeners
 function initializeEventListeners() {
-    // Location filter
-    document.getElementById('locationFilter').addEventListener('change', loadPendingAssets);
     
     // Select all functionality
     document.getElementById('selectAll').addEventListener('change', function() {
@@ -414,37 +386,168 @@ function showVerificationModal(assetId, assetName, category, location, quantity,
 
 // Verify single asset
 function verifyAsset(assetId, notes, actualQuantity, actualCondition) {
-    // This would be an AJAX call in real implementation
-    console.log('Verifying asset:', assetId, notes, actualQuantity, actualCondition);
-    
-    // Close modal and show success
-    bootstrap.Modal.getInstance(document.getElementById('verificationModal')).hide();
-    
-    // Show success message
-    showAlert('success', 'Asset verified successfully!');
-    
-    // Refresh data
-    loadStatistics();
-    loadPendingAssets();
+    // AJAX call to verify asset
+    const formData = new URLSearchParams();
+    formData.append('asset_id', assetId);
+    if (notes) formData.append('verification_notes', notes);
+    if (actualQuantity) formData.append('actual_quantity', actualQuantity);
+    if (actualCondition) formData.append('actual_condition', actualCondition);
+
+    fetch('?route=assets/verify-asset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('verificationModal')).hide();
+
+        if (data.success) {
+            showAlert('success', data.message || 'Item verified successfully!');
+            // Reload page to refresh data
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message || 'Failed to verify item');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while verifying the item');
+    });
 }
 
-// Bulk verify assets
+// Show batch verification modal with review table
 function bulkVerifyAssets() {
-    // This would be an AJAX call in real implementation
-    console.log('Bulk verifying assets:', selectedAssets);
-    
-    // Show success message
-    showAlert('success', `${selectedAssets.length} assets verified successfully!`);
-    
-    // Clear selections
-    selectedAssets = [];
-    document.getElementById('selectAll').checked = false;
-    document.getElementById('headerSelectAll').checked = false;
-    document.getElementById('bulkVerifyBtn').disabled = true;
-    
-    // Refresh data
-    loadStatistics();
-    loadPendingAssets();
+    if (selectedAssets.length === 0) {
+        showAlert('warning', 'Please select items to verify');
+        return;
+    }
+
+    // Build review table
+    const selectedRows = Array.from(document.querySelectorAll('.asset-checkbox:checked')).map(checkbox => {
+        const row = checkbox.closest('tr');
+        const cells = row.querySelectorAll('td');
+        return {
+            id: checkbox.value,
+            name: cells[1]?.textContent.trim() || '',
+            brand: cells[2]?.textContent.trim() || '',
+            manufacturer: cells[3]?.textContent.trim() || '',
+            category: cells[4]?.textContent.trim() || '',
+            location: cells[5]?.textContent.trim() || '',
+            quantity: cells[6]?.textContent.trim() || '',
+            createdBy: cells[7]?.textContent.trim() || '',
+            createdDate: cells[8]?.textContent.trim() || ''
+        };
+    });
+
+    const tableHTML = `
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Brand</th>
+                        <th>Category</th>
+                        <th>Location</th>
+                        <th>Quantity</th>
+                        <th>Created By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${selectedRows.map(item => `
+                        <tr>
+                            <td><strong>${item.name}</strong></td>
+                            <td>${item.brand}</td>
+                            <td>${item.category}</td>
+                            <td>${item.location}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.createdBy}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Total items to verify:</strong> ${selectedAssets.length}
+        </div>
+    `;
+
+    // Show confirmation modal with review table
+    const modalHTML = `
+        <div class="modal fade" id="batchVerificationModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="bi bi-shield-check me-2"></i>Batch Verification Review
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="lead">Please review the following items before verification:</p>
+                        ${tableHTML}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" onclick="confirmBatchVerification()">
+                            <i class="bi bi-check-circle me-1"></i>Verify All ${selectedAssets.length} Items
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('batchVerificationModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('batchVerificationModal'));
+    modal.show();
+}
+
+// Confirm batch verification
+function confirmBatchVerification() {
+    const formData = new URLSearchParams();
+    formData.append('asset_ids', selectedAssets.join(','));
+
+    fetch('?route=assets/batch-verify', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('batchVerificationModal'));
+        modal.hide();
+
+        if (data.success) {
+            showAlert('success', data.message || `${selectedAssets.length} items verified successfully!`);
+            // Reload page to refresh data
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message || 'Failed to verify items');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while verifying items');
+    });
 }
 
 // Utility function to show alerts
@@ -470,7 +573,7 @@ function showAlert(type, message) {
 
 // Refresh table data
 function refreshTable() {
-    loadPendingAssets();
+    window.location.reload();
 }
 </script>
 
