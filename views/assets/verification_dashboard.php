@@ -520,7 +520,11 @@ function bulkVerifyAssets() {
 // Confirm batch verification
 function confirmBatchVerification() {
     const formData = new URLSearchParams();
-    formData.append('asset_ids', selectedAssets.join(','));
+
+    // Add each asset ID as an array element
+    selectedAssets.forEach(id => {
+        formData.append('asset_ids[]', id);
+    });
 
     fetch('?route=assets/batch-verify', {
         method: 'POST',
