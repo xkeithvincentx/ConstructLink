@@ -211,6 +211,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endif; ?>
                                 </td>
                                 <td><?= htmlspecialchars($asset['quantity'] ?? 1) ?> <?= htmlspecialchars($asset['unit'] ?? 'pc') ?></td>
+                                <td><?= htmlspecialchars($asset['created_by_username'] ?? 'Unknown') ?></td>
                                 <td><?= htmlspecialchars($asset['verified_by_username'] ?? 'Unknown') ?></td>
                                 <td><?= !empty($asset['verified_at']) ? date('M d, Y', strtotime($asset['verified_at'])) : 'N/A' ?></td>
                                 <td>
@@ -308,95 +309,56 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <script>
-let pendingAssets = [];
 let selectedAssets = [];
+const CSRFTokenValue = '<?= CSRFProtection::generateToken() ?>';
 
 // Initialize dashboard on load
 document.addEventListener('DOMContentLoaded', function() {
-    loadStatistics();
-    loadPendingAssets();
-    loadCategories();
     initializeEventListeners();
 });
 
-// Load dashboard statistics
-function loadStatistics() {
-    // This would be AJAX calls in real implementation
-    document.getElementById('pendingCount').textContent = '0';
-    document.getElementById('authorizedTodayCount').textContent = '0';
-    document.getElementById('weekCount').textContent = '0';
-    document.getElementById('totalCount').textContent = '0';
-}
-
-// Load categories for filter
-function loadCategories() {
-    // This would be an AJAX call in real implementation
-    const categoryFilter = document.getElementById('categoryFilter');
-    // Add sample categories
-    const sampleCategories = ['Tools', 'Equipment', 'Furniture', 'Vehicles'];
-    sampleCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categoryFilter.appendChild(option);
-    });
-}
-
-// Load pending authorization assets
-function loadPendingAssets() {
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const locationFilter = document.getElementById('locationFilter').value;
-    
-    // Show loading
-    document.getElementById('loadingMessage').style.display = 'block';
-    document.getElementById('noDataMessage').style.display = 'none';
-    
-    // This would be an AJAX call in real implementation
-    setTimeout(() => {
-        document.getElementById('loadingMessage').style.display = 'none';
-        document.getElementById('noDataMessage').style.display = 'block';
-        
-        // Update pending count
-        document.getElementById('pendingCount').textContent = pendingAssets.length;
-    }, 1000);
-}
-
 // Initialize event listeners
 function initializeEventListeners() {
-    // Filter change handlers
-    document.getElementById('categoryFilter').addEventListener('change', loadPendingAssets);
-    document.getElementById('locationFilter').addEventListener('change', loadPendingAssets);
-    
-    // Select all functionality
-    document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('.asset-checkbox');
-        checkboxes.forEach(cb => cb.checked = this.checked);
-        updateSelectedAssets();
-    });
-    
-    document.getElementById('headerSelectAll').addEventListener('change', function() {
-        document.getElementById('selectAll').checked = this.checked;
-        document.getElementById('selectAll').dispatchEvent(new Event('change'));
-    });
-    
+    // Select all in quick actions panel
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.asset-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateSelectedAssets();
+
+            // Sync header checkbox
+            const headerCheckbox = document.getElementById('headerSelectAll');
+            if (headerCheckbox) {
+                headerCheckbox.checked = this.checked;
+            }
+        });
+    }
+
+    // Select all in table header
+    const headerSelectAll = document.getElementById('headerSelectAll');
+    if (headerSelectAll) {
+        headerSelectAll.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.asset-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateSelectedAssets();
+
+            // Sync quick actions checkbox
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = this.checked;
+            }
+        });
+    }
+
     // Bulk authorize button
-    document.getElementById('bulkAuthorizeBtn').addEventListener('click', function() {
-        if (selectedAssets.length > 0) {
-            if (confirm(`Authorize ${selectedAssets.length} selected assets as project property?`)) {
+    const bulkAuthorizeBtn = document.getElementById('bulkAuthorizeBtn');
+    if (bulkAuthorizeBtn) {
+        bulkAuthorizeBtn.addEventListener('click', function() {
+            if (selectedAssets.length > 0) {
                 bulkAuthorizeAssets();
             }
-        }
-    });
-    
-    // Authorization form submission
-    document.getElementById('confirmAuthorizeBtn').addEventListener('click', function() {
-        const assetId = this.dataset.assetId;
-        const notes = document.getElementById('authorizationNotes').value;
-        const finalLocation = document.getElementById('finalLocation').value;
-        const assetTagPrefix = document.getElementById('assetTagPrefix').value;
-        
-        authorizeAsset(assetId, notes, finalLocation, assetTagPrefix);
-    });
+        });
+    }
 }
 
 // Update selected assets array
@@ -404,92 +366,357 @@ function updateSelectedAssets() {
     selectedAssets = [];
     const checkboxes = document.querySelectorAll('.asset-checkbox:checked');
     checkboxes.forEach(cb => selectedAssets.push(cb.value));
-    
-    document.getElementById('bulkAuthorizeBtn').disabled = selectedAssets.length === 0;
+
+    const bulkAuthorizeBtn = document.getElementById('bulkAuthorizeBtn');
+    if (bulkAuthorizeBtn) {
+        bulkAuthorizeBtn.disabled = selectedAssets.length === 0;
+        if (selectedAssets.length > 0) {
+            bulkAuthorizeBtn.innerHTML = `<i class="bi bi-shield-check me-1"></i>Authorize Selected (${selectedAssets.length})`;
+        } else {
+            bulkAuthorizeBtn.innerHTML = `<i class="bi bi-shield-check me-1"></i>Authorize Selected`;
+        }
+    }
 }
 
-// Show authorization modal
-function showAuthorizationModal(assetId, assetName, category, location, quantity, condition, createdBy, verifiedBy, verificationDate) {
-    const assetDetails = document.getElementById('assetDetails');
-    assetDetails.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6 class="text-primary">Asset Information</h6>
-                <p><strong>Name:</strong> ${assetName}</p>
-                <p><strong>Category:</strong> ${category}</p>
-                <p><strong>Location:</strong> ${location}</p>
-                <p><strong>Quantity:</strong> ${quantity}</p>
-            </div>
-            <div class="col-md-6">
-                <h6 class="text-success">Verification Details</h6>
-                <p><strong>Created by:</strong> ${createdBy}</p>
-                <p><strong>Verified by:</strong> ${verifiedBy}</p>
-                <p><strong>Verification Date:</strong> ${verificationDate}</p>
-                <p><strong>Condition:</strong> ${condition || 'Not specified'}</p>
+// Authorize single asset with modal
+function authorizeAsset(assetId) {
+    if (!assetId) {
+        showAlert('danger', 'Invalid item ID');
+        return;
+    }
+
+    // Build review modal from the row data
+    const checkbox = document.querySelector(`.asset-checkbox[value="${assetId}"]`);
+    if (!checkbox) {
+        showAlert('danger', 'Item not found');
+        return;
+    }
+
+    const row = checkbox.closest('tr');
+    const cells = row.querySelectorAll('td');
+
+    const itemData = {
+        id: assetId,
+        name: cells[1]?.querySelector('strong')?.textContent.trim() || '',
+        ref: cells[1]?.querySelector('small')?.textContent.replace('REF:', '').trim() || '',
+        brand: cells[2]?.textContent.trim() || '',
+        manufacturer: cells[3]?.textContent.trim() || '',
+        category: cells[4]?.textContent.trim() || '',
+        location: cells[5]?.textContent.trim() || '',
+        quantity: cells[6]?.textContent.trim() || '',
+        createdBy: cells[7]?.textContent.trim() || '',
+        verifiedBy: cells[8]?.textContent.trim() || '',
+        verificationDate: cells[9]?.textContent.trim() || ''
+    };
+
+    // Create and show review modal
+    const modalHTML = `
+        <div class="modal fade" id="authorizationReviewModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-shield-check me-2"></i>Review Item for Authorization
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Please review the item details below before authorizing it as project property.
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th width="30%">Item Name</th>
+                                        <td><strong>${itemData.name}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <td>${itemData.ref}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Brand</th>
+                                        <td>${itemData.brand}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Manufacturer</th>
+                                        <td>${itemData.manufacturer}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Category</th>
+                                        <td>${itemData.category}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Location</th>
+                                        <td>${itemData.location}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Quantity</th>
+                                        <td>${itemData.quantity}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Created By</th>
+                                        <td>${itemData.createdBy}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Verified By</th>
+                                        <td>${itemData.verifiedBy}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Verification Date</th>
+                                        <td>${itemData.verificationDate}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="authorizationNotes" class="form-label">Authorization Comments (Optional)</label>
+                            <textarea class="form-control" id="authorizationNotes" rows="3"
+                                      placeholder="Add any comments about this authorization..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="confirmAuthorization(${assetId})">
+                            <i class="bi bi-shield-check me-1"></i>Authorize Item
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     `;
-    
-    // Reset form
-    document.getElementById('authorizationForm').reset();
-    document.getElementById('confirmAuthorizeBtn').dataset.assetId = assetId;
-    
-    // Set current location as default
-    document.getElementById('finalLocation').value = location;
-    
+
+    // Remove existing modal if present
+    const existingModal = document.getElementById('authorizationReviewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('authorizationModal'));
+    const modal = new bootstrap.Modal(document.getElementById('authorizationReviewModal'));
     modal.show();
+
+    // Clean up on close
+    document.getElementById('authorizationReviewModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
 }
 
-// Authorize single asset
-function authorizeAsset(assetId, notes, finalLocation, assetTagPrefix) {
-    // This would be an AJAX call in real implementation
-    console.log('Authorizing asset:', assetId, notes, finalLocation, assetTagPrefix);
-    
-    // Close modal and show success
-    bootstrap.Modal.getInstance(document.getElementById('authorizationModal')).hide();
-    
-    // Show success message
-    showAlert('success', 'Asset authorized successfully!');
-    
-    // Refresh data
-    loadStatistics();
-    loadPendingAssets();
+// Confirm single authorization
+function confirmAuthorization(assetId) {
+    const notes = document.getElementById('authorizationNotes')?.value || '';
+
+    const formData = new URLSearchParams();
+    formData.append('asset_id', assetId);
+    if (notes) {
+        formData.append('authorization_notes', notes);
+    }
+
+    fetch('?route=assets/authorize-asset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('authorizationReviewModal'));
+        if (modal) modal.hide();
+
+        if (data.success) {
+            showAlert('success', data.message || 'Item authorized successfully!');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message || 'Failed to authorize item');
+        }
+    })
+    .catch(error => {
+        console.error('Authorization error:', error);
+        showAlert('danger', 'An error occurred while authorizing the item');
+    });
 }
 
-// Bulk authorize assets
+// Bulk authorize assets with review modal
 function bulkAuthorizeAssets() {
-    // This would be an AJAX call in real implementation
-    console.log('Bulk authorizing assets:', selectedAssets);
-    
-    // Show success message
-    showAlert('success', `${selectedAssets.length} assets authorized successfully!`);
-    
-    // Clear selections
-    selectedAssets = [];
-    document.getElementById('selectAll').checked = false;
-    document.getElementById('headerSelectAll').checked = false;
-    document.getElementById('bulkAuthorizeBtn').disabled = true;
-    
-    // Refresh data
-    loadStatistics();
-    loadPendingAssets();
+    if (selectedAssets.length === 0) {
+        showAlert('warning', 'Please select items to authorize');
+        return;
+    }
+
+    // Build review table from selected rows
+    const selectedRows = Array.from(document.querySelectorAll('.asset-checkbox:checked')).map(checkbox => {
+        const row = checkbox.closest('tr');
+        const cells = row.querySelectorAll('td');
+        return {
+            id: checkbox.value,
+            name: cells[1]?.querySelector('strong')?.textContent.trim() || '',
+            brand: cells[2]?.textContent.trim() || '',
+            category: cells[4]?.textContent.trim() || '',
+            location: cells[5]?.textContent.trim() || '',
+            quantity: cells[6]?.textContent.trim() || '',
+            createdBy: cells[7]?.textContent.trim() || '',
+            verifiedBy: cells[8]?.textContent.trim() || ''
+        };
+    });
+
+    const tableHTML = `
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Brand</th>
+                        <th>Category</th>
+                        <th>Location</th>
+                        <th>Quantity</th>
+                        <th>Created By</th>
+                        <th>Verified By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${selectedRows.map(item => `
+                        <tr>
+                            <td><strong>${item.name}</strong></td>
+                            <td>${item.brand}</td>
+                            <td>${item.category}</td>
+                            <td>${item.location}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.createdBy}</td>
+                            <td>${item.verifiedBy}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Create review modal
+    const modalHTML = `
+        <div class="modal fade" id="batchAuthorizationModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-shield-check me-2"></i>Review Items for Batch Authorization
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You are about to authorize <strong>${selectedAssets.length} item${selectedAssets.length !== 1 ? 's' : ''}</strong> as project property.
+                            Please review the items below before proceeding.
+                        </div>
+
+                        ${tableHTML}
+
+                        <div class="mt-3">
+                            <label for="batchAuthorizationNotes" class="form-label">Authorization Comments (Optional)</label>
+                            <textarea class="form-control" id="batchAuthorizationNotes" rows="3"
+                                      placeholder="Add comments for this batch authorization..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x me-1"></i>Cancel Review
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="confirmBatchAuthorization()">
+                            <i class="bi bi-shield-check me-1"></i>Authorize All ${selectedAssets.length} Items
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if present
+    const existingModal = document.getElementById('batchAuthorizationModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('batchAuthorizationModal'));
+    modal.show();
+
+    // Clean up on close
+    document.getElementById('batchAuthorizationModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// Confirm batch authorization
+function confirmBatchAuthorization() {
+    const notes = document.getElementById('batchAuthorizationNotes')?.value || '';
+
+    const formData = new URLSearchParams();
+
+    // Add each asset ID as an array element
+    selectedAssets.forEach(id => {
+        formData.append('asset_ids[]', id);
+    });
+
+    if (notes) {
+        formData.append('notes', notes);
+    }
+
+    fetch('?route=assets/batch-authorize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': CSRFTokenValue
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('batchAuthorizationModal'));
+        if (modal) modal.hide();
+
+        if (data.success) {
+            showAlert('success', data.message || `Successfully authorized ${selectedAssets.length} items!`);
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message || 'Failed to authorize items');
+        }
+    })
+    .catch(error => {
+        console.error('Batch authorization error:', error);
+        showAlert('danger', 'An error occurred during batch authorization');
+    });
 }
 
 // Utility function to show alerts
 function showAlert(type, message) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
     alertDiv.innerHTML = `
-        <i class="bi bi-check-circle me-2"></i>${message}
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
-    // Insert after page header
-    const pageHeader = document.querySelector('.border-bottom');
-    pageHeader.parentNode.insertBefore(alertDiv, pageHeader.nextSibling);
-    
+
+    // Insert at top of main content
+    const mainContent = document.querySelector('.card');
+    if (mainContent && mainContent.parentNode) {
+        mainContent.parentNode.insertBefore(alertDiv, mainContent);
+    }
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (alertDiv.parentNode) {
@@ -500,7 +727,7 @@ function showAlert(type, message) {
 
 // Refresh table data
 function refreshTable() {
-    loadPendingAssets();
+    window.location.reload();
 }
 </script>
 
