@@ -13,10 +13,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <!-- Info Alert -->
 <div class="alert alert-info" role="alert">
     <h6 class="alert-heading">
-        <i class="bi bi-info-circle me-2"></i>Legacy Asset Verification
+        <i class="bi bi-info-circle me-2"></i>Legacy Item Verification
     </h6>
     <p class="mb-0">
-        Review and verify legacy assets created by Warehousemen. Check that the assets physically exist on-site and match the recorded information.
+        Review and verify legacy items created by Warehousemen. Check that the items physically exist on-site and match the recorded information.
     </p>
 </div>
 
@@ -44,12 +44,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <?php if (!in_array($user['role_name'], $roleConfig['assets/legacy-verify'] ?? [])): ?>
-    <div class="alert alert-danger mt-4">You do not have permission to verify legacy assets.</div>
+    <div class="alert alert-danger mt-4">You do not have permission to verify legacy items.</div>
 <?php else: ?>
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-warning text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -64,7 +64,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -79,7 +79,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-success text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -94,7 +94,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -124,7 +124,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="selectAll">
                     <label class="form-check-label" for="selectAll">
-                        Select all assets on this page
+                        Select all items on this page
                     </label>
                 </div>
             </div>
@@ -137,12 +137,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- Pending Assets Table -->
+<!-- Pending Items Table -->
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0">
-                <i class="bi bi-clock me-1"></i>Assets Pending Verification
+                <i class="bi bi-clock me-1"></i>Items Pending Verification
             </h6>
             <div class="d-flex gap-2">
                 <select class="form-select form-select-sm" id="locationFilter" style="width: auto;">
@@ -170,7 +170,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <th>
                             <input type="checkbox" class="form-check-input" id="headerSelectAll">
                         </th>
-                        <th>Asset Name</th>
+                        <th>Item Name</th>
                         <th>Brand</th>
                         <th>Manufacturer</th>
                         <th>Category</th>
@@ -243,13 +243,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-check-circle me-2"></i>Verify Asset
+                    <i class="bi bi-check-circle me-2"></i>Verify Item
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="assetDetails">
-                    <!-- Asset details will be loaded here -->
+                    <!-- Item details will be loaded here -->
                 </div>
                 <form id="verificationForm">
                     <div class="row mt-4">
@@ -259,8 +259,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <div class="col-12">
                             <div class="mb-3">
                                 <label for="verificationNotes" class="form-label">Verification Comments</label>
-                                <textarea class="form-control" id="verificationNotes" name="verification_notes" rows="3" 
-                                          placeholder="Add any notes about the asset condition, location verification, or concerns..."></textarea>
+                                <textarea class="form-control" id="verificationNotes" name="verification_notes" rows="3"
+                                          placeholder="Add any notes about the item condition, location verification, or concerns..."></textarea>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -290,7 +290,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-success" id="confirmVerifyBtn">
-                    <i class="bi bi-check-circle me-1"></i>Verify Asset
+                    <i class="bi bi-check-circle me-1"></i>Verify Item
                 </button>
             </div>
         </div>
@@ -361,7 +361,7 @@ function showVerificationModal(assetId, assetName, category, location, quantity,
     assetDetails.innerHTML = `
         <div class="row">
             <div class="col-md-6">
-                <h6 class="text-primary">Asset Information</h6>
+                <h6 class="text-primary">Item Information</h6>
                 <p><strong>Name:</strong> ${assetName}</p>
                 <p><strong>Category:</strong> ${category}</p>
                 <p><strong>Location:</strong> ${location}</p>
@@ -586,11 +586,11 @@ function refreshTable() {
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Asset Verification Dashboard - ConstructLink™';
-$pageHeader = 'Asset Verification Dashboard';
+$pageTitle = 'Item Verification Dashboard - ConstructLink™';
+$pageHeader = 'Item Verification Dashboard';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Assets', 'url' => '?route=assets'],
+    ['title' => 'Inventory', 'url' => '?route=assets'],
     ['title' => 'Verification Dashboard', 'url' => '?route=assets/verification-dashboard']
 ];
 

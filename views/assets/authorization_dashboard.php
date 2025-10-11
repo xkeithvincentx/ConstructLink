@@ -13,10 +13,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <!-- Info Alert -->
 <div class="alert alert-info" role="alert">
     <h6 class="alert-heading">
-        <i class="bi bi-info-circle me-2"></i>Legacy Asset Authorization
+        <i class="bi bi-info-circle me-2"></i>Legacy Item Authorization
     </h6>
     <p class="mb-0">
-        Authorize verified legacy assets as official project property. These assets have been verified by the Site Inventory Clerk and are ready for final approval.
+        Authorize verified legacy items as official project property. These items have been verified by the Site Inventory Clerk and are ready for final approval.
     </p>
 </div>
 
@@ -44,12 +44,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 <?php endif; ?>
 
 <?php if (!in_array($user['role_name'], $roleConfig['assets/legacy-authorize'] ?? [])): ?>
-    <div class="alert alert-danger mt-4">You do not have permission to authorize legacy assets.</div>
+    <div class="alert alert-danger mt-4">You do not have permission to authorize legacy items.</div>
 <?php else: ?>
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -64,7 +64,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-warning text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -79,7 +79,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-success text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -94,7 +94,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -124,7 +124,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="selectAll">
                     <label class="form-check-label" for="selectAll">
-                        Select all assets on this page
+                        Select all items on this page
                     </label>
                 </div>
             </div>
@@ -140,12 +140,12 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<!-- Verified Assets Table -->
+<!-- Verified Items Table -->
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0">
-                <i class="bi bi-shield-exclamation me-1"></i>Assets Ready for Authorization
+                <i class="bi bi-shield-exclamation me-1"></i>Items Ready for Authorization
             </h6>
             <div class="d-flex gap-2">
                 <select class="form-select form-select-sm" id="categoryFilter" style="width: auto;">
@@ -174,7 +174,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <th>
                             <input type="checkbox" class="form-check-input" id="headerSelectAll">
                         </th>
-                        <th>Asset Name</th>
+                        <th>Item Name</th>
                         <th>Brand</th>
                         <th>Manufacturer</th>
                         <th>Category</th>
@@ -736,11 +736,11 @@ function refreshTable() {
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Asset Authorization Dashboard - ConstructLink™';
-$pageHeader = 'Asset Authorization Dashboard';
+$pageTitle = 'Item Authorization Dashboard - ConstructLink™';
+$pageHeader = 'Item Authorization Dashboard';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Assets', 'url' => '?route=assets'],
+    ['title' => 'Inventory', 'url' => '?route=assets'],
     ['title' => 'Authorization Dashboard', 'url' => '?route=assets/authorization-dashboard']
 ];
 
