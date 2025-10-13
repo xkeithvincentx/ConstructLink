@@ -318,7 +318,12 @@ for ($copy = 1; $copy <= 4; $copy++):
                         echo '</tr>';
                     }
                 } else {
-                    $fallbackPowerTools = ['Drill [Cordless, Hammer]', 'Grinder [Angle, Bench]', 'Saw [Circular, Jigsaw]'];
+                    $fallbackPowerTools = [
+                        'Drill [Cordless, Electric, Hammer, Impact]',
+                        'Grinder [Angle, Bench]',
+                        'Saw [Circular, Jigsaw, Reciprocating]',
+                        'Sander [Belt, Orbital, Palm]'
+                    ];
                     foreach ($fallbackPowerTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
@@ -345,7 +350,14 @@ for ($copy = 1; $copy <= 4; $copy++):
                         echo '</tr>';
                     }
                 } else {
-                    $fallbackHandTools = ['Hammer [Claw, Sledge]', 'Screwdriver [Phillips, Flathead]', 'Wrench [Adjustable, Socket]', 'Pliers [Needle-nose, Cutting]'];
+                    $fallbackHandTools = [
+                        'Hammer [Claw, Sledge, Ball Peen]',
+                        'Screwdriver [Phillips, Flathead]',
+                        'Wrench [Adjustable, Socket, Allen]',
+                        'Pliers [Needle-nose, Cutting, Locking]',
+                        'Measuring [Tape Measure, Level, Square]',
+                        'Cutting [Chisel, File, Hand Saw]'
+                    ];
                     foreach ($fallbackHandTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';

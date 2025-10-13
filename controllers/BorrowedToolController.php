@@ -1610,62 +1610,77 @@ class BorrowedToolController {
     }
 
     /**
-     * Print blank borrowing form with equipment types and subtypes from database
-     * No authentication required - available to all staff for bulk printing
+     * Print blank borrowing form with actual equipment types and subtypes from database
+     * Format: Equipment Type [Subtype1, Subtype2, Subtype3] - saves space for printing
+     * Example: Drill [Cordless, Electric, Hammer, Impact]
      */
     public function printBlankForm() {
         try {
             $db = Database::getInstance()->getConnection();
 
-            // Fetch Power Tools with their subtypes grouped
+            // Fetch Power Tools with all their subtypes grouped
             $powerToolsQuery = "
                 SELECT
                     et.name as type_name,
-                    GROUP_CONCAT(DISTINCT st.name ORDER BY st.name SEPARATOR ', ') as subtypes
+                    GROUP_CONCAT(es.subtype_name ORDER BY es.subtype_name SEPARATOR ', ') as subtypes
                 FROM equipment_types et
-                LEFT JOIN equipment_subtypes st ON et.id = st.equipment_type_id
-                WHERE et.name IN ('Power Tools', 'Drilling Tools', 'Cutting Tools')
+                INNER JOIN categories c ON et.category_id = c.id
+                LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id AND es.is_active = 1
+                WHERE c.name IN ('Power Tools', 'Drilling Tools', 'Cutting Tools', 'Grinding Tools')
+                  AND et.is_active = 1
                 GROUP BY et.id, et.name
                 ORDER BY et.name ASC
-                LIMIT 10
             ";
             $powerToolsRaw = $db->query($powerToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
 
-            // Format power tools for display
+            // Format: Type [Subtype1, Subtype2, ...]
             $powerTools = [];
             foreach ($powerToolsRaw as $tool) {
-                $powerTools[] = [
-                    'display_name' => $tool['type_name'] . ($tool['subtypes'] ? ' [' . $tool['subtypes'] . ']' : '')
-                ];
+                if ($tool['subtypes']) {
+                    $powerTools[] = [
+                        'display_name' => $tool['type_name'] . ' [' . $tool['subtypes'] . ']'
+                    ];
+                } else {
+                    $powerTools[] = [
+                        'display_name' => $tool['type_name']
+                    ];
+                }
             }
 
-            // Fetch Hand Tools with their subtypes grouped
+            // Fetch Hand Tools with all their subtypes grouped
             $handToolsQuery = "
                 SELECT
                     et.name as type_name,
-                    GROUP_CONCAT(DISTINCT st.name ORDER BY st.name SEPARATOR ', ') as subtypes
+                    GROUP_CONCAT(es.subtype_name ORDER BY es.subtype_name SEPARATOR ', ') as subtypes
                 FROM equipment_types et
-                LEFT JOIN equipment_subtypes st ON et.id = st.equipment_type_id
-                WHERE et.name IN ('Hand Tools', 'Measuring Tools')
+                INNER JOIN categories c ON et.category_id = c.id
+                LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id AND es.is_active = 1
+                WHERE c.name IN ('Hand Tools', 'Fastening Tools', 'Measuring Tools')
+                  AND et.is_active = 1
                 GROUP BY et.id, et.name
                 ORDER BY et.name ASC
-                LIMIT 15
             ";
             $handToolsRaw = $db->query($handToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
 
-            // Format hand tools for display
+            // Format: Type [Subtype1, Subtype2, ...]
             $handTools = [];
             foreach ($handToolsRaw as $tool) {
-                $handTools[] = [
-                    'display_name' => $tool['type_name'] . ($tool['subtypes'] ? ' [' . $tool['subtypes'] . ']' : '')
-                ];
+                if ($tool['subtypes']) {
+                    $handTools[] = [
+                        'display_name' => $tool['type_name'] . ' [' . $tool['subtypes'] . ']'
+                    ];
+                } else {
+                    $handTools[] = [
+                        'display_name' => $tool['type_name']
+                    ];
+                }
             }
 
             include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
 
         } catch (Exception $e) {
             error_log("Print blank form error: " . $e->getMessage());
-            // Fallback to hardcoded items if database fails
+            // Fallback to empty arrays if database fails
             $powerTools = [];
             $handTools = [];
             include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
