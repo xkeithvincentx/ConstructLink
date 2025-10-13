@@ -1610,12 +1610,44 @@ class BorrowedToolController {
     }
 
     /**
-     * Print blank borrowing form (4-per-page)
+     * Print blank borrowing form with equipment subtypes from database
      * No authentication required - available to all staff for bulk printing
      */
     public function printBlankForm() {
-        // No batch data needed - just show blank template
-        include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            // Fetch Power Tools subtypes
+            $powerToolsQuery = "
+                SELECT DISTINCT st.name as subtype_name
+                FROM equipment_subtypes st
+                INNER JOIN equipment_types et ON st.equipment_type_id = et.id
+                WHERE et.name IN ('Power Tools', 'Drilling Tools', 'Cutting Tools')
+                ORDER BY st.name ASC
+                LIMIT 10
+            ";
+            $powerTools = $db->query($powerToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
+
+            // Fetch Hand Tools subtypes
+            $handToolsQuery = "
+                SELECT DISTINCT st.name as subtype_name
+                FROM equipment_subtypes st
+                INNER JOIN equipment_types et ON st.equipment_type_id = et.id
+                WHERE et.name IN ('Hand Tools', 'Measuring Tools')
+                ORDER BY st.name ASC
+                LIMIT 15
+            ";
+            $handTools = $db->query($handToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
+
+            include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
+
+        } catch (Exception $e) {
+            error_log("Print blank form error: " . $e->getMessage());
+            // Fallback to hardcoded items if database fails
+            $powerTools = [];
+            $handTools = [];
+            include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
+        }
     }
 }
 ?>
