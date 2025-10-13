@@ -7,6 +7,11 @@
  * Format: 4 copies per A4 page in 2x2 grid (saves paper)
  * Design: Simple checklist - Power Tools, Hand Tools, Others
  */
+
+// Get system name from settings for rebranding support
+$db = Database::getInstance()->getConnection();
+$stmt = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'system_name' LIMIT 1");
+$systemName = $stmt->fetchColumn() ?: 'ConstructLink™';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -264,8 +269,7 @@ for ($copy = 1; $copy <= 4; $copy++):
     <div class="form-quarter">
         <!-- Header -->
         <div class="form-header">
-            <h1>CONSTRUCTLINK EQUIPMENT FORM</h1>
-            <div class="copy-label">BORROWER COPY</div>
+            <h1><?= strtoupper($systemName) ?> BORROWER FORM</h1>
         </div>
 
         <!-- Info Section -->
@@ -405,7 +409,7 @@ for ($copy = 1; $copy <= 4; $copy++):
 
         <!-- Footer -->
         <div class="form-footer">
-            ConstructLink™ by Ranoa Digital Solutions
+            <?= $systemName ?> by Ranoa Digital Solutions
         </div>
     </div>
 <?php endfor; ?>
