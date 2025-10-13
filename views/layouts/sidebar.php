@@ -214,6 +214,7 @@ $navigationMenu = getNavigationMenu($userRole);
                         'Users' => 'bi bi-people',
                         'Projects' => 'bi bi-building',
                         'Categories' => 'bi bi-tags',
+                        'Equipment Management' => 'bi bi-gear-fill',
                         'Vendors' => 'bi bi-shop',
                         'Makers' => 'bi bi-gear',
                         'Clients' => 'bi bi-person-badge',

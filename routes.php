@@ -808,6 +808,108 @@ $routes = [
     ],
 
     // =================================================================
+    // EQUIPMENT CLASSIFICATION MANAGEMENT ROUTES
+    // =================================================================
+    'equipment/management' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'index',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+
+    // Categories Management
+    'equipment/categories' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'categories',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/categories/create' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'createCategory',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/categories/update' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'updateCategory',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/categories/delete' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'deleteCategory',
+        'auth' => true,
+        'roles' => ['System Admin']
+    ],
+
+    // Equipment Types Management
+    'equipment/types' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'equipmentTypes',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/types/create' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'createEquipmentType',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/types/update' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'updateEquipmentType',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/types/delete' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'deleteEquipmentType',
+        'auth' => true,
+        'roles' => ['System Admin']
+    ],
+
+    // Subtypes Management
+    'equipment/subtypes' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'subtypes',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/subtypes/create' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'createSubtype',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/subtypes/update' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'updateSubtype',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/subtypes/delete' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'deleteSubtype',
+        'auth' => true,
+        'roles' => ['System Admin']
+    ],
+
+    // Export/Backup
+    'equipment/export/database' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'exportDatabase',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+    'equipment/export/csv' => [
+        'controller' => 'EquipmentManagementController',
+        'action' => 'exportCSV',
+        'auth' => true,
+        'roles' => getRolesFor('equipment/management')
+    ],
+
+    // =================================================================
     // QR TAG MANAGEMENT ROUTES
     // =================================================================
     'assets/tag-management' => [

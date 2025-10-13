@@ -284,6 +284,12 @@ return [
     'categories/edit' => ['System Admin', 'Asset Director'],
     'categories/view' => ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'],
 
+    // Equipment Classification Management
+    'equipment/management' => ['System Admin', 'Asset Director'],
+    'equipment/categories' => ['System Admin', 'Asset Director'],
+    'equipment/types' => ['System Admin', 'Asset Director'],
+    'equipment/subtypes' => ['System Admin', 'Asset Director'],
+
     // Makers
     'makers' => ['System Admin', 'Finance Director', 'Procurement Officer', 'Asset Director'],
     'makers/create' => ['System Admin', 'Procurement Officer'],

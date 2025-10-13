@@ -43,6 +43,7 @@ function getNavigationMenu($userRole) {
             'Users' => 'users',
             'Projects' => 'projects',
             'Categories' => 'categories',
+            'Equipment Management' => 'equipment/management',
             'Vendors' => 'vendors',
             'Makers' => 'makers',
             'Clients' => 'clients',
