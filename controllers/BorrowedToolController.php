@@ -1610,34 +1610,56 @@ class BorrowedToolController {
     }
 
     /**
-     * Print blank borrowing form with equipment subtypes from database
+     * Print blank borrowing form with equipment types and subtypes from database
      * No authentication required - available to all staff for bulk printing
      */
     public function printBlankForm() {
         try {
             $db = Database::getInstance()->getConnection();
 
-            // Fetch Power Tools subtypes
+            // Fetch Power Tools with their subtypes grouped
             $powerToolsQuery = "
-                SELECT DISTINCT st.name as subtype_name
-                FROM equipment_subtypes st
-                INNER JOIN equipment_types et ON st.equipment_type_id = et.id
+                SELECT
+                    et.name as type_name,
+                    GROUP_CONCAT(DISTINCT st.name ORDER BY st.name SEPARATOR ', ') as subtypes
+                FROM equipment_types et
+                LEFT JOIN equipment_subtypes st ON et.id = st.equipment_type_id
                 WHERE et.name IN ('Power Tools', 'Drilling Tools', 'Cutting Tools')
-                ORDER BY st.name ASC
+                GROUP BY et.id, et.name
+                ORDER BY et.name ASC
                 LIMIT 10
             ";
-            $powerTools = $db->query($powerToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
+            $powerToolsRaw = $db->query($powerToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
 
-            // Fetch Hand Tools subtypes
+            // Format power tools for display
+            $powerTools = [];
+            foreach ($powerToolsRaw as $tool) {
+                $powerTools[] = [
+                    'display_name' => $tool['type_name'] . ($tool['subtypes'] ? ' [' . $tool['subtypes'] . ']' : '')
+                ];
+            }
+
+            // Fetch Hand Tools with their subtypes grouped
             $handToolsQuery = "
-                SELECT DISTINCT st.name as subtype_name
-                FROM equipment_subtypes st
-                INNER JOIN equipment_types et ON st.equipment_type_id = et.id
+                SELECT
+                    et.name as type_name,
+                    GROUP_CONCAT(DISTINCT st.name ORDER BY st.name SEPARATOR ', ') as subtypes
+                FROM equipment_types et
+                LEFT JOIN equipment_subtypes st ON et.id = st.equipment_type_id
                 WHERE et.name IN ('Hand Tools', 'Measuring Tools')
-                ORDER BY st.name ASC
+                GROUP BY et.id, et.name
+                ORDER BY et.name ASC
                 LIMIT 15
             ";
-            $handTools = $db->query($handToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
+            $handToolsRaw = $db->query($handToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
+
+            // Format hand tools for display
+            $handTools = [];
+            foreach ($handToolsRaw as $tool) {
+                $handTools[] = [
+                    'display_name' => $tool['type_name'] . ($tool['subtypes'] ? ' [' . $tool['subtypes'] . ']' : '')
+                ];
+            }
 
             include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
 

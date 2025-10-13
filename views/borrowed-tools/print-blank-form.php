@@ -312,13 +312,13 @@ for ($copy = 1; $copy <= 4; $copy++):
                     foreach ($powerTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                        echo '<td>' . htmlspecialchars($tool['subtype_name']) . '</td>';
+                        echo '<td>' . htmlspecialchars($tool['display_name']) . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
                         echo '</tr>';
                     }
                 } else {
-                    $fallbackPowerTools = ['Drill', 'Grinder', 'Circular Saw', 'Jigsaw', 'Impact Driver'];
+                    $fallbackPowerTools = ['Drill [Cordless, Hammer]', 'Grinder [Angle, Bench]', 'Saw [Circular, Jigsaw]'];
                     foreach ($fallbackPowerTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
@@ -339,13 +339,13 @@ for ($copy = 1; $copy <= 4; $copy++):
                     foreach ($handTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                        echo '<td>' . htmlspecialchars($tool['subtype_name']) . '</td>';
+                        echo '<td>' . htmlspecialchars($tool['display_name']) . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
                         echo '</tr>';
                     }
                 } else {
-                    $fallbackHandTools = ['Hammer', 'Screwdriver', 'Wrench', 'Pliers', 'Tape Measure', 'Level'];
+                    $fallbackHandTools = ['Hammer [Claw, Sledge]', 'Screwdriver [Phillips, Flathead]', 'Wrench [Adjustable, Socket]', 'Pliers [Needle-nose, Cutting]'];
                     foreach ($fallbackHandTools as $tool) {
                         echo '<tr>';
                         echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
