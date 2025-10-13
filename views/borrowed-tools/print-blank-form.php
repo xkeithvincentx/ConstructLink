@@ -49,10 +49,31 @@ $systemName = $stmt->fetchColumn() ?: 'ConstructLink™';
 
         /* Each Quarter Form */
         .form-quarter {
-            border: 2px solid #000;
+            border: 1px dashed #999; /* Dashed cutting guide */
             padding: 3mm;
             overflow: hidden;
             page-break-inside: avoid;
+        }
+
+        /* Solid border on outer edges only */
+        .form-quarter:first-child {
+            border-top: 2px solid #000;
+            border-left: 2px solid #000;
+        }
+
+        .form-quarter:nth-child(2) {
+            border-top: 2px solid #000;
+            border-right: 2px solid #000;
+        }
+
+        .form-quarter:nth-child(3) {
+            border-bottom: 2px solid #000;
+            border-left: 2px solid #000;
+        }
+
+        .form-quarter:nth-child(4) {
+            border-bottom: 2px solid #000;
+            border-right: 2px solid #000;
         }
 
         .form-header {
@@ -269,7 +290,7 @@ for ($copy = 1; $copy <= 4; $copy++):
     <div class="form-quarter">
         <!-- Header -->
         <div class="form-header">
-            <h1><?= strtoupper($systemName) ?> BORROWER FORM</h1>
+            <h1><?= strtoupper($systemName) ?> BORROWING FORM</h1>
         </div>
 
         <!-- Info Section -->
