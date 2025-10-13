@@ -1608,5 +1608,14 @@ class BorrowedToolController {
             include APP_ROOT . '/views/errors/500.php';
         }
     }
+
+    /**
+     * Print blank borrowing form (4-per-page)
+     * No authentication required - available to all staff for bulk printing
+     */
+    public function printBlankForm() {
+        // No batch data needed - just show blank template
+        include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
+    }
 }
 ?>

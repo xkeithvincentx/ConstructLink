@@ -18,7 +18,18 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <span class="d-none d-sm-inline">Borrow Tool</span>
                 <span class="d-sm-none">Borrow</span>
             </a>
+            <a href="?route=borrowed-tools/create-batch" class="btn btn-success btn-sm">
+                <i class="bi bi-cart-plus me-1"></i>
+                <span class="d-none d-sm-inline">Multi-Item Batch</span>
+                <span class="d-sm-none">Batch</span>
+            </a>
         <?php endif; ?>
+
+        <a href="?route=borrowed-tools/print-blank-form" class="btn btn-outline-primary btn-sm" target="_blank" title="Print blank forms for handwritten use">
+            <i class="bi bi-printer me-1"></i>
+            <span class="d-none d-sm-inline">Print Blank Form</span>
+            <span class="d-sm-none">Print</span>
+        </a>
     </div>
 
     <!-- Secondary Actions (Right) -->

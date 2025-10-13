@@ -558,6 +558,12 @@ $routes = [
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/view')
     ],
+    'borrowed-tools/print-blank-form' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'printBlankForm',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/view')
+    ],
 
     // =================================================================
     // 6. 🔄 WITHDRAWALS (MVA: Warehouseman → Site Inventory Clerk → Project Manager)
