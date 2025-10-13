@@ -1,10 +1,10 @@
 <?php
 /**
- * ConstructLink™ - Blank Printable Borrowing Form
+ * ConstructLink™ - Blank Printable Borrowing Form (2x2 Grid)
  * Developed by: Ranoa Digital Solutions
  *
- * Purpose: Pre-printed blank form with checklist for handwritten use
- * Format: One full-page form per A4 sheet
+ * Purpose: Pre-printed blank forms with checklist for handwritten use
+ * Format: 4 copies per A4 page in 2x2 grid (saves paper)
  * Design: Simple checklist - Power Tools, Hand Tools, Others
  */
 ?>
@@ -15,10 +15,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blank Borrowed Tools Form - ConstructLink™</title>
     <style>
-        /* A4 Page Setup */
         @page {
             size: A4 portrait;
-            margin: 15mm;
+            margin: 5mm;
         }
 
         * {
@@ -29,50 +28,57 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11pt;
-            line-height: 1.3;
             color: #000;
             background: #fff;
         }
 
-        /* Full Page Form */
-        .form-page {
+        /* 2x2 Grid Container */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 0;
             width: 100%;
-            min-height: 260mm;
-            border: 3px solid #000;
-            padding: 8mm;
-            page-break-after: always;
+            height: 287mm; /* A4 height minus margins */
         }
 
-        /* Header */
+        /* Each Quarter Form */
+        .form-quarter {
+            border: 2px solid #000;
+            padding: 3mm;
+            overflow: hidden;
+            page-break-inside: avoid;
+        }
+
         .form-header {
             text-align: center;
-            border-bottom: 3px solid #000;
-            padding-bottom: 4mm;
-            margin-bottom: 6mm;
-        }
-
-        .form-header h1 {
-            font-size: 18pt;
-            font-weight: bold;
+            border-bottom: 2px solid #000;
+            padding-bottom: 1mm;
             margin-bottom: 2mm;
         }
 
+        .form-header h1 {
+            font-size: 8pt;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+
         .copy-label {
-            font-size: 12pt;
+            font-size: 6pt;
             font-weight: bold;
             color: #666;
         }
 
-        /* Info Section */
+        /* Info Section - Compact */
         .info-section {
-            margin-bottom: 8mm;
+            font-size: 6pt;
+            margin-bottom: 2mm;
         }
 
         .info-row {
             display: flex;
-            gap: 8mm;
-            margin-bottom: 4mm;
+            gap: 2mm;
+            margin-bottom: 1mm;
         }
 
         .info-field {
@@ -83,57 +89,56 @@
 
         .info-label {
             font-weight: bold;
-            margin-right: 3mm;
+            margin-right: 1mm;
             white-space: nowrap;
-            font-size: 11pt;
         }
 
         .info-value {
-            border-bottom: 1.5px solid #000;
+            border-bottom: 1px solid #000;
             flex: 1;
-            min-height: 8mm;
+            min-height: 3mm;
         }
 
         /* Equipment Table */
         .equipment-table {
             width: 100%;
             border-collapse: collapse;
-            border: 2px solid #000;
-            margin-bottom: 8mm;
+            border: 1px solid #000;
+            margin-bottom: 2mm;
+            font-size: 5.5pt;
         }
 
         .equipment-table th {
             background: #000;
             color: #fff;
-            padding: 3mm;
-            font-size: 11pt;
+            padding: 0.5mm;
+            font-size: 5pt;
             font-weight: bold;
             text-align: center;
-            border: 2px solid #000;
+            border: 1px solid #000;
         }
 
         .equipment-table td {
-            padding: 3mm 4mm;
-            font-size: 11pt;
-            border: 1px solid #666;
+            padding: 0.5mm 1mm;
+            border: 0.5px solid #999;
             vertical-align: middle;
         }
 
         .category-row {
             background: #d0d0d0;
             font-weight: bold;
-            font-size: 12pt;
+            font-size: 6pt;
         }
 
         .checkbox {
-            width: 6mm;
-            height: 6mm;
-            border: 2px solid #000;
+            width: 2.5mm;
+            height: 2.5mm;
+            border: 1px solid #000;
             display: inline-block;
         }
 
         .qty-col {
-            width: 25mm;
+            width: 8mm;
             text-align: center;
         }
 
@@ -141,84 +146,53 @@
             background: #f0f0f0;
         }
 
-        .item-name-col {
-            text-align: left;
-        }
-
-        .others-row td {
-            background: #fff;
-            min-height: 10mm;
-        }
-
-        .others-row .item-name-col {
-            border-bottom: 1.5px solid #999;
-        }
-
-        /* Signature Section */
+        /* Signature Section - Simplified */
         .signature-section {
             display: flex;
-            gap: 4mm;
-            margin-top: 10mm;
+            gap: 1mm;
+            font-size: 5pt;
         }
 
         .sig-box {
             flex: 1;
             text-align: center;
-            border: 2px solid #000;
-            padding: 5mm;
-            min-height: 35mm;
+            border: 1px solid #000;
+            padding: 1mm;
+            min-height: 12mm;
         }
 
         .sig-label {
             font-weight: bold;
-            font-size: 12pt;
-            margin-bottom: 3mm;
+            margin-bottom: 0.5mm;
         }
 
         .sig-space {
-            min-height: 20mm;
-            border-bottom: 2px solid #000;
-            margin-bottom: 2mm;
+            min-height: 8mm;
+            border-bottom: 1px solid #000;
+            margin-bottom: 0.5mm;
         }
 
-        .sig-line {
-            font-size: 9pt;
-            color: #666;
-        }
-
-        .date-line {
-            margin-top: 3mm;
-            font-size: 10pt;
-        }
-
-        .date-box {
-            border-bottom: 1.5px solid #000;
-            display: inline-block;
-            width: 35mm;
-            min-height: 6mm;
+        .date-field {
+            border-bottom: 1px solid #000;
+            min-height: 3mm;
+            margin-top: 0.5mm;
         }
 
         /* Footer */
         .form-footer {
             text-align: center;
-            margin-top: 10mm;
-            padding-top: 3mm;
-            border-top: 1px solid #ccc;
-            font-size: 9pt;
+            margin-top: 1mm;
+            padding-top: 0.5mm;
+            border-top: 0.5px solid #ccc;
+            font-size: 4pt;
             color: #666;
         }
 
-        /* Print Styles */
         @media print {
             body {
                 margin: 0;
                 padding: 0;
             }
-
-            .form-page {
-                page-break-after: always;
-            }
-
             .no-print {
                 display: none !important;
             }
@@ -270,183 +244,159 @@
 
 <!-- Instructions -->
 <div class="instructions no-print">
-    <h2>📋 Equipment Borrowing Form - Blank Template</h2>
-    <p><strong>Design:</strong> Full-page form with Power Tools and Hand Tools checklist + itemizable Others section</p>
-    <p><strong>How to Use:</strong></p>
-    <ol>
-        <li><strong>Print:</strong> Print this page (one form per A4 sheet)</li>
-        <li><strong>Fill Info:</strong> Write borrower name, contact, date out, and return by date</li>
-        <li><strong>Check Items:</strong> Tick checkboxes for equipment being borrowed</li>
-        <li><strong>Write Quantities:</strong> Write numbers in "Qty Out" column</li>
-        <li><strong>Others:</strong> For equipment not in checklist, write item name in Others section</li>
-        <li><strong>Sign:</strong> Borrower and staff sign in signature boxes</li>
-        <li><strong>Return:</strong> Write returned quantities in "Qty In" column (shaded)</li>
-    </ol>
+    <h2>📋 Equipment Borrowing Form - 4 Copies Per Page</h2>
+    <p><strong>Design:</strong> 2x2 grid with 4 identical copies per A4 sheet (saves paper)</p>
+    <p><strong>Features:</strong></p>
+    <ul>
+        <li>Power Tools and Hand Tools from database</li>
+        <li>5 blank rows in Others section</li>
+        <li>Qty Out and Qty In columns</li>
+        <li>Simplified signatures: Borrowed By, Released By, and Return Date field</li>
+    </ul>
+    <p><strong>Print this page and you'll get 4 copies ready to use!</strong></p>
 </div>
 
-<div class="form-page">
-    <!-- Header -->
-    <div class="form-header">
-        <h1>CONSTRUCTLINK™ EQUIPMENT BORROWING FORM</h1>
-        <div class="copy-label">BORROWER COPY</div>
-    </div>
+<div class="grid-container">
+<?php
+// Generate 4 identical forms in 2x2 grid
+for ($copy = 1; $copy <= 4; $copy++):
+?>
+    <div class="form-quarter">
+        <!-- Header -->
+        <div class="form-header">
+            <h1>CONSTRUCTLINK EQUIPMENT FORM</h1>
+            <div class="copy-label">BORROWER COPY</div>
+        </div>
 
-    <!-- Info Section -->
-    <div class="info-section">
-        <div class="info-row">
-            <div class="info-field">
-                <span class="info-label">Borrower Name:</span>
-                <span class="info-value"></span>
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-row">
+                <div class="info-field">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value"></span>
+                </div>
+                <div class="info-field">
+                    <span class="info-label">Contact:</span>
+                    <span class="info-value"></span>
+                </div>
             </div>
-            <div class="info-field">
-                <span class="info-label">Contact Number:</span>
-                <span class="info-value"></span>
+            <div class="info-row">
+                <div class="info-field">
+                    <span class="info-label">Date Out:</span>
+                    <span class="info-value"></span>
+                </div>
+                <div class="info-field">
+                    <span class="info-label">Return By:</span>
+                    <span class="info-value"></span>
+                </div>
             </div>
         </div>
-        <div class="info-row">
-            <div class="info-field">
-                <span class="info-label">Date Out:</span>
-                <span class="info-value"></span>
+
+        <!-- Equipment Table -->
+        <table class="equipment-table">
+            <thead>
+                <tr>
+                    <th style="width: 4mm;"></th>
+                    <th style="text-align: left;">EQUIPMENT</th>
+                    <th style="width: 8mm;">Qty<br>Out</th>
+                    <th style="width: 8mm;">Qty<br>In</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- POWER TOOLS -->
+                <tr class="category-row">
+                    <td colspan="4">POWER TOOLS</td>
+                </tr>
+                <?php
+                if (!empty($powerTools)) {
+                    foreach ($powerTools as $tool) {
+                        echo '<tr>';
+                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td>' . htmlspecialchars($tool['subtype_name']) . '</td>';
+                        echo '<td class="qty-col"></td>';
+                        echo '<td class="qty-col return-col"></td>';
+                        echo '</tr>';
+                    }
+                } else {
+                    $fallbackPowerTools = ['Drill', 'Grinder', 'Circular Saw', 'Jigsaw', 'Impact Driver'];
+                    foreach ($fallbackPowerTools as $tool) {
+                        echo '<tr>';
+                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td>' . $tool . '</td>';
+                        echo '<td class="qty-col"></td>';
+                        echo '<td class="qty-col return-col"></td>';
+                        echo '</tr>';
+                    }
+                }
+                ?>
+
+                <!-- HAND TOOLS -->
+                <tr class="category-row">
+                    <td colspan="4">HAND TOOLS</td>
+                </tr>
+                <?php
+                if (!empty($handTools)) {
+                    foreach ($handTools as $tool) {
+                        echo '<tr>';
+                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td>' . htmlspecialchars($tool['subtype_name']) . '</td>';
+                        echo '<td class="qty-col"></td>';
+                        echo '<td class="qty-col return-col"></td>';
+                        echo '</tr>';
+                    }
+                } else {
+                    $fallbackHandTools = ['Hammer', 'Screwdriver', 'Wrench', 'Pliers', 'Tape Measure', 'Level'];
+                    foreach ($fallbackHandTools as $tool) {
+                        echo '<tr>';
+                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td>' . $tool . '</td>';
+                        echo '<td class="qty-col"></td>';
+                        echo '<td class="qty-col return-col"></td>';
+                        echo '</tr>';
+                    }
+                }
+                ?>
+
+                <!-- OTHERS -->
+                <tr class="category-row">
+                    <td colspan="4">OTHERS</td>
+                </tr>
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                <tr>
+                    <td style="text-align: center;"><span class="checkbox"></span></td>
+                    <td style="border-bottom: 1px solid #999;"></td>
+                    <td class="qty-col"></td>
+                    <td class="qty-col return-col"></td>
+                </tr>
+                <?php endfor; ?>
+            </tbody>
+        </table>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="sig-box">
+                <div class="sig-label">BORROWED BY</div>
+                <div class="sig-space"></div>
+                <div style="font-size: 4pt;">Signature</div>
             </div>
-            <div class="info-field">
-                <span class="info-label">Return By:</span>
-                <span class="info-value"></span>
+            <div class="sig-box">
+                <div class="sig-label">RELEASED BY</div>
+                <div class="sig-space"></div>
+                <div style="font-size: 4pt;">Signature</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-label">RETURN DATE</div>
+                <div class="date-field"></div>
+                <div style="font-size: 4pt; margin-top: 0.5mm;">Write date</div>
             </div>
         </div>
-    </div>
 
-    <!-- Equipment Table -->
-    <table class="equipment-table">
-        <thead>
-            <tr>
-                <th style="width: 12mm;">✓</th>
-                <th class="item-name-col">EQUIPMENT / TOOL</th>
-                <th style="width: 30mm;">Qty Out</th>
-                <th style="width: 30mm;">Qty In</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- POWER TOOLS -->
-            <tr class="category-row">
-                <td colspan="4">⚡ POWER TOOLS</td>
-            </tr>
-            <?php
-            // Display power tools from database
-            if (!empty($powerTools)) {
-                foreach ($powerTools as $tool) {
-                    echo '<tr>';
-                    echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                    echo '<td class="item-name-col">' . htmlspecialchars($tool['subtype_name']) . '</td>';
-                    echo '<td class="qty-col"></td>';
-                    echo '<td class="qty-col return-col"></td>';
-                    echo '</tr>';
-                }
-            } else {
-                // Fallback to hardcoded items if database is empty
-                $fallbackPowerTools = ['Drill', 'Grinder', 'Circular Saw', 'Jigsaw', 'Impact Driver'];
-                foreach ($fallbackPowerTools as $tool) {
-                    echo '<tr>';
-                    echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                    echo '<td class="item-name-col">' . $tool . '</td>';
-                    echo '<td class="qty-col"></td>';
-                    echo '<td class="qty-col return-col"></td>';
-                    echo '</tr>';
-                }
-            }
-            ?>
-
-            <!-- HAND TOOLS -->
-            <tr class="category-row">
-                <td colspan="4">🔧 HAND TOOLS</td>
-            </tr>
-            <?php
-            // Display hand tools from database
-            if (!empty($handTools)) {
-                foreach ($handTools as $tool) {
-                    echo '<tr>';
-                    echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                    echo '<td class="item-name-col">' . htmlspecialchars($tool['subtype_name']) . '</td>';
-                    echo '<td class="qty-col"></td>';
-                    echo '<td class="qty-col return-col"></td>';
-                    echo '</tr>';
-                }
-            } else {
-                // Fallback to hardcoded items if database is empty
-                $fallbackHandTools = ['Hammer', 'Screwdriver', 'Wrench', 'Pliers', 'Tape Measure', 'Level'];
-                foreach ($fallbackHandTools as $tool) {
-                    echo '<tr>';
-                    echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
-                    echo '<td class="item-name-col">' . $tool . '</td>';
-                    echo '<td class="qty-col"></td>';
-                    echo '<td class="qty-col return-col"></td>';
-                    echo '</tr>';
-                }
-            }
-            ?>
-
-            <!-- OTHERS -->
-            <tr class="category-row">
-                <td colspan="4">📝 OTHERS (Write equipment name below)</td>
-            </tr>
-            <tr class="others-row">
-                <td style="text-align: center;"><span class="checkbox"></span></td>
-                <td class="item-name-col"></td>
-                <td class="qty-col"></td>
-                <td class="qty-col return-col"></td>
-            </tr>
-            <tr class="others-row">
-                <td style="text-align: center;"><span class="checkbox"></span></td>
-                <td class="item-name-col"></td>
-                <td class="qty-col"></td>
-                <td class="qty-col return-col"></td>
-            </tr>
-            <tr class="others-row">
-                <td style="text-align: center;"><span class="checkbox"></span></td>
-                <td class="item-name-col"></td>
-                <td class="qty-col"></td>
-                <td class="qty-col return-col"></td>
-            </tr>
-            <tr class="others-row">
-                <td style="text-align: center;"><span class="checkbox"></span></td>
-                <td class="item-name-col"></td>
-                <td class="qty-col"></td>
-                <td class="qty-col return-col"></td>
-            </tr>
-            <tr class="others-row">
-                <td style="text-align: center;"><span class="checkbox"></span></td>
-                <td class="item-name-col"></td>
-                <td class="qty-col"></td>
-                <td class="qty-col return-col"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <!-- Signature Section -->
-    <div class="signature-section">
-        <div class="sig-box">
-            <div class="sig-label">BORROWED BY</div>
-            <div class="sig-space"></div>
-            <div class="sig-line">Signature over Printed Name</div>
-            <div class="date-line">Date: <span class="date-box"></span></div>
-        </div>
-        <div class="sig-box">
-            <div class="sig-label">RELEASED BY</div>
-            <div class="sig-space"></div>
-            <div class="sig-line">Signature over Printed Name</div>
-            <div class="date-line">Date: <span class="date-box"></span></div>
-        </div>
-        <div class="sig-box">
-            <div class="sig-label">RETURNED TO</div>
-            <div class="sig-space"></div>
-            <div class="sig-line">Signature over Printed Name</div>
-            <div class="date-line">Date: <span class="date-box"></span></div>
+        <!-- Footer -->
+        <div class="form-footer">
+            ConstructLink™ by Ranoa Digital Solutions
         </div>
     </div>
-
-    <!-- Footer -->
-    <div class="form-footer">
-        ConstructLink™ Equipment Management System | Developed by Ranoa Digital Solutions
-    </div>
+<?php endfor; ?>
 </div>
 
 </body>
