@@ -64,19 +64,24 @@ class EquipmentManagementController {
 
         // Items using this classification
         $stmt = $this->db->query("SELECT COUNT(*) as total FROM assets");
-        $stats['total_items'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $stats['total_assets'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Categories breakdown
         $stmt = $this->db->query("
             SELECT
+                c.id,
                 c.name,
                 c.iso_code,
+                c.description,
                 c.asset_type,
                 c.is_consumable,
+                c.generates_assets,
                 COUNT(DISTINCT et.id) as equipment_types_count,
-                COUNT(DISTINCT a.id) as items_count
+                COUNT(DISTINCT es.id) as subtypes_count,
+                COUNT(DISTINCT a.id) as assets_count
             FROM categories c
             LEFT JOIN equipment_types et ON c.id = et.category_id
+            LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id
             LEFT JOIN assets a ON c.id = a.category_id
             GROUP BY c.id
             ORDER BY c.name
