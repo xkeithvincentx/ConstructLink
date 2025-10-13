@@ -194,16 +194,16 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-success"><?= $category['equipment_types_count'] ?></span>
+                                    <span class="badge bg-success"><?= $category['equipment_types_count'] ?? 0 ?></span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-info"><?= $category['subtypes_count'] ?></span>
+                                    <span class="badge bg-info"><?= $category['subtypes_count'] ?? 0 ?></span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-warning text-dark"><?= $category['assets_count'] ?></span>
+                                    <span class="badge bg-warning text-dark"><?= $category['assets_count'] ?? 0 ?></span>
                                 </td>
                                 <td class="text-center">
-                                    <?php if ($category['generates_assets']): ?>
+                                    <?php if (!empty($category['generates_assets'])): ?>
                                         <i class="bi bi-check-circle-fill text-success" title="Generates Items"></i>
                                     <?php else: ?>
                                         <i class="bi bi-dash-circle text-muted" title="No Items"></i>
