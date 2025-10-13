@@ -286,7 +286,7 @@ for ($copy = 1; $copy <= 4; $copy++):
             </div>
             <div class="info-row">
                 <div class="info-field">
-                    <span class="info-label">Reference No.:</span>
+                    <span class="info-label">Contact:</span>
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
@@ -300,7 +300,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Contact:</span>
+                    <span class="info-label">Reference No.:</span>
                     <span class="info-value"></span>
                 </div>
             </div>
