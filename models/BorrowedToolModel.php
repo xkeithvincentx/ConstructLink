@@ -7,8 +7,10 @@
 class BorrowedToolModel extends BaseModel {
     protected $table = 'borrowed_tools';
     protected $fillable = [
-        'asset_id', 'borrower_name', 'borrower_contact', 'expected_return', 
+        'asset_id', 'borrower_name', 'borrower_contact', 'expected_return',
         'actual_return', 'issued_by', 'purpose', 'condition_out', 'condition_in', 'status',
+        // Batch support fields
+        'batch_id', 'quantity', 'quantity_returned', 'line_notes', 'condition_returned',
         // MVA workflow fields
         'verified_by', 'verification_date', 'approved_by', 'approval_date',
         'borrowed_by', 'borrowed_date', 'returned_by', 'return_date', 'canceled_by', 'cancellation_date', 'cancellation_reason'
@@ -986,16 +988,82 @@ class BorrowedToolModel extends BaseModel {
     }
     
     /**
+     * Get items by batch ID
+     */
+    public function getItemsByBatchId($batchId) {
+        try {
+            $sql = "
+                SELECT bt.*,
+                       a.name as asset_name,
+                       a.ref as asset_ref,
+                       a.acquisition_cost,
+                       c.name as category_name,
+                       et.name as equipment_type_name
+                FROM borrowed_tools bt
+                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN categories c ON a.category_id = c.id
+                LEFT JOIN equipment_types et ON a.equipment_type_id = et.id
+                WHERE bt.batch_id = ?
+                ORDER BY a.name ASC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$batchId]);
+            return $stmt->fetchAll();
+
+        } catch (Exception $e) {
+            error_log("Get items by batch ID error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Check if item is fully returned
+     */
+    public function isFullyReturned($borrowedToolId) {
+        try {
+            $record = $this->find($borrowedToolId);
+            if (!$record) {
+                return false;
+            }
+
+            return $record['quantity_returned'] >= $record['quantity'];
+
+        } catch (Exception $e) {
+            error_log("Check fully returned error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get unreturned quantity for an item
+     */
+    public function getUnreturnedQuantity($borrowedToolId) {
+        try {
+            $record = $this->find($borrowedToolId);
+            if (!$record) {
+                return 0;
+            }
+
+            return max(0, $record['quantity'] - $record['quantity_returned']);
+
+        } catch (Exception $e) {
+            error_log("Get unreturned quantity error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Log activity for audit trail
      */
     private function logActivity($action, $description, $table, $recordId) {
         try {
             $auth = Auth::getInstance();
             $user = $auth->getCurrentUser();
-            
-            $sql = "INSERT INTO activity_logs (user_id, action, description, table_name, record_id, ip_address, user_agent, created_at) 
+
+            $sql = "INSERT INTO activity_logs (user_id, action, description, table_name, record_id, ip_address, user_agent, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $user['id'] ?? null,
