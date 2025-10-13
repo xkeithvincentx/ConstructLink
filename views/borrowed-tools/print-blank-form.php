@@ -280,17 +280,27 @@ for ($copy = 1; $copy <= 4; $copy++):
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Contact:</span>
+                    <span class="info-label">Date Filled:</span>
                     <span class="info-value"></span>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-field">
-                    <span class="info-label">Date Out:</span>
+                    <span class="info-label">Reference No.:</span>
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Return By:</span>
+                    <span class="info-label">Released Date:</span>
+                    <span class="info-value"></span>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-field">
+                    <span class="info-label">Returned Date:</span>
+                    <span class="info-value"></span>
+                </div>
+                <div class="info-field">
+                    <span class="info-label">Contact:</span>
                     <span class="info-value"></span>
                 </div>
             </div>
@@ -391,7 +401,7 @@ for ($copy = 1; $copy <= 4; $copy++):
         <!-- Signature Section -->
         <div class="signature-section">
             <div class="sig-box">
-                <div class="sig-label">BORROWED BY</div>
+                <div class="sig-label">BORROWER</div>
                 <div class="sig-space"></div>
                 <div style="font-size: 4pt;">Signature</div>
             </div>
@@ -401,9 +411,9 @@ for ($copy = 1; $copy <= 4; $copy++):
                 <div style="font-size: 4pt;">Signature</div>
             </div>
             <div class="sig-box">
-                <div class="sig-label">RETURN DATE</div>
-                <div class="date-field"></div>
-                <div style="font-size: 4pt; margin-top: 0.5mm;">Write date</div>
+                <div class="sig-label">SUPERVISOR</div>
+                <div class="sig-space"></div>
+                <div style="font-size: 4pt;">Signature (Optional)</div>
             </div>
         </div>
 
