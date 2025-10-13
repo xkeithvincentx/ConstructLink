@@ -503,6 +503,62 @@ $routes = [
         'roles' => getRolesFor('borrowed-tools/cancel')
     ],
 
+    // Multi-Item Batch Borrowing Routes
+    'borrowed-tools/create-batch' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'createBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/create')
+    ],
+    'borrowed-tools/batch/create' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'storeBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/create')
+    ],
+    'borrowed-tools/batch/view' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'viewBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/view')
+    ],
+    'borrowed-tools/batch/verify' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'verifyBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/verify')
+    ],
+    'borrowed-tools/batch/approve' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'approveBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/approve')
+    ],
+    'borrowed-tools/batch/release' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'releaseBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/borrow')
+    ],
+    'borrowed-tools/batch/return' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'returnBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/return')
+    ],
+    'borrowed-tools/batch/cancel' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'cancelBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/cancel')
+    ],
+    'borrowed-tools/batch/print' => [
+        'controller' => 'BorrowedToolController',
+        'action' => 'printBatchForm',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/view')
+    ],
+
     // =================================================================
     // 6. 🔄 WITHDRAWALS (MVA: Warehouseman → Site Inventory Clerk → Project Manager)
     // =================================================================

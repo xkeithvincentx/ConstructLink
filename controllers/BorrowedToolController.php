@@ -1131,5 +1131,482 @@ class BorrowedToolController {
             ]);
         }
     }
+
+    // =========================================================================
+    // BATCH BORROWING METHODS
+    // Multi-item borrowing with shopping cart interface
+    // =========================================================================
+
+    /**
+     * Display multi-item batch creation form
+     */
+    public function createBatch() {
+        if (!$this->hasBorrowedToolPermission('create')) {
+            http_response_code(403);
+            include APP_ROOT . '/views/errors/403.php';
+            return;
+        }
+
+        $this->requireProjectAssignment();
+
+        $errors = [];
+        $messages = [];
+
+        $pageTitle = 'Borrow Multiple Tools - ConstructLink™';
+        include APP_ROOT . '/views/borrowed-tools/create-batch.php';
+    }
+
+    /**
+     * Store new batch (AJAX/POST)
+     */
+    public function storeBatch() {
+        header('Content-Type: application/json');
+
+        if (!$this->hasBorrowedToolPermission('create')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        try {
+            $currentUser = $this->auth->getCurrentUser();
+
+            // Parse batch data
+            $batchData = [
+                'borrower_name' => Validator::sanitize($_POST['borrower_name'] ?? ''),
+                'borrower_contact' => Validator::sanitize($_POST['borrower_contact'] ?? ''),
+                'expected_return' => $_POST['expected_return'] ?? '',
+                'purpose' => Validator::sanitize($_POST['purpose'] ?? ''),
+                'issued_by' => $currentUser['id']
+            ];
+
+            // Parse items
+            $itemsJson = $_POST['items'] ?? '[]';
+            $items = json_decode($itemsJson, true);
+
+            if (empty($items)) {
+                echo json_encode(['success' => false, 'message' => 'No items selected']);
+                return;
+            }
+
+            // Create batch using model
+            $batchModel = new BorrowedToolBatchModel();
+            $result = $batchModel->createBatch($batchData, $items);
+
+            if ($result['success']) {
+                // If streamlined workflow (basic tools), also release immediately
+                if ($result['workflow_type'] === 'streamlined') {
+                    $releaseResult = $batchModel->releaseBatch(
+                        $result['batch']['id'],
+                        $currentUser['id'],
+                        'Streamlined auto-release for basic tools'
+                    );
+
+                    if ($releaseResult['success']) {
+                        $result['message'] = 'Batch created and released successfully';
+                    }
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'batch_id' => $result['batch']['id'],
+                    'batch_reference' => $result['batch']['batch_reference'],
+                    'workflow_type' => $result['workflow_type'],
+                    'message' => $result['message']
+                ]);
+            } else {
+                echo json_encode($result);
+            }
+
+        } catch (Exception $e) {
+            error_log("Batch creation error: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to create batch']);
+        }
+    }
+
+    /**
+     * View batch details
+     */
+    public function viewBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-view.php';
+
+        } catch (Exception $e) {
+            error_log("View batch error: " . $e->getMessage());
+            $error = 'Failed to load batch details';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Verify batch (Verifier step)
+     */
+    public function verifyBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission('verify', $batch)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $notes = Validator::sanitize($_POST['verification_notes'] ?? '');
+                $verifiedBy = $this->auth->getCurrentUser()['id'];
+
+                $result = $batchModel->verifyBatch($batchId, $verifiedBy, $notes);
+
+                if ($result['success']) {
+                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_verified');
+                    exit;
+                } else {
+                    $errors[] = $result['message'];
+                }
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-verify.php';
+
+        } catch (Exception $e) {
+            error_log("Batch verification error: " . $e->getMessage());
+            $error = 'Failed to process verification';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Approve batch (Authorizer step)
+     */
+    public function approveBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission('approve', $batch)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $notes = Validator::sanitize($_POST['approval_notes'] ?? '');
+                $approvedBy = $this->auth->getCurrentUser()['id'];
+
+                $result = $batchModel->approveBatch($batchId, $approvedBy, $notes);
+
+                if ($result['success']) {
+                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_approved');
+                    exit;
+                } else {
+                    $errors[] = $result['message'];
+                }
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-approve.php';
+
+        } catch (Exception $e) {
+            error_log("Batch approval error: " . $e->getMessage());
+            $error = 'Failed to process approval';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Release batch to borrower
+     */
+    public function releaseBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission('borrow', $batch)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $notes = Validator::sanitize($_POST['release_notes'] ?? '');
+                $releasedBy = $this->auth->getCurrentUser()['id'];
+
+                $result = $batchModel->releaseBatch($batchId, $releasedBy, $notes);
+
+                if ($result['success']) {
+                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_released');
+                    exit;
+                } else {
+                    $errors[] = $result['message'];
+                }
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-release.php';
+
+        } catch (Exception $e) {
+            error_log("Batch release error: " . $e->getMessage());
+            $error = 'Failed to process release';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Return batch (full or partial)
+     */
+    public function returnBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission('return', $batch)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                // Parse returned items
+                $returnedItems = [];
+                foreach ($batch['items'] as $item) {
+                    $quantityKey = 'quantity_returned_' . $item['id'];
+                    $conditionKey = 'condition_in_' . $item['id'];
+
+                    if (isset($_POST[$quantityKey]) && $_POST[$quantityKey] > 0) {
+                        $returnedItems[] = [
+                            'borrowed_tool_id' => $item['id'],
+                            'quantity_returned' => (int)$_POST[$quantityKey],
+                            'condition_in' => Validator::sanitize($_POST[$conditionKey] ?? 'Good')
+                        ];
+                    }
+                }
+
+                if (empty($returnedItems)) {
+                    $errors[] = 'Please specify at least one item to return';
+                } else {
+                    $notes = Validator::sanitize($_POST['return_notes'] ?? '');
+                    $returnedBy = $this->auth->getCurrentUser()['id'];
+
+                    $result = $batchModel->returnBatch($batchId, $returnedBy, $returnedItems, $notes);
+
+                    if ($result['success']) {
+                        header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_returned');
+                        exit;
+                    } else {
+                        $errors[] = $result['message'];
+                    }
+                }
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-return.php';
+
+        } catch (Exception $e) {
+            error_log("Batch return error: " . $e->getMessage());
+            $error = 'Failed to process return';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Cancel batch
+     */
+    public function cancelBatch() {
+        $this->requireProjectAssignment();
+
+        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission('cancel', $batch)) {
+                http_response_code(403);
+                include APP_ROOT . '/views/errors/403.php';
+                return;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $reason = Validator::sanitize($_POST['cancellation_reason'] ?? '');
+                $canceledBy = $this->auth->getCurrentUser()['id'];
+
+                $result = $batchModel->cancelBatch($batchId, $canceledBy, $reason);
+
+                if ($result['success']) {
+                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_canceled');
+                    exit;
+                } else {
+                    $errors[] = $result['message'];
+                }
+            }
+
+            include APP_ROOT . '/views/borrowed-tools/batch-cancel.php';
+
+        } catch (Exception $e) {
+            error_log("Batch cancellation error: " . $e->getMessage());
+            $error = 'Failed to process cancellation';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
+    /**
+     * Print batch form (4 per page)
+     */
+    public function printBatchForm() {
+        $batchId = $_GET['id'] ?? 0;
+
+        if (!$batchId) {
+            http_response_code(404);
+            include APP_ROOT . '/views/errors/404.php';
+            return;
+        }
+
+        try {
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                http_response_code(404);
+                include APP_ROOT . '/views/errors/404.php';
+                return;
+            }
+
+            // Update printed_at timestamp
+            $batchModel->update($batchId, ['printed_at' => date('Y-m-d H:i:s')]);
+
+            include APP_ROOT . '/views/borrowed-tools/batch-print.php';
+
+        } catch (Exception $e) {
+            error_log("Print batch form error: " . $e->getMessage());
+            $error = 'Failed to generate print form';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
 }
 ?>
