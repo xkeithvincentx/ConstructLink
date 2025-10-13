@@ -294,7 +294,8 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </div>
-                                    <div class="mt-2">
+                                    <!-- Only show quantity for non-serialized items -->
+                                    <div class="mt-2" x-show="!item.serial_number">
                                         <label class="form-label small mb-1">Quantity:</label>
                                         <input type="number"
                                                class="form-control form-control-sm quantity-input"
@@ -302,6 +303,12 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                                                max="99"
                                                x-model.number="item.quantity"
                                                @input="updateQuantity(item.id, $event.target.value)">
+                                    </div>
+                                    <!-- Show note for serialized items -->
+                                    <div class="mt-2" x-show="item.serial_number">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>Unique item (Serial: <span x-text="item.serial_number"></span>)
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -487,24 +494,30 @@ function batchBorrowingApp() {
         },
 
         filterEquipment() {
-            const category = this.categories[this.activeCategory];
-            if (!category || !category.items) {
-                this.filteredItems = [];
-                return;
-            }
-
-            let items = category.items;
-
+            // If there's a search query, search across ALL categories
             if (this.searchQuery.trim()) {
                 const query = this.searchQuery.toLowerCase();
-                items = items.filter(item =>
+                let allItems = [];
+
+                // Collect all items from all categories
+                Object.values(this.categories).forEach(category => {
+                    if (category.items) {
+                        allItems = allItems.concat(category.items);
+                    }
+                });
+
+                // Filter by search query
+                this.filteredItems = allItems.filter(item =>
                     item.name.toLowerCase().includes(query) ||
                     item.ref.toLowerCase().includes(query) ||
-                    (item.model && item.model.toLowerCase().includes(query))
+                    (item.model && item.model.toLowerCase().includes(query)) ||
+                    (item.serial_number && item.serial_number.toLowerCase().includes(query))
                 );
+            } else {
+                // No search query - show items from active category only
+                const category = this.categories[this.activeCategory];
+                this.filteredItems = (category && category.items) ? category.items : [];
             }
-
-            this.filteredItems = items;
         },
 
         clearSearch() {
@@ -538,7 +551,12 @@ function batchBorrowingApp() {
         updateQuantity(itemId, quantity) {
             const item = this.cart.find(i => i.id === itemId);
             if (item) {
-                item.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
+                // Serialized items must always be quantity 1 (unique items)
+                if (item.serial_number) {
+                    item.quantity = 1;
+                } else {
+                    item.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
+                }
             }
         },
 
