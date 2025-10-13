@@ -96,7 +96,7 @@ $isSystemAdmin = $user['role_name'] === 'System Admin';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <small><?= htmlspecialchars($category['description']) ?></small>
+                                    <small><?= htmlspecialchars($category['description'] ?? '') ?></small>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-success"><?= $category['equipment_types_count'] ?></span>

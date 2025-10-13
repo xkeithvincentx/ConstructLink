@@ -133,7 +133,7 @@ $isSystemAdmin = $user['role_name'] === 'System Admin';
                                     </small>
                                 </td>
                                 <td>
-                                    <small><?= htmlspecialchars($subtype['application_area']) ?></small>
+                                    <small><?= htmlspecialchars($subtype['application_area'] ?? '') ?></small>
                                 </td>
                                 <td>
                                     <?php

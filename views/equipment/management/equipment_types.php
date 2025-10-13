@@ -108,7 +108,7 @@ $isSystemAdmin = $user['role_name'] === 'System Admin';
                                     <strong><?= htmlspecialchars($type['name']) ?></strong>
                                 </td>
                                 <td>
-                                    <small><?= htmlspecialchars($type['description']) ?></small>
+                                    <small><?= htmlspecialchars($type['description'] ?? '') ?></small>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge bg-info"><?= $type['subtypes_count'] ?></span>
