@@ -427,14 +427,14 @@ for ($copy = 1; $copy <= 4; $copy++):
                 <div style="font-size: 4pt;">Signature</div>
             </div>
             <div class="sig-box">
+                <div class="sig-label">OIC</div>
+                <div class="sig-space"></div>
+                <div style="font-size: 4pt;">Signature (Optional)</div>
+            </div>
+            <div class="sig-box">
                 <div class="sig-label">RELEASED BY</div>
                 <div class="sig-space"></div>
                 <div style="font-size: 4pt;">Signature</div>
-            </div>
-            <div class="sig-box">
-                <div class="sig-label">SUPERVISOR</div>
-                <div class="sig-space"></div>
-                <div style="font-size: 4pt;">Signature (Optional)</div>
             </div>
         </div>
 
