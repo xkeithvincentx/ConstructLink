@@ -889,7 +889,7 @@ usort($displayItems, function($a, $b) {
                                                     </thead>
                                                     <tbody>
                                                         <?php foreach ($batchItems as $index => $item): ?>
-                                                            <tr>
+                                                            <tr data-item-id="<?= $item['id'] ?>">
                                                                 <td><?= $index + 1 ?></td>
                                                                 <td>
                                                                     <strong><?= htmlspecialchars($item['asset_name']) ?></strong>
@@ -1523,9 +1523,9 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="batchReturnForm" x-data="{ csrfToken: '<?= CSRFProtection::generateToken() ?>' }">
+            <form id="batchReturnForm">
                 <div class="modal-body">
-                    <input type="hidden" name="_csrf_token" :value="csrfToken" id="returnCsrfToken">
+                    <input type="hidden" name="_csrf_token" value="" id="returnCsrfToken">
                     <input type="hidden" name="batch_id" value="" id="returnBatchId">
 
                     <div class="alert alert-success">
@@ -1571,6 +1571,9 @@ function clearAutoRefresh() {
 </div>
 
 <script>
+// Store CSRF token once at page load for return modal
+const returnBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
+
 // Enhanced load function for batch return modal with Qty In inputs
 document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', function() {
     const batchId = this.getAttribute('data-batch-id');
@@ -1581,10 +1584,15 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
         return;
     }
 
-    // Set batch ID in hidden field
+    // Set batch ID and CSRF token in hidden fields
     const batchIdInput = document.getElementById('returnBatchId');
     if (batchIdInput) {
         batchIdInput.value = batchId;
+    }
+
+    const csrfInput = document.getElementById('returnCsrfToken');
+    if (csrfInput) {
+        csrfInput.value = returnBatchCsrfToken;
     }
 
     const items = batchItemsRow.querySelectorAll('tbody tr');
@@ -1608,6 +1616,9 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             console.warn('Invalid row structure, skipping item', index);
             return;
         }
+
+        // Get borrowed_tool ID from data attribute or row
+        const borrowedToolId = item.getAttribute('data-item-id') || item.dataset.id || '';
 
         const itemNumber = cells[0].textContent.trim();
         const equipmentCell = cells[1];
@@ -1633,7 +1644,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                        min="0"
                        max="${qtyOut}"
                        value="${qtyOut}">
-                <input type="hidden" name="item_ref[]" value="${reference}">
+                <input type="hidden" name="item_id[]" value="${borrowedToolId}">
             </td>
             <td>
                 <select class="form-select form-select-sm" name="condition[]">

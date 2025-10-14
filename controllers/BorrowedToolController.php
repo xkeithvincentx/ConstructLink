@@ -1546,11 +1546,11 @@ class BorrowedToolController {
                 // Parse returned items - support both array format (qty_in[], item_ref[]) and individual format
                 $returnedItems = [];
 
-                // Array format from modal (qty_in[], condition[], item_ref[])
+                // Array format from modal (qty_in[], condition[], item_id[])
                 if (isset($_POST['qty_in']) && is_array($_POST['qty_in'])) {
                     $qtyIn = $_POST['qty_in'];
                     $conditions = $_POST['condition'] ?? [];
-                    $itemRefs = $_POST['item_ref'] ?? [];
+                    $itemIds = $_POST['item_id'] ?? [];
                     $itemNotes = $_POST['item_notes'] ?? [];
 
                     foreach ($qtyIn as $index => $qty) {
@@ -1559,19 +1559,15 @@ class BorrowedToolController {
                             continue;
                         }
 
-                        $reference = $itemRefs[$index] ?? '';
+                        $borrowedToolId = $itemIds[$index] ?? '';
 
-                        // Find the borrowed tool ID by reference
-                        foreach ($batch['items'] as $item) {
-                            if ($item['reference_no'] === $reference) {
-                                $returnedItems[] = [
-                                    'borrowed_tool_id' => $item['id'],
-                                    'quantity_returned' => (int)$qty,
-                                    'condition_in' => Validator::sanitize($conditions[$index] ?? 'Good'),
-                                    'notes' => Validator::sanitize($itemNotes[$index] ?? '')
-                                ];
-                                break;
-                            }
+                        if ($borrowedToolId) {
+                            $returnedItems[] = [
+                                'borrowed_tool_id' => (int)$borrowedToolId,
+                                'quantity_returned' => (int)$qty,
+                                'condition_in' => Validator::sanitize($conditions[$index] ?? 'Good'),
+                                'notes' => Validator::sanitize($itemNotes[$index] ?? '')
+                            ];
                         }
                     }
                 } else {
