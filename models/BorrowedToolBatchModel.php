@@ -19,33 +19,73 @@ class BorrowedToolBatchModel extends BaseModel {
     ];
 
     /**
-     * Generate unique batch reference number
-     * Format: BRW-YYYY-NNNN (e.g., BRW-2025-0001)
+     * Generate unique batch reference number following ISO 55000 principles
+     * Format: BRW-[PROJECT]-[YEAR]-[SEQ] (e.g., BRW-PROJ1-2025-0001)
+     *
+     * This format allows Finance/Asset Directors to immediately identify:
+     * - BRW: Borrowing transaction type
+     * - PROJECT: Which project the borrowing belongs to
+     * - YEAR: Year of transaction
+     * - SEQ: Sequential number within project/year
+     *
+     * @param int $projectId The project ID for the borrowing
+     * @return string ISO-compliant batch reference
      */
-    public function generateBatchReference() {
+    public function generateBatchReference($projectId) {
         try {
+            // Get project code
+            $projectCode = $this->getProjectCode($projectId);
             $year = date('Y');
 
-            // Get or create sequence for current year
-            $seqSql = "INSERT INTO borrowed_tool_batch_sequences (year, last_sequence)
-                       VALUES (?, 1)
+            // Get or create sequence for this project and year
+            $seqSql = "INSERT INTO borrowed_tool_batch_sequences (project_id, year, last_sequence)
+                       VALUES (?, ?, 1)
                        ON DUPLICATE KEY UPDATE last_sequence = last_sequence + 1";
             $stmt = $this->db->prepare($seqSql);
-            $stmt->execute([$year]);
+            $stmt->execute([$projectId, $year]);
 
             // Get the current sequence
-            $getSql = "SELECT last_sequence FROM borrowed_tool_batch_sequences WHERE year = ?";
+            $getSql = "SELECT last_sequence FROM borrowed_tool_batch_sequences
+                      WHERE project_id = ? AND year = ?";
             $getStmt = $this->db->prepare($getSql);
-            $getStmt->execute([$year]);
+            $getStmt->execute([$projectId, $year]);
             $sequence = $getStmt->fetchColumn();
 
-            return sprintf('BRW-%s-%04d', $year, $sequence);
+            return sprintf('BRW-%s-%s-%04d', $projectCode, $year, $sequence);
 
         } catch (Exception $e) {
             error_log("Batch reference generation error: " . $e->getMessage());
             // Fallback to timestamp-based reference
-            return 'BRW-' . date('Ymd') . '-' . substr(uniqid(), -4);
+            return 'BRW-UNK-' . date('Ymd') . '-' . substr(uniqid(), -4);
         }
+    }
+
+    /**
+     * Get project code from project ID
+     *
+     * @param int $projectId
+     * @return string Project code
+     * @throws Exception if project not found
+     */
+    private function getProjectCode($projectId) {
+        if (!$projectId) {
+            throw new Exception("Project ID is required for batch reference generation");
+        }
+
+        $sql = "SELECT code, name FROM projects WHERE id = ? AND is_active = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$projectId]);
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$project) {
+            throw new Exception("Active project with ID {$projectId} not found");
+        }
+
+        if (empty($project['code'])) {
+            throw new Exception("Project '{$project['name']}' (ID: {$projectId}) is missing required code");
+        }
+
+        return strtoupper($project['code']);
     }
 
     /**
@@ -84,6 +124,7 @@ class BorrowedToolBatchModel extends BaseModel {
             $assetModel = new AssetModel();
             $validatedItems = [];
             $totalQuantity = 0;
+            $projectId = null;
 
             foreach ($items as $item) {
                 $asset = $assetModel->find($item['asset_id']);
@@ -96,6 +137,14 @@ class BorrowedToolBatchModel extends BaseModel {
                 if ($asset['status'] !== 'available') {
                     $this->db->rollBack();
                     return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing'];
+                }
+
+                // Validate all items belong to same project
+                if ($projectId === null) {
+                    $projectId = $asset['project_id'];
+                } elseif ($projectId !== $asset['project_id']) {
+                    $this->db->rollBack();
+                    return ['success' => false, 'message' => 'All items in a batch must belong to the same project'];
                 }
 
                 // Check if critical tool
@@ -118,8 +167,14 @@ class BorrowedToolBatchModel extends BaseModel {
                 $totalQuantity += $quantity;
             }
 
-            // Generate batch reference
-            $batchReference = $this->generateBatchReference();
+            // Validate we have a project ID
+            if (!$projectId) {
+                $this->db->rollBack();
+                return ['success' => false, 'message' => 'Unable to determine project for batch items'];
+            }
+
+            // Generate batch reference with project code
+            $batchReference = $this->generateBatchReference($projectId);
 
             // Determine initial status based on critical flag and streamlined workflow
             $initialStatus = 'Pending Verification'; // Default: MVA workflow

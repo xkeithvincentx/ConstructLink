@@ -6,6 +6,57 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
+
+// Group borrowed tools by batch_id for batch display
+$groupedTools = [];
+$singleTools = [];
+
+foreach ($borrowedTools as $tool) {
+    if (!empty($tool['batch_id'])) {
+        // This is a batch item - group by batch_id
+        if (!isset($groupedTools[$tool['batch_id']])) {
+            $groupedTools[$tool['batch_id']] = [];
+        }
+        $groupedTools[$tool['batch_id']][] = $tool;
+    } else {
+        // Single item (no batch_id)
+        $singleTools[] = $tool;
+    }
+}
+
+// Merge grouped batches and single items for display
+// Only treat as "batch" if there are 2+ items with same batch_id
+$displayItems = [];
+foreach ($groupedTools as $batchId => $batchItems) {
+    if (count($batchItems) > 1) {
+        // True batch (multiple items)
+        $displayItems[] = [
+            'type' => 'batch',
+            'batch_id' => $batchId,
+            'items' => $batchItems,
+            'primary' => $batchItems[0] // Use first item for main display
+        ];
+    } else {
+        // Only 1 item with this batch_id - treat as single item
+        $displayItems[] = [
+            'type' => 'single',
+            'item' => $batchItems[0]
+        ];
+    }
+}
+foreach ($singleTools as $tool) {
+    $displayItems[] = [
+        'type' => 'single',
+        'item' => $tool
+    ];
+}
+
+// Sort by ID descending
+usort($displayItems, function($a, $b) {
+    $idA = $a['type'] === 'batch' ? $a['primary']['id'] : $a['item']['id'];
+    $idB = $b['type'] === 'batch' ? $b['primary']['id'] : $b['item']['id'];
+    return $idB - $idA;
+});
 ?>
 
 <!-- Action Buttons (No Header - handled by layout) -->
@@ -385,57 +436,96 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($borrowedTools as $tool): ?>
+                        <?php foreach ($displayItems as $displayItem): ?>
                             <?php
+                            // Determine if this is a batch or single item
+                            $isBatch = ($displayItem['type'] === 'batch');
+                            $tool = $isBatch ? $displayItem['primary'] : $displayItem['item'];
+                            $batchId = $isBatch ? $displayItem['batch_id'] : null;
+                            $batchItems = $isBatch ? $displayItem['items'] : [];
+                            $batchCount = $isBatch ? count($batchItems) : 0;
+
                             $expectedReturn = $tool['expected_return'];
                             $isOverdue = $tool['status'] === 'Borrowed' && strtotime($expectedReturn) < time();
                             $isDueSoon = !$isOverdue && $tool['status'] === 'Borrowed' && strtotime($expectedReturn) <= strtotime('+3 days');
                             $rowClass = $isOverdue ? 'table-danger' : ($isDueSoon ? 'table-warning' : '');
                             ?>
-                            <tr class="<?= $rowClass ?>">
-                                <!-- ID with Visual Priority Indicators -->
+                            <tr class="<?= $rowClass ?> <?= $isBatch ? 'batch-row' : '' ?>" data-batch-id="<?= $batchId ?>">
+                                <!-- ID with Visual Priority Indicators and Batch Badge -->
                                 <td>
                                     <div class="d-flex align-items-center">
+                                        <?php if ($isBatch): ?>
+                                            <button class="btn btn-sm btn-outline-secondary me-2 batch-toggle"
+                                                    type="button"
+                                                    data-batch-id="<?= $batchId ?>"
+                                                    title="Click to expand/collapse batch items">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </button>
+                                        <?php endif; ?>
                                         <?php if ($isOverdue): ?>
                                             <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="Overdue"></i>
                                         <?php elseif ($isDueSoon): ?>
                                             <i class="bi bi-clock-fill text-warning me-1" title="Due Soon"></i>
                                         <?php endif; ?>
-                                        <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
-                                            #<?= $tool['id'] ?>
-                                        </a>
+                                        <?php if ($isBatch): ?>
+                                            <span class="badge bg-primary me-2" title="Batch with <?= $batchCount ?> items">
+                                                <i class="bi bi-stack me-1"></i><?= $batchCount ?> items
+                                            </span>
+                                            <span class="fw-medium">Batch #<?= $batchId ?></span>
+                                        <?php else: ?>
+                                            <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
+                                                #<?= $tool['id'] ?>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 
                                 <!-- Enhanced Asset Details -->
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2">
-                                            <?php if (!empty($tool['asset_image'])): ?>
-                                                <img src="<?= htmlspecialchars($tool['asset_image']) ?>" 
-                                                     class="rounded" width="40" height="40" alt="Asset">
-                                            <?php else: ?>
-                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                    <?php if ($isBatch): ?>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center"
                                                      style="width: 40px; height: 40px;">
-                                                    <i class="bi bi-tools text-primary"></i>
+                                                    <i class="bi bi-stack text-primary"></i>
                                                 </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div>
-                                            <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
-                                            <small class="text-muted">
-                                                <?= htmlspecialchars($tool['asset_ref']) ?>
-                                                <?php if (!empty($tool['asset_category'])): ?>
-                                                    | <?= htmlspecialchars($tool['asset_category']) ?>
-                                                <?php endif; ?>
-                                            </small>
-                                            <?php if ($auth->hasRole(['System Admin', 'Asset Director']) && !empty($tool['asset_value'])): ?>
-                                                <br><small class="text-info">
-                                                    Value: ₱<?= number_format($tool['asset_value'], 2) ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-box-seam me-1"></i>Multiple categories
                                                 </small>
-                                            <?php endif; ?>
+                                            </div>
                                         </div>
-                                    </div>
+                                    <?php else: ?>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-2">
+                                                <?php if (!empty($tool['asset_image'])): ?>
+                                                    <img src="<?= htmlspecialchars($tool['asset_image']) ?>"
+                                                         class="rounded" width="40" height="40" alt="Asset">
+                                                <?php else: ?>
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-tools text-primary"></i>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
+                                                <small class="text-muted">
+                                                    <?= htmlspecialchars($tool['asset_ref']) ?>
+                                                    <?php if (!empty($tool['asset_category'])): ?>
+                                                        | <?= htmlspecialchars($tool['asset_category']) ?>
+                                                    <?php endif; ?>
+                                                </small>
+                                                <?php if ($auth->hasRole(['System Admin', 'Asset Director']) && !empty($tool['asset_value'])): ?>
+                                                    <br><small class="text-info">
+                                                        Value: ₱<?= number_format($tool['asset_value'], 2) ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 
                                 <!-- Enhanced Borrower Info -->
@@ -596,61 +686,110 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <?php
                                         $primaryAction = null;
                                         $secondaryActions = [];
-                                        
-                                        // Determine primary action based on role and status
-                                        if ($tool['status'] === 'Pending Verification' && $auth->hasRole(['System Admin', 'Project Manager'])):
-                                            $primaryAction = [
-                                                'url' => "?route=borrowed-tools/verify&id={$tool['id']}",
-                                                'class' => 'btn-warning',
-                                                'icon' => 'check-circle',
-                                                'text' => 'Verify',
-                                                'title' => 'Verify this tool borrowing request'
-                                            ];
-                                        elseif ($tool['status'] === 'Pending Approval' && $auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])):
-                                            $primaryAction = [
-                                                'url' => "?route=borrowed-tools/approve&id={$tool['id']}",
-                                                'class' => 'btn-success',
-                                                'icon' => 'shield-check',
-                                                'text' => 'Approve',
-                                                'title' => 'Approve this tool borrowing request'
-                                            ];
-                                        elseif ($tool['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman'])):
-                                            $primaryAction = [
-                                                'url' => "?route=borrowed-tools/borrow&id={$tool['id']}",
-                                                'class' => 'btn-info',
-                                                'icon' => 'box-arrow-up',
-                                                'text' => 'Issue Tool',
-                                                'title' => 'Mark tool as issued to borrower'
-                                            ];
-                                        elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
-                                            $primaryAction = [
-                                                'url' => "?route=borrowed-tools/return&id={$tool['id']}",
-                                                'class' => $isOverdue ? 'btn-danger' : 'btn-success',
-                                                'icon' => 'box-arrow-down',
-                                                'text' => $isOverdue ? 'Return Overdue' : 'Return Tool',
-                                                'title' => 'Mark tool as returned'
-                                            ];
-                                        endif;
-                                        
-                                        // Always available: View Details
-                                        $viewAction = [
-                                            'url' => "?route=borrowed-tools/view&id={$tool['id']}",
-                                            'class' => 'btn-outline-primary',
-                                            'icon' => 'eye',
-                                            'text' => '',
-                                            'title' => 'View full details'
-                                        ];
-                                        
-                                        // Secondary actions based on role and status
-                                        if ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
-                                            $secondaryActions[] = [
-                                                'url' => "?route=borrowed-tools/extend&id={$tool['id']}",
-                                                'class' => 'btn-outline-secondary',
-                                                'icon' => 'calendar-plus',
+
+                                        // For batch items - use modals instead of page links
+                                        if ($isBatch) {
+                                            // Determine primary action based on role and status
+                                            if ($tool['status'] === 'Pending Verification' && $auth->hasRole(['System Admin', 'Project Manager'])):
+                                                $primaryAction = [
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchVerifyModal',
+                                                    'batch_id' => $batchId,
+                                                    'class' => 'btn-warning',
+                                                    'icon' => 'check-circle',
+                                                    'text' => 'Verify Batch',
+                                                    'title' => 'Verify all items in this batch'
+                                                ];
+                                            elseif ($tool['status'] === 'Pending Approval' && $auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])):
+                                                $primaryAction = [
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchAuthorizeModal',
+                                                    'batch_id' => $batchId,
+                                                    'class' => 'btn-success',
+                                                    'icon' => 'shield-check',
+                                                    'text' => 'Authorize Batch',
+                                                    'title' => 'Authorize all items in this batch'
+                                                ];
+                                            elseif ($tool['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman'])):
+                                                $primaryAction = [
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchReleaseModal',
+                                                    'batch_id' => $batchId,
+                                                    'class' => 'btn-info',
+                                                    'icon' => 'box-arrow-up',
+                                                    'text' => 'Release Batch',
+                                                    'title' => 'Release all items in this batch'
+                                                ];
+                                            elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                                $primaryAction = [
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchReturnModal',
+                                                    'batch_id' => $batchId,
+                                                    'class' => $isOverdue ? 'btn-danger' : 'btn-success',
+                                                    'icon' => 'box-arrow-down',
+                                                    'text' => $isOverdue ? 'Return Overdue' : 'Return Batch',
+                                                    'title' => 'Return all items in this batch'
+                                                ];
+                                            endif;
+
+                                            // View action for batch - no single view page
+                                            $viewAction = null;
+                                        } else {
+                                            // Single item - use regular page links
+                                            if ($tool['status'] === 'Pending Verification' && $auth->hasRole(['System Admin', 'Project Manager'])):
+                                                $primaryAction = [
+                                                    'url' => "?route=borrowed-tools/verify&id={$tool['id']}",
+                                                    'class' => 'btn-warning',
+                                                    'icon' => 'check-circle',
+                                                    'text' => 'Verify',
+                                                    'title' => 'Verify this tool borrowing request'
+                                                ];
+                                            elseif ($tool['status'] === 'Pending Approval' && $auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])):
+                                                $primaryAction = [
+                                                    'url' => "?route=borrowed-tools/approve&id={$tool['id']}",
+                                                    'class' => 'btn-success',
+                                                    'icon' => 'shield-check',
+                                                    'text' => 'Approve',
+                                                    'title' => 'Approve this tool borrowing request'
+                                                ];
+                                            elseif ($tool['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman'])):
+                                                $primaryAction = [
+                                                    'url' => "?route=borrowed-tools/borrow&id={$tool['id']}",
+                                                    'class' => 'btn-info',
+                                                    'icon' => 'box-arrow-up',
+                                                    'text' => 'Issue Tool',
+                                                    'title' => 'Mark tool as issued to borrower'
+                                                ];
+                                            elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                                $primaryAction = [
+                                                    'url' => "?route=borrowed-tools/return&id={$tool['id']}",
+                                                    'class' => $isOverdue ? 'btn-danger' : 'btn-success',
+                                                    'icon' => 'box-arrow-down',
+                                                    'text' => $isOverdue ? 'Return Overdue' : 'Return Tool',
+                                                    'title' => 'Mark tool as returned'
+                                                ];
+                                            endif;
+
+                                            // Always available: View Details
+                                            $viewAction = [
+                                                'url' => "?route=borrowed-tools/view&id={$tool['id']}",
+                                                'class' => 'btn-outline-primary',
+                                                'icon' => 'eye',
                                                 'text' => '',
-                                                'title' => 'Extend return date'
+                                                'title' => 'View full details'
                                             ];
-                                        endif;
+
+                                            // Secondary actions based on role and status
+                                            if ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
+                                                $secondaryActions[] = [
+                                                    'url' => "?route=borrowed-tools/extend&id={$tool['id']}",
+                                                    'class' => 'btn-outline-secondary',
+                                                    'icon' => 'calendar-plus',
+                                                    'text' => '',
+                                                    'title' => 'Extend return date'
+                                                ];
+                                            endif;
+                                        }
                                         
                                         if (in_array($tool['status'], ['Pending Verification', 'Pending Approval', 'Approved']) && 
                                             $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
@@ -667,19 +806,34 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <div class="btn-group btn-group-sm" role="group">
                                             <!-- Primary Action -->
                                             <?php if ($primaryAction): ?>
-                                                <a href="<?= $primaryAction['url'] ?>" 
-                                                   class="btn <?= $primaryAction['class'] ?>" 
-                                                   title="<?= $primaryAction['title'] ?>">
-                                                    <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
+                                                <?php if (isset($primaryAction['modal']) && $primaryAction['modal']): ?>
+                                                    <!-- Batch action - opens modal -->
+                                                    <button type="button"
+                                                            class="btn <?= $primaryAction['class'] ?> batch-action-btn"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#<?= $primaryAction['modal_id'] ?>"
+                                                            data-batch-id="<?= $primaryAction['batch_id'] ?>"
+                                                            title="<?= $primaryAction['title'] ?>">
+                                                        <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <!-- Single item action - regular link -->
+                                                    <a href="<?= $primaryAction['url'] ?>"
+                                                       class="btn <?= $primaryAction['class'] ?>"
+                                                       title="<?= $primaryAction['title'] ?>">
+                                                        <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
+                                                    </a>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+
+                                            <!-- View Details (Always Available for single items) -->
+                                            <?php if ($viewAction): ?>
+                                                <a href="<?= $viewAction['url'] ?>"
+                                                   class="btn <?= $viewAction['class'] ?>"
+                                                   title="<?= $viewAction['title'] ?>">
+                                                    <i class="bi bi-<?= $viewAction['icon'] ?>"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            
-                                            <!-- View Details (Always Available) -->
-                                            <a href="<?= $viewAction['url'] ?>" 
-                                               class="btn <?= $viewAction['class'] ?>" 
-                                               title="<?= $viewAction['title'] ?>">
-                                                <i class="bi bi-<?= $viewAction['icon'] ?>"></i>
-                                            </a>
                                             
                                             <!-- Secondary Actions Dropdown -->
                                             <?php if (!empty($secondaryActions)): ?>
@@ -714,6 +868,69 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     </div>
                                 </td>
                             </tr>
+
+                            <!-- Expandable Batch Items Row (hidden by default) -->
+                            <?php if ($isBatch): ?>
+                                <tr class="batch-items-row" data-batch-id="<?= $batchId ?>" style="display: none;">
+                                    <td colspan="100%" class="p-0">
+                                        <div class="batch-items-container bg-light p-3">
+                                            <h6 class="mb-3"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered mb-0">
+                                                    <thead class="table-secondary">
+                                                        <tr>
+                                                            <th style="width: 5%">#</th>
+                                                            <th style="width: 40%">Equipment</th>
+                                                            <th style="width: 15%">Reference</th>
+                                                            <th style="width: 10%">Qty Out</th>
+                                                            <th style="width: 15%">Serial Number</th>
+                                                            <th style="width: 15%">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($batchItems as $index => $item): ?>
+                                                            <tr>
+                                                                <td><?= $index + 1 ?></td>
+                                                                <td>
+                                                                    <strong><?= htmlspecialchars($item['asset_name']) ?></strong>
+                                                                    <?php if (!empty($item['asset_category'])): ?>
+                                                                        <br><small class="text-muted"><?= htmlspecialchars($item['asset_category']) ?></small>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td><?= htmlspecialchars($item['asset_ref']) ?></td>
+                                                                <td class="text-center"><?= $item['quantity'] ?></td>
+                                                                <td>
+                                                                    <?php if (!empty($item['serial_number'])): ?>
+                                                                        <code><?= htmlspecialchars($item['serial_number']) ?></code>
+                                                                    <?php else: ?>
+                                                                        <span class="text-muted">-</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td>
+                                                                    <?php
+                                                                    $statusConfig = [
+                                                                        'Pending Verification' => ['class' => 'bg-primary', 'icon' => 'clock'],
+                                                                        'Pending Approval' => ['class' => 'bg-warning text-dark', 'icon' => 'hourglass-split'],
+                                                                        'Approved' => ['class' => 'bg-info', 'icon' => 'check-circle'],
+                                                                        'Borrowed' => ['class' => 'bg-secondary', 'icon' => 'box-arrow-up'],
+                                                                        'Returned' => ['class' => 'bg-success', 'icon' => 'check-square'],
+                                                                        'Canceled' => ['class' => 'bg-dark', 'icon' => 'x-circle']
+                                                                    ];
+                                                                    $config = $statusConfig[$item['status']] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
+                                                                    ?>
+                                                                    <span class="badge <?= $config['class'] ?>">
+                                                                        <i class="bi bi-<?= $config['icon'] ?> me-1"></i><?= $item['status'] ?>
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -917,6 +1134,73 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
 </style>
 
 <script>
+// Batch expand/collapse functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle batch items expand/collapse
+    document.querySelectorAll('.batch-toggle').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const batchId = this.getAttribute('data-batch-id');
+            const expandRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+            const icon = this.querySelector('i');
+
+            if (expandRow) {
+                if (expandRow.style.display === 'none') {
+                    // Expand
+                    expandRow.style.display = 'table-row';
+                    icon.classList.remove('bi-chevron-right');
+                    icon.classList.add('bi-chevron-down');
+                } else {
+                    // Collapse
+                    expandRow.style.display = 'none';
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-right');
+                }
+            }
+        });
+    });
+
+    // Handle batch action modals - load batch data when modal opens
+    document.querySelectorAll('.batch-action-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const batchId = this.getAttribute('data-batch-id');
+            const modalId = this.getAttribute('data-bs-target').substring(1);
+
+            // Store batch ID in modal for form submission
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.setAttribute('data-batch-id', batchId);
+
+                // Load batch items into modal
+                loadBatchItemsIntoModal(batchId, modalId);
+            }
+        });
+    });
+});
+
+// Load batch items into modal
+function loadBatchItemsIntoModal(batchId, modalId) {
+    // Find the batch items from the expandable row
+    const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+    if (!batchItemsRow) return;
+
+    const modal = document.getElementById(modalId);
+    const itemsContainer = modal.querySelector('.batch-modal-items');
+
+    if (itemsContainer) {
+        // Clone the batch items table
+        const batchTable = batchItemsRow.querySelector('table').cloneNode(true);
+        itemsContainer.innerHTML = '';
+        itemsContainer.appendChild(batchTable);
+    }
+
+    // Set batch ID in hidden input if exists
+    const batchIdInput = modal.querySelector('input[name="batch_id"]');
+    if (batchIdInput) {
+        batchIdInput.value = batchId;
+    }
+}
+
 // Mark tool as overdue
 function markOverdue(borrowId) {
     if (confirm('Mark this tool as overdue? This will update the status and may trigger notifications.')) {
@@ -1101,6 +1385,240 @@ function clearAutoRefresh() {
         if (indicator) indicator.remove();
     }
 }
+</script>
+
+<!-- Batch Verification Modal -->
+<div class="modal fade" id="batchVerifyModal" tabindex="-1" aria-labelledby="batchVerifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="batchVerifyModalLabel">
+                    <i class="bi bi-check-circle me-2"></i>Verify Batch
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/index.php?route=borrowed-tools/batch/verify">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="batch_id" value="">
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Review all items in this batch and confirm they match the physical equipment on-site.
+                    </div>
+
+                    <!-- Batch Items Table -->
+                    <div class="batch-modal-items mb-3">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+
+                    <!-- Verification Notes -->
+                    <div class="mb-3">
+                        <label for="verification_notes" class="form-label">Verification Notes</label>
+                        <textarea class="form-control" id="verification_notes" name="verification_notes" rows="3" placeholder="Optional notes about the verification"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-circle me-1"></i>Verify Batch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Authorization Modal -->
+<div class="modal fade" id="batchAuthorizeModal" tabindex="-1" aria-labelledby="batchAuthorizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="batchAuthorizeModalLabel">
+                    <i class="bi bi-shield-check me-2"></i>Authorize Batch
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/index.php?route=borrowed-tools/batch/approve">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="batch_id" value="">
+
+                    <div class="alert alert-success">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Review all items and authorize this batch for release.
+                    </div>
+
+                    <!-- Batch Items Table -->
+                    <div class="batch-modal-items mb-3">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+
+                    <!-- Authorization Notes -->
+                    <div class="mb-3">
+                        <label for="approval_notes" class="form-label">Authorization Notes</label>
+                        <textarea class="form-control" id="approval_notes" name="approval_notes" rows="3" placeholder="Optional notes about the authorization"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-shield-check me-1"></i>Authorize Batch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Release Modal -->
+<div class="modal fade" id="batchReleaseModal" tabindex="-1" aria-labelledby="batchReleaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="batchReleaseModalLabel">
+                    <i class="bi bi-box-arrow-up me-2"></i>Release Batch
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/index.php?route=borrowed-tools/batch/release">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="batch_id" value="">
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Confirm that all items in this batch are being released to the borrower.
+                    </div>
+
+                    <!-- Batch Items Table -->
+                    <div class="batch-modal-items mb-3">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+
+                    <!-- Release Notes -->
+                    <div class="mb-3">
+                        <label for="release_notes" class="form-label">Release Notes</label>
+                        <textarea class="form-control" id="release_notes" name="release_notes" rows="3" placeholder="Optional notes about the release"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-box-arrow-up me-1"></i>Release Batch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Return Modal -->
+<div class="modal fade" id="batchReturnModal" tabindex="-1" aria-labelledby="batchReturnModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="batchReturnModalLabel">
+                    <i class="bi bi-box-arrow-down me-2"></i>Return Batch
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/index.php?route=borrowed-tools/batch/return" id="batchReturnForm">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="batch_id" value="">
+
+                    <div class="alert alert-success">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Enter the quantity returned for each item. Check the condition of each item.
+                    </div>
+
+                    <!-- Batch Items Table with Qty In -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="batchReturnTable">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 30%">Equipment</th>
+                                    <th style="width: 15%">Reference</th>
+                                    <th style="width: 10%">Qty Out</th>
+                                    <th style="width: 10%">Qty In</th>
+                                    <th style="width: 15%">Condition</th>
+                                    <th style="width: 15%">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchReturnItems">
+                                <!-- Items will be populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Return Notes -->
+                    <div class="mb-3">
+                        <label for="return_notes" class="form-label">Overall Return Notes</label>
+                        <textarea class="form-control" id="return_notes" name="return_notes" rows="3" placeholder="Optional notes about the return"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-box-arrow-down me-1"></i>Process Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced load function for batch return modal with Qty In inputs
+document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', function() {
+    const batchId = this.getAttribute('data-batch-id');
+    const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+
+    if (!batchItemsRow) return;
+
+    const items = batchItemsRow.querySelectorAll('tbody tr');
+    const returnTableBody = document.getElementById('batchReturnItems');
+    returnTableBody.innerHTML = '';
+
+    items.forEach((item, index) => {
+        const cells = item.querySelectorAll('td');
+        const equipmentName = cells[1].querySelector('strong').textContent;
+        const reference = cells[2].textContent;
+        const qtyOut = cells[3].textContent;
+        const itemId = cells[0].textContent; // Use index as item identifier
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td><strong>${equipmentName}</strong></td>
+            <td>${reference}</td>
+            <td class="text-center">${qtyOut}</td>
+            <td>
+                <input type="number"
+                       class="form-control form-control-sm qty-in-input"
+                       name="qty_in[]"
+                       min="0"
+                       max="${qtyOut}"
+                       value="${qtyOut}"
+                       required>
+            </td>
+            <td>
+                <select class="form-select form-select-sm" name="condition[]" required>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Damaged">Damaged</option>
+                    <option value="Missing">Missing</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">
+            </td>
+        `;
+        returnTableBody.appendChild(row);
+    });
+});
 </script>
 
 <?php
