@@ -1397,9 +1397,9 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="/index.php?route=borrowed-tools/batch/verify">
+            <form method="POST" action="index.php?route=borrowed-tools/batch/verify">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>">
                     <input type="hidden" name="batch_id" value="">
 
                     <div class="alert alert-info">
@@ -1439,9 +1439,9 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="/index.php?route=borrowed-tools/batch/approve">
+            <form method="POST" action="index.php?route=borrowed-tools/batch/approve">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>">
                     <input type="hidden" name="batch_id" value="">
 
                     <div class="alert alert-success">
@@ -1481,9 +1481,9 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="/index.php?route=borrowed-tools/batch/release">
+            <form method="POST" action="index.php?route=borrowed-tools/batch/release">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>">
                     <input type="hidden" name="batch_id" value="">
 
                     <div class="alert alert-info">
@@ -1523,9 +1523,9 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="/index.php?route=borrowed-tools/batch/return" id="batchReturnForm">
+            <form method="POST" action="index.php?route=borrowed-tools/batch/return" id="batchReturnForm">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="<?= CSRFProtection::generateToken() ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>">
                     <input type="hidden" name="batch_id" value="">
 
                     <div class="alert alert-success">
@@ -1576,25 +1576,56 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
     const batchId = this.getAttribute('data-batch-id');
     const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
 
-    if (!batchItemsRow) return;
+    if (!batchItemsRow) {
+        console.error('Batch items row not found for batch ID:', batchId);
+        return;
+    }
+
+    // Set batch ID in hidden field
+    const batchIdInput = this.querySelector('input[name="batch_id"]');
+    if (batchIdInput) {
+        batchIdInput.value = batchId;
+    }
 
     const items = batchItemsRow.querySelectorAll('tbody tr');
     const returnTableBody = document.getElementById('batchReturnItems');
+
+    if (!returnTableBody) {
+        console.error('Return table body not found');
+        return;
+    }
+
     returnTableBody.innerHTML = '';
+
+    if (items.length === 0) {
+        returnTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No items found in batch</td></tr>';
+        return;
+    }
 
     items.forEach((item, index) => {
         const cells = item.querySelectorAll('td');
-        const equipmentName = cells[1].querySelector('strong').textContent;
-        const reference = cells[2].textContent;
-        const qtyOut = cells[3].textContent;
-        const itemId = cells[0].textContent; // Use index as item identifier
+        if (cells.length < 6) {
+            console.warn('Invalid row structure, skipping item', index);
+            return;
+        }
+
+        const itemNumber = cells[0].textContent.trim();
+        const equipmentCell = cells[1];
+        const equipmentName = equipmentCell.querySelector('strong') ? equipmentCell.querySelector('strong').textContent : equipmentCell.textContent;
+        const equipmentCategory = equipmentCell.querySelector('small') ? equipmentCell.querySelector('small').textContent : '';
+        const reference = cells[2].textContent.trim();
+        const qtyOut = cells[3].textContent.trim();
+        const serialNumber = cells[4].textContent.trim();
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${index + 1}</td>
-            <td><strong>${equipmentName}</strong></td>
-            <td>${reference}</td>
-            <td class="text-center">${qtyOut}</td>
+            <td class="text-center">${index + 1}</td>
+            <td>
+                <strong>${equipmentName}</strong>
+                ${equipmentCategory ? `<br><small class="text-muted">${equipmentCategory}</small>` : ''}
+            </td>
+            <td><code>${reference}</code></td>
+            <td class="text-center"><strong>${qtyOut}</strong></td>
             <td>
                 <input type="number"
                        class="form-control form-control-sm qty-in-input"
@@ -1603,21 +1634,24 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                        max="${qtyOut}"
                        value="${qtyOut}"
                        required>
+                <input type="hidden" name="item_ref[]" value="${reference}">
             </td>
             <td>
                 <select class="form-select form-select-sm" name="condition[]" required>
-                    <option value="Good">Good</option>
+                    <option value="Good" selected>Good</option>
                     <option value="Fair">Fair</option>
                     <option value="Damaged">Damaged</option>
                     <option value="Missing">Missing</option>
                 </select>
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">
+                <input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional notes">
             </td>
         `;
         returnTableBody.appendChild(row);
     });
+
+    console.log(`Loaded ${items.length} items into return modal for batch ${batchId}`);
 });
 </script>
 
