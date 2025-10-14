@@ -464,6 +464,9 @@ function batchBorrowingApp() {
         showBorrowerSuggestions: false,
         submitting: false,
 
+        // CSRF token (generated once at page load)
+        csrfToken: '<?= CSRFProtection::generateToken() ?>',
+
         // Borrower suggestions data
         allBorrowers: <?= json_encode($commonBorrowers) ?>,
 
@@ -605,7 +608,7 @@ function batchBorrowingApp() {
 
             try {
                 const formData = new FormData();
-                formData.append('csrf_token', '<?= CSRFProtection::generateToken() ?>');
+                formData.append('_csrf_token', this.csrfToken);
                 formData.append('borrower_name', this.formData.borrower_name);
                 formData.append('borrower_contact', this.formData.borrower_contact);
                 formData.append('expected_return', this.formData.expected_return);
@@ -617,7 +620,7 @@ function batchBorrowingApp() {
                     quantity: item.quantity || 1
                 }))));
 
-                const response = await fetch('/index.php?route=borrowed-tools/batch/create', {
+                const response = await fetch('index.php?route=borrowed-tools/batch/create', {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
@@ -632,7 +635,7 @@ function batchBorrowingApp() {
                     const messageParam = result.workflow_type === 'streamlined'
                         ? 'batch_created_released'
                         : 'batch_created_pending';
-                    window.location.href = '/index.php?route=borrowed-tools&message=' + messageParam;
+                    window.location.href = 'index.php?route=borrowed-tools&message=' + messageParam;
                 } else {
                     alert('Error: ' + (result.message || 'Failed to create batch'));
                     this.submitting = false;

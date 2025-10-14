@@ -1147,7 +1147,15 @@ class BorrowedToolController {
             return;
         }
 
-        $this->requireProjectAssignment();
+        // Check project assignment (MVA oversight roles exempt)
+        $currentUser = $this->auth->getCurrentUser();
+        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+
+        if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
+            $error = 'You must be assigned to a project to borrow tools. Please contact your administrator.';
+            include APP_ROOT . '/views/errors/403.php';
+            exit;
+        }
 
         $errors = [];
         $messages = [];
@@ -1160,6 +1168,10 @@ class BorrowedToolController {
      * Store new batch (AJAX/POST)
      */
     public function storeBatch() {
+        // Suppress error output to prevent breaking JSON response
+        @ini_set('display_errors', '0');
+        error_reporting(E_ALL);
+
         header('Content-Type: application/json');
 
         if (!$this->hasBorrowedToolPermission('create')) {
@@ -1238,8 +1250,14 @@ class BorrowedToolController {
 
         } catch (Exception $e) {
             error_log("Batch creation error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Failed to create batch']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to create batch: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
