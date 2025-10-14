@@ -578,8 +578,15 @@ function batchBorrowingApp() {
                 return;
             }
 
-            const modal = new bootstrap.Modal(this.$refs.borrowerModal);
-            modal.show();
+            // Use Bootstrap 5 modal with proper options
+            const modalElement = this.$refs.borrowerModal;
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
+            }
         },
 
         async submitBatch() {
