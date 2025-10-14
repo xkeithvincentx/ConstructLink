@@ -13,6 +13,9 @@ class BorrowedToolController {
         $this->auth = Auth::getInstance();
         $this->borrowedToolModel = new BorrowedToolModel();
         $this->roleConfig = require APP_ROOT . '/config/roles.php';
+
+        // Require batch model for batch operations
+        require_once APP_ROOT . '/models/BorrowedToolBatchModel.php';
         // Ensure user is authenticated
         if (!$this->auth->isAuthenticated()) {
             $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
