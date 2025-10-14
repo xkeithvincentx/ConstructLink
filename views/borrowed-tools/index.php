@@ -13,15 +13,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     <!-- Primary Actions (Left) -->
     <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
-            <a href="?route=borrowed-tools/create" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>
-                <span class="d-none d-sm-inline">Borrow Tool</span>
-                <span class="d-sm-none">Borrow</span>
-            </a>
-            <a href="?route=borrowed-tools/create-batch" class="btn btn-success btn-sm">
+            <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
                 <i class="bi bi-cart-plus me-1"></i>
-                <span class="d-none d-sm-inline">Multi-Item Batch</span>
-                <span class="d-sm-none">Batch</span>
+                <span class="d-none d-sm-inline">Borrow Equipment</span>
+                <span class="d-sm-none">Borrow</span>
             </a>
         <?php endif; ?>
 
