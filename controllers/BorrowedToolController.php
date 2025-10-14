@@ -102,6 +102,14 @@ class BorrowedToolController {
     }
 
     /**
+     * Check if current request is AJAX
+     */
+    private function isAjaxRequest() {
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    /**
      * Display borrowed tools listing
      */
     public function index() {
@@ -1475,11 +1483,29 @@ class BorrowedToolController {
      * Return batch (full or partial)
      */
     public function returnBatch() {
-        $this->requireProjectAssignment();
+        // Suppress error output to prevent breaking JSON response
+        @ini_set('display_errors', '0');
+        error_reporting(E_ALL);
+
+        // Check project assignment (MVA oversight roles exempt)
+        $currentUser = $this->auth->getCurrentUser();
+        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+
+        if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
+            $error = 'You must be assigned to a project to return tools. Please contact your administrator.';
+            http_response_code(403);
+            include APP_ROOT . '/views/errors/403.php';
+            exit;
+        }
 
         $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
 
         if (!$batchId) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Batch ID required']);
+                return;
+            }
             http_response_code(404);
             include APP_ROOT . '/views/errors/404.php';
             return;
@@ -1492,6 +1518,11 @@ class BorrowedToolController {
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
             if (!$batch) {
+                if ($this->isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Batch not found']);
+                    return;
+                }
                 http_response_code(404);
                 include APP_ROOT . '/views/errors/404.php';
                 return;
@@ -1499,6 +1530,11 @@ class BorrowedToolController {
 
             // Check permission
             if (!$this->hasBorrowedToolPermission('return', $batch)) {
+                if ($this->isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Permission denied']);
+                    return;
+                }
                 http_response_code(403);
                 include APP_ROOT . '/views/errors/403.php';
                 return;
@@ -1507,23 +1543,61 @@ class BorrowedToolController {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 CSRFProtection::validateRequest();
 
-                // Parse returned items
+                // Parse returned items - support both array format (qty_in[], item_ref[]) and individual format
                 $returnedItems = [];
-                foreach ($batch['items'] as $item) {
-                    $quantityKey = 'quantity_returned_' . $item['id'];
-                    $conditionKey = 'condition_in_' . $item['id'];
 
-                    if (isset($_POST[$quantityKey]) && $_POST[$quantityKey] > 0) {
-                        $returnedItems[] = [
-                            'borrowed_tool_id' => $item['id'],
-                            'quantity_returned' => (int)$_POST[$quantityKey],
-                            'condition_in' => Validator::sanitize($_POST[$conditionKey] ?? 'Good')
-                        ];
+                // Array format from modal (qty_in[], condition[], item_ref[])
+                if (isset($_POST['qty_in']) && is_array($_POST['qty_in'])) {
+                    $qtyIn = $_POST['qty_in'];
+                    $conditions = $_POST['condition'] ?? [];
+                    $itemRefs = $_POST['item_ref'] ?? [];
+                    $itemNotes = $_POST['item_notes'] ?? [];
+
+                    foreach ($qtyIn as $index => $qty) {
+                        // Skip items with qty 0 or empty
+                        if (empty($qty) || $qty <= 0) {
+                            continue;
+                        }
+
+                        $reference = $itemRefs[$index] ?? '';
+
+                        // Find the borrowed tool ID by reference
+                        foreach ($batch['items'] as $item) {
+                            if ($item['reference_no'] === $reference) {
+                                $returnedItems[] = [
+                                    'borrowed_tool_id' => $item['id'],
+                                    'quantity_returned' => (int)$qty,
+                                    'condition_in' => Validator::sanitize($conditions[$index] ?? 'Good'),
+                                    'notes' => Validator::sanitize($itemNotes[$index] ?? '')
+                                ];
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Individual format from batch-return.php view (quantity_returned_ID, condition_in_ID)
+                    foreach ($batch['items'] as $item) {
+                        $quantityKey = 'quantity_returned_' . $item['id'];
+                        $conditionKey = 'condition_in_' . $item['id'];
+
+                        if (isset($_POST[$quantityKey]) && $_POST[$quantityKey] > 0) {
+                            $returnedItems[] = [
+                                'borrowed_tool_id' => $item['id'],
+                                'quantity_returned' => (int)$_POST[$quantityKey],
+                                'condition_in' => Validator::sanitize($_POST[$conditionKey] ?? 'Good')
+                            ];
+                        }
                     }
                 }
 
                 if (empty($returnedItems)) {
                     $errors[] = 'Please specify at least one item to return';
+
+                    if ($this->isAjaxRequest()) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Please specify at least one item to return']);
+                        return;
+                    }
                 } else {
                     $notes = Validator::sanitize($_POST['return_notes'] ?? '');
                     $returnedBy = $this->auth->getCurrentUser()['id'];
@@ -1531,10 +1605,25 @@ class BorrowedToolController {
                     $result = $batchModel->returnBatch($batchId, $returnedBy, $returnedItems, $notes);
 
                     if ($result['success']) {
+                        if ($this->isAjaxRequest()) {
+                            header('Content-Type: application/json');
+                            echo json_encode([
+                                'success' => true,
+                                'message' => 'Batch returned successfully',
+                                'batch_id' => $batchId
+                            ]);
+                            return;
+                        }
                         header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_returned');
                         exit;
                     } else {
                         $errors[] = $result['message'];
+
+                        if ($this->isAjaxRequest()) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => false, 'message' => $result['message']]);
+                            return;
+                        }
                     }
                 }
             }
@@ -1543,6 +1632,17 @@ class BorrowedToolController {
 
         } catch (Exception $e) {
             error_log("Batch return error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to process return: ' . $e->getMessage()
+                ]);
+                return;
+            }
+
             $error = 'Failed to process return';
             include APP_ROOT . '/views/errors/500.php';
         }

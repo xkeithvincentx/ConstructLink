@@ -1523,10 +1523,10 @@ function clearAutoRefresh() {
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="index.php?route=borrowed-tools/batch/return" id="batchReturnForm">
+            <form id="batchReturnForm" x-data="{ csrfToken: '<?= CSRFProtection::generateToken() ?>' }">
                 <div class="modal-body">
-                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>">
-                    <input type="hidden" name="batch_id" value="">
+                    <input type="hidden" name="_csrf_token" :value="csrfToken" id="returnCsrfToken">
+                    <input type="hidden" name="batch_id" value="" id="returnBatchId">
 
                     <div class="alert alert-success">
                         <i class="bi bi-info-circle me-2"></i>
@@ -1561,7 +1561,7 @@ function clearAutoRefresh() {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="processReturnBtn">
                         <i class="bi bi-box-arrow-down me-1"></i>Process Return
                     </button>
                 </div>
@@ -1582,7 +1582,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
     }
 
     // Set batch ID in hidden field
-    const batchIdInput = this.querySelector('input[name="batch_id"]');
+    const batchIdInput = document.getElementById('returnBatchId');
     if (batchIdInput) {
         batchIdInput.value = batchId;
     }
@@ -1632,12 +1632,11 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                        name="qty_in[]"
                        min="0"
                        max="${qtyOut}"
-                       value="${qtyOut}"
-                       required>
+                       value="${qtyOut}">
                 <input type="hidden" name="item_ref[]" value="${reference}">
             </td>
             <td>
-                <select class="form-select form-select-sm" name="condition[]" required>
+                <select class="form-select form-select-sm" name="condition[]">
                     <option value="Good" selected>Good</option>
                     <option value="Fair">Fair</option>
                     <option value="Damaged">Damaged</option>
@@ -1652,6 +1651,53 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
     });
 
     console.log(`Loaded ${items.length} items into return modal for batch ${batchId}`);
+});
+
+// Handle batch return form submission via AJAX
+document.getElementById('batchReturnForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('processReturnBtn');
+    const originalBtnText = submitBtn.innerHTML;
+
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+    try {
+        const formData = new FormData(this);
+
+        const response = await fetch('index.php?route=borrowed-tools/batch/return', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchReturnModal'));
+            modal.hide();
+
+            // Show success message
+            alert('Batch returned successfully!');
+
+            // Reload page to show updated status
+            window.location.reload();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to process return'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    } catch (error) {
+        console.error('Batch return error:', error);
+        alert('Error: Failed to process return. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 });
 </script>
 
