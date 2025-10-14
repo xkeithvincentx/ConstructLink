@@ -469,7 +469,7 @@ usort($displayItems, function($a, $b) {
                                         <?php endif; ?>
                                         <?php if ($isBatch): ?>
                                             <span class="badge bg-primary me-2" title="Batch with <?= $batchCount ?> items">
-                                                <i class="bi bi-stack me-1"></i><?= $batchCount ?> items
+                                                <?= $batchCount ?> items
                                             </span>
                                             <span class="fw-medium">Batch #<?= $batchId ?></span>
                                         <?php else: ?>
@@ -484,32 +484,21 @@ usort($displayItems, function($a, $b) {
                                 <td>
                                     <?php if ($isBatch): ?>
                                         <div class="d-flex align-items-center">
-                                            <div class="me-2">
-                                                <div class="bg-light rounded d-flex align-items-center justify-content-center"
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="bi bi-stack text-primary"></i>
-                                                </div>
-                                            </div>
                                             <div>
                                                 <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
                                                 <small class="text-muted">
-                                                    <i class="bi bi-box-seam me-1"></i>Multiple categories
+                                                    Multiple categories
                                                 </small>
                                             </div>
                                         </div>
                                     <?php else: ?>
                                         <div class="d-flex align-items-center">
-                                            <div class="me-2">
-                                                <?php if (!empty($tool['asset_image'])): ?>
+                                            <?php if (!empty($tool['asset_image'])): ?>
+                                                <div class="me-2">
                                                     <img src="<?= htmlspecialchars($tool['asset_image']) ?>"
                                                          class="rounded" width="40" height="40" alt="Asset">
-                                                <?php else: ?>
-                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center"
-                                                         style="width: 40px; height: 40px;">
-                                                        <i class="bi bi-tools text-primary"></i>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
+                                                </div>
+                                            <?php endif; ?>
                                             <div>
                                                 <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
                                                 <small class="text-muted">
