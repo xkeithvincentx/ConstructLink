@@ -344,7 +344,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 <div class="modal fade" id="borrowerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form @submit.prevent="submitBatch()">
+            <form action="?route=borrowed-tools/batch/store" method="POST" @submit.prevent="submitBatch()">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="bi bi-person-fill me-2"></i>Borrower Information
@@ -617,7 +617,7 @@ function batchBorrowingApp() {
                     quantity: item.quantity || 1
                 }))));
 
-                const response = await fetch('?route=borrowed-tools/batch/create', {
+                const response = await fetch('?route=borrowed-tools/batch/store', {
                     method: 'POST',
                     body: formData
                 });
