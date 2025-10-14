@@ -368,18 +368,18 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                         <!-- Borrower Suggestions Dropdown -->
                         <div class="card position-absolute w-100 mt-1"
                              style="z-index: 1000; max-height: 200px; overflow-y: auto;"
-                             x-show="showBorrowerSuggestions && formData.borrower_name.length > 0"
+                             x-show="showBorrowerSuggestions && filteredBorrowers.length > 0"
                              x-transition>
-                            <?php foreach ($commonBorrowers as $borrower): ?>
-                            <div class="borrower-suggestion"
-                                 @click="selectBorrower('<?= htmlspecialchars($borrower['borrower_name']) ?>', '<?= htmlspecialchars($borrower['borrower_contact'] ?? '') ?>')">
-                                <strong><?= htmlspecialchars($borrower['borrower_name']) ?></strong>
-                                <?php if ($borrower['borrower_contact']): ?>
-                                    <br><small class="text-muted"><?= htmlspecialchars($borrower['borrower_contact']) ?></small>
-                                <?php endif; ?>
-                                <small class="text-muted float-end"><?= $borrower['borrow_count'] ?> times</small>
-                            </div>
-                            <?php endforeach; ?>
+                            <template x-for="borrower in filteredBorrowers" :key="borrower.borrower_name">
+                                <div class="borrower-suggestion"
+                                     @click="selectBorrower(borrower.borrower_name, borrower.borrower_contact || '')">
+                                    <strong x-text="borrower.borrower_name"></strong>
+                                    <template x-if="borrower.borrower_contact">
+                                        <br><small class="text-muted" x-text="borrower.borrower_contact"></small>
+                                    </template>
+                                    <small class="text-muted float-end" x-text="borrower.borrow_count + ' times'"></small>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -464,6 +464,9 @@ function batchBorrowingApp() {
         showBorrowerSuggestions: false,
         submitting: false,
 
+        // Borrower suggestions data
+        allBorrowers: <?= json_encode($commonBorrowers) ?>,
+
         // Computed
         get totalQuantity() {
             return this.cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -477,6 +480,17 @@ function batchBorrowingApp() {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             return tomorrow.toISOString().split('T')[0];
+        },
+
+        get filteredBorrowers() {
+            if (!this.formData.borrower_name || this.formData.borrower_name.length < 1) {
+                return [];
+            }
+
+            const query = this.formData.borrower_name.toLowerCase();
+            return this.allBorrowers.filter(borrower =>
+                borrower.borrower_name.toLowerCase().includes(query)
+            ).slice(0, 5); // Limit to 5 suggestions
         },
 
         init() {
