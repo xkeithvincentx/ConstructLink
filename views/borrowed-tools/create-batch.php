@@ -619,6 +619,9 @@ function batchBorrowingApp() {
 
                 const response = await fetch('/index.php?route=borrowed-tools/batch/create', {
                     method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
 
