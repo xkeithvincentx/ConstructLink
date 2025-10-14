@@ -338,10 +338,9 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
             </div>
         </div>
     </div>
-</div>
 
-<!-- Borrower Information Modal -->
-<div class="modal fade" id="borrowerModal" tabindex="-1">
+    <!-- Borrower Information Modal -->
+    <div class="modal fade" id="borrowerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form @submit.prevent="submitBatch()">
@@ -439,6 +438,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                 </div>
             </form>
         </div>
+    </div>
     </div>
 </div>
 

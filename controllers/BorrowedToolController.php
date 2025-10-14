@@ -40,8 +40,8 @@ class BorrowedToolController {
         // Handle MVA workflow permissions
         switch ($action) {
             case 'create':
-                // Maker: Warehouseman
-                return in_array($userRole, ['Warehouseman']);
+                // Maker: Warehouseman, Site Inventory Clerk (System Admin already handled above)
+                return in_array($userRole, ['Warehouseman', 'Site Inventory Clerk']);
                 
             case 'create_and_process':
                 // For streamlined workflow when same user can do all steps (Basic tools only)
@@ -1164,13 +1164,23 @@ class BorrowedToolController {
 
         if (!$this->hasBorrowedToolPermission('create')) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            echo json_encode(['success' => false, 'message' => 'Access denied: Only Warehouseman or System Admin can create batches']);
             return;
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        // Validate user has project assignment (except MVA oversight roles)
+        $currentUser = $this->auth->getCurrentUser();
+        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+
+        if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'You must be assigned to a project to borrow equipment']);
             return;
         }
 
