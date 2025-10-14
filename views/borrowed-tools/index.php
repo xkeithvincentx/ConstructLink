@@ -471,7 +471,13 @@ usort($displayItems, function($a, $b) {
                                             <span class="badge bg-primary me-2" title="Batch with <?= $batchCount ?> items">
                                                 <?= $batchCount ?> items
                                             </span>
-                                            <span class="fw-medium">Batch #<?= $batchId ?></span>
+                                            <span class="fw-medium">
+                                                <?php if (!empty($tool['batch_reference'])): ?>
+                                                    <?= htmlspecialchars($tool['batch_reference']) ?>
+                                                <?php else: ?>
+                                                    Batch #<?= $batchId ?>
+                                                <?php endif; ?>
+                                            </span>
                                         <?php else: ?>
                                             <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
                                                 #<?= $tool['id'] ?>
@@ -556,28 +562,59 @@ usort($displayItems, function($a, $b) {
                                 
                                 <!-- Enhanced Return Schedule -->
                                 <td>
-                                    <div class="return-schedule">
-                                        <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : 'text-dark') ?>">
-                                            <?= date('M j, Y', strtotime($expectedReturn)) ?>
+                                    <?php if ($tool['status'] === 'Returned' && !empty($tool['actual_return'])): ?>
+                                        <!-- Show actual return date for returned items -->
+                                        <div class="return-schedule">
+                                            <div class="fw-medium text-success">
+                                                <?= date('M j, Y', strtotime($tool['actual_return'])) ?>
+                                            </div>
+                                            <small class="text-muted">Returned on <?= date('l', strtotime($tool['actual_return'])) ?></small>
+
+                                            <?php
+                                            $expectedTime = strtotime($expectedReturn);
+                                            $actualTime = strtotime($tool['actual_return']);
+                                            $daysDiff = floor(($actualTime - $expectedTime) / 86400);
+                                            ?>
+
+                                            <?php if ($daysDiff < 0): ?>
+                                                <br><span class="badge bg-success">
+                                                    <?= abs($daysDiff) ?> days early
+                                                </span>
+                                            <?php elseif ($daysDiff > 0): ?>
+                                                <br><span class="badge bg-warning text-dark">
+                                                    <?= $daysDiff ?> days late
+                                                </span>
+                                            <?php else: ?>
+                                                <br><span class="badge bg-info">
+                                                    On time
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
-                                        <small class="text-muted"><?= date('l', strtotime($expectedReturn)) ?></small>
-                                        
-                                        <?php if ($isOverdue): ?>
-                                            <br><span class="badge bg-danger">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                                <?= abs(floor((time() - strtotime($expectedReturn)) / 86400)) ?> days overdue
-                                            </span>
-                                        <?php elseif ($isDueSoon): ?>
-                                            <br><span class="badge bg-warning text-dark">
-                                                <i class="bi bi-clock me-1"></i>
-                                                Due in <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days
-                                            </span>
-                                        <?php elseif ($tool['status'] === 'Borrowed'): ?>
-                                            <br><small class="text-success">
-                                                <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days remaining
-                                            </small>
-                                        <?php endif; ?>
-                                    </div>
+                                    <?php else: ?>
+                                        <!-- Show expected return date for items not yet returned -->
+                                        <div class="return-schedule">
+                                            <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : 'text-dark') ?>">
+                                                <?= date('M j, Y', strtotime($expectedReturn)) ?>
+                                            </div>
+                                            <small class="text-muted"><?= date('l', strtotime($expectedReturn)) ?></small>
+
+                                            <?php if ($isOverdue): ?>
+                                                <br><span class="badge bg-danger">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    <?= abs(floor((time() - strtotime($expectedReturn)) / 86400)) ?> days overdue
+                                                </span>
+                                            <?php elseif ($isDueSoon): ?>
+                                                <br><span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-clock me-1"></i>
+                                                    Due in <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days
+                                                </span>
+                                            <?php elseif ($tool['status'] === 'Borrowed'): ?>
+                                                <br><small class="text-success">
+                                                    <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days remaining
+                                                </small>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 
                                 <!-- Enhanced Status with Progress -->

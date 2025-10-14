@@ -441,7 +441,8 @@ class BorrowedToolModel extends BaseModel {
                    c.name as category_name,
                    p.name as project_name,
                    u.full_name as issued_by_name,
-                   CASE 
+                   btb.batch_reference,
+                   CASE
                        WHEN bt.status = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
                        ELSE bt.status
                    END as current_status
@@ -450,6 +451,7 @@ class BorrowedToolModel extends BaseModel {
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN users u ON bt.issued_by = u.id
+            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
             {$whereClause}
             ORDER BY bt.created_at DESC
             LIMIT {$perPage} OFFSET {$offset}
