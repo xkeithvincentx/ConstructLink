@@ -330,7 +330,8 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                 </button>
                 <button type="button"
                         class="btn btn-primary w-100"
-                        @click="proceedToCheckout()"
+                        data-bs-toggle="modal"
+                        data-bs-target="#borrowerModal"
                         :disabled="cart.length === 0">
                     <i class="bi bi-arrow-right me-1"></i>Continue to Borrower Info
                 </button>
@@ -340,7 +341,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 </div>
 
 <!-- Borrower Information Modal -->
-<div class="modal fade" id="borrowerModal" tabindex="-1" x-ref="borrowerModal">
+<div class="modal fade" id="borrowerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form @submit.prevent="submitBatch()">
@@ -572,22 +573,6 @@ function batchBorrowingApp() {
             this.showBorrowerSuggestions = false;
         },
 
-        proceedToCheckout() {
-            if (this.cart.length === 0) {
-                alert('Please select at least one item');
-                return;
-            }
-
-            // Use Bootstrap 5 modal with proper options
-            const modalElement = this.$refs.borrowerModal;
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-                modal.show();
-            }
-        },
 
         async submitBatch() {
             if (this.submitting) return;
