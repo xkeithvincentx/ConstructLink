@@ -344,7 +344,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 <div class="modal fade" id="borrowerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="/index.php?route=borrowed-tools/batch/store" method="POST" @submit.prevent="submitBatch()">
+            <form action="/index.php?route=borrowed-tools/batch/create" method="POST" @submit.prevent="submitBatch()">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="bi bi-person-fill me-2"></i>Borrower Information
@@ -617,7 +617,7 @@ function batchBorrowingApp() {
                     quantity: item.quantity || 1
                 }))));
 
-                const response = await fetch('/index.php?route=borrowed-tools/batch/store', {
+                const response = await fetch('/index.php?route=borrowed-tools/batch/create', {
                     method: 'POST',
                     body: formData
                 });
@@ -625,7 +625,11 @@ function batchBorrowingApp() {
                 const result = await response.json();
 
                 if (result.success) {
-                    window.location.href = '/index.php?route=borrowed-tools/batch/view&id=' + result.batch_id + '&message=batch_created';
+                    // Redirect to main borrowed tools list with success message
+                    const messageParam = result.workflow_type === 'streamlined'
+                        ? 'batch_created_released'
+                        : 'batch_created_pending';
+                    window.location.href = '/index.php?route=borrowed-tools&message=' + messageParam;
                 } else {
                     alert('Error: ' + (result.message || 'Failed to create batch'));
                     this.submitting = false;
