@@ -148,6 +148,25 @@ class BorrowedToolBatchModel extends BaseModel {
                     return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing (status: ' . $asset['status'] . ')'];
                 }
 
+                // CRITICAL SECURITY FIX: Check if asset is already reserved in another active batch
+                // This prevents double-booking during the approval workflow
+                $checkReservationSql = "
+                    SELECT bt.id, btb.batch_reference, btb.status
+                    FROM borrowed_tools bt
+                    INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                    WHERE bt.asset_id = ?
+                      AND btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Partially Returned')
+                    LIMIT 1
+                ";
+                $checkStmt = $this->db->prepare($checkReservationSql);
+                $checkStmt->execute([$asset['id']]);
+                $existingReservation = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($existingReservation) {
+                    $this->db->rollBack();
+                    return ['success' => false, 'message' => $asset['name'] . ' is already reserved in batch ' . $existingReservation['batch_reference'] . ' (status: ' . $existingReservation['status'] . ')'];
+                }
+
                 // Validate all items belong to same project
                 if ($projectId === null) {
                     $projectId = $asset['project_id'];
