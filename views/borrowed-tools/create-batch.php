@@ -419,11 +419,16 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                 </button>
                 <button type="button"
                         class="btn btn-primary w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#borrowerModal"
+                        @click="proceedToBorrowerInfo()"
                         :disabled="cart.length === 0">
                     <i class="bi bi-arrow-right me-1"></i>Continue to Borrower Info
                 </button>
+
+                <!-- Availability Warning -->
+                <div class="alert alert-warning alert-sm mt-2 mb-0 py-2 px-2" style="font-size: 0.75rem;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <small><strong>Note:</strong> Equipment availability is validated when you create the batch. Items may become unavailable if another user borrows them first.</small>
+                </div>
             </div>
         </div>
     </div>
@@ -773,6 +778,26 @@ function batchBorrowingApp() {
             this.showBorrowerSuggestions = false;
         },
 
+        // Open borrower info modal
+        proceedToBorrowerInfo() {
+            if (this.cart.length === 0) {
+                alert('Please add items to cart first');
+                return;
+            }
+
+            // Show availability reminder
+            const proceed = confirm(
+                'Important: Equipment availability will be verified when you create the batch.\n\n' +
+                'If another user borrows an item before you submit, that item will be marked as unavailable.\n\n' +
+                'Do you want to continue?'
+            );
+
+            if (proceed) {
+                // Open the modal programmatically
+                const modal = new bootstrap.Modal(document.getElementById('borrowerModal'));
+                modal.show();
+            }
+        },
 
         async submitBatch() {
             if (this.submitting) return;
