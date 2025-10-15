@@ -56,41 +56,15 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 
 .cart-badge {
     position: fixed;
-    top: 100px;
+    bottom: 20px;
     right: 20px;
     z-index: 1000;
 }
 
-.cart-panel {
-    position: fixed;
-    right: -400px;
-    top: 0;
-    width: 400px;
-    height: 100vh;
-    background: white;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-    transition: right 0.3s;
-    z-index: 1050;
-    overflow-y: auto;
-}
-
-.cart-panel.open {
-    right: 0;
-}
-
-.cart-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1040;
-    display: none;
-}
-
-.cart-overlay.show {
-    display: block;
+@media (min-width: 992px) {
+    .cart-badge {
+        display: none;
+    }
 }
 
 .quantity-input {
@@ -156,7 +130,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 
 <div class="row" x-data="batchBorrowingApp()">
     <!-- Left Panel: Equipment Selection -->
-    <div class="col-lg-8">
+    <div class="col-lg-8 col-12">
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
@@ -201,7 +175,7 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                 <!-- Equipment Grid -->
                 <div class="row g-3" style="max-height: 600px; overflow-y: auto;">
                     <template x-for="item in filteredItems" :key="item.id">
-                        <div class="col-md-6">
+                        <div class="col-md-6 col-12">
                             <div class="card equipment-card h-100"
                                  :class="isInCart(item.id) ? 'selected' : ''"
                                  @click="toggleItem(item)">
@@ -258,8 +232,113 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
         </div>
     </div>
 
-    <!-- Right Panel: Shopping Cart -->
-    <div class="col-lg-4">
+    <!-- Mobile: Floating Cart Button -->
+    <button class="btn btn-success btn-lg cart-badge d-lg-none rounded-circle"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#cartOffcanvas"
+            aria-label="View Cart">
+        <i class="bi bi-cart3 fs-5"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              x-show="cart.length > 0"
+              x-text="cart.length"
+              style="font-size: 0.7rem;"></span>
+    </button>
+
+    <!-- Mobile: Cart Offcanvas (Bottom) -->
+    <div class="offcanvas offcanvas-bottom d-lg-none" tabindex="-1" id="cartOffcanvas" style="height: 70vh;">
+        <div class="offcanvas-header bg-success text-white">
+            <h5 class="offcanvas-title">
+                <i class="bi bi-cart3 me-2"></i>Selected Items
+                <span class="badge bg-light text-dark ms-2" x-text="cart.length"></span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="overflow-y: auto;">
+            <template x-if="cart.length === 0">
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-cart-x fs-1"></i>
+                    <p class="mt-2">No items selected</p>
+                    <p class="small">Click on equipment cards to add them</p>
+                </div>
+            </template>
+
+            <template x-if="cart.length > 0">
+                <div>
+                    <template x-for="(item, index) in cart" :key="item.id">
+                        <div class="card mb-3 border">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1" x-text="item.name"></h6>
+                                        <p class="text-muted small mb-1">
+                                            <strong>Ref:</strong> <span x-text="item.ref"></span>
+                                        </p>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger"
+                                            @click="removeFromCart(item.id)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <!-- Only show quantity for non-serialized items -->
+                                <div class="mt-2" x-show="!item.serial_number">
+                                    <label class="form-label small mb-1">Quantity:</label>
+                                    <input type="number"
+                                           class="form-control form-control-sm"
+                                           style="width: 100px;"
+                                           min="1"
+                                           max="99"
+                                           x-model.number="item.quantity"
+                                           @input="updateQuantity(item.id, $event.target.value)">
+                                </div>
+                                <!-- Show note for serialized items -->
+                                <div class="mt-2" x-show="item.serial_number">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Unique item (Serial: <span x-text="item.serial_number"></span>)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Total Items</small>
+                                    <strong class="fs-5" x-text="cart.length"></strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Total Quantity</small>
+                                    <strong class="fs-5" x-text="totalQuantity"></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="offcanvas-footer p-3 border-top bg-light">
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm w-100 mb-2"
+                    @click="clearCart()"
+                    :disabled="cart.length === 0">
+                <i class="bi bi-trash me-1"></i>Clear All
+            </button>
+            <button type="button"
+                    class="btn btn-primary w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#borrowerModal"
+                    data-bs-dismiss="offcanvas"
+                    :disabled="cart.length === 0">
+                <i class="bi bi-arrow-right me-1"></i>Continue to Borrower Info
+            </button>
+        </div>
+    </div>
+
+    <!-- Desktop: Right Panel Shopping Cart -->
+    <div class="col-lg-4 d-none d-lg-block">
         <div class="card shadow-sm sticky-top" style="top: 20px;">
             <div class="card-header bg-success text-white">
                 <h5 class="card-title mb-0">

@@ -81,7 +81,7 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                     <?php endif; ?>
                 </p>
             </div>
-            <div class="col-md-4 text-end">
+            <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
                 <h5 class="mb-2">
                     <span class="badge bg-<?= $statusColor ?> fs-6">
                         <?= htmlspecialchars($batch['status']) ?>
@@ -153,7 +153,88 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                 </h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <!-- Mobile Card View -->
+                <div class="d-md-none">
+                    <?php foreach ($batch['items'] as $item): ?>
+                        <?php
+                        $remaining = $item['quantity'] - $item['quantity_returned'];
+                        $itemStatusColors = [
+                            'Pending Verification' => 'warning',
+                            'Pending Approval' => 'info',
+                            'Approved' => 'success',
+                            'Borrowed' => 'primary',
+                            'Returned' => 'secondary',
+                            'Canceled' => 'dark'
+                        ];
+                        $itemStatusColor = $itemStatusColors[$item['status']] ?? 'secondary';
+                        ?>
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <!-- Header with name and status -->
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <strong class="d-block"><?= htmlspecialchars($item['asset_name']) ?></strong>
+                                        <small class="text-muted d-block"><?= htmlspecialchars($item['asset_ref']) ?></small>
+                                        <small class="text-muted d-block"><?= htmlspecialchars($item['category_name']) ?></small>
+                                    </div>
+                                    <span class="badge bg-<?= $itemStatusColor ?>">
+                                        <?= htmlspecialchars($item['status']) ?>
+                                    </span>
+                                </div>
+
+                                <?php if ($item['acquisition_cost'] > 50000): ?>
+                                    <div class="mb-2">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-shield-check me-1"></i>Critical Item
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Quantity info -->
+                                <div class="row text-center g-2">
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Borrowed</small>
+                                        <span class="badge bg-primary"><?= $item['quantity'] ?></span>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Returned</small>
+                                        <span class="badge bg-success"><?= $item['quantity_returned'] ?></span>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block">Remaining</small>
+                                        <span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>">
+                                            <?= $remaining ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <!-- Mobile Totals Card -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <strong class="d-block mb-2">Totals</strong>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Borrowed</small>
+                                    <strong><?= $batch['total_quantity'] ?></strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Returned</small>
+                                    <strong><?= array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Remaining</small>
+                                    <strong><?= $batch['total_quantity'] - array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Table View -->
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-hover">
                         <thead>
                             <tr>

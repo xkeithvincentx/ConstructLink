@@ -87,39 +87,39 @@ $isCriticalTool = $assetValue > 50000;
                     </div>
                 </div>
                 
-                <div class="row text-center">
-                    <div class="col-2">
-                        <small class="text-muted">Created</small><br>
+                <div class="row text-center g-2">
+                    <div class="col-4 col-md-2">
+                        <small class="text-muted d-block">Created</small>
                         <i class="bi bi-check-circle text-success"></i>
                     </div>
-                    <div class="col-2">
-                        <small class="<?= in_array($status, ['Pending Verification']) ? 'text-warning' : ($currentStep['progress'] >= 25 ? 'text-success' : 'text-muted') ?>">
+                    <div class="col-4 col-md-2">
+                        <small class="<?= in_array($status, ['Pending Verification']) ? 'text-warning' : ($currentStep['progress'] >= 25 ? 'text-success' : 'text-muted') ?> d-block">
                             Verification
-                        </small><br>
+                        </small>
                         <i class="bi bi-<?= in_array($status, ['Pending Verification']) ? 'hourglass-split text-warning' : ($currentStep['progress'] >= 25 ? 'check-circle text-success' : 'circle text-muted') ?>"></i>
                     </div>
-                    <div class="col-2">
-                        <small class="<?= in_array($status, ['Pending Approval']) ? 'text-info' : ($currentStep['progress'] >= 50 ? 'text-success' : 'text-muted') ?>">
+                    <div class="col-4 col-md-2">
+                        <small class="<?= in_array($status, ['Pending Approval']) ? 'text-info' : ($currentStep['progress'] >= 50 ? 'text-success' : 'text-muted') ?> d-block">
                             Approval
-                        </small><br>
+                        </small>
                         <i class="bi bi-<?= in_array($status, ['Pending Approval']) ? 'hourglass-split text-info' : ($currentStep['progress'] >= 50 ? 'check-circle text-success' : 'circle text-muted') ?>"></i>
                     </div>
-                    <div class="col-2">
-                        <small class="<?= in_array($status, ['Approved']) ? 'text-success' : ($currentStep['progress'] >= 75 ? 'text-success' : 'text-muted') ?>">
+                    <div class="col-4 col-md-2">
+                        <small class="<?= in_array($status, ['Approved']) ? 'text-success' : ($currentStep['progress'] >= 75 ? 'text-success' : 'text-muted') ?> d-block">
                             Approved
-                        </small><br>
+                        </small>
                         <i class="bi bi-<?= in_array($status, ['Approved']) ? 'hourglass-split text-success' : ($currentStep['progress'] >= 75 ? 'check-circle text-success' : 'circle text-muted') ?>"></i>
                     </div>
-                    <div class="col-2">
-                        <small class="<?= in_array($status, ['Borrowed']) ? 'text-primary' : ($currentStep['progress'] >= 100 && $status !== 'Canceled' ? 'text-success' : 'text-muted') ?>">
+                    <div class="col-4 col-md-2">
+                        <small class="<?= in_array($status, ['Borrowed']) ? 'text-primary' : ($currentStep['progress'] >= 100 && $status !== 'Canceled' ? 'text-success' : 'text-muted') ?> d-block">
                             Borrowed
-                        </small><br>
+                        </small>
                         <i class="bi bi-<?= in_array($status, ['Borrowed']) ? 'hourglass-split text-primary' : ($currentStep['progress'] >= 100 && $status !== 'Canceled' ? 'check-circle text-success' : 'circle text-muted') ?>"></i>
                     </div>
-                    <div class="col-2">
-                        <small class="<?= in_array($status, ['Returned']) ? 'text-success' : ($status === 'Overdue' ? 'text-danger' : 'text-muted') ?>">
+                    <div class="col-4 col-md-2">
+                        <small class="<?= in_array($status, ['Returned']) ? 'text-success' : ($status === 'Overdue' ? 'text-danger' : 'text-muted') ?> d-block">
                             <?= $status === 'Overdue' ? 'Overdue' : 'Returned' ?>
-                        </small><br>
+                        </small>
                         <i class="bi bi-<?= in_array($status, ['Returned']) ? 'check-circle text-success' : ($status === 'Overdue' ? 'exclamation-triangle text-danger' : 'circle text-muted') ?>"></i>
                     </div>
                 </div>
