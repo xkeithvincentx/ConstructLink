@@ -277,6 +277,38 @@ class BorrowedToolModel extends BaseModel {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Failed to update asset status'];
             }
+
+            // Check if this item belongs to a batch and update batch status if all items are returned
+            if (!empty($borrowedTool['batch_id'])) {
+                $batchModel = new BorrowedToolBatchModel();
+
+                // Check if all items in the batch are now returned
+                $checkAllReturnedSql = "
+                    SELECT COUNT(*) as total_items,
+                           SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_items
+                    FROM borrowed_tools
+                    WHERE batch_id = ?
+                ";
+                $checkStmt = $this->db->prepare($checkAllReturnedSql);
+                $checkStmt->execute([$borrowedTool['batch_id']]);
+                $batchStatus = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($batchStatus && $batchStatus['total_items'] == $batchStatus['returned_items']) {
+                    // All items returned - update batch status
+                    $batchModel->update($borrowedTool['batch_id'], [
+                        'status' => 'Returned',
+                        'actual_return' => date('Y-m-d'),
+                        'returned_by' => $returnedBy,
+                        'return_date' => date('Y-m-d H:i:s')
+                    ]);
+                } elseif ($batchStatus && $batchStatus['returned_items'] > 0) {
+                    // Some items returned - update to partially returned
+                    $batchModel->update($borrowedTool['batch_id'], [
+                        'status' => 'Partially Returned'
+                    ]);
+                }
+            }
+
             $this->logActivity('return_tool', "Tool returned: {$borrowedTool['asset_name']} by {$borrowedTool['borrower_name']}", 'borrowed_tools', $borrowId);
             $this->db->commit();
             return ['success' => true, 'message' => 'Tool returned successfully'];
