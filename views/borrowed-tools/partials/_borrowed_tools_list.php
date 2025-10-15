@@ -91,9 +91,9 @@
                                 </span>
                             </div>
 
-                            <!-- Asset Details -->
+                            <!-- Item Details -->
                             <div class="mb-2">
-                                <small class="text-muted d-block mb-1">Asset</small>
+                                <small class="text-muted d-block mb-1">Item</small>
                                 <?php if ($isBatch): ?>
                                     <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
                                     <button class="btn btn-sm btn-outline-secondary mt-1 w-100 batch-toggle-mobile"
@@ -268,20 +268,20 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Asset Details</th>
-                            <th>Borrower Info</th>
+                            <th>Item Details</th>
+                            <th>Borrower</th>
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                                 <th>Purpose</th>
                             <?php endif; ?>
-                            <th>Return Schedule</th>
-                            <th>Status & Progress</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-                                <th>MVA Workflow</th>
+                                <th>MVA</th>
                             <?php endif; ?>
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Site Inventory Clerk'])): ?>
-                                <th>Request Info</th>
+                                <th>Created By</th>
                             <?php endif; ?>
-                            <th>Actions</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -697,7 +697,7 @@
                                                 <?php if (isset($primaryAction['modal']) && $primaryAction['modal']): ?>
                                                     <!-- Batch action - opens modal -->
                                                     <button type="button"
-                                                            class="btn <?= $primaryAction['class'] ?> batch-action-btn"
+                                                            class="btn btn-sm <?= $primaryAction['class'] ?> batch-action-btn"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#<?= $primaryAction['modal_id'] ?>"
                                                             data-batch-id="<?= $primaryAction['batch_id'] ?>"
@@ -707,7 +707,7 @@
                                                 <?php else: ?>
                                                     <!-- Single item action - regular link -->
                                                     <a href="<?= $primaryAction['url'] ?>"
-                                                       class="btn <?= $primaryAction['class'] ?>"
+                                                       class="btn btn-sm <?= $primaryAction['class'] ?>"
                                                        title="<?= $primaryAction['title'] ?>">
                                                         <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
                                                     </a>
@@ -717,7 +717,7 @@
                                             <!-- View Details (Always Available) -->
                                             <?php if ($viewAction): ?>
                                                 <a href="<?= $viewAction['url'] ?>"
-                                                   class="btn <?= $viewAction['class'] ?>"
+                                                   class="btn btn-sm <?= $viewAction['class'] ?>"
                                                    title="<?= $viewAction['title'] ?>">
                                                     <i class="bi bi-<?= $viewAction['icon'] ?>"></i>
                                                 </a>
