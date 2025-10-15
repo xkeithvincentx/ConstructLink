@@ -91,6 +91,7 @@ class EquipmentCategoryHelper {
                 LEFT JOIN equipment_types et ON a.equipment_type_id = et.id
                 INNER JOIN projects p ON a.project_id = p.id
                 WHERE a.status = 'available'
+                  AND a.workflow_status = 'approved'
                   AND c.is_consumable = 0
                   AND p.is_active = 1
             ";
