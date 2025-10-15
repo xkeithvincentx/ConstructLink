@@ -37,16 +37,19 @@ class BorrowedToolBatchModel extends BaseModel {
             $projectCode = $this->getProjectCode($projectId);
             $year = date('Y');
 
-            // Get or create sequence for this project and year
+            // CONCURRENCY FIX: Use INSERT ... ON DUPLICATE KEY UPDATE which is atomic in MySQL
+            // This ensures thread-safe sequence increment even with multiple simultaneous requests
             $seqSql = "INSERT INTO borrowed_tool_batch_sequences (project_id, year, last_sequence)
                        VALUES (?, ?, 1)
                        ON DUPLICATE KEY UPDATE last_sequence = last_sequence + 1";
             $stmt = $this->db->prepare($seqSql);
             $stmt->execute([$projectId, $year]);
 
-            // Get the current sequence
+            // Get the current sequence with row lock to prevent race conditions
+            // FOR UPDATE locks the row until transaction commits
             $getSql = "SELECT last_sequence FROM borrowed_tool_batch_sequences
-                      WHERE project_id = ? AND year = ?";
+                      WHERE project_id = ? AND year = ?
+                      FOR UPDATE";
             $getStmt = $this->db->prepare($getSql);
             $getStmt->execute([$projectId, $year]);
             $sequence = $getStmt->fetchColumn();
@@ -55,7 +58,7 @@ class BorrowedToolBatchModel extends BaseModel {
 
         } catch (Exception $e) {
             error_log("Batch reference generation error: " . $e->getMessage());
-            // Fallback to timestamp-based reference
+            // Fallback to timestamp-based unique reference
             return 'BRW-UNK-' . date('Ymd') . '-' . substr(uniqid(), -4);
         }
     }
@@ -127,7 +130,13 @@ class BorrowedToolBatchModel extends BaseModel {
             $projectId = null;
 
             foreach ($items as $item) {
-                $asset = $assetModel->find($item['asset_id']);
+                // CONCURRENCY FIX: Lock asset row for reading to prevent double-booking
+                // SELECT ... FOR UPDATE ensures no other transaction can modify this asset
+                // until our transaction commits
+                $lockSql = "SELECT * FROM assets WHERE id = ? FOR UPDATE";
+                $lockStmt = $this->db->prepare($lockSql);
+                $lockStmt->execute([$item['asset_id']]);
+                $asset = $lockStmt->fetch(PDO::FETCH_ASSOC);
 
                 if (!$asset) {
                     $this->db->rollBack();
@@ -136,7 +145,7 @@ class BorrowedToolBatchModel extends BaseModel {
 
                 if ($asset['status'] !== 'available') {
                     $this->db->rollBack();
-                    return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing'];
+                    return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing (status: ' . $asset['status'] . ')'];
                 }
 
                 // Validate all items belong to same project
@@ -552,8 +561,13 @@ class BorrowedToolBatchModel extends BaseModel {
                 $quantityReturned = (int)$item['quantity_returned'];
                 $conditionIn = $item['condition_in'] ?? 'Good';
 
-                // Get current borrowed tool record
-                $borrowedTool = $borrowedToolModel->find($borrowToolId);
+                // CONCURRENCY FIX: Lock borrowed_tools row to prevent double-return
+                // This prevents race condition where two users simultaneously return the same item
+                $lockSql = "SELECT * FROM borrowed_tools WHERE id = ? FOR UPDATE";
+                $lockStmt = $this->db->prepare($lockSql);
+                $lockStmt->execute([$borrowToolId]);
+                $borrowedTool = $lockStmt->fetch(PDO::FETCH_ASSOC);
+
                 if (!$borrowedTool || $borrowedTool['batch_id'] != $batchId) {
                     continue; // Skip invalid items
                 }
@@ -561,7 +575,7 @@ class BorrowedToolBatchModel extends BaseModel {
                 $newTotalReturned = $borrowedTool['quantity_returned'] + $quantityReturned;
                 if ($newTotalReturned > $borrowedTool['quantity']) {
                     $this->db->rollBack();
-                    return ['success' => false, 'message' => 'Cannot return more than borrowed quantity'];
+                    return ['success' => false, 'message' => 'Cannot return more than borrowed quantity for ' . $borrowedTool['asset_id']];
                 }
 
                 // Update borrowed_tools record
