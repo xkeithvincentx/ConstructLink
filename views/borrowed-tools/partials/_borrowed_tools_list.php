@@ -278,7 +278,7 @@
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
                                 <th>MVA Workflow</th>
                             <?php endif; ?>
-                            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
+                            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Site Inventory Clerk'])): ?>
                                 <th>Request Info</th>
                             <?php endif; ?>
                             <th>Actions</th>
@@ -534,7 +534,7 @@
                                 <?php endif; ?>
 
                                 <!-- Request Info (for tracking) -->
-                                <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
+                                <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Site Inventory Clerk'])): ?>
                                     <td>
                                         <div class="request-info small">
                                             <div class="fw-medium"><?= date('M j, Y', strtotime($tool['created_at'])) ?></div>
