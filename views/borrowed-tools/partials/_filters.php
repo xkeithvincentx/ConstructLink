@@ -44,31 +44,31 @@
                         <option value="">All Statuses</option>
                         <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Asset Director'])): ?>
                             <option value="Pending Verification" <?= ($_GET['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>
-                                📋 Pending Verification
+                                Pending Verification
                             </option>
                         <?php endif; ?>
                         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
                             <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>
-                                ⏳ Pending Approval
+                                Pending Approval
                             </option>
                         <?php endif; ?>
                         <?php if ($auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])): ?>
                             <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>
-                                ✅ Ready to Issue
+                                Approved
                             </option>
                         <?php endif; ?>
-                        <option value="Borrowed" <?= ($_GET['status'] ?? '') === 'Borrowed' ? 'selected' : '' ?>>
-                            🔧 Currently Out
+                        <option value="Released" <?= ($_GET['status'] ?? '') === 'Released' ? 'selected' : '' ?>>
+                            Released
+                        </option>
+                        <option value="Partially Returned" <?= ($_GET['status'] ?? '') === 'Partially Returned' ? 'selected' : '' ?>>
+                            Partially Returned
                         </option>
                         <option value="Returned" <?= ($_GET['status'] ?? '') === 'Returned' ? 'selected' : '' ?>>
-                            ↩️ Returned
-                        </option>
-                        <option value="Overdue" <?= ($_GET['status'] ?? '') === 'Overdue' ? 'selected' : '' ?>>
-                            ⚠️ Overdue
+                            Returned
                         </option>
                         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
                             <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>
-                                ❌ Canceled
+                                Canceled
                             </option>
                         <?php endif; ?>
                     </select>
@@ -80,9 +80,9 @@
                         <label for="priority-mobile" class="form-label">Priority</label>
                         <select class="form-select" id="priority-mobile" name="priority">
                             <option value="">All Priorities</option>
-                            <option value="overdue" <?= ($_GET['priority'] ?? '') === 'overdue' ? 'selected' : '' ?>>🚨 Overdue Items</option>
-                            <option value="due_soon" <?= ($_GET['priority'] ?? '') === 'due_soon' ? 'selected' : '' ?>>⚡ Due Soon (3 days)</option>
-                            <option value="pending_action" <?= ($_GET['priority'] ?? '') === 'pending_action' ? 'selected' : '' ?>>🔄 Needs My Action</option>
+                            <option value="overdue" <?= ($_GET['priority'] ?? '') === 'overdue' ? 'selected' : '' ?>>Overdue Items</option>
+                            <option value="due_soon" <?= ($_GET['priority'] ?? '') === 'due_soon' ? 'selected' : '' ?>>Due Soon (3 days)</option>
+                            <option value="pending_action" <?= ($_GET['priority'] ?? '') === 'pending_action' ? 'selected' : '' ?>>Needs My Action</option>
                         </select>
                     </div>
                 <?php endif; ?>
@@ -174,31 +174,31 @@
                         <option value="">All Statuses</option>
                         <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Asset Director'])): ?>
                             <option value="Pending Verification" <?= ($_GET['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>
-                                📋 Pending Verification
+                                Pending Verification
                             </option>
                         <?php endif; ?>
                         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
                             <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>
-                                ⏳ Pending Approval
+                                Pending Approval
                             </option>
                         <?php endif; ?>
                         <?php if ($auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])): ?>
                             <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>
-                                ✅ Ready to Issue
+                                Approved
                             </option>
                         <?php endif; ?>
-                        <option value="Borrowed" <?= ($_GET['status'] ?? '') === 'Borrowed' ? 'selected' : '' ?>>
-                            🔧 Currently Out
+                        <option value="Released" <?= ($_GET['status'] ?? '') === 'Released' ? 'selected' : '' ?>>
+                            Released
+                        </option>
+                        <option value="Partially Returned" <?= ($_GET['status'] ?? '') === 'Partially Returned' ? 'selected' : '' ?>>
+                            Partially Returned
                         </option>
                         <option value="Returned" <?= ($_GET['status'] ?? '') === 'Returned' ? 'selected' : '' ?>>
-                            ↩️ Returned
-                        </option>
-                        <option value="Overdue" <?= ($_GET['status'] ?? '') === 'Overdue' ? 'selected' : '' ?>>
-                            ⚠️ Overdue
+                            Returned
                         </option>
                         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
                             <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>
-                                ❌ Canceled
+                                Canceled
                             </option>
                         <?php endif; ?>
                     </select>
@@ -210,9 +210,9 @@
                         <label for="priority" class="form-label">Priority</label>
                         <select class="form-select form-select-sm" id="priority" name="priority">
                             <option value="">All Priorities</option>
-                            <option value="overdue" <?= ($_GET['priority'] ?? '') === 'overdue' ? 'selected' : '' ?>>🚨 Overdue Items</option>
-                            <option value="due_soon" <?= ($_GET['priority'] ?? '') === 'due_soon' ? 'selected' : '' ?>>⚡ Due Soon (3 days)</option>
-                            <option value="pending_action" <?= ($_GET['priority'] ?? '') === 'pending_action' ? 'selected' : '' ?>>🔄 Needs My Action</option>
+                            <option value="overdue" <?= ($_GET['priority'] ?? '') === 'overdue' ? 'selected' : '' ?>>Overdue Items</option>
+                            <option value="due_soon" <?= ($_GET['priority'] ?? '') === 'due_soon' ? 'selected' : '' ?>>Due Soon (3 days)</option>
+                            <option value="pending_action" <?= ($_GET['priority'] ?? '') === 'pending_action' ? 'selected' : '' ?>>Needs My Action</option>
                         </select>
                     </div>
                 <?php endif; ?>
