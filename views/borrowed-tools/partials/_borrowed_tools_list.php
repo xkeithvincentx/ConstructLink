@@ -66,7 +66,6 @@
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
                                     <?php if ($isBatch): ?>
-                                        <span class="badge bg-primary me-1"><?= $batchCount ?> items</span>
                                         <span class="fw-bold">
                                             <?php if (!empty($tool['batch_reference'])): ?>
                                                 <?= htmlspecialchars($tool['batch_reference']) ?>
@@ -317,9 +316,6 @@
                                             <i class="bi bi-clock-fill text-warning me-1" title="Due Soon"></i>
                                         <?php endif; ?>
                                         <?php if ($isBatch): ?>
-                                            <span class="badge bg-primary me-2" title="Batch with <?= $batchCount ?> items">
-                                                <?= $batchCount ?> items
-                                            </span>
                                             <span class="fw-medium">
                                                 <?php if (!empty($tool['batch_reference'])): ?>
                                                     <?= htmlspecialchars($tool['batch_reference']) ?>
