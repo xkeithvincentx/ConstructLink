@@ -346,19 +346,13 @@
                                         <?php elseif ($isDueSoon): ?>
                                             <i class="bi bi-clock-fill text-warning me-1" title="Due Soon"></i>
                                         <?php endif; ?>
-                                        <?php if ($isBatch): ?>
-                                            <span class="fw-medium">
-                                                <?php if (!empty($tool['batch_reference'])): ?>
-                                                    <?= htmlspecialchars($tool['batch_reference']) ?>
-                                                <?php else: ?>
-                                                    Batch #<?= $batchId ?>
-                                                <?php endif; ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
+                                        <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
+                                            <?php if (!empty($tool['batch_reference'])): ?>
+                                                <?= htmlspecialchars($tool['batch_reference']) ?>
+                                            <?php else: ?>
                                                 #<?= $tool['id'] ?>
-                                            </a>
-                                        <?php endif; ?>
+                                            <?php endif; ?>
+                                        </a>
                                     </div>
                                 </td>
 
