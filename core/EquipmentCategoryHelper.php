@@ -102,11 +102,12 @@ class EquipmentCategoryHelper {
                 $params[] = $projectId;
             }
 
-            // Exclude items currently borrowed
+            // Exclude items currently borrowed or in pending batches
             $sql .= " AND a.id NOT IN (
                 SELECT bt.asset_id
                 FROM borrowed_tools bt
-                WHERE bt.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Borrowed')
+                INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                WHERE btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Borrowed', 'Partially Returned')
             )";
 
             $sql .= " ORDER BY c.name, et.name, a.name";
