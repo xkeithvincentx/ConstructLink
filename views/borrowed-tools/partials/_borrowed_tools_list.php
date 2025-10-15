@@ -409,96 +409,60 @@
                                     </td>
                                 <?php endif; ?>
 
-                                <!-- Enhanced Return Schedule -->
+                                <!-- Return Date -->
                                 <td>
                                     <?php if ($tool['status'] === 'Returned' && !empty($tool['actual_return'])): ?>
-                                        <!-- Show actual return date for returned items -->
-                                        <div class="return-schedule">
-                                            <div class="fw-medium text-success">
-                                                <?= date('M j, Y', strtotime($tool['actual_return'])) ?>
-                                            </div>
-                                            <small class="text-muted">Returned on <?= date('l', strtotime($tool['actual_return'])) ?></small>
-
-                                            <?php
-                                            $expectedTime = strtotime($expectedReturn);
-                                            $actualTime = strtotime($tool['actual_return']);
-                                            $daysDiff = floor(($actualTime - $expectedTime) / 86400);
-                                            ?>
-
-                                            <?php if ($daysDiff < 0): ?>
-                                                <br><span class="badge bg-success">
-                                                    <?= abs($daysDiff) ?> days early
-                                                </span>
-                                            <?php elseif ($daysDiff > 0): ?>
-                                                <br><span class="badge bg-warning text-dark">
-                                                    <?= $daysDiff ?> days late
-                                                </span>
-                                            <?php else: ?>
-                                                <br><span class="badge bg-info">
-                                                    On time
-                                                </span>
-                                            <?php endif; ?>
+                                        <!-- Actual return date -->
+                                        <div class="fw-medium text-success">
+                                            <?= date('M j, Y', strtotime($tool['actual_return'])) ?>
                                         </div>
+                                        <small class="text-muted">Returned</small>
+                                        <?php
+                                        $expectedTime = strtotime($expectedReturn);
+                                        $actualTime = strtotime($tool['actual_return']);
+                                        $daysDiff = floor(($actualTime - $expectedTime) / 86400);
+                                        ?>
+                                        <?php if ($daysDiff < 0): ?>
+                                            <div><span class="badge bg-success"><?= abs($daysDiff) ?>d early</span></div>
+                                        <?php elseif ($daysDiff > 0): ?>
+                                            <div><span class="badge bg-warning text-dark"><?= $daysDiff ?>d late</span></div>
+                                        <?php else: ?>
+                                            <div><span class="badge bg-info">On time</span></div>
+                                        <?php endif; ?>
                                     <?php else: ?>
-                                        <!-- Show expected return date for items not yet returned -->
-                                        <div class="return-schedule">
-                                            <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : 'text-dark') ?>">
-                                                <?= date('M j, Y', strtotime($expectedReturn)) ?>
-                                            </div>
-                                            <small class="text-muted"><?= date('l', strtotime($expectedReturn)) ?></small>
-
-                                            <?php if ($isOverdue): ?>
-                                                <br><span class="badge bg-danger">
-                                                    <i class="bi bi-exclamation-triangle me-1"></i>
-                                                    <?= abs(floor((time() - strtotime($expectedReturn)) / 86400)) ?> days overdue
-                                                </span>
-                                            <?php elseif ($isDueSoon): ?>
-                                                <br><span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-clock me-1"></i>
-                                                    Due in <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days
-                                                </span>
-                                            <?php elseif ($tool['status'] === 'Borrowed'): ?>
-                                                <br><small class="text-success">
-                                                    <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?> days remaining
-                                                </small>
-                                            <?php endif; ?>
+                                        <!-- Expected return date -->
+                                        <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : '') ?>">
+                                            <?= date('M j, Y', strtotime($expectedReturn)) ?>
                                         </div>
+                                        <?php if ($isOverdue): ?>
+                                            <div><span class="badge bg-danger"><?= abs(floor((time() - strtotime($expectedReturn)) / 86400)) ?>d overdue</span></div>
+                                        <?php elseif ($isDueSoon): ?>
+                                            <small class="text-warning">Due in <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?>d</small>
+                                        <?php elseif ($tool['status'] === 'Released'): ?>
+                                            <small class="text-muted"><?= ceil((strtotime($expectedReturn) - time()) / 86400) ?>d left</small>
+                                        <?php else: ?>
+                                            <small class="text-muted">Expected</small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
 
-                                <!-- Enhanced Status with Progress -->
+                                <!-- Status -->
                                 <td>
                                     <?php
                                     $statusConfig = [
-                                        'Pending Verification' => ['class' => 'bg-primary', 'icon' => 'clock', 'progress' => 25],
-                                        'Pending Approval' => ['class' => 'bg-warning text-dark', 'icon' => 'hourglass-split', 'progress' => 50],
-                                        'Approved' => ['class' => 'bg-info', 'icon' => 'check-circle', 'progress' => 75],
-                                        'Borrowed' => ['class' => 'bg-secondary', 'icon' => 'box-arrow-up', 'progress' => 90],
-                                        'Returned' => ['class' => 'bg-success', 'icon' => 'check-square', 'progress' => 100],
-                                        'Overdue' => ['class' => 'bg-danger', 'icon' => 'exclamation-triangle', 'progress' => 90],
-                                        'Canceled' => ['class' => 'bg-dark', 'icon' => 'x-circle', 'progress' => 0]
+                                        'Pending Verification' => 'bg-warning text-dark',
+                                        'Pending Approval' => 'bg-info',
+                                        'Approved' => 'bg-primary',
+                                        'Released' => 'bg-secondary',
+                                        'Partially Returned' => 'bg-success',
+                                        'Returned' => 'bg-success',
+                                        'Canceled' => 'bg-dark'
                                     ];
-                                    $config = $statusConfig[$tool['status']] ?? ['class' => 'bg-secondary', 'icon' => 'question', 'progress' => 0];
+                                    $badgeClass = $statusConfig[$tool['status']] ?? 'bg-secondary';
                                     ?>
-                                    <div class="status-cell">
-                                        <span class="badge <?= $config['class'] ?> mb-1">
-                                            <i class="bi bi-<?= $config['icon'] ?> me-1"></i>
-                                            <?= htmlspecialchars($tool['status']) ?>
-                                        </span>
-
-                                        <!-- Progress Bar -->
-                                        <div class="progress" style="height: 4px;">
-                                            <div class="progress-bar <?= str_replace(['bg-', ' text-dark'], ['bg-', ''], $config['class']) ?>"
-                                                 style="width: <?= $config['progress'] ?>%"></div>
-                                        </div>
-
-                                        <!-- Time Indicators -->
-                                        <?php if (!empty($tool['borrowed_date']) && $tool['status'] === 'Borrowed'): ?>
-                                            <small class="text-muted">
-                                                Out for <?= floor((time() - strtotime($tool['borrowed_date'])) / 86400) ?> days
-                                            </small>
-                                        <?php endif; ?>
-                                    </div>
+                                    <span class="badge <?= $badgeClass ?>">
+                                        <?= htmlspecialchars($tool['status']) ?>
+                                    </span>
                                 </td>
 
                                 <!-- MVA Workflow (Management Roles) -->
@@ -538,8 +502,7 @@
                                     <td>
                                         <div class="request-info small">
                                             <?php if (!empty($tool['issued_by_name'])): ?>
-                                                <div class="fw-medium text-primary">
-                                                    <i class="bi bi-person-circle me-1"></i>
+                                                <div class="fw-medium">
                                                     <?= htmlspecialchars($tool['issued_by_name']) ?>
                                                 </div>
                                             <?php endif; ?>
@@ -691,30 +654,61 @@
                                         endif;
                                         ?>
 
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <!-- Primary Action -->
-                                            <?php if ($primaryAction): ?>
-                                                <?php if (isset($primaryAction['modal']) && $primaryAction['modal']): ?>
-                                                    <!-- Batch action - opens modal -->
-                                                    <button type="button"
-                                                            class="btn btn-sm <?= $primaryAction['class'] ?> batch-action-btn"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#<?= $primaryAction['modal_id'] ?>"
-                                                            data-batch-id="<?= $primaryAction['batch_id'] ?>"
-                                                            title="<?= $primaryAction['title'] ?>">
-                                                        <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
-                                                    </button>
-                                                <?php else: ?>
-                                                    <!-- Single item action - regular link -->
-                                                    <a href="<?= $primaryAction['url'] ?>"
-                                                       class="btn btn-sm <?= $primaryAction['class'] ?>"
-                                                       title="<?= $primaryAction['title'] ?>">
-                                                        <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
-                                                    </a>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <!-- Left: Action Buttons -->
+                                            <div class="d-flex gap-1">
+                                                <!-- Primary Action -->
+                                                <?php if ($primaryAction): ?>
+                                                    <?php if (isset($primaryAction['modal']) && $primaryAction['modal']): ?>
+                                                        <!-- Batch action - opens modal -->
+                                                        <button type="button"
+                                                                class="btn btn-sm <?= $primaryAction['class'] ?> batch-action-btn"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#<?= $primaryAction['modal_id'] ?>"
+                                                                data-batch-id="<?= $primaryAction['batch_id'] ?>"
+                                                                title="<?= $primaryAction['title'] ?>">
+                                                            <i class="bi bi-<?= $primaryAction['icon'] ?>"></i>
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <!-- Single item action - regular link -->
+                                                        <a href="<?= $primaryAction['url'] ?>"
+                                                           class="btn btn-sm <?= $primaryAction['class'] ?>"
+                                                           title="<?= $primaryAction['title'] ?>">
+                                                            <i class="bi bi-<?= $primaryAction['icon'] ?>"></i>
+                                                        </a>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
-                                            <?php endif; ?>
 
-                                            <!-- View Details (Always Available) -->
+                                                <!-- Overdue Reminder Button (if applicable) -->
+                                                <?php if ($isOverdue && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
+                                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                                            onclick="sendOverdueReminder(<?= $tool['id'] ?>)"
+                                                            title="Send overdue reminder">
+                                                        <i class="bi bi-bell"></i>
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <!-- Secondary Actions Dropdown -->
+                                                <?php if (!empty($secondaryActions)): ?>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <?php foreach ($secondaryActions as $action): ?>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="<?= $action['url'] ?>" title="<?= $action['title'] ?>">
+                                                                        <i class="bi bi-<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
+                                                                    </a>
+                                                                </li>
+                                                            <?php endforeach; ?>
+                                                        </ul>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <!-- Right: View Button -->
                                             <?php if ($viewAction): ?>
                                                 <a href="<?= $viewAction['url'] ?>"
                                                    class="btn btn-sm <?= $viewAction['class'] ?>"
@@ -722,37 +716,7 @@
                                                     <i class="bi bi-<?= $viewAction['icon'] ?>"></i>
                                                 </a>
                                             <?php endif; ?>
-
-                                            <!-- Secondary Actions Dropdown -->
-                                            <?php if (!empty($secondaryActions)): ?>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split"
-                                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <span class="visually-hidden">Toggle Dropdown</span>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <?php foreach ($secondaryActions as $action): ?>
-                                                            <li>
-                                                                <a class="dropdown-item" href="<?= $action['url'] ?>" title="<?= $action['title'] ?>">
-                                                                    <i class="bi bi-<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
-                                                                </a>
-                                                            </li>
-                                                        <?php endforeach; ?>
-                                                    </ul>
-                                                </div>
-                                            <?php endif; ?>
                                         </div>
-
-                                        <!-- Quick Status Indicators for Actions -->
-                                        <?php if ($isOverdue && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
-                                            <div class="mt-1">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                        onclick="sendOverdueReminder(<?= $tool['id'] ?>)"
-                                                        title="Send overdue reminder">
-                                                    <i class="bi bi-bell"></i>
-                                                </button>
-                                            </div>
-                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
