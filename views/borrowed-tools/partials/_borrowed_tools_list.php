@@ -334,14 +334,7 @@
                                 <!-- Enhanced Asset Details -->
                                 <td>
                                     <?php if ($isBatch): ?>
-                                        <div class="d-flex align-items-center">
-                                            <div>
-                                                <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
-                                                <small class="text-muted">
-                                                    Multiple categories
-                                                </small>
-                                            </div>
-                                        </div>
+                                        <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
                                     <?php else: ?>
                                         <div class="d-flex align-items-center">
                                             <?php if (!empty($tool['asset_image'])): ?>

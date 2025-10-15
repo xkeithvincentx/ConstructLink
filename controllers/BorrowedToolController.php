@@ -176,14 +176,36 @@ class BorrowedToolController {
             error_log("DEBUG - Results: Count=" . count($borrowedTools) . ", Projects=" . json_encode($projectsInResults));
             
             // Get statistics (filtered by project for operational roles, all projects for MVA oversight roles)
+            error_log("DEBUG - About to fetch batch stats");
             $batchModel = new BorrowedToolBatchModel();
             $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
+            error_log("DEBUG - Batch stats fetched: " . json_encode($batchStats));
+
+            // Get available non-consumable equipment count
+            error_log("DEBUG - About to query available equipment");
+            try {
+                $db = Database::getInstance()->getConnection();
+                $availableEquipmentSql = "SELECT COUNT(*) FROM assets WHERE is_consumable = 0 AND status = 'Active'";
+                $availableParams = [];
+                if ($projectFilter) {
+                    $availableEquipmentSql .= " AND project_id = ?";
+                    $availableParams[] = $projectFilter;
+                }
+                error_log("DEBUG - Available equipment SQL: $availableEquipmentSql, Params: " . json_encode($availableParams));
+                $availableStmt = $db->prepare($availableEquipmentSql);
+                $availableStmt->execute($availableParams);
+                $availableEquipmentCount = $availableStmt->fetchColumn();
+                error_log("DEBUG - Available equipment count: $availableEquipmentCount");
+            } catch (Exception $e) {
+                error_log("ERROR - Failed to get available equipment count: " . $e->getMessage());
+                $availableEquipmentCount = 0;
+            }
 
             // Transform batch stats to match expected format in views
             $borrowedToolStats = [
                 'pending_verification' => $batchStats['pending_verification'] ?? 0,
                 'pending_approval' => $batchStats['pending_approval'] ?? 0,
-                'approved' => $batchStats['approved'] ?? 0,
+                'available_equipment' => $availableEquipmentCount ?? 0,
                 'borrowed' => $batchStats['released'] ?? 0,  // "Released" batches are currently borrowed
                 'partially_returned' => $batchStats['partially_returned'] ?? 0,
                 'returned' => $batchStats['returned'] ?? 0,
@@ -191,10 +213,12 @@ class BorrowedToolController {
                 'total_borrowings' => $batchStats['total_batches'] ?? 0,
                 'overdue' => 0  // Will calculate separately
             ];
+            error_log("DEBUG - Transformed stats: " . json_encode($borrowedToolStats));
 
             // Get overdue batches (Released batches past expected_return date)
             $overdueCount = $batchModel->getOverdueBatchCount($projectFilter);
             $borrowedToolStats['overdue'] = $overdueCount;
+            error_log("DEBUG - Final stats with overdue: " . json_encode($borrowedToolStats));
 
             // Get overdue tools (filtered by project for operational roles, all projects for MVA oversight roles)
             $overdueTools = $this->borrowedToolModel->getOverdueBorrowedTools($projectFilter);
@@ -321,42 +345,94 @@ class BorrowedToolController {
      * Display borrowed tool details
      */
     public function view() {
-        $borrowId = $_GET['id'] ?? 0;
-        
-        if (!$borrowId) {
+        $id = $_GET['id'] ?? 0;
+
+        if (!$id) {
             http_response_code(404);
             include APP_ROOT . '/views/errors/404.php';
             return;
         }
-        
+
         // Ensure user has project assignment (MVA oversight roles are exempt)
         $this->requireProjectAssignment();
-        
+
         try {
-            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
-            
+            // First, check if this is a batch_id or a borrowed_tools id
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($id, $this->getProjectFilter());
+
+            if ($batch) {
+                // It's a batch request
+                $auth = $this->auth;
+                include APP_ROOT . '/views/borrowed-tools/view.php';
+                return;
+            }
+
+            // Not a batch, try loading as single borrowed tool
+            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($id, $this->getProjectFilter());
+
             if (!$borrowedTool) {
                 http_response_code(404);
                 include APP_ROOT . '/views/errors/404.php';
                 return;
             }
-            
-            $pageTitle = 'Borrowed Tool Details - ConstructLink™';
-            $pageHeader = 'Borrowed Tool: ' . htmlspecialchars($borrowedTool['asset_name']);
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
-                ['title' => 'View Details', 'url' => '?route=borrowed-tools/view&id=' . $borrowId]
+
+            // Convert single borrowed tool to batch format for unified view
+            $batch = [
+                'id' => $borrowedTool['batch_id'] ?? $borrowedTool['id'],
+                'batch_reference' => $borrowedTool['id'] ? "BT-" . str_pad($borrowedTool['id'], 6, '0', STR_PAD_LEFT) : 'N/A',
+                'borrower_name' => $borrowedTool['borrower_name'] ?? 'N/A',
+                'borrower_contact' => $borrowedTool['borrower_contact'] ?? '',
+                'expected_return' => $borrowedTool['expected_return'] ?? date('Y-m-d'),
+                'actual_return' => $borrowedTool['actual_return'] ?? null,
+                'status' => $borrowedTool['status'] ?? 'Unknown',
+                'is_critical_batch' => ($borrowedTool['acquisition_cost'] ?? 0) > 50000,
+                'purpose' => $borrowedTool['purpose'] ?? '',
+                'created_at' => $borrowedTool['created_at'] ?? date('Y-m-d H:i:s'),
+                'issued_by_name' => $borrowedTool['issued_by_name'] ?? 'Unknown',
+                'verified_by' => $borrowedTool['verified_by'] ?? null,
+                'verified_by_name' => $borrowedTool['verified_by_name'] ?? null,
+                'verification_date' => $borrowedTool['verification_date'] ?? null,
+                'verification_notes' => $borrowedTool['verification_notes'] ?? null,
+                'approved_by' => $borrowedTool['approved_by'] ?? null,
+                'approved_by_name' => $borrowedTool['approved_by_name'] ?? null,
+                'approval_date' => $borrowedTool['approval_date'] ?? null,
+                'approval_notes' => $borrowedTool['approval_notes'] ?? null,
+                'released_by' => $borrowedTool['borrowed_by'] ?? null,
+                'released_by_name' => $borrowedTool['borrowed_by_name'] ?? null,
+                'release_date' => $borrowedTool['borrowed_date'] ?? null,
+                'release_notes' => null,
+                'returned_by' => $borrowedTool['returned_by'] ?? null,
+                'returned_by_name' => $borrowedTool['returned_by_name'] ?? null,
+                'return_date' => $borrowedTool['return_date'] ?? null,
+                'return_notes' => null,
+                'canceled_by' => $borrowedTool['canceled_by'] ?? null,
+                'canceled_by_name' => $borrowedTool['canceled_by_name'] ?? null,
+                'cancellation_date' => $borrowedTool['cancellation_date'] ?? null,
+                'cancellation_reason' => $borrowedTool['cancellation_reason'] ?? null,
+                'total_items' => 1,
+                'total_quantity' => $borrowedTool['quantity'] ?? 1,
+                'items' => [
+                    [
+                        'id' => $borrowedTool['id'],
+                        'asset_id' => $borrowedTool['asset_id'],
+                        'asset_name' => $borrowedTool['asset_name'] ?? 'Unknown',
+                        'asset_ref' => $borrowedTool['asset_ref'] ?? 'N/A',
+                        'category_name' => $borrowedTool['category_name'] ?? 'N/A',
+                        'acquisition_cost' => $borrowedTool['acquisition_cost'] ?? 0,
+                        'quantity' => $borrowedTool['quantity'] ?? 1,
+                        'quantity_returned' => 0, // Old single items don't track partial returns
+                        'status' => $borrowedTool['status'] ?? 'Unknown'
+                    ]
+                ]
             ];
-            
-            // Pass auth instance to view
+
             $auth = $this->auth;
-            
             include APP_ROOT . '/views/borrowed-tools/view.php';
-            
+
         } catch (Exception $e) {
-            error_log("Borrowed tool view error: " . $e->getMessage());
-            $error = 'Failed to load borrowed tool details';
+            error_log("View request error: " . $e->getMessage());
+            $error = 'Failed to load request details';
             include APP_ROOT . '/views/errors/500.php';
         }
     }
@@ -1302,7 +1378,7 @@ class BorrowedToolController {
     }
 
     /**
-     * View batch details
+     * View request details (single or multi-item)
      */
     public function viewBatch() {
         $this->requireProjectAssignment();
@@ -1325,11 +1401,11 @@ class BorrowedToolController {
                 return;
             }
 
-            include APP_ROOT . '/views/borrowed-tools/batch-view.php';
+            include APP_ROOT . '/views/borrowed-tools/view.php';
 
         } catch (Exception $e) {
-            error_log("View batch error: " . $e->getMessage());
-            $error = 'Failed to load batch details';
+            error_log("View request error: " . $e->getMessage());
+            $error = 'Failed to load request details';
             include APP_ROOT . '/views/errors/500.php';
         }
     }

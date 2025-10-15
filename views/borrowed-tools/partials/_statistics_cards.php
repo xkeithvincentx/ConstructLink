@@ -58,21 +58,21 @@
                 </div>
             </div>
 
-            <!-- Ready to Issue -->
+            <!-- Available Equipment -->
             <div class="col-lg-3 col-md-6">
                 <div class="card h-100" style="border-left: 4px solid var(--success-color);">
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
                             <div class="rounded-circle bg-light p-2 me-3">
-                                <i class="bi bi-check-circle text-success fs-5"></i>
+                                <i class="bi bi-box-seam text-success fs-5"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="text-muted mb-1 small">Ready to Issue</h6>
-                                <h3 class="mb-0"><?= $borrowedToolStats['approved'] ?? 0 ?></h3>
+                                <h6 class="text-muted mb-1 small">Available Equipment</h6>
+                                <h3 class="mb-0"><?= $borrowedToolStats['available_equipment'] ?? 0 ?></h3>
                             </div>
                         </div>
                         <p class="text-muted mb-0 small">
-                            <i class="bi bi-box-arrow-right me-1"></i>Awaiting release
+                            <i class="bi bi-check-circle me-1"></i>Non-consumable items
                         </p>
                     </div>
                 </div>
