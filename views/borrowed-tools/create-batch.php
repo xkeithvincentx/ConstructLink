@@ -86,21 +86,31 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 <!-- MVA Workflow Info -->
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="alert alert-success">
-            <h6><i class="bi bi-lightning-charge me-1"></i><strong>Basic Tools Workflow</strong> (≤₱50,000)</h6>
-            <p class="mb-2"><span class="badge bg-primary">Streamlined Process</span> - Instant approval</p>
-            <small>Warehouseman: Create → Auto-Verify → Auto-Approve → Released</small>
+        <div class="card border-success shadow-sm">
+            <div class="card-body bg-success bg-opacity-10">
+                <h6 class="text-success mb-2">
+                    <i class="bi bi-lightning-charge me-1"></i>
+                    <strong>Basic Tools Workflow</strong> (≤₱50,000)
+                </h6>
+                <p class="mb-2"><span class="badge bg-primary">Streamlined Process</span> - Instant approval</p>
+                <small class="text-muted">Warehouseman: Create → Auto-Verify → Auto-Approve → Released</small>
+            </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="alert alert-warning">
-            <h6><i class="bi bi-shield-check me-1"></i><strong>Critical Tools Workflow</strong> (>₱50,000)</h6>
-            <p class="mb-2"><span class="badge bg-warning text-dark">Full MVA Process</span></p>
-            <small>
-                <span class="badge bg-primary">Maker</span> (Warehouseman) →
-                <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
-                <span class="badge bg-success">Authorizer</span> (Asset Director/Finance Director)
-            </small>
+        <div class="card border-warning shadow-sm">
+            <div class="card-body bg-warning bg-opacity-10">
+                <h6 class="text-warning mb-2">
+                    <i class="bi bi-shield-check me-1"></i>
+                    <strong>Critical Tools Workflow</strong> (>₱50,000)
+                </h6>
+                <p class="mb-2"><span class="badge bg-warning text-dark">Full MVA Process</span></p>
+                <small class="text-muted">
+                    <span class="badge bg-primary">Maker</span> (Warehouseman) →
+                    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
+                    <span class="badge bg-success">Authorizer</span> (Asset Director/Finance Director)
+                </small>
+            </div>
         </div>
     </div>
 </div>
