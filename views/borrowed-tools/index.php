@@ -408,7 +408,7 @@ usort($displayItems, function($a, $b) {
                 <h5 class="mt-3 text-muted">No borrowed tools found</h5>
                 <p class="text-muted">Try adjusting your filters or borrow your first tool.</p>
                 <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
-                    <a href="?route=borrowed-tools/create" class="btn btn-primary">
+                    <a href="?route=borrowed-tools/create-batch" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Borrow First Tool
                     </a>
                 <?php endif; ?>
@@ -758,8 +758,14 @@ usort($displayItems, function($a, $b) {
                                                 ];
                                             endif;
 
-                                            // View action for batch - no single view page
-                                            $viewAction = null;
+                                            // View action for batch
+                                            $viewAction = [
+                                                'url' => "?route=borrowed-tools/batch/view&batch_id={$batchId}",
+                                                'class' => 'btn-outline-primary',
+                                                'icon' => 'eye',
+                                                'text' => '',
+                                                'title' => 'View batch details'
+                                            ];
                                         } else {
                                             // Single item - use regular page links
                                             if ($tool['status'] === 'Pending Verification' && $auth->hasRole(['System Admin', 'Project Manager'])):

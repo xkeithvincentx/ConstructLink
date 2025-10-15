@@ -202,15 +202,26 @@ class BorrowedToolController {
     
     /**
      * Display create borrowed tool form
+     * Redirects to create-batch which handles both single and multiple items
      */
     public function create() {
+        // Redirect to create-batch (unified interface for single/multiple items)
+        header('Location: ?route=borrowed-tools/create-batch');
+        exit;
+    }
+
+    /**
+     * Old single-item create method - kept for reference
+     * TODO: Remove after confirming all functionality moved to create-batch
+     */
+    private function oldCreate_DEPRECATED() {
         // Centralized RBAC: Only users with create permission can access
         if (!$this->hasBorrowedToolPermission('create')) {
             http_response_code(403);
             include APP_ROOT . '/views/errors/403.php';
             return;
         }
-        
+
         $errors = [];
         $messages = [];
         $formData = [];
@@ -1278,7 +1289,7 @@ class BorrowedToolController {
     public function viewBatch() {
         $this->requireProjectAssignment();
 
-        $batchId = $_GET['id'] ?? 0;
+        $batchId = $_GET['batch_id'] ?? $_GET['id'] ?? 0;
 
         if (!$batchId) {
             http_response_code(404);
@@ -1311,55 +1322,53 @@ class BorrowedToolController {
     public function verifyBatch() {
         $this->requireProjectAssignment();
 
-        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        // Only accept POST requests (form handled by modal in index.php)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?route=borrowed-tools&error=invalid_request');
+            exit;
         }
 
-        $errors = [];
+        $batchId = $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            header('Location: ?route=borrowed-tools&error=batch_id_required');
+            exit;
+        }
 
         try {
+            CSRFProtection::validateRequest();
+
             $batchModel = new BorrowedToolBatchModel();
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
             if (!$batch) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=batch_not_found');
+                exit;
             }
 
             // Check permission
             if (!$this->hasBorrowedToolPermission('verify', $batch)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=permission_denied');
+                exit;
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
+            $notes = Validator::sanitize($_POST['verification_notes'] ?? '');
+            $verifiedBy = $this->auth->getCurrentUser()['id'];
 
-                $notes = Validator::sanitize($_POST['verification_notes'] ?? '');
-                $verifiedBy = $this->auth->getCurrentUser()['id'];
+            $result = $batchModel->verifyBatch($batchId, $verifiedBy, $notes);
 
-                $result = $batchModel->verifyBatch($batchId, $verifiedBy, $notes);
-
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_verified');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
+            if ($result['success']) {
+                header('Location: ?route=borrowed-tools&message=batch_verified');
+                exit;
+            } else {
+                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
+                exit;
             }
-
-            include APP_ROOT . '/views/borrowed-tools/batch-verify.php';
 
         } catch (Exception $e) {
             error_log("Batch verification error: " . $e->getMessage());
-            $error = 'Failed to process verification';
-            include APP_ROOT . '/views/errors/500.php';
+            header('Location: ?route=borrowed-tools&error=verification_failed');
+            exit;
         }
     }
 
@@ -1369,55 +1378,53 @@ class BorrowedToolController {
     public function approveBatch() {
         $this->requireProjectAssignment();
 
-        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        // Only accept POST requests (form handled by modal in index.php)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?route=borrowed-tools&error=invalid_request');
+            exit;
         }
 
-        $errors = [];
+        $batchId = $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            header('Location: ?route=borrowed-tools&error=batch_id_required');
+            exit;
+        }
 
         try {
+            CSRFProtection::validateRequest();
+
             $batchModel = new BorrowedToolBatchModel();
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
             if (!$batch) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=batch_not_found');
+                exit;
             }
 
             // Check permission
             if (!$this->hasBorrowedToolPermission('approve', $batch)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=permission_denied');
+                exit;
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
+            $notes = Validator::sanitize($_POST['approval_notes'] ?? '');
+            $approvedBy = $this->auth->getCurrentUser()['id'];
 
-                $notes = Validator::sanitize($_POST['approval_notes'] ?? '');
-                $approvedBy = $this->auth->getCurrentUser()['id'];
+            $result = $batchModel->approveBatch($batchId, $approvedBy, $notes);
 
-                $result = $batchModel->approveBatch($batchId, $approvedBy, $notes);
-
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_approved');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
+            if ($result['success']) {
+                header('Location: ?route=borrowed-tools&message=batch_approved');
+                exit;
+            } else {
+                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
+                exit;
             }
-
-            include APP_ROOT . '/views/borrowed-tools/batch-approve.php';
 
         } catch (Exception $e) {
             error_log("Batch approval error: " . $e->getMessage());
-            $error = 'Failed to process approval';
-            include APP_ROOT . '/views/errors/500.php';
+            header('Location: ?route=borrowed-tools&error=approval_failed');
+            exit;
         }
     }
 
@@ -1427,55 +1434,53 @@ class BorrowedToolController {
     public function releaseBatch() {
         $this->requireProjectAssignment();
 
-        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        // Only accept POST requests (form handled by modal in index.php)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?route=borrowed-tools&error=invalid_request');
+            exit;
         }
 
-        $errors = [];
+        $batchId = $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            header('Location: ?route=borrowed-tools&error=batch_id_required');
+            exit;
+        }
 
         try {
+            CSRFProtection::validateRequest();
+
             $batchModel = new BorrowedToolBatchModel();
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
             if (!$batch) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=batch_not_found');
+                exit;
             }
 
             // Check permission
             if (!$this->hasBorrowedToolPermission('borrow', $batch)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=permission_denied');
+                exit;
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
+            $notes = Validator::sanitize($_POST['release_notes'] ?? '');
+            $releasedBy = $this->auth->getCurrentUser()['id'];
 
-                $notes = Validator::sanitize($_POST['release_notes'] ?? '');
-                $releasedBy = $this->auth->getCurrentUser()['id'];
+            $result = $batchModel->releaseBatch($batchId, $releasedBy, $notes);
 
-                $result = $batchModel->releaseBatch($batchId, $releasedBy, $notes);
-
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_released');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
+            if ($result['success']) {
+                header('Location: ?route=borrowed-tools&message=batch_released');
+                exit;
+            } else {
+                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
+                exit;
             }
-
-            include APP_ROOT . '/views/borrowed-tools/batch-release.php';
 
         } catch (Exception $e) {
             error_log("Batch release error: " . $e->getMessage());
-            $error = 'Failed to process release';
-            include APP_ROOT . '/views/errors/500.php';
+            header('Location: ?route=borrowed-tools&error=release_failed');
+            exit;
         }
     }
 
@@ -1650,55 +1655,53 @@ class BorrowedToolController {
     public function cancelBatch() {
         $this->requireProjectAssignment();
 
-        $batchId = $_GET['id'] ?? $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        // Only accept POST requests (can be handled by modal in index.php if needed)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ?route=borrowed-tools&error=invalid_request');
+            exit;
         }
 
-        $errors = [];
+        $batchId = $_POST['batch_id'] ?? 0;
+
+        if (!$batchId) {
+            header('Location: ?route=borrowed-tools&error=batch_id_required');
+            exit;
+        }
 
         try {
+            CSRFProtection::validateRequest();
+
             $batchModel = new BorrowedToolBatchModel();
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
             if (!$batch) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=batch_not_found');
+                exit;
             }
 
             // Check permission
             if (!$this->hasBorrowedToolPermission('cancel', $batch)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
+                header('Location: ?route=borrowed-tools&error=permission_denied');
+                exit;
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
+            $reason = Validator::sanitize($_POST['cancellation_reason'] ?? '');
+            $canceledBy = $this->auth->getCurrentUser()['id'];
 
-                $reason = Validator::sanitize($_POST['cancellation_reason'] ?? '');
-                $canceledBy = $this->auth->getCurrentUser()['id'];
+            $result = $batchModel->cancelBatch($batchId, $canceledBy, $reason);
 
-                $result = $batchModel->cancelBatch($batchId, $canceledBy, $reason);
-
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_canceled');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
+            if ($result['success']) {
+                header('Location: ?route=borrowed-tools&message=batch_canceled');
+                exit;
+            } else {
+                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
+                exit;
             }
-
-            include APP_ROOT . '/views/borrowed-tools/batch-cancel.php';
 
         } catch (Exception $e) {
             error_log("Batch cancellation error: " . $e->getMessage());
-            $error = 'Failed to process cancellation';
-            include APP_ROOT . '/views/errors/500.php';
+            header('Location: ?route=borrowed-tools&error=cancellation_failed');
+            exit;
         }
     }
 
