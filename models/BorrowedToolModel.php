@@ -388,21 +388,32 @@ class BorrowedToolModel extends BaseModel {
             }
         }
         // No else clause - show all statuses by default (including Canceled and Returned)
-        
+
+        // Priority filter
+        if (!empty($filters['priority'])) {
+            if ($filters['priority'] === 'overdue') {
+                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return < CURDATE()";
+            } elseif ($filters['priority'] === 'due_soon') {
+                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)";
+            } elseif ($filters['priority'] === 'pending_action') {
+                $conditions[] = "bt.status IN ('Pending Verification', 'Pending Approval')";
+            }
+        }
+
         if (!empty($filters['date_from'])) {
             $conditions[] = "DATE(bt.created_at) >= ?";
             $params[] = $filters['date_from'];
         }
-        
+
         if (!empty($filters['date_to'])) {
             $conditions[] = "DATE(bt.created_at) <= ?";
             $params[] = $filters['date_to'];
         }
-        
+
         if (!empty($filters['search'])) {
-            $conditions[] = "(a.name LIKE ? OR a.ref LIKE ? OR bt.borrower_name LIKE ? OR bt.purpose LIKE ?)";
+            $conditions[] = "(a.name LIKE ? OR a.ref LIKE ? OR bt.borrower_name LIKE ? OR bt.purpose LIKE ? OR btb.batch_reference LIKE ?)";
             $searchTerm = "%{$filters['search']}%";
-            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         }
         
         // Filter by project if specified
@@ -418,12 +429,13 @@ class BorrowedToolModel extends BaseModel {
         
         // Count total records
         $countSql = "
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM borrowed_tools bt
             INNER JOIN assets a ON bt.asset_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN users u ON bt.issued_by = u.id
+            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
             {$whereClause}
         ";
         

@@ -133,6 +133,7 @@ class BorrowedToolController {
         if (!empty($_GET['search'])) $filters['search'] = $_GET['search'];
         if (!empty($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
         if (!empty($_GET['date_to'])) $filters['date_to'] = $_GET['date_to'];
+        if (!empty($_GET['priority'])) $filters['priority'] = $_GET['priority'];
         
         // Apply project filtering based on user role
         $projectFilter = $this->getProjectFilter();
@@ -176,26 +177,23 @@ class BorrowedToolController {
             error_log("DEBUG - Results: Count=" . count($borrowedTools) . ", Projects=" . json_encode($projectsInResults));
             
             // Get statistics (filtered by project for operational roles, all projects for MVA oversight roles)
-            error_log("DEBUG - About to fetch batch stats");
             $batchModel = new BorrowedToolBatchModel();
             $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
-            error_log("DEBUG - Batch stats fetched: " . json_encode($batchStats));
 
             // Get available non-consumable equipment count
-            error_log("DEBUG - About to query available equipment");
             try {
                 $db = Database::getInstance()->getConnection();
-                $availableEquipmentSql = "SELECT COUNT(*) FROM assets WHERE is_consumable = 0 AND status = 'Active'";
+                $availableEquipmentSql = "SELECT COUNT(*) FROM assets a
+                    JOIN categories c ON a.category_id = c.id
+                    WHERE c.is_consumable = 0 AND a.status = 'available'";
                 $availableParams = [];
                 if ($projectFilter) {
-                    $availableEquipmentSql .= " AND project_id = ?";
+                    $availableEquipmentSql .= " AND a.project_id = ?";
                     $availableParams[] = $projectFilter;
                 }
-                error_log("DEBUG - Available equipment SQL: $availableEquipmentSql, Params: " . json_encode($availableParams));
                 $availableStmt = $db->prepare($availableEquipmentSql);
                 $availableStmt->execute($availableParams);
                 $availableEquipmentCount = $availableStmt->fetchColumn();
-                error_log("DEBUG - Available equipment count: $availableEquipmentCount");
             } catch (Exception $e) {
                 error_log("ERROR - Failed to get available equipment count: " . $e->getMessage());
                 $availableEquipmentCount = 0;
@@ -213,12 +211,10 @@ class BorrowedToolController {
                 'total_borrowings' => $batchStats['total_batches'] ?? 0,
                 'overdue' => 0  // Will calculate separately
             ];
-            error_log("DEBUG - Transformed stats: " . json_encode($borrowedToolStats));
 
             // Get overdue batches (Released batches past expected_return date)
             $overdueCount = $batchModel->getOverdueBatchCount($projectFilter);
             $borrowedToolStats['overdue'] = $overdueCount;
-            error_log("DEBUG - Final stats with overdue: " . json_encode($borrowedToolStats));
 
             // Get overdue tools (filtered by project for operational roles, all projects for MVA oversight roles)
             $overdueTools = $this->borrowedToolModel->getOverdueBorrowedTools($projectFilter);

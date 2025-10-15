@@ -118,7 +118,7 @@
                 <div class="mb-3">
                     <label for="search-mobile" class="form-label">Search</label>
                     <input type="text" class="form-control" id="search-mobile" name="search"
-                           placeholder="Item, borrower, purpose..."
+                           placeholder="Reference, equipment name, borrower..."
                            value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                 </div>
 
@@ -136,21 +136,19 @@
                 <hr class="my-3">
                 <div class="d-grid gap-2">
                     <?php if ($auth->hasRole(['System Admin', 'Project Manager'])): ?>
-                        <button type="button" class="btn btn-outline-warning" onclick="filterByStatus('Pending Verification')">
+                        <button type="button" class="btn btn-outline-warning" onclick="quickFilter('Pending Verification')">
                             <i class="bi bi-clock me-1"></i>My Verifications
                         </button>
                     <?php endif; ?>
                     <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-                        <button type="button" class="btn btn-outline-info" onclick="filterByStatus('Pending Approval')">
+                        <button type="button" class="btn btn-outline-info" onclick="quickFilter('Pending Approval')">
                             <i class="bi bi-shield-check me-1"></i>My Approvals
                         </button>
                     <?php endif; ?>
-                    <?php if ($auth->hasRole(['System Admin', 'Warehouseman'])): ?>
-                        <button type="button" class="btn btn-outline-success" onclick="filterByStatus('Approved')">
-                            <i class="bi bi-box-arrow-up me-1"></i>Ready to Issue
-                        </button>
-                    <?php endif; ?>
-                    <button type="button" class="btn btn-outline-danger" onclick="filterByStatus('Overdue')">
+                    <button type="button" class="btn btn-outline-primary" onclick="quickFilter('Borrowed')">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Currently Out
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="quickFilter('overdue')">
                         <i class="bi bi-exclamation-triangle me-1"></i>Overdue
                     </button>
                 </div>
@@ -166,9 +164,19 @@
             </h6>
         </div>
         <div class="card-body">
-            <form method="GET" action="?route=borrowed-tools" class="row g-3">
+            <form method="GET" id="filter-form" class="row g-3">
+                <input type="hidden" name="route" value="borrowed-tools">
+
+                <!-- Search Field -->
+                <div class="col-lg-4 col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control form-control-sm" id="search" name="search"
+                           placeholder="Reference, equipment name, borrower..."
+                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                </div>
+
                 <!-- Status Filter - Role-based Options -->
-                <div class="col-lg-2 col-md-3">
+                <div class="col-lg-2 col-md-4">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select form-select-sm" id="status" name="status">
                         <option value="">All Statuses</option>
@@ -204,28 +212,15 @@
                     </select>
                 </div>
 
-                <!-- Priority Filter - For Management Roles -->
-                <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
-                    <div class="col-lg-2 col-md-3">
-                        <label for="priority" class="form-label">Priority</label>
-                        <select class="form-select form-select-sm" id="priority" name="priority">
-                            <option value="">All Priorities</option>
-                            <option value="overdue" <?= ($_GET['priority'] ?? '') === 'overdue' ? 'selected' : '' ?>>Overdue Items</option>
-                            <option value="due_soon" <?= ($_GET['priority'] ?? '') === 'due_soon' ? 'selected' : '' ?>>Due Soon (3 days)</option>
-                            <option value="pending_action" <?= ($_GET['priority'] ?? '') === 'pending_action' ? 'selected' : '' ?>>Needs My Action</option>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
                 <!-- Project Filter - For Project Managers and Site Staff -->
                 <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk']) && !empty($projects)): ?>
-                    <div class="col-lg-2 col-md-3">
+                    <div class="col-lg-2 col-md-6">
                         <label for="project" class="form-label">Project</label>
                         <select class="form-select form-select-sm" id="project" name="project">
                             <option value="">All Projects</option>
                             <?php foreach ($projects as $project): ?>
                                 <option value="<?= $project['id'] ?>" <?= ($_GET['project'] ?? '') == $project['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($project['code']) ?> - <?= htmlspecialchars($project['name']) ?>
+                                    <?= htmlspecialchars($project['code']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -244,40 +239,30 @@
                            value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
                 </div>
 
-                <!-- Search Field -->
-                <div class="col-lg-2 col-md-3">
-                    <label for="search" class="form-label">Search</label>
-                    <input type="text" class="form-control form-control-sm" id="search" name="search"
-                           placeholder="Item, borrower..."
-                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-                </div>
-
                 <!-- Action Buttons -->
                 <div class="col-12 d-flex align-items-end gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-search me-1"></i>Filter
+                        <i class="bi bi-search me-1"></i>Apply Filters
                     </button>
                     <a href="?route=borrowed-tools" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-x-circle me-1"></i>Clear
+                        <i class="bi bi-x-circle me-1"></i>Clear All
                     </a>
 
                     <!-- Quick Action Buttons -->
                     <?php if ($auth->hasRole(['System Admin', 'Project Manager'])): ?>
-                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterByStatus('Pending Verification')">
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="quickFilter('Pending Verification')">
                             <i class="bi bi-clock me-1"></i>My Verifications
                         </button>
                     <?php endif; ?>
                     <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
-                        <button type="button" class="btn btn-outline-info btn-sm" onclick="filterByStatus('Pending Approval')">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="quickFilter('Pending Approval')">
                             <i class="bi bi-shield-check me-1"></i>My Approvals
                         </button>
                     <?php endif; ?>
-                    <?php if ($auth->hasRole(['System Admin', 'Warehouseman'])): ?>
-                        <button type="button" class="btn btn-outline-success btn-sm" onclick="filterByStatus('Approved')">
-                            <i class="bi bi-box-arrow-up me-1"></i>Ready to Issue
-                        </button>
-                    <?php endif; ?>
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="filterByStatus('Overdue')">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="quickFilter('Borrowed')">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Currently Out
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="quickFilter('overdue')">
                         <i class="bi bi-exclamation-triangle me-1"></i>Overdue
                     </button>
                 </div>

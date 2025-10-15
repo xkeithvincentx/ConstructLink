@@ -385,18 +385,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Quick filter functions
-function filterByStatus(status) {
-    // Handle both desktop and mobile status selects
-    const desktopStatus = document.getElementById('status');
-    const mobileStatus = document.getElementById('status-mobile');
-
-    if (desktopStatus) {
-        desktopStatus.value = status;
-        desktopStatus.closest('form').submit();
-    } else if (mobileStatus) {
-        mobileStatus.value = status;
-        mobileStatus.closest('form').submit();
+// Quick filter function
+function quickFilter(status) {
+    // Navigate to borrowed-tools with status filter
+    if (status === 'overdue') {
+        window.location.href = '?route=borrowed-tools&priority=overdue';
+    } else {
+        window.location.href = '?route=borrowed-tools&status=' + encodeURIComponent(status);
     }
 }
 
