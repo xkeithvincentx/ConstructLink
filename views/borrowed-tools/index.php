@@ -63,7 +63,7 @@ usort($displayItems, function($a, $b) {
 <div class="mb-4">
     <!-- Mobile: Full width buttons stacked -->
     <div class="d-lg-none d-grid gap-2">
-        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
+        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
             <a href="?route=borrowed-tools/create-batch" class="btn btn-primary">
                 <i class="bi bi-cart-plus me-1"></i>Borrow Equipment
             </a>
@@ -76,7 +76,7 @@ usort($displayItems, function($a, $b) {
     <!-- Desktop: Horizontal layout with left/right split -->
     <div class="d-none d-lg-flex justify-content-between align-items-center">
         <div class="btn-toolbar gap-2">
-            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
+            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
                 <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
                     <i class="bi bi-cart-plus me-1"></i>Borrow Equipment
                 </a>

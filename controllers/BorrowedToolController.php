@@ -43,8 +43,8 @@ class BorrowedToolController {
         // Handle MVA workflow permissions
         switch ($action) {
             case 'create':
-                // Maker: Warehouseman, Site Inventory Clerk (System Admin already handled above)
-                return in_array($userRole, ['Warehouseman', 'Site Inventory Clerk']);
+                // Maker: Warehouseman, Site Inventory Clerk, Project Manager (System Admin already handled above)
+                return in_array($userRole, ['Warehouseman', 'Site Inventory Clerk', 'Project Manager']);
                 
             case 'create_and_process':
                 // For streamlined workflow when same user can do all steps (Basic tools only)
