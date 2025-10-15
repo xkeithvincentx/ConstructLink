@@ -245,22 +245,25 @@ class EquipmentCategoryHelper {
 
     /**
      * Get common borrower names (autocomplete helper)
-     * Returns list of borrower names who have borrowed before
+     * Returns list of borrower names who have borrowed before with active borrow info
      *
      * @param int|null $projectId Filter by project
      * @param int $limit Number of results
-     * @return array List of borrower names with borrow counts
+     * @return array List of borrower names with borrow counts and active borrows
      */
     public static function getCommonBorrowers($projectId = null, $limit = 20) {
         try {
             $db = Database::getInstance()->getConnection();
 
+            // Standardize borrower names: UPPER(TRIM(borrower_name))
             $sql = "
                 SELECT
-                    btb.borrower_name,
+                    TRIM(btb.borrower_name) as borrower_name,
                     btb.borrower_contact,
-                    COUNT(*) as borrow_count,
-                    MAX(btb.created_at) as last_borrow_date
+                    COUNT(DISTINCT btb.id) as borrow_count,
+                    MAX(btb.created_at) as last_borrow_date,
+                    COUNT(DISTINCT CASE WHEN btb.status IN ('Released', 'Partially Returned') THEN btb.id END) as active_borrows,
+                    SUM(CASE WHEN btb.status IN ('Released', 'Partially Returned') THEN btb.total_items ELSE 0 END) as active_items_count
                 FROM borrowed_tool_batches btb
             ";
 
@@ -278,8 +281,9 @@ class EquipmentCategoryHelper {
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             }
 
-            $sql .= " GROUP BY btb.borrower_name, btb.borrower_contact
-                      ORDER BY borrow_count DESC, last_borrow_date DESC
+            // Group by standardized name (trimmed, case-insensitive grouping)
+            $sql .= " GROUP BY UPPER(TRIM(btb.borrower_name)), btb.borrower_contact
+                      ORDER BY active_borrows DESC, borrow_count DESC, last_borrow_date DESC
                       LIMIT ?";
 
             $params[] = $limit;

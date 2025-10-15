@@ -430,34 +430,76 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Borrower Name with Autocomplete -->
-                    <div class="mb-3 position-relative">
-                        <label for="borrower_name" class="form-label">
-                            Borrower Name <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               class="form-control"
-                               id="borrower_name"
-                               x-model="formData.borrower_name"
-                               @input="showBorrowerSuggestions = true"
-                               @blur="setTimeout(() => showBorrowerSuggestions = false, 200)"
-                               required>
+                    <!-- Borrower Name Fields with Autocomplete -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 position-relative">
+                            <label for="borrower_last_name" class="form-label">
+                                Last Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control text-capitalize"
+                                   id="borrower_last_name"
+                                   x-model="formData.borrower_last_name"
+                                   @input="updateBorrowerSearch(); showBorrowerSuggestions = true"
+                                   @blur="setTimeout(() => showBorrowerSuggestions = false, 200)"
+                                   placeholder="e.g., Dela Cruz"
+                                   required>
+                        </div>
+                        <div class="col-md-6 position-relative">
+                            <label for="borrower_first_name" class="form-label">
+                                First Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control text-capitalize"
+                                   id="borrower_first_name"
+                                   x-model="formData.borrower_first_name"
+                                   @input="updateBorrowerSearch(); showBorrowerSuggestions = true"
+                                   @blur="setTimeout(() => showBorrowerSuggestions = false, 200)"
+                                   placeholder="e.g., Juan"
+                                   required>
+                        </div>
+                    </div>
 
-                        <!-- Borrower Suggestions Dropdown -->
-                        <div class="card position-absolute w-100 mt-1"
-                             style="z-index: 1000; max-height: 200px; overflow-y: auto;"
+                    <!-- Borrower Suggestions Dropdown -->
+                    <div class="mb-3 position-relative">
+                        <div class="card position-absolute w-100"
+                             style="z-index: 1000; max-height: 300px; overflow-y: auto; top: -10px;"
                              x-show="showBorrowerSuggestions && filteredBorrowers.length > 0"
                              x-transition>
-                            <template x-for="borrower in filteredBorrowers" :key="borrower.borrower_name">
-                                <div class="borrower-suggestion"
-                                     @click="selectBorrower(borrower.borrower_name, borrower.borrower_contact || '')">
-                                    <strong x-text="borrower.borrower_name"></strong>
-                                    <template x-if="borrower.borrower_contact">
-                                        <br><small class="text-muted" x-text="borrower.borrower_contact"></small>
-                                    </template>
-                                    <small class="text-muted float-end" x-text="borrower.borrow_count + ' times'"></small>
-                                </div>
-                            </template>
+                            <div class="card-header bg-light py-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Select from previous borrowers or continue typing
+                                </small>
+                            </div>
+                            <div class="list-group list-group-flush">
+                                <template x-for="borrower in filteredBorrowers" :key="borrower.borrower_name">
+                                    <div class="list-group-item list-group-item-action borrower-suggestion"
+                                         @click="selectBorrower(borrower)"
+                                         :class="borrower.active_borrows > 0 ? 'border-start border-warning border-3' : ''">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <strong x-text="borrower.borrower_name"></strong>
+                                                <template x-if="borrower.borrower_contact">
+                                                    <br><small class="text-muted">
+                                                        <i class="bi bi-telephone me-1"></i>
+                                                        <span x-text="borrower.borrower_contact"></span>
+                                                    </small>
+                                                </template>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="badge bg-secondary" x-text="borrower.borrow_count + ' times'"></small>
+                                                <template x-if="borrower.active_borrows > 0">
+                                                    <br><small class="badge bg-warning text-dark mt-1">
+                                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                                        <span x-text="borrower.active_items_count + ' items out'"></span>
+                                                    </small>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
 
@@ -535,11 +577,14 @@ function batchBorrowingApp() {
 
         // Form data
         formData: {
-            borrower_name: '',
+            borrower_last_name: '',
+            borrower_first_name: '',
+            borrower_name: '',  // Combined standardized name (Last, First)
             borrower_contact: '',
             expected_return: '',
             purpose: ''
         },
+        borrowerSearchQuery: '',  // Combined search query for filtering
         showBorrowerSuggestions: false,
         submitting: false,
 
@@ -565,14 +610,25 @@ function batchBorrowingApp() {
         },
 
         get filteredBorrowers() {
-            if (!this.formData.borrower_name || this.formData.borrower_name.length < 1) {
+            if (this.borrowerSearchQuery.length < 1) {
                 return [];
             }
 
-            const query = this.formData.borrower_name.toLowerCase();
-            return this.allBorrowers.filter(borrower =>
-                borrower.borrower_name.toLowerCase().includes(query)
-            ).slice(0, 5); // Limit to 5 suggestions
+            const query = this.borrowerSearchQuery.toLowerCase().trim();
+            const queryParts = query.split(/\s+/);
+
+            return this.allBorrowers.filter(borrower => {
+                const borrowerName = borrower.borrower_name.toLowerCase();
+                const borrowerParts = borrowerName.split(/[\s,]+/).filter(p => p.length > 0);
+
+                // Match if ANY query part matches ANY borrower name part
+                // This allows "Juan Dela Cruz" to match "dela cruz, juan" or "juan dela"
+                return queryParts.every(queryPart =>
+                    borrowerParts.some(borrowerPart =>
+                        borrowerPart.includes(queryPart) || queryPart.includes(borrowerPart)
+                    )
+                );
+            }).slice(0, 10); // Show up to 10 suggestions
         },
 
         init() {
@@ -663,9 +719,47 @@ function batchBorrowingApp() {
             }
         },
 
-        selectBorrower(name, contact) {
-            this.formData.borrower_name = name;
-            this.formData.borrower_contact = contact;
+        // Update borrower search query when either name field changes
+        updateBorrowerSearch() {
+            this.borrowerSearchQuery = `${this.formData.borrower_last_name} ${this.formData.borrower_first_name}`.trim();
+            // Update the combined standardized name (Last, First)
+            if (this.formData.borrower_last_name && this.formData.borrower_first_name) {
+                this.formData.borrower_name = `${this.formData.borrower_last_name}, ${this.formData.borrower_first_name}`;
+            } else if (this.formData.borrower_last_name) {
+                this.formData.borrower_name = this.formData.borrower_last_name;
+            } else if (this.formData.borrower_first_name) {
+                this.formData.borrower_name = this.formData.borrower_first_name;
+            } else {
+                this.formData.borrower_name = '';
+            }
+        },
+
+        // Select borrower from suggestions
+        selectBorrower(borrower) {
+            // Parse the stored name (could be "Last, First" or just a single name)
+            const nameParts = borrower.borrower_name.split(',').map(p => p.trim());
+
+            if (nameParts.length === 2) {
+                // Format: "Last, First"
+                this.formData.borrower_last_name = nameParts[0];
+                this.formData.borrower_first_name = nameParts[1];
+            } else {
+                // Single name - try to split by space and guess
+                const spaceParts = borrower.borrower_name.trim().split(/\s+/);
+                if (spaceParts.length >= 2) {
+                    // Assume last word is last name, rest is first name
+                    this.formData.borrower_last_name = spaceParts[spaceParts.length - 1];
+                    this.formData.borrower_first_name = spaceParts.slice(0, -1).join(' ');
+                } else {
+                    // Just one word - put in last name
+                    this.formData.borrower_last_name = borrower.borrower_name;
+                    this.formData.borrower_first_name = '';
+                }
+            }
+
+            this.formData.borrower_name = borrower.borrower_name;
+            this.formData.borrower_contact = borrower.borrower_contact || '';
+            this.updateBorrowerSearch();
             this.showBorrowerSuggestions = false;
         },
 
@@ -673,8 +767,14 @@ function batchBorrowingApp() {
         async submitBatch() {
             if (this.submitting) return;
 
-            if (!this.formData.borrower_name || !this.formData.expected_return) {
-                alert('Please fill in all required fields');
+            // Validate required fields
+            if (!this.formData.borrower_last_name || !this.formData.borrower_first_name) {
+                alert('Please fill in both first name and last name');
+                return;
+            }
+
+            if (!this.formData.expected_return) {
+                alert('Please select an expected return date');
                 return;
             }
 
@@ -682,6 +782,9 @@ function batchBorrowingApp() {
                 alert('Please select at least one item');
                 return;
             }
+
+            // Ensure the combined name is set
+            this.updateBorrowerSearch();
 
             this.submitting = true;
 
