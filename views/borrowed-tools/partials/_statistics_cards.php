@@ -72,7 +72,7 @@
                             </div>
                         </div>
                         <p class="text-muted mb-0 small">
-                            <i class="bi bi-box-arrow-right me-1"></i>Approved for borrowing
+                            <i class="bi bi-box-arrow-right me-1"></i>Awaiting release
                         </p>
                     </div>
                 </div>
@@ -92,7 +92,7 @@
                             </div>
                         </div>
                         <p class="text-muted mb-0 small">
-                            <i class="bi bi-person-badge me-1"></i>Active borrows
+                            <i class="bi bi-person-badge me-1"></i>Active borrowings
                         </p>
                     </div>
                 </div>
@@ -132,7 +132,7 @@
                             </div>
                         </div>
                         <p class="text-muted mb-0 small">
-                            <i class="bi bi-calendar me-1"></i>This month
+                            <i class="bi bi-check-circle me-1"></i>Completed batches
                         </p>
                     </div>
                 </div>
@@ -172,7 +172,7 @@
                             </div>
                         </div>
                         <p class="text-muted mb-0 small">
-                            <i class="bi bi-graph-up me-1"></i>All time
+                            <i class="bi bi-archive me-1"></i>All batch records
                         </p>
                     </div>
                 </div>
