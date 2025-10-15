@@ -537,7 +537,13 @@
                                 <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Site Inventory Clerk'])): ?>
                                     <td>
                                         <div class="request-info small">
-                                            <div class="fw-medium"><?= date('M j, Y', strtotime($tool['created_at'])) ?></div>
+                                            <?php if (!empty($tool['issued_by_name'])): ?>
+                                                <div class="fw-medium text-primary">
+                                                    <i class="bi bi-person-circle me-1"></i>
+                                                    <?= htmlspecialchars($tool['issued_by_name']) ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="text-muted"><?= date('M j, Y', strtotime($tool['created_at'])) ?></div>
                                             <small class="text-muted"><?= date('g:i A', strtotime($tool['created_at'])) ?></small>
 
                                             <?php if (!empty($tool['creator_role'])): ?>
