@@ -203,7 +203,9 @@ class BorrowedToolController {
                 $db = Database::getInstance()->getConnection();
                 $availableEquipmentSql = "SELECT COUNT(*) FROM assets a
                     JOIN categories c ON a.category_id = c.id
-                    WHERE c.is_consumable = 0 AND a.status = 'available'";
+                    WHERE c.is_consumable = 0
+                      AND a.status = 'available'
+                      AND a.workflow_status = 'approved'";
                 $availableParams = [];
                 if ($projectFilter) {
                     $availableEquipmentSql .= " AND a.project_id = ?";
