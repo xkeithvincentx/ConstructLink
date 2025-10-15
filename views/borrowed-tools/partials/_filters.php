@@ -118,7 +118,7 @@
                 <div class="mb-3">
                     <label for="search-mobile" class="form-label">Search</label>
                     <input type="text" class="form-control" id="search-mobile" name="search"
-                           placeholder="Asset, borrower, purpose..."
+                           placeholder="Item, borrower, purpose..."
                            value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                 </div>
 
@@ -248,7 +248,7 @@
                 <div class="col-lg-2 col-md-3">
                     <label for="search" class="form-label">Search</label>
                     <input type="text" class="form-control form-control-sm" id="search" name="search"
-                           placeholder="Asset, borrower..."
+                           placeholder="Item, borrower..."
                            value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                 </div>
 

@@ -383,15 +383,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Quick filter functions
 function filterByStatus(status) {
-    document.getElementById('status').value = status;
-    document.querySelector('form[action="?route=borrowed-tools"]').submit();
+    // Handle both desktop and mobile status selects
+    const desktopStatus = document.getElementById('status');
+    const mobileStatus = document.getElementById('status-mobile');
+
+    if (desktopStatus) {
+        desktopStatus.value = status;
+        desktopStatus.closest('form').submit();
+    } else if (mobileStatus) {
+        mobileStatus.value = status;
+        mobileStatus.closest('form').submit();
+    }
 }
 
 function filterByPriority(priority) {
-    const prioritySelect = document.getElementById('priority');
-    if (prioritySelect) {
-        prioritySelect.value = priority;
-        document.querySelector('form[action="?route=borrowed-tools"]').submit();
+    // Handle both desktop and mobile priority selects
+    const desktopPriority = document.getElementById('priority');
+    const mobilePriority = document.getElementById('priority-mobile');
+
+    if (desktopPriority) {
+        desktopPriority.value = priority;
+        desktopPriority.closest('form').submit();
+    } else if (mobilePriority) {
+        mobilePriority.value = priority;
+        mobilePriority.closest('form').submit();
     }
 }
 
