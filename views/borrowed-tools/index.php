@@ -60,29 +60,33 @@ usort($displayItems, function($a, $b) {
 ?>
 
 <!-- Action Buttons (No Header - handled by layout) -->
-<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-2">
-    <!-- Primary Actions (Left) -->
-    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
+<div class="mb-4">
+    <!-- Mobile: Full width buttons stacked -->
+    <div class="d-lg-none d-grid gap-2">
         <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
-            <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
-                <i class="bi bi-cart-plus me-1"></i>
-                <span class="d-none d-sm-inline">Borrow Equipment</span>
-                <span class="d-sm-none">Borrow</span>
+            <a href="?route=borrowed-tools/create-batch" class="btn btn-primary">
+                <i class="bi bi-cart-plus me-1"></i>Borrow Equipment
             </a>
         <?php endif; ?>
-
-        <a href="?route=borrowed-tools/print-blank-form" class="btn btn-outline-primary btn-sm" target="_blank" title="Print blank forms for handwritten use">
-            <i class="bi bi-printer me-1"></i>
-            <span class="d-none d-sm-inline">Print Blank Form</span>
-            <span class="d-sm-none">Print</span>
+        <a href="?route=borrowed-tools/print-blank-form" class="btn btn-outline-primary" target="_blank" title="Print blank forms">
+            <i class="bi bi-printer me-1"></i>Print Blank Form
         </a>
     </div>
 
-    <!-- Secondary Actions (Right) -->
-    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Secondary actions">
+    <!-- Desktop: Horizontal layout with left/right split -->
+    <div class="d-none d-lg-flex justify-content-between align-items-center">
+        <div class="btn-toolbar gap-2">
+            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk'])): ?>
+                <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
+                    <i class="bi bi-cart-plus me-1"></i>Borrow Equipment
+                </a>
+            <?php endif; ?>
+            <a href="?route=borrowed-tools/print-blank-form" class="btn btn-outline-primary btn-sm" target="_blank" title="Print blank forms">
+                <i class="bi bi-printer me-1"></i>Print Blank Form
+            </a>
+        </div>
         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshBorrowedTools()">
-            <i class="bi bi-arrow-clockwise"></i>
-            <span class="d-none d-sm-inline ms-1">Refresh</span>
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
         </button>
     </div>
 </div>
