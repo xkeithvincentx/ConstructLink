@@ -273,30 +273,6 @@ usort($displayItems, function($a, $b) {
 <script>
 // Batch expand/collapse functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle batch items expand/collapse
-    document.querySelectorAll('.batch-toggle').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const batchId = this.getAttribute('data-batch-id');
-            const expandRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
-            const icon = this.querySelector('i');
-
-            if (expandRow) {
-                if (expandRow.style.display === 'none') {
-                    // Expand
-                    expandRow.style.display = 'table-row';
-                    icon.classList.remove('bi-chevron-right');
-                    icon.classList.add('bi-chevron-down');
-                } else {
-                    // Collapse
-                    expandRow.style.display = 'none';
-                    icon.classList.remove('bi-chevron-down');
-                    icon.classList.add('bi-chevron-right');
-                }
-            }
-        });
-    });
-
     // Handle batch action modals - load batch data when modal opens
     document.querySelectorAll('.batch-action-btn').forEach(button => {
         button.addEventListener('click', function() {
