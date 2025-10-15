@@ -800,6 +800,39 @@ class BorrowedToolBatchModel extends BaseModel {
     }
 
     /**
+     * Get count of overdue batches
+     */
+    public function getOverdueBatchCount($projectId = null) {
+        $conditions = [
+            "btb.status = 'Released'",
+            "btb.expected_return < CURDATE()"
+        ];
+        $params = [];
+
+        if ($projectId) {
+            $conditions[] = "EXISTS (
+                SELECT 1 FROM borrowed_tools bt
+                INNER JOIN assets a ON bt.asset_id = a.id
+                WHERE bt.batch_id = btb.id AND a.project_id = ?
+            )";
+            $params[] = $projectId;
+        }
+
+        $whereClause = "WHERE " . implode(" AND ", $conditions);
+
+        $sql = "
+            SELECT COUNT(*) as overdue_count
+            FROM borrowed_tool_batches btb
+            {$whereClause}
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch();
+        return $result['overdue_count'] ?? 0;
+    }
+
+    /**
      * Log activity for audit trail
      */
     private function logActivity($action, $description, $table, $recordId) {

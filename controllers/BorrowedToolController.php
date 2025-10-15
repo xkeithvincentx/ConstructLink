@@ -176,8 +176,26 @@ class BorrowedToolController {
             error_log("DEBUG - Results: Count=" . count($borrowedTools) . ", Projects=" . json_encode($projectsInResults));
             
             // Get statistics (filtered by project for operational roles, all projects for MVA oversight roles)
-            $borrowedToolStats = $this->borrowedToolModel->getBorrowedToolStats(null, null, $projectFilter);
-            
+            $batchModel = new BorrowedToolBatchModel();
+            $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
+
+            // Transform batch stats to match expected format in views
+            $borrowedToolStats = [
+                'pending_verification' => $batchStats['pending_verification'] ?? 0,
+                'pending_approval' => $batchStats['pending_approval'] ?? 0,
+                'approved' => $batchStats['approved'] ?? 0,
+                'borrowed' => $batchStats['released'] ?? 0,  // "Released" batches are currently borrowed
+                'partially_returned' => $batchStats['partially_returned'] ?? 0,
+                'returned' => $batchStats['returned'] ?? 0,
+                'canceled' => $batchStats['canceled'] ?? 0,
+                'total_borrowings' => $batchStats['total_batches'] ?? 0,
+                'overdue' => 0  // Will calculate separately
+            ];
+
+            // Get overdue batches (Released batches past expected_return date)
+            $overdueCount = $batchModel->getOverdueBatchCount($projectFilter);
+            $borrowedToolStats['overdue'] = $overdueCount;
+
             // Get overdue tools (filtered by project for operational roles, all projects for MVA oversight roles)
             $overdueTools = $this->borrowedToolModel->getOverdueBorrowedTools($projectFilter);
             
