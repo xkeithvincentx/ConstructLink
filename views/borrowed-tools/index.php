@@ -156,6 +156,47 @@ usort($displayItems, function($a, $b) {
 
 <style>
 /* Enhanced Borrowed Tools Index Styles */
+
+/* Sortable columns */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+th.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+th.sortable i {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+/* Fix hidden batch items row spacing */
+tr.batch-items-row[style*="display: none"] {
+    display: none !important;
+    height: 0 !important;
+    line-height: 0 !important;
+}
+
+tr.batch-items-row[style*="display: none"] td {
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+/* Fix action buttons spacing */
+.action-buttons {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.action-buttons .d-flex {
+    margin: 0 !important;
+}
+
 .workflow-step {
     text-align: center;
     min-width: 100px;
@@ -394,6 +435,37 @@ function quickFilter(status) {
         window.location.href = '?route=borrowed-tools&status=' + encodeURIComponent(status);
     }
 }
+
+// Sortable table columns
+document.addEventListener('DOMContentLoaded', function() {
+    const sortableHeaders = document.querySelectorAll('th.sortable');
+
+    sortableHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.style.userSelect = 'none';
+
+        header.addEventListener('click', function() {
+            const sortColumn = this.getAttribute('data-sort');
+            const currentSort = '<?= $currentSort ?? '' ?>';
+            const currentOrder = '<?= $currentOrder ?? 'desc' ?>';
+
+            // Determine new sort order
+            let newOrder = 'asc';
+            if (sortColumn === currentSort) {
+                // Toggle order if clicking same column
+                newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            }
+
+            // Build URL with current filters and new sort
+            const params = new URLSearchParams(window.location.search);
+            params.set('sort', sortColumn);
+            params.set('order', newOrder);
+
+            // Navigate with new sort
+            window.location.href = '?' + params.toString();
+        });
+    });
+});
 
 function filterByPriority(priority) {
     // Handle both desktop and mobile priority selects

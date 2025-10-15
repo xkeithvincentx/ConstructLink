@@ -40,25 +40,6 @@ $statusColors = [
 $statusColor = $statusColors[$batch['status']] ?? 'secondary';
 ?>
 
-<!-- Messages -->
-<?php if (isset($_GET['message'])): ?>
-    <?php
-    $messages = [
-        'batch_created' => 'Request created successfully',
-        'batch_verified' => 'Request verified successfully',
-        'batch_approved' => 'Request approved successfully',
-        'batch_released' => 'Equipment released to borrower',
-        'batch_returned' => 'Return processed successfully',
-        'batch_canceled' => 'Request canceled'
-    ];
-    $messageText = $messages[$_GET['message']] ?? 'Operation completed successfully';
-    ?>
-    <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($messageText) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-<?php endif; ?>
-
 <!-- Request Header -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">

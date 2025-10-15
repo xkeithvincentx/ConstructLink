@@ -266,14 +266,45 @@
                 <table class="table table-hover" id="borrowedToolsTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Item Details</th>
-                            <th>Borrower</th>
+                            <th class="sortable" data-sort="id">
+                                ID
+                                <?php if (isset($currentSort) && $currentSort === 'id'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
+                            <th class="sortable" data-sort="reference">
+                                Reference
+                                <?php if (isset($currentSort) && $currentSort === 'reference'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
+                            <th class="sortable" data-sort="borrower">
+                                Borrower
+                                <?php if (isset($currentSort) && $currentSort === 'borrower'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                                 <th>Purpose</th>
                             <?php endif; ?>
-                            <th>Return Date</th>
-                            <th>Status</th>
+                            <th class="sortable" data-sort="items">
+                                Items
+                                <?php if (isset($currentSort) && $currentSort === 'items'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
+                            <th class="sortable" data-sort="date">
+                                Date
+                                <?php if (isset($currentSort) && $currentSort === 'date'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
+                            <th class="sortable" data-sort="status">
+                                Status
+                                <?php if (isset($currentSort) && $currentSort === 'status'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])): ?>
                                 <th>MVA</th>
                             <?php endif; ?>
@@ -331,33 +362,24 @@
                                     </div>
                                 </td>
 
-                                <!-- Enhanced Asset Details -->
+                                <!-- Reference / Description -->
                                 <td>
                                     <?php if ($isBatch): ?>
-                                        <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
-                                    <?php else: ?>
-                                        <div class="d-flex align-items-center">
-                                            <?php if (!empty($tool['asset_image'])): ?>
-                                                <div class="me-2">
-                                                    <img src="<?= htmlspecialchars($tool['asset_image']) ?>"
-                                                         class="rounded" width="40" height="40" alt="Asset">
-                                                </div>
+                                        <!-- Batch: Show batch reference -->
+                                        <div class="fw-medium">
+                                            <?php if (!empty($tool['batch_reference'])): ?>
+                                                <?= htmlspecialchars($tool['batch_reference']) ?>
+                                            <?php else: ?>
+                                                Batch #<?= $batchId ?>
                                             <?php endif; ?>
-                                            <div>
-                                                <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
-                                                <small class="text-muted">
-                                                    <?= htmlspecialchars($tool['asset_ref']) ?>
-                                                    <?php if (!empty($tool['asset_category'])): ?>
-                                                        | <?= htmlspecialchars($tool['asset_category']) ?>
-                                                    <?php endif; ?>
-                                                </small>
-                                                <?php if ($auth->hasRole(['System Admin', 'Asset Director']) && !empty($tool['asset_value'])): ?>
-                                                    <br><small class="text-info">
-                                                        Value: ₱<?= number_format($tool['asset_value'], 2) ?>
-                                                    </small>
-                                                <?php endif; ?>
-                                            </div>
                                         </div>
+                                        <small class="text-muted"><?= $batchCount ?> Equipment Items</small>
+                                    <?php else: ?>
+                                        <!-- Single Item: Show equipment description/name -->
+                                        <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
+                                        <?php if (!empty($tool['asset_category'])): ?>
+                                            <small class="text-muted"><?= htmlspecialchars($tool['asset_category']) ?></small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
 
@@ -398,40 +420,69 @@
                                     </td>
                                 <?php endif; ?>
 
-                                <!-- Return Date -->
-                                <td>
-                                    <?php if ($tool['status'] === 'Returned' && !empty($tool['actual_return'])): ?>
-                                        <!-- Actual return date -->
-                                        <div class="fw-medium text-success">
-                                            <?= date('M j, Y', strtotime($tool['actual_return'])) ?>
-                                        </div>
-                                        <small class="text-muted">Returned</small>
-                                        <?php
-                                        $expectedTime = strtotime($expectedReturn);
-                                        $actualTime = strtotime($tool['actual_return']);
-                                        $daysDiff = floor(($actualTime - $expectedTime) / 86400);
-                                        ?>
-                                        <?php if ($daysDiff < 0): ?>
-                                            <div><span class="badge bg-success"><?= abs($daysDiff) ?>d early</span></div>
-                                        <?php elseif ($daysDiff > 0): ?>
-                                            <div><span class="badge bg-warning text-dark"><?= $daysDiff ?>d late</span></div>
-                                        <?php else: ?>
-                                            <div><span class="badge bg-info">On time</span></div>
-                                        <?php endif; ?>
+                                <!-- Items -->
+                                <td class="text-center">
+                                    <?php if ($isBatch): ?>
+                                        <span class="badge bg-primary"><?= $batchCount ?></span>
                                     <?php else: ?>
-                                        <!-- Expected return date -->
-                                        <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : '') ?>">
-                                            <?= date('M j, Y', strtotime($expectedReturn)) ?>
-                                        </div>
-                                        <?php if ($isOverdue): ?>
-                                            <div><span class="badge bg-danger"><?= abs(floor((time() - strtotime($expectedReturn)) / 86400)) ?>d overdue</span></div>
-                                        <?php elseif ($isDueSoon): ?>
-                                            <small class="text-warning">Due in <?= ceil((strtotime($expectedReturn) - time()) / 86400) ?>d</small>
-                                        <?php elseif ($tool['status'] === 'Released'): ?>
-                                            <small class="text-muted"><?= ceil((strtotime($expectedReturn) - time()) / 86400) ?>d left</small>
-                                        <?php else: ?>
-                                            <small class="text-muted">Expected</small>
-                                        <?php endif; ?>
+                                        <span class="text-muted"><?= htmlspecialchars($tool['asset_ref']) ?></span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Date (Expected Return / Due Status) -->
+                                <td>
+                                    <?php
+                                    $expectedReturn = $tool['expected_return'];
+
+                                    // For active borrowed items (not yet returned)
+                                    if (in_array($tool['status'], ['Approved', 'Released', 'Borrowed', 'Partially Returned'])) {
+                                        $isOverdue = strtotime($expectedReturn) < time();
+                                        $isDueSoon = !$isOverdue && strtotime($expectedReturn) <= strtotime('+3 days');
+                                        $hasTimeRemaining = !$isOverdue && !$isDueSoon;
+                                    } else {
+                                        // For other statuses (Returned, Pending, Canceled, etc.)
+                                        $isOverdue = false;
+                                        $isDueSoon = false;
+                                        $hasTimeRemaining = false;
+                                    }
+
+                                    // For returned items, check if they were returned late
+                                    $returnedLate = false;
+                                    if ($tool['status'] === 'Returned' && !empty($tool['return_date'])) {
+                                        $returnedLate = strtotime($tool['return_date']) > strtotime($expectedReturn);
+                                    }
+                                    ?>
+                                    <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : ($returnedLate ? 'text-danger' : 'text-dark')) ?>">
+                                        <?= date('M j, Y', strtotime($expectedReturn)) ?>
+                                    </div>
+                                    <small class="text-muted"><?= date('l', strtotime($expectedReturn)) ?></small>
+
+                                    <?php if ($isOverdue): ?>
+                                        <?php $daysOverdue = abs(floor((time() - strtotime($expectedReturn)) / 86400)); ?>
+                                        <br><span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            <?= $daysOverdue ?> <?= $daysOverdue == 1 ? 'day' : 'days' ?> overdue
+                                        </span>
+                                    <?php elseif ($isDueSoon): ?>
+                                        <?php $daysUntilDue = ceil((strtotime($expectedReturn) - time()) / 86400); ?>
+                                        <br><span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Due in <?= $daysUntilDue ?> <?= $daysUntilDue == 1 ? 'day' : 'days' ?>
+                                        </span>
+                                    <?php elseif ($hasTimeRemaining): ?>
+                                        <?php $daysRemaining = ceil((strtotime($expectedReturn) - time()) / 86400); ?>
+                                        <br><small class="text-success">
+                                            <?= $daysRemaining ?> <?= $daysRemaining == 1 ? 'day' : 'days' ?> remaining
+                                        </small>
+                                    <?php elseif ($returnedLate): ?>
+                                        <?php $daysLate = abs(floor((strtotime($tool['return_date']) - strtotime($expectedReturn)) / 86400)); ?>
+                                        <br><small class="text-danger">
+                                            Returned <?= $daysLate ?> <?= $daysLate == 1 ? 'day' : 'days' ?> late
+                                        </small>
+                                    <?php elseif ($tool['status'] === 'Returned'): ?>
+                                        <br><small class="text-success">
+                                            Returned on time
+                                        </small>
                                     <?php endif; ?>
                                 </td>
 
@@ -443,6 +494,7 @@
                                         'Pending Approval' => 'bg-info',
                                         'Approved' => 'bg-primary',
                                         'Released' => 'bg-secondary',
+                                        'Borrowed' => 'bg-secondary',
                                         'Partially Returned' => 'bg-success',
                                         'Returned' => 'bg-success',
                                         'Canceled' => 'bg-dark'
@@ -464,7 +516,6 @@
                                                     <?= htmlspecialchars($tool['created_by_name'] ?? 'Unknown') ?>
                                                 </span>
                                             </div>
-
                                             <?php if (!empty($tool['verified_by_name'])): ?>
                                                 <div class="d-flex align-items-center mb-1">
                                                     <span class="badge badge-sm bg-warning text-dark me-1">V</span>
@@ -473,10 +524,9 @@
                                                     </span>
                                                 </div>
                                             <?php endif; ?>
-
                                             <?php if (!empty($tool['approved_by_name'])): ?>
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-sm bg-success me-1">A</span>
+                                                    <span class="badge badge-sm bg-success text-white me-1">A</span>
                                                     <span class="text-truncate" style="max-width: 80px;">
                                                         <?= htmlspecialchars($tool['approved_by_name']) ?>
                                                     </span>
@@ -486,30 +536,15 @@
                                     </td>
                                 <?php endif; ?>
 
-                                <!-- Request Info (for tracking) -->
+                                <!-- Created By (Site Staff Roles) -->
                                 <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager', 'Site Inventory Clerk'])): ?>
                                     <td>
-                                        <div class="request-info small">
-                                            <?php if (!empty($tool['issued_by_name'])): ?>
-                                                <div class="fw-medium">
-                                                    <?= htmlspecialchars($tool['issued_by_name']) ?>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="text-muted"><?= date('M j, Y', strtotime($tool['created_at'])) ?></div>
-                                            <small class="text-muted"><?= date('g:i A', strtotime($tool['created_at'])) ?></small>
-
-                                            <?php if (!empty($tool['creator_role'])): ?>
-                                                <br><span class="badge bg-light text-dark">
-                                                    <?= htmlspecialchars($tool['creator_role']) ?>
-                                                </span>
-                                            <?php endif; ?>
-
-                                            <?php if (!empty($tool['urgency_level'])): ?>
-                                                <br><span class="badge <?= $tool['urgency_level'] === 'high' ? 'bg-danger' : ($tool['urgency_level'] === 'medium' ? 'bg-warning text-dark' : 'bg-secondary') ?>">
-                                                    <?= ucfirst($tool['urgency_level']) ?> Priority
-                                                </span>
-                                            <?php endif; ?>
+                                        <div class="small">
+                                            <?= htmlspecialchars($tool['created_by_name'] ?? 'Unknown') ?>
                                         </div>
+                                        <small class="text-muted">
+                                            <?= date('M j', strtotime($tool['created_at'])) ?>
+                                        </small>
                                     </td>
                                 <?php endif; ?>
 
@@ -555,13 +590,14 @@
                                                     'title' => 'Release all items in this batch'
                                                 ];
                                             elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                                $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
                                                 $primaryAction = [
                                                     'modal' => true,
                                                     'modal_id' => 'batchReturnModal',
                                                     'batch_id' => $batchId,
-                                                    'class' => $isOverdue ? 'btn-danger' : 'btn-success',
+                                                    'class' => $isBorrowedOverdue ? 'btn-danger' : 'btn-success',
                                                     'icon' => 'box-arrow-down',
-                                                    'text' => $isOverdue ? 'Return Overdue' : 'Return Batch',
+                                                    'text' => $isBorrowedOverdue ? 'Return Overdue' : 'Return Batch',
                                                     'title' => 'Return all items in this batch'
                                                 ];
                                             endif;
@@ -601,11 +637,12 @@
                                                     'title' => 'Mark tool as issued to borrower'
                                                 ];
                                             elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                                $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
                                                 $primaryAction = [
                                                     'url' => "?route=borrowed-tools/return&id={$tool['id']}",
-                                                    'class' => $isOverdue ? 'btn-danger' : 'btn-success',
+                                                    'class' => $isBorrowedOverdue ? 'btn-danger' : 'btn-success',
                                                     'icon' => 'box-arrow-down',
-                                                    'text' => $isOverdue ? 'Return Overdue' : 'Return Tool',
+                                                    'text' => $isBorrowedOverdue ? 'Return Overdue' : 'Return Tool',
                                                     'title' => 'Mark tool as returned'
                                                 ];
                                             endif;

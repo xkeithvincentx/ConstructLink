@@ -423,7 +423,34 @@ class BorrowedToolModel extends BaseModel {
         }
         
         $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-        
+
+        // Build ORDER BY clause
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortOrder = strtoupper($filters['sort_order'] ?? 'DESC');
+
+        // Map sort column to SQL expression
+        $orderByMap = [
+            'id' => 'bt.id',
+            'reference' => 'COALESCE(btb.batch_reference, CONCAT("BT-", LPAD(bt.id, 6, "0")))',
+            'borrower' => 'bt.borrower_name',
+            'status' => 'CASE bt.status
+                WHEN "Pending Verification" THEN 1
+                WHEN "Pending Approval" THEN 2
+                WHEN "Approved" THEN 3
+                WHEN "Borrowed" THEN 4
+                WHEN "Partially Returned" THEN 5
+                WHEN "Returned" THEN 6
+                WHEN "Canceled" THEN 7
+                ELSE 8
+            END',
+            'date' => 'bt.created_at',
+            'items' => 'bt.quantity',
+            'created_at' => 'bt.created_at'
+        ];
+
+        $orderByColumn = $orderByMap[$sortBy] ?? 'bt.created_at';
+        $orderByClause = "ORDER BY {$orderByColumn} {$sortOrder}";
+
         // Debug: Log the SQL and parameters (remove this after testing)
         error_log("DEBUG - SQL WHERE: " . $whereClause . ", Params: " . json_encode($params));
         
@@ -465,7 +492,7 @@ class BorrowedToolModel extends BaseModel {
             LEFT JOIN users u ON bt.issued_by = u.id
             LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
             {$whereClause}
-            ORDER BY bt.created_at DESC
+            {$orderByClause}
             LIMIT {$perPage} OFFSET {$offset}
         ";
         

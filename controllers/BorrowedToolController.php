@@ -134,6 +134,24 @@ class BorrowedToolController {
         if (!empty($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
         if (!empty($_GET['date_to'])) $filters['date_to'] = $_GET['date_to'];
         if (!empty($_GET['priority'])) $filters['priority'] = $_GET['priority'];
+
+        // Sorting parameters
+        $sortBy = $_GET['sort'] ?? 'date';
+        $sortOrder = $_GET['order'] ?? 'desc';
+
+        // Validate sort column
+        $allowedSortColumns = ['id', 'reference', 'borrower', 'status', 'date', 'items'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'date';
+        }
+
+        // Validate sort order
+        if (!in_array(strtolower($sortOrder), ['asc', 'desc'])) {
+            $sortOrder = 'desc';
+        }
+
+        $filters['sort_by'] = $sortBy;
+        $filters['sort_order'] = $sortOrder;
         
         // Apply project filtering based on user role
         $projectFilter = $this->getProjectFilter();
@@ -226,9 +244,11 @@ class BorrowedToolController {
                 ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools']
             ];
             
-            // Pass auth instance to view
+            // Pass auth instance and sort parameters to view
             $auth = $this->auth;
-            
+            $currentSort = $sortBy;
+            $currentOrder = $sortOrder;
+
             include APP_ROOT . '/views/borrowed-tools/index.php';
             
         } catch (Exception $e) {
