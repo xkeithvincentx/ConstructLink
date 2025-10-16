@@ -513,9 +513,10 @@ class BorrowedToolModel extends BaseModel {
                    p.name as project_name,
                    u.full_name as issued_by_name,
                    btb.batch_reference,
+                   COALESCE(btb.status, bt.status) as status,
                    CASE
-                       WHEN bt.status = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
-                       ELSE bt.status
+                       WHEN COALESCE(btb.status, bt.status) = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
+                       ELSE COALESCE(btb.status, bt.status)
                    END as current_status
             FROM borrowed_tools bt
             INNER JOIN assets a ON bt.asset_id = a.id

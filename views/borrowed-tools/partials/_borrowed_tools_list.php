@@ -198,14 +198,14 @@
                                             'icon' => 'box-arrow-up',
                                             'text' => 'Release Batch'
                                         ];
-                                    elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                    elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                         $primaryAction = [
                                             'modal' => true,
                                             'modal_id' => 'batchReturnModal',
                                             'batch_id' => $batchId,
                                             'class' => $isOverdue ? 'btn-danger' : 'btn-success',
                                             'icon' => 'box-arrow-down',
-                                            'text' => $isOverdue ? 'Return Overdue' : 'Return Batch'
+                                            'text' => $tool['status'] === 'Partially Returned' ? 'Return Remaining' : ($isOverdue ? 'Return Overdue' : 'Return Batch')
                                         ];
                                     endif;
                                 }
@@ -463,7 +463,7 @@
                                         'Approved' => 'bg-primary',
                                         'Released' => 'bg-secondary',
                                         'Borrowed' => 'bg-secondary',
-                                        'Partially Returned' => 'bg-success',
+                                        'Partially Returned' => 'bg-warning text-dark',
                                         'Returned' => 'bg-success',
                                         'Canceled' => 'bg-dark'
                                     ];
@@ -557,7 +557,7 @@
                                                     'text' => 'Release Batch',
                                                     'title' => 'Release all items in this batch'
                                                 ];
-                                            elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                            elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                                 $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
                                                 $primaryAction = [
                                                     'modal' => true,
@@ -565,8 +565,8 @@
                                                     'batch_id' => $batchId,
                                                     'class' => $isBorrowedOverdue ? 'btn-danger' : 'btn-success',
                                                     'icon' => 'box-arrow-down',
-                                                    'text' => $isBorrowedOverdue ? 'Return Overdue' : 'Return Batch',
-                                                    'title' => 'Return all items in this batch'
+                                                    'text' => $tool['status'] === 'Partially Returned' ? 'Return Remaining' : ($isBorrowedOverdue ? 'Return Overdue' : 'Return Batch'),
+                                                    'title' => 'Return items in this batch'
                                                 ];
                                             endif;
 
@@ -726,15 +726,22 @@
                                                     <thead class="table-secondary">
                                                         <tr>
                                                             <th style="width: 5%">#</th>
-                                                            <th style="width: 40%">Equipment</th>
+                                                            <th style="width: 35%">Equipment</th>
                                                             <th style="width: 15%">Reference</th>
-                                                            <th style="width: 10%">Qty Out</th>
-                                                            <th style="width: 15%">Serial Number</th>
-                                                            <th style="width: 15%">Status</th>
+                                                            <th style="width: 8%">Borrowed</th>
+                                                            <th style="width: 8%">Returned</th>
+                                                            <th style="width: 8%">Remaining</th>
+                                                            <th style="width: 13%">Serial Number</th>
+                                                            <th style="width: 8%">Status</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <?php foreach ($batchItems as $index => $item): ?>
+                                                            <?php
+                                                            $borrowed = $item['quantity'] ?? 1;
+                                                            $returned = $item['quantity_returned'] ?? 0;
+                                                            $remaining = $borrowed - $returned;
+                                                            ?>
                                                             <tr data-item-id="<?= $item['id'] ?>">
                                                                 <td><?= $index + 1 ?></td>
                                                                 <td>
@@ -744,7 +751,9 @@
                                                                     <?php endif; ?>
                                                                 </td>
                                                                 <td><?= htmlspecialchars($item['asset_ref']) ?></td>
-                                                                <td class="text-center"><?= $item['quantity'] ?></td>
+                                                                <td class="text-center"><span class="badge bg-primary"><?= $borrowed ?></span></td>
+                                                                <td class="text-center"><span class="badge bg-success"><?= $returned ?></span></td>
+                                                                <td class="text-center"><span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>"><?= $remaining ?></span></td>
                                                                 <td>
                                                                     <?php if (!empty($item['serial_number'])): ?>
                                                                         <code><?= htmlspecialchars($item['serial_number']) ?></code>
@@ -754,6 +763,9 @@
                                                                 </td>
                                                                 <td>
                                                                     <?php
+                                                                    // Determine actual status based on remaining quantity
+                                                                    $actualStatus = $remaining > 0 ? 'Borrowed' : 'Returned';
+
                                                                     $statusConfig = [
                                                                         'Pending Verification' => ['class' => 'bg-primary', 'icon' => 'clock'],
                                                                         'Pending Approval' => ['class' => 'bg-warning text-dark', 'icon' => 'hourglass-split'],
@@ -762,10 +774,10 @@
                                                                         'Returned' => ['class' => 'bg-success', 'icon' => 'check-square'],
                                                                         'Canceled' => ['class' => 'bg-dark', 'icon' => 'x-circle']
                                                                     ];
-                                                                    $config = $statusConfig[$item['status']] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
+                                                                    $config = $statusConfig[$actualStatus] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
                                                                     ?>
                                                                     <span class="badge <?= $config['class'] ?>">
-                                                                        <i class="bi bi-<?= $config['icon'] ?> me-1"></i><?= $item['status'] ?>
+                                                                        <i class="bi bi-<?= $config['icon'] ?> me-1"></i><?= $actualStatus ?>
                                                                     </span>
                                                                 </td>
                                                             </tr>
