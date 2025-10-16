@@ -118,11 +118,6 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
             </a>
         <?php endif; ?>
 
-        <?php if (in_array($batch['status'], ['Released', 'Partially Returned']) && hasRole(['Warehouseman', 'Site Inventory Clerk', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools" class="btn btn-primary">
-                <i class="bi bi-arrow-return-left me-1"></i>Return to List to Process Return
-            </a>
-        <?php endif; ?>
 
         <?php if (in_array($batch['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
             <a href="?route=borrowed-tools/batch/cancel&id=<?= $batch['id'] ?>" class="btn btn-danger">
@@ -159,11 +154,6 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
             </a>
         <?php endif; ?>
 
-        <?php if (in_array($batch['status'], ['Released', 'Partially Returned']) && hasRole(['Warehouseman', 'Site Inventory Clerk', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools" class="btn btn-primary">
-                <i class="bi bi-arrow-return-left me-1"></i>Return to List to Process Return
-            </a>
-        <?php endif; ?>
 
         <?php if (in_array($batch['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
             <a href="?route=borrowed-tools/batch/cancel&id=<?= $batch['id'] ?>" class="btn btn-danger">

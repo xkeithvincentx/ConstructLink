@@ -512,6 +512,9 @@ class BorrowedToolModel extends BaseModel {
                    c.name as category_name,
                    p.name as project_name,
                    u.full_name as issued_by_name,
+                   u.full_name as created_by_name,
+                   u_verified.full_name as verified_by_name,
+                   u_approved.full_name as approved_by_name,
                    btb.batch_reference,
                    COALESCE(btb.status, bt.status) as status,
                    CASE
@@ -524,6 +527,8 @@ class BorrowedToolModel extends BaseModel {
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN users u ON bt.issued_by = u.id
             LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+            LEFT JOIN users u_verified ON COALESCE(btb.verified_by, bt.verified_by) = u_verified.id
+            LEFT JOIN users u_approved ON COALESCE(btb.approved_by, bt.approved_by) = u_approved.id
             {$whereClause}
             {$orderByClause}
             LIMIT {$perPage} OFFSET {$offset}
