@@ -516,9 +516,15 @@ class BorrowedToolModel extends BaseModel {
                    u_verified.full_name as verified_by_name,
                    u_approved.full_name as approved_by_name,
                    btb.batch_reference,
-                   COALESCE(btb.status, bt.status) as status,
                    CASE
-                       WHEN COALESCE(btb.status, bt.status) = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
+                       WHEN btb.status IN ('Partially Returned', 'Returned') THEN btb.status
+                       WHEN bt.status IN ('Borrowed', 'Returned') THEN bt.status
+                       ELSE COALESCE(btb.status, bt.status)
+                   END as status,
+                   CASE
+                       WHEN btb.status IN ('Partially Returned', 'Returned') THEN btb.status
+                       WHEN bt.status = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
+                       WHEN bt.status IN ('Borrowed', 'Returned') THEN bt.status
                        ELSE COALESCE(btb.status, bt.status)
                    END as current_status
             FROM borrowed_tools bt

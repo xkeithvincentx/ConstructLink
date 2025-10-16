@@ -557,7 +557,7 @@
                                                     'text' => 'Release Batch',
                                                     'title' => 'Release all items in this batch'
                                                 ];
-                                            elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
+                                            elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned', 'Released']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                                 $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
                                                 $primaryAction = [
                                                     'modal' => true,
@@ -580,7 +580,7 @@
                                             ];
 
                                             // Secondary actions for batch - Extend button
-                                            if (in_array($tool['status'], ['Borrowed', 'Partially Returned', 'Overdue']) && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
+                                            if (in_array($tool['status'], ['Borrowed', 'Partially Returned', 'Overdue', 'Released']) && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
                                                 $secondaryActions[] = [
                                                     'modal' => true,
                                                     'modal_id' => 'batchExtendModal',
