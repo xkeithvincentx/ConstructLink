@@ -819,8 +819,8 @@
                                                                     </span>
                                                                 </td>
                                                                 <td>
-                                                                    <?php if (!empty($item['return_notes'])): ?>
-                                                                        <small class="text-muted"><?= htmlspecialchars($item['return_notes']) ?></small>
+                                                                    <?php if (!empty($item['line_notes'])): ?>
+                                                                        <small class="text-muted"><?= htmlspecialchars($item['line_notes']) ?></small>
                                                                     <?php else: ?>
                                                                         <span class="text-muted">-</span>
                                                                     <?php endif; ?>
@@ -855,7 +855,7 @@
                                                         <td><?= !empty($tool['condition_returned']) ? htmlspecialchars($tool['condition_returned']) : '-' ?></td>
                                                         <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
                                                         <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
-                                                        <td><?= !empty($tool['return_notes']) ? htmlspecialchars($tool['return_notes']) : '-' ?></td>
+                                                        <td><?= !empty($tool['line_notes']) ? htmlspecialchars($tool['line_notes']) : '-' ?></td>
                                                     </tr>
                                                 </tbody>
                                             </table>

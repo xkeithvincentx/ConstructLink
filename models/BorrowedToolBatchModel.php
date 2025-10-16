@@ -578,6 +578,7 @@ class BorrowedToolBatchModel extends BaseModel {
                 $borrowToolId = $item['borrowed_tool_id'];
                 $quantityReturned = (int)$item['quantity_returned'];
                 $conditionIn = $item['condition_in'] ?? 'Good';
+                $itemNotes = $item['notes'] ?? '';
 
                 // CONCURRENCY FIX: Lock borrowed_tools row to prevent double-return
                 // This prevents race condition where two users simultaneously return the same item
@@ -599,7 +600,8 @@ class BorrowedToolBatchModel extends BaseModel {
                 // Update borrowed_tools record
                 $updateData = [
                     'quantity_returned' => $newTotalReturned,
-                    'condition_returned' => $conditionIn
+                    'condition_returned' => $conditionIn,
+                    'line_notes' => $itemNotes
                 ];
 
                 // If fully returned, mark as complete
