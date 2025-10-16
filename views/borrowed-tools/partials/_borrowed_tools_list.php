@@ -578,6 +578,19 @@
                                                 'text' => '',
                                                 'title' => 'View batch details'
                                             ];
+
+                                            // Secondary actions for batch - Extend button
+                                            if (in_array($tool['status'], ['Borrowed', 'Partially Returned', 'Overdue']) && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
+                                                $secondaryActions[] = [
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchExtendModal',
+                                                    'batch_id' => $batchId,
+                                                    'class' => 'btn-outline-secondary',
+                                                    'icon' => 'calendar-plus',
+                                                    'text' => '',
+                                                    'title' => 'Extend return date for batch items'
+                                                ];
+                                            endif;
                                         } else {
                                             // Single item - use regular page links
                                             if ($tool['status'] === 'Pending Verification' && $auth->hasRole(['System Admin', 'Project Manager'])):
@@ -625,7 +638,8 @@
                                             ];
 
                                             // Secondary actions based on role and status
-                                            if ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
+                                            // Allow extend for both Borrowed and Overdue status
+                                            if (in_array($tool['status'], ['Borrowed', 'Overdue']) && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])):
                                                 $secondaryActions[] = [
                                                     'url' => "?route=borrowed-tools/extend&id={$tool['id']}",
                                                     'class' => 'btn-outline-secondary',
@@ -692,9 +706,22 @@
                                                         <ul class="dropdown-menu">
                                                             <?php foreach ($secondaryActions as $action): ?>
                                                                 <li>
-                                                                    <a class="dropdown-item" href="<?= $action['url'] ?>" title="<?= $action['title'] ?>">
-                                                                        <i class="bi bi-<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
-                                                                    </a>
+                                                                    <?php if (isset($action['modal']) && $action['modal']): ?>
+                                                                        <!-- Modal-based action -->
+                                                                        <a class="dropdown-item batch-action-btn"
+                                                                           href="#"
+                                                                           data-bs-toggle="modal"
+                                                                           data-bs-target="#<?= $action['modal_id'] ?>"
+                                                                           data-batch-id="<?= $action['batch_id'] ?>"
+                                                                           title="<?= $action['title'] ?>">
+                                                                            <i class="bi bi-<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
+                                                                        </a>
+                                                                    <?php else: ?>
+                                                                        <!-- URL-based action -->
+                                                                        <a class="dropdown-item" href="<?= $action['url'] ?>" title="<?= $action['title'] ?>">
+                                                                            <i class="bi bi-<?= $action['icon'] ?> me-2"></i><?= $action['title'] ?>
+                                                                        </a>
+                                                                    <?php endif; ?>
                                                                 </li>
                                                             <?php endforeach; ?>
                                                         </ul>

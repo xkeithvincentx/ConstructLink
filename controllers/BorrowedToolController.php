@@ -1775,6 +1775,72 @@ class BorrowedToolController {
     }
 
     /**
+     * Extend batch return date
+     */
+    public function extendBatch() {
+        // Set JSON header
+        header('Content-Type: application/json');
+
+        $this->requireProjectAssignment();
+
+        // Only accept POST requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            return;
+        }
+
+        try {
+            CSRFProtection::validateRequest();
+
+            $batchId = $_POST['batch_id'] ?? 0;
+            $itemIds = $_POST['item_ids'] ?? [];
+            $newExpectedReturn = $_POST['new_expected_return'] ?? '';
+            $reason = Validator::sanitize($_POST['reason'] ?? '');
+
+            // Validate inputs
+            if (!$batchId) {
+                echo json_encode(['success' => false, 'message' => 'Invalid batch ID']);
+                return;
+            }
+
+            if (empty($itemIds) || !is_array($itemIds)) {
+                echo json_encode(['success' => false, 'message' => 'No items selected']);
+                return;
+            }
+
+            if (empty($newExpectedReturn)) {
+                echo json_encode(['success' => false, 'message' => 'New expected return date is required']);
+                return;
+            }
+
+            if (empty($reason)) {
+                echo json_encode(['success' => false, 'message' => 'Reason for extension is required']);
+                return;
+            }
+
+            // Validate date format and ensure it's in the future
+            $newDate = new DateTime($newExpectedReturn);
+            $today = new DateTime();
+            $today->setTime(0, 0, 0);
+
+            if ($newDate < $today) {
+                echo json_encode(['success' => false, 'message' => 'New return date must be today or in the future']);
+                return;
+            }
+
+            // Extend the batch items
+            $batchModel = new BorrowedToolBatchModel($this->db);
+            $result = $batchModel->extendBatchItems($batchId, $itemIds, $newExpectedReturn, $reason, $this->auth->getCurrentUser()['id']);
+
+            echo json_encode($result);
+
+        } catch (Exception $e) {
+            error_log("Batch extend error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to extend batch: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Cancel batch
      */
     public function cancelBatch() {

@@ -771,9 +771,81 @@ function clearAutoRefresh() {
     </div>
 </div>
 
+<!-- Batch Extend Modal -->
+<div class="modal fade" id="batchExtendModal" tabindex="-1" aria-labelledby="batchExtendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="batchExtendModalLabel">
+                    <i class="bi bi-calendar-plus me-2"></i>Extend Batch Return Date
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="batchExtendForm">
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf_token" value="" id="extendCsrfToken">
+                    <input type="hidden" name="batch_id" value="" id="extendBatchId">
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Select which items in this batch to extend. You can extend all items or only specific items that are still borrowed.
+                    </div>
+
+                    <!-- Batch Items Table with Selection -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="batchExtendTable">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th style="width: 5%">
+                                        <input type="checkbox" class="form-check-input" id="selectAllExtend" title="Select All">
+                                    </th>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 30%">Equipment</th>
+                                    <th style="width: 15%">Reference</th>
+                                    <th style="width: 10%" class="text-center">Borrowed</th>
+                                    <th style="width: 10%" class="text-center">Remaining</th>
+                                    <th style="width: 15%">Current Return Date</th>
+                                    <th style="width: 10%">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchExtendItems">
+                                <!-- Items will be populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- New Return Date -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="new_expected_return" class="form-label">New Expected Return Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="new_expected_return" name="new_expected_return" required>
+                                <small class="text-muted">All selected items will be extended to this date</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="mb-3">
+                        <label for="extend_reason" class="form-label">Reason for Extension <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="extend_reason" name="reason" rows="3" placeholder="Provide reason for extending the return date" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info" id="processExtendBtn">
+                        <i class="bi bi-calendar-plus me-1"></i>Extend Selected Items
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Store CSRF token once at page load for return modal
 const returnBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
+const extendBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 
 // Enhanced load function for batch return modal with Qty In inputs
 document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', function() {
@@ -918,6 +990,198 @@ document.getElementById('batchReturnForm').addEventListener('submit', async func
     } catch (error) {
         console.error('Batch return error:', error);
         alert('Error: Failed to process return. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+});
+
+// Batch Extend Modal Logic
+document.getElementById('batchExtendModal').addEventListener('shown.bs.modal', function() {
+    const batchId = this.getAttribute('data-batch-id');
+    const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+
+    if (!batchItemsRow) {
+        console.error('Batch items row not found for batch ID:', batchId);
+        return;
+    }
+
+    // Set batch ID and CSRF token
+    document.getElementById('extendBatchId').value = batchId;
+    document.getElementById('extendCsrfToken').value = extendBatchCsrfToken;
+
+    // Get batch items data from the hidden table
+    const itemsTable = batchItemsRow.querySelector('.batch-items-table tbody');
+    const items = Array.from(itemsTable.querySelectorAll('tr[data-item-id]'));
+
+    const extendTableBody = document.getElementById('batchExtendItems');
+    extendTableBody.innerHTML = '';
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('new_expected_return').setAttribute('min', today);
+
+    items.forEach((item, index) => {
+        const cells = item.querySelectorAll('td');
+        if (cells.length < 8) {
+            console.warn('Invalid row structure, skipping item', index);
+            return;
+        }
+
+        const borrowedToolId = item.getAttribute('data-item-id');
+        const equipmentName = cells[1].querySelector('strong') ? cells[1].querySelector('strong').textContent : cells[1].textContent;
+        const equipmentCategory = cells[1].querySelector('small') ? cells[1].querySelector('small').textContent : '';
+        const reference = cells[2].textContent.trim();
+        const borrowed = parseInt(cells[3].textContent.trim()) || 1;
+        const returned = parseInt(cells[4].textContent.trim()) || 0;
+        const remaining = borrowed - returned;
+        const statusBadge = cells[8].querySelector('.badge');
+        const status = statusBadge ? statusBadge.textContent.trim() : '';
+
+        // Get expected return date from the main table
+        const mainTableRow = document.querySelector(`tr[data-batch-id="${batchId}"]`);
+        const expectedReturnCell = mainTableRow ? mainTableRow.querySelector('td:nth-child(6)') : null;
+        const expectedReturn = expectedReturnCell ? expectedReturnCell.textContent.trim() : 'N/A';
+
+        // Only show items that have remaining quantity (not fully returned)
+        if (remaining <= 0) {
+            return;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input item-extend-checkbox"
+                       name="item_ids[]" value="${borrowedToolId}"
+                       data-remaining="${remaining}"
+                       ${remaining > 0 ? 'checked' : 'disabled'}>
+            </td>
+            <td>${index + 1}</td>
+            <td>
+                <strong>${equipmentName}</strong>
+                ${equipmentCategory ? `<br><small class="text-muted">${equipmentCategory}</small>` : ''}
+            </td>
+            <td>${reference}</td>
+            <td class="text-center"><span class="badge bg-primary">${borrowed}</span></td>
+            <td class="text-center"><span class="badge bg-warning">${remaining}</span></td>
+            <td>${expectedReturn}</td>
+            <td><span class="badge bg-secondary">${status}</span></td>
+        `;
+
+        extendTableBody.appendChild(row);
+    });
+
+    // Update select all checkbox state
+    updateSelectAllExtendCheckbox();
+});
+
+// Select All Extend functionality
+document.getElementById('selectAllExtend').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.item-extend-checkbox:not(:disabled)');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// Update select all checkbox when individual checkboxes change
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('item-extend-checkbox')) {
+        updateSelectAllExtendCheckbox();
+    }
+});
+
+function updateSelectAllExtendCheckbox() {
+    const checkboxes = document.querySelectorAll('.item-extend-checkbox:not(:disabled)');
+    const selectAllCheckbox = document.getElementById('selectAllExtend');
+
+    if (checkboxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        return;
+    }
+
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+    if (checkedCount === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedCount === checkboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+// Handle batch extend form submission
+document.getElementById('batchExtendForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('processExtendBtn');
+    const originalBtnText = submitBtn.innerHTML;
+
+    // Get selected items
+    const selectedItems = Array.from(document.querySelectorAll('.item-extend-checkbox:checked')).map(cb => cb.value);
+
+    if (selectedItems.length === 0) {
+        alert('Please select at least one item to extend');
+        return;
+    }
+
+    const newExpectedReturn = document.getElementById('new_expected_return').value;
+    const reason = document.getElementById('extend_reason').value.trim();
+
+    if (!newExpectedReturn) {
+        alert('Please enter a new expected return date');
+        return;
+    }
+
+    if (!reason) {
+        alert('Please provide a reason for the extension');
+        return;
+    }
+
+    // Disable submit button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+    try {
+        const formData = new FormData();
+        formData.append('_csrf_token', document.getElementById('extendCsrfToken').value);
+        formData.append('batch_id', document.getElementById('extendBatchId').value);
+        formData.append('new_expected_return', newExpectedReturn);
+        formData.append('reason', reason);
+
+        // Add selected item IDs
+        selectedItems.forEach(itemId => {
+            formData.append('item_ids[]', itemId);
+        });
+
+        const response = await fetch('?route=borrowed-tools/batch/extend', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchExtendModal'));
+            modal.hide();
+
+            // Show success message
+            alert('Batch extended successfully!');
+
+            // Reload page to show updated dates
+            window.location.reload();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to extend batch'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    } catch (error) {
+        console.error('Batch extend error:', error);
+        alert('Error: Failed to extend batch. Please try again.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }

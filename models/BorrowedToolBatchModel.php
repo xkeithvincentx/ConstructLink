@@ -900,5 +900,131 @@ class BorrowedToolBatchModel extends BaseModel {
             error_log("Activity logging error: " . $e->getMessage());
         }
     }
+
+    /**
+     * Extend batch items return date
+     * @param int $batchId - The batch ID
+     * @param array $itemIds - Array of borrowed_tools IDs to extend
+     * @param string $newExpectedReturn - New expected return date
+     * @param string $reason - Reason for extension
+     * @param int $extendedBy - User ID who extended
+     * @return array - Success/error message
+     */
+    public function extendBatchItems($batchId, $itemIds, $newExpectedReturn, $reason, $extendedBy) {
+        try {
+            $this->db->beginTransaction();
+
+            // Validate batch exists and belongs to the project
+            $batch = $this->getBatchWithItems($batchId);
+            if (!$batch) {
+                throw new Exception("Batch not found");
+            }
+
+            // Validate that all item IDs belong to this batch
+            $validItemIds = array_column($batch['items'], 'id');
+            $invalidItems = array_diff($itemIds, $validItemIds);
+
+            if (!empty($invalidItems)) {
+                throw new Exception("Some items do not belong to this batch");
+            }
+
+            // Validate items are in a state that can be extended (Borrowed or Partially Returned)
+            foreach ($batch['items'] as $item) {
+                if (in_array($item['id'], $itemIds)) {
+                    $remaining = $item['quantity'] - $item['quantity_returned'];
+
+                    if ($remaining <= 0) {
+                        throw new Exception("Cannot extend item {$item['asset_name']} - already fully returned");
+                    }
+
+                    if (!in_array($item['status'], ['Borrowed', 'Released'])) {
+                        throw new Exception("Cannot extend item {$item['asset_name']} - invalid status: {$item['status']}");
+                    }
+                }
+            }
+
+            // Validate new date is not earlier than current expected return
+            $currentExpectedReturn = new DateTime($batch['expected_return']);
+            $newDate = new DateTime($newExpectedReturn);
+
+            if ($newDate < $currentExpectedReturn) {
+                throw new Exception("New return date cannot be earlier than current expected return date");
+            }
+
+            // Update expected_return for selected items in borrowed_tools
+            $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+            $updateSql = "
+                UPDATE borrowed_tools
+                SET expected_return = ?,
+                    updated_at = NOW()
+                WHERE id IN ($placeholders)
+                AND batch_id = ?
+            ";
+
+            $params = array_merge([$newExpectedReturn], $itemIds, [$batchId]);
+            $stmt = $this->db->prepare($updateSql);
+            $stmt->execute($params);
+
+            $affectedRows = $stmt->rowCount();
+
+            // Update batch expected_return date to the maximum of all items
+            $updateBatchSql = "
+                UPDATE borrowed_tool_batches
+                SET expected_return = (
+                    SELECT MAX(expected_return)
+                    FROM borrowed_tools
+                    WHERE batch_id = ?
+                ),
+                updated_at = NOW()
+                WHERE id = ?
+            ";
+            $batchStmt = $this->db->prepare($updateBatchSql);
+            $batchStmt->execute([$batchId, $batchId]);
+
+            // Log extension for each item
+            foreach ($itemIds as $itemId) {
+                $logSql = "
+                    INSERT INTO borrowed_tool_logs
+                    (borrowed_tool_id, action, user_id, notes, created_at)
+                    VALUES (?, 'extended', ?, ?, NOW())
+                ";
+                $logStmt = $this->db->prepare($logSql);
+                $logStmt->execute([
+                    $itemId,
+                    $extendedBy,
+                    "Extended return date to " . date('Y-m-d', strtotime($newExpectedReturn)) . ". Reason: " . $reason
+                ]);
+            }
+
+            // Log activity for batch
+            try {
+                $activityModel = new ActivityLogModel($this->db);
+                $activityModel->logActivity(
+                    'borrowed_tool_batch',
+                    $batchId,
+                    'extended',
+                    "Batch return date extended for " . count($itemIds) . " item(s). Reason: " . $reason,
+                    $extendedBy
+                );
+            } catch (Exception $e) {
+                error_log("Activity logging error: " . $e->getMessage());
+            }
+
+            $this->db->commit();
+
+            return [
+                'success' => true,
+                'message' => "Successfully extended " . $affectedRows . " item(s) to " . date('M d, Y', strtotime($newExpectedReturn))
+            ];
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Batch extend error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
 }
 ?>
