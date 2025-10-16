@@ -119,8 +119,8 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
         <?php endif; ?>
 
         <?php if (in_array($batch['status'], ['Released', 'Partially Returned']) && hasRole(['Warehouseman', 'Site Inventory Clerk', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/return&id=<?= $batch['id'] ?>" class="btn btn-primary">
-                <i class="bi bi-arrow-return-left me-1"></i>Process Return
+            <a href="?route=borrowed-tools" class="btn btn-primary">
+                <i class="bi bi-arrow-return-left me-1"></i>Return to List to Process Return
             </a>
         <?php endif; ?>
 
@@ -160,8 +160,8 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
         <?php endif; ?>
 
         <?php if (in_array($batch['status'], ['Released', 'Partially Returned']) && hasRole(['Warehouseman', 'Site Inventory Clerk', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/return&id=<?= $batch['id'] ?>" class="btn btn-primary">
-                <i class="bi bi-arrow-return-left me-1"></i>Process Return
+            <a href="?route=borrowed-tools" class="btn btn-primary">
+                <i class="bi bi-arrow-return-left me-1"></i>Return to List to Process Return
             </a>
         <?php endif; ?>
 

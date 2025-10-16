@@ -1751,7 +1751,10 @@ class BorrowedToolController {
                 }
             }
 
-            include APP_ROOT . '/views/borrowed-tools/batch-return.php';
+            // GET request - redirect to borrowed-tools list
+            // The return modal is available in the index page
+            header('Location: ?route=borrowed-tools');
+            exit;
 
         } catch (Exception $e) {
             error_log("Batch return error: " . $e->getMessage());

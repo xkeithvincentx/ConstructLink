@@ -738,12 +738,14 @@ function clearAutoRefresh() {
                             <thead class="table-secondary">
                                 <tr>
                                     <th style="width: 5%">#</th>
-                                    <th style="width: 30%">Equipment</th>
-                                    <th style="width: 15%">Reference</th>
-                                    <th style="width: 10%">Qty Out</th>
-                                    <th style="width: 10%">Qty In</th>
-                                    <th style="width: 15%">Condition</th>
-                                    <th style="width: 15%">Notes</th>
+                                    <th style="width: 25%">Equipment</th>
+                                    <th style="width: 12%">Reference</th>
+                                    <th style="width: 8%" class="text-center">Borrowed</th>
+                                    <th style="width: 8%" class="text-center">Returned</th>
+                                    <th style="width: 8%" class="text-center">Remaining</th>
+                                    <th style="width: 10%" class="text-center">Return Now</th>
+                                    <th style="width: 12%">Condition</th>
+                                    <th style="width: 12%">Notes</th>
                                 </tr>
                             </thead>
                             <tbody id="batchReturnItems">
@@ -824,8 +826,9 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
         const equipmentName = equipmentCell.querySelector('strong') ? equipmentCell.querySelector('strong').textContent : equipmentCell.textContent;
         const equipmentCategory = equipmentCell.querySelector('small') ? equipmentCell.querySelector('small').textContent : '';
         const reference = cells[2].textContent.trim();
-        const qtyOut = cells[3].textContent.trim();
-        const serialNumber = cells[4].textContent.trim();
+        const borrowed = parseInt(cells[3].textContent.trim()) || 1;
+        const returned = parseInt(cells[4].textContent.trim()) || 0;
+        const remaining = borrowed - returned;
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -833,28 +836,37 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             <td>
                 <strong>${equipmentName}</strong>
                 ${equipmentCategory ? `<br><small class="text-muted">${equipmentCategory}</small>` : ''}
+                ${remaining === 0 ? '<br><small class="text-success"><i class="bi bi-check-circle-fill"></i> Fully Returned</small>' : ''}
             </td>
             <td><code>${reference}</code></td>
-            <td class="text-center"><strong>${qtyOut}</strong></td>
-            <td>
+            <td class="text-center"><span class="badge bg-primary">${borrowed}</span></td>
+            <td class="text-center"><span class="badge bg-success">${returned}</span></td>
+            <td class="text-center"><span class="badge bg-${remaining > 0 ? 'warning' : 'secondary'}">${remaining}</span></td>
+            <td class="text-center">
+                ${remaining > 0 ? `
                 <input type="number"
                        class="form-control form-control-sm qty-in-input"
                        name="qty_in[]"
                        min="0"
-                       max="${qtyOut}"
-                       value="${qtyOut}">
+                       max="${remaining}"
+                       value="${remaining}"
+                       style="width: 70px; display: inline-block;">
                 <input type="hidden" name="item_id[]" value="${borrowedToolId}">
+                ` : '<span class="text-muted">-</span>'}
             </td>
             <td>
+                ${remaining > 0 ? `
                 <select class="form-select form-select-sm" name="condition[]">
                     <option value="Good" selected>Good</option>
                     <option value="Fair">Fair</option>
+                    <option value="Poor">Poor</option>
                     <option value="Damaged">Damaged</option>
-                    <option value="Missing">Missing</option>
+                    <option value="Lost">Lost</option>
                 </select>
+                ` : `<span class="badge bg-success">${cells[5] ? cells[5].textContent.trim() : 'Good'}</span>`}
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional notes">
+                ${remaining > 0 ? `<input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">` : '-'}
             </td>
         `;
         returnTableBody.appendChild(row);
