@@ -572,7 +572,6 @@ class BorrowedToolBatchModel extends BaseModel {
             }
 
             // Process each returned item
-            $allItemsReturned = true;
             $borrowedToolModel = new BorrowedToolModel();
 
             foreach ($returnedItems as $item) {
@@ -614,13 +613,24 @@ class BorrowedToolBatchModel extends BaseModel {
                     // Update asset status back to available
                     $assetModel = new AssetModel();
                     $assetModel->update($borrowedTool['asset_id'], ['status' => 'available']);
-                } else {
-                    // Partial return - keep status as Borrowed
-                    $allItemsReturned = false;
                 }
 
                 $borrowedToolModel->update($borrowToolId, $updateData);
             }
+
+            // Check if ALL items in the batch are fully returned
+            $checkAllReturnedSql = "
+                SELECT
+                    COUNT(*) as total_items,
+                    SUM(CASE WHEN quantity_returned >= quantity THEN 1 ELSE 0 END) as fully_returned_items
+                FROM borrowed_tools
+                WHERE batch_id = ?
+            ";
+            $checkStmt = $this->db->prepare($checkAllReturnedSql);
+            $checkStmt->execute([$batchId]);
+            $batchReturnStatus = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            $allItemsReturned = ($batchReturnStatus['total_items'] == $batchReturnStatus['fully_returned_items']);
 
             // Update batch status
             $batchStatus = $allItemsReturned ? 'Returned' : 'Partially Returned';
