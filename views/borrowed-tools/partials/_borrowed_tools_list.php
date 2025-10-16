@@ -267,14 +267,14 @@
                     <thead>
                         <tr>
                             <th class="sortable" data-sort="id">
-                                ID
+                                Reference
                                 <?php if (isset($currentSort) && $currentSort === 'id'): ?>
                                     <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
                                 <?php endif; ?>
                             </th>
-                            <th class="sortable" data-sort="reference">
-                                Reference
-                                <?php if (isset($currentSort) && $currentSort === 'reference'): ?>
+                            <th class="sortable" data-sort="items">
+                                Items
+                                <?php if (isset($currentSort) && $currentSort === 'items'): ?>
                                     <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
                                 <?php endif; ?>
                             </th>
@@ -287,12 +287,6 @@
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                                 <th>Purpose</th>
                             <?php endif; ?>
-                            <th class="sortable" data-sort="items">
-                                Items
-                                <?php if (isset($currentSort) && $currentSort === 'items'): ?>
-                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
-                                <?php endif; ?>
-                            </th>
                             <th class="sortable" data-sort="date">
                                 Date
                                 <?php if (isset($currentSort) && $currentSort === 'date'): ?>
@@ -346,7 +340,7 @@
                                         <?php elseif ($isDueSoon): ?>
                                             <i class="bi bi-clock-fill text-warning me-1" title="Due Soon"></i>
                                         <?php endif; ?>
-                                        <a href="?route=borrowed-tools/view&id=<?= $tool['id'] ?>" class="text-decoration-none fw-medium">
+                                        <a href="?route=borrowed-tools/view&id=<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>" class="text-decoration-none fw-medium">
                                             <?php if (!empty($tool['batch_reference'])): ?>
                                                 <?= htmlspecialchars($tool['batch_reference']) ?>
                                             <?php else: ?>
@@ -356,24 +350,13 @@
                                     </div>
                                 </td>
 
-                                <!-- Reference / Description -->
+                                <!-- Items -->
                                 <td>
                                     <?php if ($isBatch): ?>
-                                        <!-- Batch: Show batch reference -->
-                                        <div class="fw-medium">
-                                            <?php if (!empty($tool['batch_reference'])): ?>
-                                                <?= htmlspecialchars($tool['batch_reference']) ?>
-                                            <?php else: ?>
-                                                Batch #<?= $batchId ?>
-                                            <?php endif; ?>
-                                        </div>
-                                        <small class="text-muted"><?= $batchCount ?> Equipment Items</small>
+                                        <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
                                     <?php else: ?>
-                                        <!-- Single Item: Show equipment description/name -->
-                                        <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
-                                        <?php if (!empty($tool['asset_category'])): ?>
-                                            <small class="text-muted"><?= htmlspecialchars($tool['asset_category']) ?></small>
-                                        <?php endif; ?>
+                                        <div class="fw-medium"><?= htmlspecialchars($tool['asset_ref']) ?></div>
+                                        <small class="text-muted"><?= htmlspecialchars($tool['asset_name']) ?></small>
                                     <?php endif; ?>
                                 </td>
 
@@ -413,15 +396,6 @@
                                         </div>
                                     </td>
                                 <?php endif; ?>
-
-                                <!-- Items -->
-                                <td class="text-center">
-                                    <?php if ($isBatch): ?>
-                                        <span class="badge bg-primary"><?= $batchCount ?></span>
-                                    <?php else: ?>
-                                        <span class="text-muted"><?= htmlspecialchars($tool['asset_ref']) ?></span>
-                                    <?php endif; ?>
-                                </td>
 
                                 <!-- Date (Expected Return / Due Status) -->
                                 <td>

@@ -395,10 +395,20 @@ class BorrowedToolController {
                 return;
             }
 
-            // Convert single borrowed tool to batch format for unified view
+            // If this item has a batch_id, load the full batch instead
+            if (!empty($borrowedTool['batch_id'])) {
+                $batch = $batchModel->getBatchWithItems($borrowedTool['batch_id'], $this->getProjectFilter());
+                if ($batch) {
+                    $auth = $this->auth;
+                    include APP_ROOT . '/views/borrowed-tools/view.php';
+                    return;
+                }
+            }
+
+            // Convert single borrowed tool to batch format for unified view (legacy items without batch)
             $batch = [
                 'id' => $borrowedTool['batch_id'] ?? $borrowedTool['id'],
-                'batch_reference' => $borrowedTool['id'] ? "BT-" . str_pad($borrowedTool['id'], 6, '0', STR_PAD_LEFT) : 'N/A',
+                'batch_reference' => $borrowedTool['batch_reference'] ?? ($borrowedTool['id'] ? "BT-" . str_pad($borrowedTool['id'], 6, '0', STR_PAD_LEFT) : 'N/A'),
                 'borrower_name' => $borrowedTool['borrower_name'] ?? 'N/A',
                 'borrower_contact' => $borrowedTool['borrower_contact'] ?? '',
                 'expected_return' => $borrowedTool['expected_return'] ?? date('Y-m-d'),

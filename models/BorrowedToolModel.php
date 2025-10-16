@@ -605,6 +605,7 @@ class BorrowedToolModel extends BaseModel {
                    a.acquisition_cost,
                    c.name as category_name,
                    p.name as project_name,
+                   btb.batch_reference,
                    u.full_name as issued_by_name,
                    uv.full_name as verified_by_name,
                    ua.full_name as approved_by_name,
@@ -615,6 +616,7 @@ class BorrowedToolModel extends BaseModel {
             INNER JOIN assets a ON bt.asset_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
+            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
             LEFT JOIN users u ON bt.issued_by = u.id
             LEFT JOIN users uv ON bt.verified_by = uv.id
             LEFT JOIN users ua ON bt.approved_by = ua.id
