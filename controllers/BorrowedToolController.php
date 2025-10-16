@@ -1642,12 +1642,40 @@ class BorrowedToolController {
 
         try {
             $batchModel = new BorrowedToolBatchModel();
+
+            // First, try to get as batch
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            // If not found as batch, try as single item
+            if (!$batch) {
+                $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithDetails($batchId, $this->getProjectFilter());
+
+                if ($borrowedTool) {
+                    // Convert single item to batch format for consistent processing
+                    $batch = [
+                        'id' => null, // No batch ID for single items
+                        'batch_reference' => $borrowedTool['asset_ref'] ?? "BT-{$batchId}",
+                        'status' => $borrowedTool['status'],
+                        'expected_return' => $borrowedTool['expected_return'],
+                        'items' => [
+                            [
+                                'id' => $borrowedTool['id'],
+                                'asset_id' => $borrowedTool['asset_id'],
+                                'asset_name' => $borrowedTool['asset_name'],
+                                'asset_ref' => $borrowedTool['asset_ref'],
+                                'quantity' => $borrowedTool['quantity'] ?? 1,
+                                'quantity_returned' => $borrowedTool['quantity_returned'] ?? 0,
+                                'status' => $borrowedTool['status']
+                            ]
+                        ]
+                    ];
+                }
+            }
 
             if (!$batch) {
                 if ($this->isAjaxRequest()) {
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Batch not found']);
+                    echo json_encode(['success' => false, 'message' => 'Item or batch not found']);
                     return;
                 }
                 http_response_code(404);
@@ -1725,27 +1753,100 @@ class BorrowedToolController {
                     $notes = Validator::sanitize($_POST['return_notes'] ?? '');
                     $returnedBy = $this->auth->getCurrentUser()['id'];
 
-                    $result = $batchModel->returnBatch($batchId, $returnedBy, $returnedItems, $notes);
+                    // Determine if this is a batch or single item
+                    $isSingleItem = ($batch['id'] === null);
 
-                    if ($result['success']) {
-                        if ($this->isAjaxRequest()) {
-                            header('Content-Type: application/json');
-                            echo json_encode([
-                                'success' => true,
-                                'message' => 'Batch returned successfully',
-                                'batch_id' => $batchId
+                    if ($isSingleItem) {
+                        // For single items, process the return directly using BorrowedToolModel
+                        $itemId = $batch['items'][0]['id'];
+                        $quantityReturned = $returnedItems[0]['quantity_returned'];
+                        $conditionIn = $returnedItems[0]['condition_in'] ?? 'Good';
+
+                        try {
+                            $db = Database::getInstance()->getConnection();
+                            $db->beginTransaction();
+
+                            // Update the borrowed tool record
+                            $updateSql = "
+                                UPDATE borrowed_tools
+                                SET quantity_returned = quantity_returned + ?,
+                                    condition_returned = ?,
+                                    return_notes = ?,
+                                    returned_by = ?,
+                                    return_date = NOW(),
+                                    status = CASE
+                                        WHEN (quantity_returned + ?) >= quantity THEN 'Returned'
+                                        ELSE 'Borrowed'
+                                    END,
+                                    updated_at = NOW()
+                                WHERE id = ?
+                            ";
+
+                            $stmt = $db->prepare($updateSql);
+                            $stmt->execute([
+                                $quantityReturned,
+                                $conditionIn,
+                                $notes,
+                                $returnedBy,
+                                $quantityReturned,
+                                $itemId
                             ]);
-                            return;
-                        }
-                        header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_returned');
-                        exit;
-                    } else {
-                        $errors[] = $result['message'];
 
-                        if ($this->isAjaxRequest()) {
-                            header('Content-Type: application/json');
-                            echo json_encode(['success' => false, 'message' => $result['message']]);
-                            return;
+                            // Log the return
+                            $logSql = "
+                                INSERT INTO borrowed_tool_logs (borrowed_tool_id, action, user_id, notes, created_at)
+                                VALUES (?, 'returned', ?, ?, NOW())
+                            ";
+                            $logStmt = $db->prepare($logSql);
+                            $logStmt->execute([$itemId, $returnedBy, "Returned {$quantityReturned} unit(s) in {$conditionIn} condition. " . $notes]);
+
+                            $db->commit();
+
+                            if ($this->isAjaxRequest()) {
+                                header('Content-Type: application/json');
+                                echo json_encode([
+                                    'success' => true,
+                                    'message' => 'Item returned successfully'
+                                ]);
+                                return;
+                            }
+                            header('Location: ?route=borrowed-tools&message=item_returned');
+                            exit;
+                        } catch (Exception $e) {
+                            $db->rollBack();
+                            error_log("Single item return error: " . $e->getMessage());
+
+                            if ($this->isAjaxRequest()) {
+                                header('Content-Type: application/json');
+                                echo json_encode(['success' => false, 'message' => 'Failed to return item: ' . $e->getMessage()]);
+                                return;
+                            }
+                            $errors[] = 'Failed to return item';
+                        }
+                    } else {
+                        // For batches, use the existing batch return logic
+                        $result = $batchModel->returnBatch($batchId, $returnedBy, $returnedItems, $notes);
+
+                        if ($result['success']) {
+                            if ($this->isAjaxRequest()) {
+                                header('Content-Type: application/json');
+                                echo json_encode([
+                                    'success' => true,
+                                    'message' => 'Batch returned successfully',
+                                    'batch_id' => $batchId
+                                ]);
+                                return;
+                            }
+                            header('Location: ?route=borrowed-tools/batch/view&id=' . $batchId . '&message=batch_returned');
+                            exit;
+                        } else {
+                            $errors[] = $result['message'];
+
+                            if ($this->isAjaxRequest()) {
+                                header('Content-Type: application/json');
+                                echo json_encode(['success' => false, 'message' => $result['message']]);
+                                return;
+                            }
                         }
                     }
                 }

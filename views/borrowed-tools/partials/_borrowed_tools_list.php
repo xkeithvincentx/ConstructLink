@@ -620,7 +620,9 @@
                                             elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                                 $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
                                                 $primaryAction = [
-                                                    'url' => "?route=borrowed-tools/return&id={$tool['id']}",
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchReturnModal',
+                                                    'batch_id' => !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'],
                                                     'class' => $isBorrowedOverdue ? 'btn-danger' : 'btn-success',
                                                     'icon' => 'box-arrow-down',
                                                     'text' => $isBorrowedOverdue ? 'Return Overdue' : 'Return Tool',
@@ -820,6 +822,34 @@
                                                     </tbody>
                                                 </table>
                                             </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <!-- Hidden Single Item Data Row (for modal) -->
+                                <tr class="batch-items-row" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>" style="display: none;">
+                                    <td colspan="100%" class="p-0">
+                                        <div class="batch-items-container" style="display: none;">
+                                            <table class="batch-items-table">
+                                                <tbody>
+                                                    <tr data-item-id="<?= $tool['id'] ?>">
+                                                        <td>1</td>
+                                                        <td>
+                                                            <strong><?= htmlspecialchars($tool['asset_name']) ?></strong>
+                                                            <?php if (!empty($tool['category_name'])): ?>
+                                                                <small class="text-muted"><?= htmlspecialchars($tool['category_name']) ?></small>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td><?= htmlspecialchars($tool['asset_ref']) ?></td>
+                                                        <td><?= $tool['quantity'] ?? 1 ?></td>
+                                                        <td><?= $tool['quantity_returned'] ?? 0 ?></td>
+                                                        <td><?= ($tool['quantity'] ?? 1) - ($tool['quantity_returned'] ?? 0) ?></td>
+                                                        <td><?= !empty($tool['condition_returned']) ? htmlspecialchars($tool['condition_returned']) : '-' ?></td>
+                                                        <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
+                                                        <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </td>
                                 </tr>
