@@ -885,7 +885,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
 
     items.forEach((item, index) => {
         const cells = item.querySelectorAll('td');
-        if (cells.length < 8) {
+        if (cells.length < 10) {
             console.warn('Invalid row structure, skipping item', index);
             return;
         }
@@ -901,7 +901,8 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
         const borrowed = parseInt(cells[3].textContent.trim()) || 1;
         const returned = parseInt(cells[4].textContent.trim()) || 0;
         const remaining = borrowed - returned;
-        const returnedCondition = cells[6].textContent.trim(); // Column 6 is now Condition
+        const returnedCondition = cells[6].textContent.trim();
+        const returnedNotes = cells[9].textContent.trim();
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -939,7 +940,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                 ` : `<span class="badge bg-info">${returnedCondition || 'Good'}</span>`}
             </td>
             <td>
-                ${remaining > 0 ? `<input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">` : '-'}
+                ${remaining > 0 ? `<input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">` : `<small class="text-muted">${returnedNotes !== '-' ? returnedNotes : ''}</small>`}
             </td>
         `;
         returnTableBody.appendChild(row);

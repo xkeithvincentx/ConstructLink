@@ -755,14 +755,15 @@
                                                     <thead class="table-secondary">
                                                         <tr>
                                                             <th style="width: 5%">#</th>
-                                                            <th style="width: 30%">Equipment</th>
-                                                            <th style="width: 12%">Reference</th>
-                                                            <th style="width: 7%">Borrowed</th>
-                                                            <th style="width: 7%">Returned</th>
-                                                            <th style="width: 7%">Remaining</th>
-                                                            <th style="width: 10%">Condition</th>
-                                                            <th style="width: 12%">Serial Number</th>
-                                                            <th style="width: 10%">Status</th>
+                                                            <th style="width: 25%">Equipment</th>
+                                                            <th style="width: 10%">Reference</th>
+                                                            <th style="width: 6%">Borrowed</th>
+                                                            <th style="width: 6%">Returned</th>
+                                                            <th style="width: 6%">Remaining</th>
+                                                            <th style="width: 8%">Condition</th>
+                                                            <th style="width: 10%">Serial Number</th>
+                                                            <th style="width: 8%">Status</th>
+                                                            <th style="width: 16%">Notes</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -817,6 +818,13 @@
                                                                         <i class="bi bi-<?= $config['icon'] ?> me-1"></i><?= $actualStatus ?>
                                                                     </span>
                                                                 </td>
+                                                                <td>
+                                                                    <?php if (!empty($item['return_notes'])): ?>
+                                                                        <small class="text-muted"><?= htmlspecialchars($item['return_notes']) ?></small>
+                                                                    <?php else: ?>
+                                                                        <span class="text-muted">-</span>
+                                                                    <?php endif; ?>
+                                                                </td>
                                                             </tr>
                                                         <?php endforeach; ?>
                                                     </tbody>
@@ -847,6 +855,7 @@
                                                         <td><?= !empty($tool['condition_returned']) ? htmlspecialchars($tool['condition_returned']) : '-' ?></td>
                                                         <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
                                                         <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
+                                                        <td><?= !empty($tool['return_notes']) ? htmlspecialchars($tool['return_notes']) : '-' ?></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
