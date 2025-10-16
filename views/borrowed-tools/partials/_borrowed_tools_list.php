@@ -726,13 +726,14 @@
                                                     <thead class="table-secondary">
                                                         <tr>
                                                             <th style="width: 5%">#</th>
-                                                            <th style="width: 35%">Equipment</th>
-                                                            <th style="width: 15%">Reference</th>
-                                                            <th style="width: 8%">Borrowed</th>
-                                                            <th style="width: 8%">Returned</th>
-                                                            <th style="width: 8%">Remaining</th>
-                                                            <th style="width: 13%">Serial Number</th>
-                                                            <th style="width: 8%">Status</th>
+                                                            <th style="width: 30%">Equipment</th>
+                                                            <th style="width: 12%">Reference</th>
+                                                            <th style="width: 7%">Borrowed</th>
+                                                            <th style="width: 7%">Returned</th>
+                                                            <th style="width: 7%">Remaining</th>
+                                                            <th style="width: 10%">Condition</th>
+                                                            <th style="width: 12%">Serial Number</th>
+                                                            <th style="width: 10%">Status</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -754,6 +755,13 @@
                                                                 <td class="text-center"><span class="badge bg-primary"><?= $borrowed ?></span></td>
                                                                 <td class="text-center"><span class="badge bg-success"><?= $returned ?></span></td>
                                                                 <td class="text-center"><span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>"><?= $remaining ?></span></td>
+                                                                <td>
+                                                                    <?php if ($remaining == 0 && !empty($item['condition_returned'])): ?>
+                                                                        <span class="badge bg-info"><?= htmlspecialchars($item['condition_returned']) ?></span>
+                                                                    <?php else: ?>
+                                                                        <span class="text-muted">-</span>
+                                                                    <?php endif; ?>
+                                                                </td>
                                                                 <td>
                                                                     <?php if (!empty($item['serial_number'])): ?>
                                                                         <code><?= htmlspecialchars($item['serial_number']) ?></code>

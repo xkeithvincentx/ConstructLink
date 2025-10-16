@@ -813,7 +813,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
 
     items.forEach((item, index) => {
         const cells = item.querySelectorAll('td');
-        if (cells.length < 6) {
+        if (cells.length < 8) {
             console.warn('Invalid row structure, skipping item', index);
             return;
         }
@@ -829,6 +829,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
         const borrowed = parseInt(cells[3].textContent.trim()) || 1;
         const returned = parseInt(cells[4].textContent.trim()) || 0;
         const remaining = borrowed - returned;
+        const returnedCondition = cells[6].textContent.trim(); // Column 6 is now Condition
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -863,7 +864,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                     <option value="Damaged">Damaged</option>
                     <option value="Lost">Lost</option>
                 </select>
-                ` : `<span class="badge bg-success">${cells[5] ? cells[5].textContent.trim() : 'Good'}</span>`}
+                ` : `<span class="badge bg-info">${returnedCondition || 'Good'}</span>`}
             </td>
             <td>
                 ${remaining > 0 ? `<input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">` : '-'}
