@@ -718,7 +718,7 @@ function clearAutoRefresh() {
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="batchReturnModalLabel">
-                    <i class="bi bi-box-arrow-down me-2"></i>Return Batch
+                    <i class="bi bi-box-arrow-down me-2"></i>Return Equipment
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
