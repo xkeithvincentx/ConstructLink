@@ -1340,6 +1340,13 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
         formData.append('reported_by', <?= $_SESSION['user_id'] ?? 0 ?>);
         formData.append('date_reported', new Date().toISOString().split('T')[0]);
 
+        console.log('Submitting incident report...', {
+            asset_id: formData.get('asset_id'),
+            borrowed_tool_id: formData.get('borrowed_tool_id'),
+            type: formData.get('type'),
+            severity: formData.get('severity')
+        });
+
         const response = await fetch('?route=incidents/create', {
             method: 'POST',
             headers: {
@@ -1348,13 +1355,22 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
             body: formData
         });
 
-        if (response.redirected) {
+        console.log('Response status:', response.status);
+        console.log('Response redirected:', response.redirected);
+
+        // Check if response is HTML (error page) or JSON
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
+
+        if (response.redirected || response.status === 302) {
             // Success - incident was created and redirected to view page
             const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
-            incidentModal.hide();
+            if (incidentModal) {
+                incidentModal.hide();
+            }
 
             // Track the incident
-            const incidentId = response.url.split('id=')[1]?.split('&')[0];
+            const incidentId = response.url.split('id=')[1]?.split('&')[0] || 'NEW';
             reportedIncidents[borrowedToolId] = {
                 incident_id: incidentId,
                 type: formData.get('type'),
@@ -1390,15 +1406,19 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
             `;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 5000);
-        } else {
+        } else if (contentType && contentType.includes('application/json')) {
             const result = await response.json();
+            console.log('JSON response:', result);
+
             if (result.success) {
                 const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
-                incidentModal.hide();
+                if (incidentModal) {
+                    incidentModal.hide();
+                }
 
                 // Track the incident
                 reportedIncidents[borrowedToolId] = {
-                    incident_id: result.incident?.id,
+                    incident_id: result.incident?.id || 'NEW',
                     type: formData.get('type'),
                     severity: formData.get('severity')
                 };
@@ -1433,14 +1453,22 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);
             } else {
+                console.error('Incident creation failed:', result);
                 alert('Error: ' + (result.message || 'Failed to create incident'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
             }
+        } else {
+            // HTML response - likely an error page
+            const htmlText = await response.text();
+            console.error('HTML response received:', htmlText.substring(0, 500));
+            alert('Error: Server returned an error page. Check browser console for details.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     } catch (error) {
         console.error('Incident creation error:', error);
-        alert('Error: Failed to create incident. Please try again.');
+        alert('Error: Failed to create incident. Please try again.\n' + error.message);
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
