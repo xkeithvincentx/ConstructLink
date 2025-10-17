@@ -738,14 +738,15 @@ function clearAutoRefresh() {
                             <thead class="table-secondary">
                                 <tr>
                                     <th style="width: 5%">#</th>
-                                    <th style="width: 25%">Equipment</th>
+                                    <th style="width: 23%">Equipment</th>
                                     <th style="width: 12%">Reference</th>
-                                    <th style="width: 8%" class="text-center">Borrowed</th>
-                                    <th style="width: 8%" class="text-center">Returned</th>
-                                    <th style="width: 8%" class="text-center">Remaining</th>
-                                    <th style="width: 10%" class="text-center">Return Now</th>
+                                    <th style="width: 7%" class="text-center">Borrowed</th>
+                                    <th style="width: 7%" class="text-center">Returned</th>
+                                    <th style="width: 7%" class="text-center">Remaining</th>
+                                    <th style="width: 9%" class="text-center">Return Now</th>
                                     <th style="width: 12%">Condition</th>
                                     <th style="width: 12%">Notes</th>
+                                    <th style="width: 6%" class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="batchReturnItems">
@@ -842,10 +843,76 @@ function clearAutoRefresh() {
     </div>
 </div>
 
+<!-- Quick Incident Report Modal -->
+<div class="modal fade" id="quickIncidentModal" tabindex="-1" aria-labelledby="quickIncidentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="quickIncidentModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Report Incident
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickIncidentForm">
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf_token" value="" id="incidentCsrfToken">
+                    <input type="hidden" name="asset_id" value="" id="incidentAssetId">
+                    <input type="hidden" name="borrowed_tool_id" value="" id="incidentBorrowedToolId">
+
+                    <div class="alert alert-info">
+                        <strong id="incidentEquipmentName"></strong><br>
+                        <small>Reference: <code id="incidentAssetRef"></code></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="incident_type" class="form-label">Incident Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="incident_type" name="type" required>
+                            <option value="">Select Type</option>
+                            <option value="lost">Lost</option>
+                            <option value="damaged">Damaged</option>
+                            <option value="stolen">Stolen</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="incident_severity" class="form-label">Severity</label>
+                        <select class="form-select" id="incident_severity" name="severity">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="incident_description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="incident_description" name="description" rows="4" required
+                                  placeholder="Describe what happened, when it occurred, and any relevant details..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="incident_location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="incident_location" name="location"
+                               placeholder="Where did this incident occur?">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="submitIncidentBtn">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Report Incident
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Store CSRF token once at page load for return modal
 const returnBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 const extendBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
+const incidentCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 
 // Enhanced load function for batch return modal with Qty In inputs
 document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', function() {
@@ -941,6 +1008,17 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             </td>
             <td>
                 ${remaining > 0 ? `<input type="text" class="form-control form-control-sm" name="item_notes[]" placeholder="Optional">` : `<small class="text-muted">${returnedNotes !== '-' ? returnedNotes : ''}</small>`}
+            </td>
+            <td class="text-center">
+                ${remaining > 0 ? `
+                <button type="button" class="btn btn-sm btn-outline-danger report-incident-item-btn"
+                        data-item-id="${borrowedToolId}"
+                        data-asset-ref="${reference}"
+                        data-asset-name="${equipmentName}"
+                        title="Report incident for this item">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </button>
+                ` : '-'}
             </td>
         `;
         returnTableBody.appendChild(row);
@@ -1183,6 +1261,101 @@ document.getElementById('batchExtendForm').addEventListener('submit', async func
     } catch (error) {
         console.error('Batch extend error:', error);
         alert('Error: Failed to extend batch. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+});
+
+// Handle incident report button click from return modal
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.report-incident-item-btn')) {
+        e.preventDefault();
+        const btn = e.target.closest('.report-incident-item-btn');
+        const itemId = btn.getAttribute('data-item-id');
+        const assetRef = btn.getAttribute('data-asset-ref');
+        const assetName = btn.getAttribute('data-asset-name');
+
+        // Get asset ID from the hidden row
+        const batchId = document.getElementById('returnBatchId').value;
+        const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+        const itemRow = Array.from(batchItemsRow.querySelectorAll('tr[data-item-id]')).find(row => row.getAttribute('data-item-id') == itemId);
+
+        let assetId = null;
+        if (itemRow) {
+            const assetIdCell = itemRow.querySelector('td:nth-child(11)');
+            if (assetIdCell) {
+                assetId = assetIdCell.textContent.trim();
+            }
+        }
+
+        // Populate incident modal
+        document.getElementById('incidentCsrfToken').value = incidentCsrfToken;
+        document.getElementById('incidentAssetId').value = assetId || '';
+        document.getElementById('incidentBorrowedToolId').value = itemId;
+        document.getElementById('incidentEquipmentName').textContent = assetName;
+        document.getElementById('incidentAssetRef').textContent = assetRef;
+
+        // Reset form fields
+        document.getElementById('incident_type').value = '';
+        document.getElementById('incident_severity').value = 'medium';
+        document.getElementById('incident_description').value = '';
+        document.getElementById('incident_location').value = '';
+
+        // Show incident modal
+        const incidentModal = new bootstrap.Modal(document.getElementById('quickIncidentModal'));
+        incidentModal.show();
+    }
+});
+
+// Handle incident form submission
+document.getElementById('quickIncidentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitIncidentBtn');
+    const originalBtnText = submitBtn.innerHTML;
+
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating Incident...';
+
+    try {
+        const formData = new FormData(this);
+        formData.append('reported_by', <?= $_SESSION['user_id'] ?? 0 ?>);
+        formData.append('date_reported', new Date().toISOString().split('T')[0]);
+
+        const response = await fetch('?route=incidents/create', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+
+        if (response.redirected) {
+            // Success - incident was created and redirected to view page
+            const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
+            incidentModal.hide();
+
+            alert('Incident report created successfully!');
+
+            // Optionally open the incident view in new tab
+            window.open(response.url, '_blank');
+        } else {
+            const result = await response.json();
+            if (result.success) {
+                const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
+                incidentModal.hide();
+
+                alert('Incident report created successfully!');
+            } else {
+                alert('Error: ' + (result.message || 'Failed to create incident'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        }
+    } catch (error) {
+        console.error('Incident creation error:', error);
+        alert('Error: Failed to create incident. Please try again.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
