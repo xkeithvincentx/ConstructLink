@@ -914,6 +914,9 @@ const returnBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 const extendBatchCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 const incidentCsrfToken = '<?= CSRFProtection::generateToken() ?>';
 
+// Track incidents reported during current return session
+const reportedIncidents = {};
+
 // Enhanced load function for batch return modal with Qty In inputs
 document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', function() {
     const batchId = this.getAttribute('data-batch-id');
@@ -1012,7 +1015,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             </td>
             <td class="text-center">
                 ${remaining > 0 ? `
-                <button type="button" class="btn btn-sm btn-outline-danger report-incident-item-btn"
+                <button type="button" class="btn btn-sm btn-outline-danger report-incident-item-btn incident-btn-${borrowedToolId}"
                         data-item-id="${borrowedToolId}"
                         data-asset-id="${assetId}"
                         data-asset-ref="${reference}"
@@ -1020,6 +1023,9 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                         title="Report incident for this item">
                     <i class="bi bi-exclamation-triangle"></i>
                 </button>
+                <small class="d-block mt-1 text-success incident-reported-badge-${borrowedToolId}" style="display:none !important;">
+                    <i class="bi bi-check-circle-fill"></i> Incident Reported
+                </small>
                 ` : '-'}
             </td>
         `;
@@ -1058,8 +1064,23 @@ document.getElementById('batchReturnForm').addEventListener('submit', async func
             const modal = bootstrap.Modal.getInstance(document.getElementById('batchReturnModal'));
             modal.hide();
 
+            // Build success message with incident summary
+            let successMessage = result.message || 'Batch returned successfully!';
+
+            // Add manual incident reports to the summary
+            const manualIncidentCount = Object.keys(reportedIncidents).length;
+            if (manualIncidentCount > 0) {
+                successMessage += '\n\nManually reported incidents: ' + manualIncidentCount;
+                Object.entries(reportedIncidents).forEach(([itemId, incident]) => {
+                    successMessage += '\n- Incident #' + incident.incident_id + ' (' + incident.type + ', ' + incident.severity + ' severity)';
+                });
+            }
+
             // Show success message
-            alert('Batch returned successfully!');
+            alert(successMessage);
+
+            // Clear tracked incidents for next session
+            Object.keys(reportedIncidents).forEach(key => delete reportedIncidents[key]);
 
             // Reload page to show updated status
             window.location.reload();
@@ -1278,6 +1299,12 @@ document.addEventListener('click', function(e) {
         const assetRef = btn.getAttribute('data-asset-ref');
         const assetName = btn.getAttribute('data-asset-name');
 
+        // Check if incident already reported for this item
+        if (reportedIncidents[itemId]) {
+            alert('An incident has already been reported for this item in this session.\nIncident #' + reportedIncidents[itemId].incident_id);
+            return;
+        }
+
         // Populate incident modal
         document.getElementById('incidentCsrfToken').value = incidentCsrfToken;
         document.getElementById('incidentAssetId').value = assetId || '';
@@ -1303,6 +1330,7 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
 
     const submitBtn = document.getElementById('submitIncidentBtn');
     const originalBtnText = submitBtn.innerHTML;
+    const borrowedToolId = document.getElementById('incidentBorrowedToolId').value;
 
     // Disable button and show loading state
     submitBtn.disabled = true;
@@ -1326,17 +1354,85 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
             const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
             incidentModal.hide();
 
-            alert('Incident report created successfully!');
+            // Track the incident
+            const incidentId = response.url.split('id=')[1]?.split('&')[0];
+            reportedIncidents[borrowedToolId] = {
+                incident_id: incidentId,
+                type: formData.get('type'),
+                severity: formData.get('severity')
+            };
 
-            // Optionally open the incident view in new tab
-            window.open(response.url, '_blank');
+            // Update UI - hide button and show badge
+            const incidentBtn = document.querySelector(`.incident-btn-${borrowedToolId}`);
+            const incidentBadge = document.querySelector(`.incident-reported-badge-${borrowedToolId}`);
+            if (incidentBtn) {
+                incidentBtn.style.display = 'none';
+            }
+            if (incidentBadge) {
+                incidentBadge.style.display = 'block';
+                incidentBadge.style.removeProperty('display');
+            }
+
+            // Show toast notification
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '11';
+            toast.innerHTML = `
+                <div class="toast show" role="alert">
+                    <div class="toast-header bg-success text-white">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong class="me-auto">Incident Reported</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        Incident #${incidentId} created successfully. Continue with the return process.
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
         } else {
             const result = await response.json();
             if (result.success) {
                 const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
                 incidentModal.hide();
 
-                alert('Incident report created successfully!');
+                // Track the incident
+                reportedIncidents[borrowedToolId] = {
+                    incident_id: result.incident?.id,
+                    type: formData.get('type'),
+                    severity: formData.get('severity')
+                };
+
+                // Update UI
+                const incidentBtn = document.querySelector(`.incident-btn-${borrowedToolId}`);
+                const incidentBadge = document.querySelector(`.incident-reported-badge-${borrowedToolId}`);
+                if (incidentBtn) {
+                    incidentBtn.style.display = 'none';
+                }
+                if (incidentBadge) {
+                    incidentBadge.style.display = 'block';
+                    incidentBadge.style.removeProperty('display');
+                }
+
+                // Show toast
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '11';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert">
+                        <div class="toast-header bg-success text-white">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <strong class="me-auto">Incident Reported</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                        </div>
+                        <div class="toast-body">
+                            Incident created successfully. Continue with the return process.
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
             } else {
                 alert('Error: ' + (result.message || 'Failed to create incident'));
                 submitBtn.disabled = false;
