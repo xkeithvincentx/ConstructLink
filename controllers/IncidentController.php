@@ -140,9 +140,31 @@ class IncidentController {
                     }
                 }
 
+                // Check if this is an AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Incident reported successfully',
+                        'incident' => $result['incident']
+                    ]);
+                    exit;
+                }
+
                 header('Location: ?route=incidents/view&id=' . $result['incident']['id'] . '&message=incident_reported');
                 exit;
             } else {
+                // Check if this is an AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => isset($result['errors']) ? implode(', ', $result['errors']) : $result['message'],
+                        'errors' => $result['errors'] ?? []
+                    ]);
+                    exit;
+                }
+
                 if (isset($result['errors'])) {
                     $errors = $result['errors'];
                 } else {

@@ -1340,13 +1340,6 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
         formData.append('reported_by', <?= $_SESSION['user_id'] ?? 0 ?>);
         formData.append('date_reported', new Date().toISOString().split('T')[0]);
 
-        console.log('Submitting incident report...', {
-            asset_id: formData.get('asset_id'),
-            borrowed_tool_id: formData.get('borrowed_tool_id'),
-            type: formData.get('type'),
-            severity: formData.get('severity')
-        });
-
         const response = await fetch('?route=incidents/create', {
             method: 'POST',
             headers: {
@@ -1355,60 +1348,11 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
             body: formData
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response redirected:', response.redirected);
-
         // Check if response is HTML (error page) or JSON
         const contentType = response.headers.get('content-type');
-        console.log('Content-Type:', contentType);
 
-        if (response.redirected || response.status === 302) {
-            // Success - incident was created and redirected to view page
-            const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
-            if (incidentModal) {
-                incidentModal.hide();
-            }
-
-            // Track the incident
-            const incidentId = response.url.split('id=')[1]?.split('&')[0] || 'NEW';
-            reportedIncidents[borrowedToolId] = {
-                incident_id: incidentId,
-                type: formData.get('type'),
-                severity: formData.get('severity')
-            };
-
-            // Update UI - hide button and show badge
-            const incidentBtn = document.querySelector(`.incident-btn-${borrowedToolId}`);
-            const incidentBadge = document.querySelector(`.incident-reported-badge-${borrowedToolId}`);
-            if (incidentBtn) {
-                incidentBtn.style.display = 'none';
-            }
-            if (incidentBadge) {
-                incidentBadge.style.display = 'block';
-                incidentBadge.style.removeProperty('display');
-            }
-
-            // Show toast notification
-            const toast = document.createElement('div');
-            toast.className = 'position-fixed bottom-0 end-0 p-3';
-            toast.style.zIndex = '11';
-            toast.innerHTML = `
-                <div class="toast show" role="alert">
-                    <div class="toast-header bg-success text-white">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <strong class="me-auto">Incident Reported</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body">
-                        Incident #${incidentId} created successfully. Continue with the return process.
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
-        } else if (contentType && contentType.includes('application/json')) {
+        if (contentType && contentType.includes('application/json')) {
             const result = await response.json();
-            console.log('JSON response:', result);
 
             if (result.success) {
                 const incidentModal = bootstrap.Modal.getInstance(document.getElementById('quickIncidentModal'));
@@ -1446,14 +1390,13 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
                         </div>
                         <div class="toast-body">
-                            Incident created successfully. Continue with the return process.
+                            Incident #${result.incident?.id || 'NEW'} created successfully. Continue with the return process.
                         </div>
                     </div>
                 `;
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);
             } else {
-                console.error('Incident creation failed:', result);
                 alert('Error: ' + (result.message || 'Failed to create incident'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
@@ -1461,14 +1404,12 @@ document.getElementById('quickIncidentForm').addEventListener('submit', async fu
         } else {
             // HTML response - likely an error page
             const htmlText = await response.text();
-            console.error('HTML response received:', htmlText.substring(0, 500));
-            alert('Error: Server returned an error page. Check browser console for details.');
+            alert('Error: Server returned an unexpected response. Please try again.');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnText;
         }
     } catch (error) {
-        console.error('Incident creation error:', error);
-        alert('Error: Failed to create incident. Please try again.\n' + error.message);
+        alert('Error: Failed to create incident. Please try again.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
