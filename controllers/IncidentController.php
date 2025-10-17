@@ -112,7 +112,7 @@ class IncidentController {
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             CSRFProtection::validateRequest();
-            
+
             $formData = [
                 'asset_id' => (int)($_POST['asset_id'] ?? 0),
                 'type' => $_POST['type'] ?? 'other',
@@ -121,12 +121,25 @@ class IncidentController {
                 'reported_by' => $_SESSION['user_id'],
                 'severity' => $_POST['severity'] ?? 'medium',
                 'location' => Validator::sanitize($_POST['location'] ?? ''),
-                'witnesses' => Validator::sanitize($_POST['witnesses'] ?? '')
+                'witnesses' => Validator::sanitize($_POST['witnesses'] ?? ''),
+                'borrowed_tool_id' => !empty($_POST['borrowed_tool_id']) ? (int)$_POST['borrowed_tool_id'] : null
             ];
-            
+
             $result = $this->incidentModel->createIncident($formData);
-            
+
             if ($result['success']) {
+                // If incident came from borrowed tools, add reference note
+                if (!empty($formData['borrowed_tool_id'])) {
+                    try {
+                        $db = Database::getInstance()->getConnection();
+                        $updateSql = "UPDATE incidents SET notes = CONCAT(COALESCE(notes, ''), 'Linked to borrowed tool ID: " . $formData['borrowed_tool_id'] . "') WHERE id = ?";
+                        $stmt = $db->prepare($updateSql);
+                        $stmt->execute([$result['incident']['id']]);
+                    } catch (Exception $e) {
+                        error_log("Failed to add borrowed tool reference: " . $e->getMessage());
+                    }
+                }
+
                 header('Location: ?route=incidents/view&id=' . $result['incident']['id'] . '&message=incident_reported');
                 exit;
             } else {

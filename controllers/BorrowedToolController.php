@@ -1761,17 +1761,49 @@ class BorrowedToolController {
                         $itemId = $batch['items'][0]['id'];
                         $quantityReturned = $returnedItems[0]['quantity_returned'];
                         $conditionIn = $returnedItems[0]['condition_in'] ?? 'Good';
+                        $itemNotes = $returnedItems[0]['notes'] ?? '';
 
                         try {
                             $db = Database::getInstance()->getConnection();
                             $db->beginTransaction();
+
+                            // Get borrowed tool and asset details for incident creation
+                            $borrowedToolSql = "SELECT bt.*, a.ref as asset_ref, a.name as asset_name FROM borrowed_tools bt LEFT JOIN assets a ON bt.asset_id = a.id WHERE bt.id = ?";
+                            $borrowedToolStmt = $db->prepare($borrowedToolSql);
+                            $borrowedToolStmt->execute([$itemId]);
+                            $borrowedToolData = $borrowedToolStmt->fetch(PDO::FETCH_ASSOC);
+
+                            // Auto-create incident for Damaged or Lost items
+                            $incidentCreated = null;
+                            if (in_array($conditionIn, ['Damaged', 'Lost'])) {
+                                $incidentModel = new IncidentModel();
+
+                                $incidentType = ($conditionIn === 'Damaged') ? 'damaged' : 'lost';
+                                $incidentSeverity = ($conditionIn === 'Damaged') ? 'medium' : 'high';
+
+                                $incidentData = [
+                                    'asset_id' => $borrowedToolData['asset_id'],
+                                    'borrowed_tool_id' => $itemId,
+                                    'reported_by' => $returnedBy,
+                                    'type' => $incidentType,
+                                    'severity' => $incidentSeverity,
+                                    'description' => "Equipment returned from borrowed tools with condition: {$conditionIn}. " . $itemNotes,
+                                    'date_reported' => date('Y-m-d')
+                                ];
+
+                                $incidentResult = $incidentModel->createIncident($incidentData);
+
+                                if ($incidentResult['success']) {
+                                    $incidentCreated = $incidentResult['incident']['id'];
+                                }
+                            }
 
                             // Update the borrowed tool record
                             $updateSql = "
                                 UPDATE borrowed_tools
                                 SET quantity_returned = quantity_returned + ?,
                                     condition_returned = ?,
-                                    return_notes = ?,
+                                    line_notes = ?,
                                     returned_by = ?,
                                     return_date = NOW(),
                                     status = CASE
@@ -1786,11 +1818,22 @@ class BorrowedToolController {
                             $stmt->execute([
                                 $quantityReturned,
                                 $conditionIn,
-                                $notes,
+                                $itemNotes,
                                 $returnedBy,
                                 $quantityReturned,
                                 $itemId
                             ]);
+
+                            // Update asset status (unless damaged/lost)
+                            if (in_array($conditionIn, ['Damaged', 'Lost'])) {
+                                $assetUpdateSql = "UPDATE assets SET status = 'under_maintenance' WHERE id = ?";
+                                $assetStmt = $db->prepare($assetUpdateSql);
+                                $assetStmt->execute([$borrowedToolData['asset_id']]);
+                            } else {
+                                $assetUpdateSql = "UPDATE assets SET status = 'available' WHERE id = ?";
+                                $assetStmt = $db->prepare($assetUpdateSql);
+                                $assetStmt->execute([$borrowedToolData['asset_id']]);
+                            }
 
                             // Log the return
                             $logSql = "
@@ -1802,11 +1845,17 @@ class BorrowedToolController {
 
                             $db->commit();
 
+                            $successMessage = 'Item returned successfully';
+                            if ($incidentCreated) {
+                                $successMessage .= '. Incident #' . $incidentCreated . ' created';
+                            }
+
                             if ($this->isAjaxRequest()) {
                                 header('Content-Type: application/json');
                                 echo json_encode([
                                     'success' => true,
-                                    'message' => 'Item returned successfully'
+                                    'message' => $successMessage,
+                                    'incident_created' => $incidentCreated
                                 ]);
                                 return;
                             }

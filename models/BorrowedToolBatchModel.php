@@ -571,8 +571,9 @@ class BorrowedToolBatchModel extends BaseModel {
                 return ['success' => false, 'message' => 'Batch is not currently released or partially returned'];
             }
 
-            // Process each returned item
+            // Process each returned item and track incidents
             $borrowedToolModel = new BorrowedToolModel();
+            $incidentsCreated = [];
 
             foreach ($returnedItems as $item) {
                 $borrowToolId = $item['borrowed_tool_id'];
@@ -582,7 +583,7 @@ class BorrowedToolBatchModel extends BaseModel {
 
                 // CONCURRENCY FIX: Lock borrowed_tools row to prevent double-return
                 // This prevents race condition where two users simultaneously return the same item
-                $lockSql = "SELECT * FROM borrowed_tools WHERE id = ? FOR UPDATE";
+                $lockSql = "SELECT bt.*, a.ref as asset_ref, a.name as asset_name FROM borrowed_tools bt LEFT JOIN assets a ON bt.asset_id = a.id WHERE bt.id = ? FOR UPDATE";
                 $lockStmt = $this->db->prepare($lockSql);
                 $lockStmt->execute([$borrowToolId]);
                 $borrowedTool = $lockStmt->fetch(PDO::FETCH_ASSOC);
@@ -595,6 +596,37 @@ class BorrowedToolBatchModel extends BaseModel {
                 if ($newTotalReturned > $borrowedTool['quantity']) {
                     $this->db->rollBack();
                     return ['success' => false, 'message' => 'Cannot return more than borrowed quantity for ' . $borrowedTool['asset_id']];
+                }
+
+                // Auto-create incident for Damaged or Lost items
+                if (in_array($conditionIn, ['Damaged', 'Lost'])) {
+                    $incidentModel = new IncidentModel();
+
+                    $incidentType = ($conditionIn === 'Damaged') ? 'damaged' : 'lost';
+                    $incidentSeverity = ($conditionIn === 'Damaged') ? 'medium' : 'high';
+
+                    $incidentData = [
+                        'asset_id' => $borrowedTool['asset_id'],
+                        'borrowed_tool_id' => $borrowToolId,
+                        'reported_by' => $returnedBy,
+                        'type' => $incidentType,
+                        'severity' => $incidentSeverity,
+                        'description' => "Equipment returned from borrowed tools with condition: {$conditionIn}. " . $itemNotes,
+                        'date_reported' => date('Y-m-d')
+                    ];
+
+                    $incidentResult = $incidentModel->createIncident($incidentData);
+
+                    if ($incidentResult['success']) {
+                        $incidentsCreated[] = [
+                            'asset_ref' => $borrowedTool['asset_ref'],
+                            'asset_name' => $borrowedTool['asset_name'],
+                            'condition' => $conditionIn,
+                            'incident_id' => $incidentResult['incident']['id']
+                        ];
+                    } else {
+                        error_log("Failed to create incident for borrowed tool {$borrowToolId}: " . json_encode($incidentResult));
+                    }
                 }
 
                 // Update borrowed_tools record
@@ -612,9 +644,15 @@ class BorrowedToolBatchModel extends BaseModel {
                     $updateData['return_date'] = date('Y-m-d H:i:s');
                     $updateData['condition_in'] = $conditionIn;
 
-                    // Update asset status back to available
-                    $assetModel = new AssetModel();
-                    $assetModel->update($borrowedTool['asset_id'], ['status' => 'available']);
+                    // Update asset status back to available (unless damaged/lost)
+                    if (!in_array($conditionIn, ['Damaged', 'Lost'])) {
+                        $assetModel = new AssetModel();
+                        $assetModel->update($borrowedTool['asset_id'], ['status' => 'available']);
+                    } else {
+                        // Mark asset as under maintenance for damaged/lost items
+                        $assetModel = new AssetModel();
+                        $assetModel->update($borrowedTool['asset_id'], ['status' => 'under_maintenance']);
+                    }
                 }
 
                 $borrowedToolModel->update($borrowToolId, $updateData);
@@ -652,7 +690,18 @@ class BorrowedToolBatchModel extends BaseModel {
             $this->logActivity('return_batch', "Batch {$batch['batch_reference']} " . ($allItemsReturned ? 'fully' : 'partially') . " returned", 'borrowed_tool_batches', $batchId);
 
             $this->db->commit();
-            return ['success' => true, 'message' => 'Batch return processed successfully', 'fully_returned' => $allItemsReturned];
+
+            $message = 'Batch return processed successfully';
+            if (count($incidentsCreated) > 0) {
+                $message .= '. ' . count($incidentsCreated) . ' incident(s) created for damaged/lost items';
+            }
+
+            return [
+                'success' => true,
+                'message' => $message,
+                'fully_returned' => $allItemsReturned,
+                'incidents_created' => $incidentsCreated
+            ];
 
         } catch (Exception $e) {
             $this->db->rollBack();

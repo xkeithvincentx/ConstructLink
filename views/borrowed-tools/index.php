@@ -930,7 +930,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             </td>
             <td>
                 ${remaining > 0 ? `
-                <select class="form-select form-select-sm" name="condition[]">
+                <select class="form-select form-select-sm condition-select" name="condition[]">
                     <option value="Good" selected>Good</option>
                     <option value="Fair">Fair</option>
                     <option value="Poor">Poor</option>
@@ -1187,6 +1187,7 @@ document.getElementById('batchExtendForm').addEventListener('submit', async func
         submitBtn.innerHTML = originalBtnText;
     }
 });
+
 </script>
 
 <?php

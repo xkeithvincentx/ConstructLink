@@ -10,6 +10,13 @@ if (!hasPermission('incidents/create')) {
     echo '<div class="alert alert-danger">You do not have permission to create an incident report.</div>';
     return;
 }
+
+// Get pre-fill parameters from URL (from borrowed-tools integration)
+$assetRef = $_GET['asset_ref'] ?? '';
+$prefillType = $_GET['type'] ?? '';
+$prefillSeverity = $_GET['severity'] ?? '';
+$prefillDescription = $_GET['description'] ?? '';
+$borrowedToolId = $_GET['borrowed_tool_id'] ?? '';
 ?>
 
 <!-- MVA Workflow Sidebar -->
@@ -91,10 +98,10 @@ if (!hasPermission('incidents/create')) {
                         <div class="col-md-6 mb-3">
                             <label for="type" class="form-label">Incident Type <span class="text-danger">*</span></label>
                             <select class="form-select" id="type" name="type" required>
-                                <option value="lost" <?= ($formData['type'] ?? '') === 'lost' ? 'selected' : '' ?>>Lost</option>
-                                <option value="damaged" <?= ($formData['type'] ?? '') === 'damaged' ? 'selected' : '' ?>>Damaged</option>
-                                <option value="stolen" <?= ($formData['type'] ?? '') === 'stolen' ? 'selected' : '' ?>>Stolen</option>
-                                <option value="other" <?= ($formData['type'] ?? 'other') === 'other' ? 'selected' : '' ?>>Other</option>
+                                <option value="lost" <?= ($formData['type'] ?? $prefillType) === 'lost' ? 'selected' : '' ?>>Lost</option>
+                                <option value="damaged" <?= ($formData['type'] ?? $prefillType) === 'damaged' ? 'selected' : '' ?>>Damaged</option>
+                                <option value="stolen" <?= ($formData['type'] ?? $prefillType) === 'stolen' ? 'selected' : '' ?>>Stolen</option>
+                                <option value="other" <?= ($formData['type'] ?? $prefillType ?: 'other') === 'other' ? 'selected' : '' ?>>Other</option>
                             </select>
                         </div>
 
@@ -102,10 +109,10 @@ if (!hasPermission('incidents/create')) {
                         <div class="col-md-6 mb-3">
                             <label for="severity" class="form-label">Severity</label>
                             <select class="form-select" id="severity" name="severity">
-                                <option value="low" <?= ($formData['severity'] ?? '') === 'low' ? 'selected' : '' ?>>Low</option>
-                                <option value="medium" <?= ($formData['severity'] ?? 'medium') === 'medium' ? 'selected' : '' ?>>Medium</option>
-                                <option value="high" <?= ($formData['severity'] ?? '') === 'high' ? 'selected' : '' ?>>High</option>
-                                <option value="critical" <?= ($formData['severity'] ?? '') === 'critical' ? 'selected' : '' ?>>Critical</option>
+                                <option value="low" <?= ($formData['severity'] ?? $prefillSeverity) === 'low' ? 'selected' : '' ?>>Low</option>
+                                <option value="medium" <?= ($formData['severity'] ?? $prefillSeverity ?: 'medium') === 'medium' ? 'selected' : '' ?>>Medium</option>
+                                <option value="high" <?= ($formData['severity'] ?? $prefillSeverity) === 'high' ? 'selected' : '' ?>>High</option>
+                                <option value="critical" <?= ($formData['severity'] ?? $prefillSeverity) === 'critical' ? 'selected' : '' ?>>Critical</option>
                             </select>
                         </div>
                     </div>
@@ -113,16 +120,21 @@ if (!hasPermission('incidents/create')) {
                     <!-- Description -->
                     <div class="mb-3">
                         <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-                        <textarea class="form-control <?= isset($errors) && in_array('Description is required', $errors) ? 'is-invalid' : '' ?>" 
-                                  id="description" 
-                                  name="description" 
-                                  rows="4" 
-                                  required 
-                                  placeholder="Describe what happened, when it occurred, and any relevant details..."><?= htmlspecialchars($formData['description'] ?? '') ?></textarea>
+                        <textarea class="form-control <?= isset($errors) && in_array('Description is required', $errors) ? 'is-invalid' : '' ?>"
+                                  id="description"
+                                  name="description"
+                                  rows="4"
+                                  required
+                                  placeholder="Describe what happened, when it occurred, and any relevant details..."><?= htmlspecialchars($formData['description'] ?? $prefillDescription) ?></textarea>
                         <div class="invalid-feedback">
                             Please provide a description of the incident.
                         </div>
                     </div>
+
+                    <!-- Hidden field for borrowed_tool_id -->
+                    <?php if (!empty($borrowedToolId)): ?>
+                        <input type="hidden" name="borrowed_tool_id" value="<?= htmlspecialchars($borrowedToolId) ?>">
+                    <?php endif; ?>
 
                     <div class="row">
                         <!-- Location -->
@@ -264,11 +276,30 @@ if (!hasPermission('incidents/create')) {
 </div>
 
 <script>
+// Auto-select asset based on asset_ref URL parameter
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const assetRef = urlParams.get('asset_ref');
+
+    if (assetRef) {
+        const assetSelect = document.getElementById('asset_id');
+        const options = assetSelect.options;
+
+        for (let i = 0; i < options.length; i++) {
+            const optionText = options[i].text;
+            if (optionText.startsWith(assetRef + ' -')) {
+                assetSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+});
+
 // Auto-set severity based on incident type
 document.getElementById('type').addEventListener('change', function() {
     const type = this.value;
     const severitySelect = document.getElementById('severity');
-    
+
     // Suggest severity based on type
     switch(type) {
         case 'lost':
@@ -289,14 +320,14 @@ document.getElementById('type').addEventListener('change', function() {
 document.querySelector('form').addEventListener('submit', function(e) {
     const assetId = document.getElementById('asset_id').value;
     const description = document.getElementById('description').value.trim();
-    
+
     if (!assetId) {
         e.preventDefault();
         alert('Please select an asset.');
         document.getElementById('asset_id').focus();
         return false;
     }
-    
+
     if (description.length < 10) {
         e.preventDefault();
         alert('Please provide a more detailed description (at least 10 characters).');

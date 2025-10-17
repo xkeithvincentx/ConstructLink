@@ -7,7 +7,7 @@
 class IncidentModel extends BaseModel {
     protected $table = 'incidents';
     protected $fillable = [
-        'asset_id', 'reported_by', 'type', 'severity', 'description', 'location',
+        'asset_id', 'borrowed_tool_id', 'reported_by', 'type', 'severity', 'description', 'location',
         'witnesses', 'date_reported', 'status', 'resolution_notes', 'resolved_by', 'resolution_date',
         // MVA workflow fields
         'verified_by', 'verification_date', 'authorized_by', 'authorization_date',
@@ -74,6 +74,7 @@ class IncidentModel extends BaseModel {
             // Set initial status for MVA workflow
             $incidentData = [
                 'asset_id' => (int)$data['asset_id'],
+                'borrowed_tool_id' => !empty($data['borrowed_tool_id']) ? (int)$data['borrowed_tool_id'] : null,
                 'reported_by' => (int)$data['reported_by'],
                 'type' => $data['type'],
                 'severity' => $data['severity'] ?? 'medium',
