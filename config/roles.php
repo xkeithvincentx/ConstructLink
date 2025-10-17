@@ -128,7 +128,7 @@ return [
         'authorizer' => ['Asset Director'], // Authorizes resolution and approves actions
         'viewer' => ['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'] // Can view all incidents
     ],
-    'incidents/create' => ['Site Inventory Clerk', 'System Admin'],
+    'incidents/create' => ['Site Inventory Clerk', 'Warehouseman', 'Project Manager', 'System Admin'],
     'incidents/investigate' => ['Project Manager', 'System Admin'], // Verifier step
     'incidents/resolve' => ['Asset Director', 'System Admin'], // Authorizer step (can authorize and resolve)
     'incidents/close' => ['Asset Director', 'System Admin'], // Final closure
