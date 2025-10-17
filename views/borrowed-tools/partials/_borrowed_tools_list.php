@@ -773,7 +773,7 @@
                                                             $returned = $item['quantity_returned'] ?? 0;
                                                             $remaining = $borrowed - $returned;
                                                             ?>
-                                                            <tr data-item-id="<?= $item['id'] ?>">
+                                                            <tr data-item-id="<?= $item['id'] ?>" data-asset-id="<?= $item['asset_id'] ?>">
                                                                 <td><?= $index + 1 ?></td>
                                                                 <td>
                                                                     <strong><?= htmlspecialchars($item['asset_name']) ?></strong>
@@ -840,7 +840,7 @@
                                         <div class="batch-items-container" style="display: none;">
                                             <table class="batch-items-table">
                                                 <tbody>
-                                                    <tr data-item-id="<?= $tool['id'] ?>">
+                                                    <tr data-item-id="<?= $tool['id'] ?>" data-asset-id="<?= $tool['asset_id'] ?>">
                                                         <td>1</td>
                                                         <td>
                                                             <strong><?= htmlspecialchars($tool['asset_name']) ?></strong>
@@ -856,6 +856,7 @@
                                                         <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
                                                         <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
                                                         <td><?= !empty($tool['line_notes']) ? htmlspecialchars($tool['line_notes']) : '-' ?></td>
+                                                        <td style="display:none;"><?= $tool['asset_id'] ?></td>
                                                     </tr>
                                                 </tbody>
                                             </table>

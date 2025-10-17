@@ -957,8 +957,9 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
             return;
         }
 
-        // Get borrowed_tool ID from data attribute or row
+        // Get borrowed_tool ID and asset ID from data attributes
         const borrowedToolId = item.getAttribute('data-item-id') || item.dataset.id || '';
+        const assetId = item.getAttribute('data-asset-id') || item.dataset.assetId || '';
 
         const itemNumber = cells[0].textContent.trim();
         const equipmentCell = cells[1];
@@ -1013,6 +1014,7 @@ document.getElementById('batchReturnModal').addEventListener('shown.bs.modal', f
                 ${remaining > 0 ? `
                 <button type="button" class="btn btn-sm btn-outline-danger report-incident-item-btn"
                         data-item-id="${borrowedToolId}"
+                        data-asset-id="${assetId}"
                         data-asset-ref="${reference}"
                         data-asset-name="${equipmentName}"
                         title="Report incident for this item">
@@ -1272,21 +1274,9 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         const btn = e.target.closest('.report-incident-item-btn');
         const itemId = btn.getAttribute('data-item-id');
+        const assetId = btn.getAttribute('data-asset-id');
         const assetRef = btn.getAttribute('data-asset-ref');
         const assetName = btn.getAttribute('data-asset-name');
-
-        // Get asset ID from the hidden row
-        const batchId = document.getElementById('returnBatchId').value;
-        const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
-        const itemRow = Array.from(batchItemsRow.querySelectorAll('tr[data-item-id]')).find(row => row.getAttribute('data-item-id') == itemId);
-
-        let assetId = null;
-        if (itemRow) {
-            const assetIdCell = itemRow.querySelector('td:nth-child(11)');
-            if (assetIdCell) {
-                assetId = assetIdCell.textContent.trim();
-            }
-        }
 
         // Populate incident modal
         document.getElementById('incidentCsrfToken').value = incidentCsrfToken;
