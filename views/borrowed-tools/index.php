@@ -855,7 +855,7 @@ function clearAutoRefresh() {
             </div>
             <form id="quickIncidentForm">
                 <div class="modal-body">
-                    <input type="hidden" name="_csrf_token" value="" id="incidentCsrfToken">
+                    <input type="hidden" name="_csrf_token" value="<?= CSRFProtection::generateToken() ?>" id="incidentCsrfToken">
                     <input type="hidden" name="asset_id" value="" id="incidentAssetId">
                     <input type="hidden" name="borrowed_tool_id" value="" id="incidentBorrowedToolId">
 
@@ -1306,7 +1306,6 @@ document.addEventListener('click', function(e) {
         }
 
         // Populate incident modal
-        document.getElementById('incidentCsrfToken').value = incidentCsrfToken;
         document.getElementById('incidentAssetId').value = assetId || '';
         document.getElementById('incidentBorrowedToolId').value = itemId;
         document.getElementById('incidentEquipmentName').textContent = assetName;
