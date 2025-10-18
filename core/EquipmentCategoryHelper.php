@@ -104,11 +104,14 @@ class EquipmentCategoryHelper {
             }
 
             // Exclude items currently borrowed or in pending batches
+            // But allow items that are fully returned (quantity = quantity_returned) or have status 'Returned'
             $sql .= " AND a.id NOT IN (
                 SELECT bt.asset_id
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
                 WHERE btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Borrowed', 'Partially Returned')
+                  AND bt.status != 'Returned'
+                  AND (bt.quantity > bt.quantity_returned OR bt.quantity_returned IS NULL)
             )";
 
             $sql .= " ORDER BY c.name, et.name, a.name";
