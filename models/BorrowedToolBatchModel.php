@@ -644,14 +644,20 @@ class BorrowedToolBatchModel extends BaseModel {
                     $updateData['return_date'] = date('Y-m-d H:i:s');
                     $updateData['condition_in'] = $conditionIn;
 
-                    // Update asset status back to available (unless damaged/lost)
+                    // Update asset status and current condition
+                    $assetModel = new AssetModel();
                     if (!in_array($conditionIn, ['Damaged', 'Lost'])) {
-                        $assetModel = new AssetModel();
-                        $assetModel->update($borrowedTool['asset_id'], ['status' => 'available']);
+                        // Good/Fair/Poor: Update condition and mark available
+                        $assetModel->update($borrowedTool['asset_id'], [
+                            'status' => 'available',
+                            'current_condition' => $conditionIn
+                        ]);
                     } else {
-                        // Mark asset as under maintenance for damaged/lost items
-                        $assetModel = new AssetModel();
-                        $assetModel->update($borrowedTool['asset_id'], ['status' => 'under_maintenance']);
+                        // Damaged/Lost: Mark under maintenance and update condition
+                        $assetModel->update($borrowedTool['asset_id'], [
+                            'status' => 'under_maintenance',
+                            'current_condition' => $conditionIn
+                        ]);
                     }
                 }
 

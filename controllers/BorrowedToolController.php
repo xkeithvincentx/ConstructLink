@@ -1839,15 +1839,17 @@ class BorrowedToolController {
                                 $itemId
                             ]);
 
-                            // Update asset status (unless damaged/lost)
+                            // Update asset status and current condition
                             if (in_array($conditionIn, ['Damaged', 'Lost'])) {
-                                $assetUpdateSql = "UPDATE assets SET status = 'under_maintenance' WHERE id = ?";
+                                // Damaged/Lost: Mark as under maintenance
+                                $assetUpdateSql = "UPDATE assets SET status = 'under_maintenance', current_condition = ? WHERE id = ?";
                                 $assetStmt = $db->prepare($assetUpdateSql);
-                                $assetStmt->execute([$borrowedToolData['asset_id']]);
+                                $assetStmt->execute([$conditionIn, $borrowedToolData['asset_id']]);
                             } else {
-                                $assetUpdateSql = "UPDATE assets SET status = 'available' WHERE id = ?";
+                                // Good/Fair/Poor: Update condition and keep available
+                                $assetUpdateSql = "UPDATE assets SET status = 'available', current_condition = ? WHERE id = ?";
                                 $assetStmt = $db->prepare($assetUpdateSql);
-                                $assetStmt->execute([$borrowedToolData['asset_id']]);
+                                $assetStmt->execute([$conditionIn, $borrowedToolData['asset_id']]);
                             }
 
                             // Log the return

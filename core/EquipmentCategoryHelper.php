@@ -79,6 +79,7 @@ class EquipmentCategoryHelper {
                     a.serial_number,
                     a.acquisition_cost,
                     a.status,
+                    a.current_condition,
                     c.id as category_id,
                     c.name as category_name,
                     c.iso_code,

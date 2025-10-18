@@ -200,8 +200,21 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                                                 <strong>Category:</strong> <span x-text="item.category_name"></span>
                                             </p>
                                             <template x-if="item.model">
-                                                <p class="text-muted small mb-0">
+                                                <p class="text-muted small mb-1">
                                                     <strong>Model:</strong> <span x-text="item.model"></span>
+                                                </p>
+                                            </template>
+                                            <template x-if="item.current_condition">
+                                                <p class="mb-0">
+                                                    <span class="badge"
+                                                          :class="{
+                                                              'bg-success': item.current_condition === 'Good',
+                                                              'bg-warning text-dark': item.current_condition === 'Fair',
+                                                              'bg-danger': item.current_condition === 'Poor'
+                                                          }">
+                                                        <i class="bi bi-tools me-1"></i>
+                                                        <span x-text="item.current_condition"></span>
+                                                    </span>
                                                 </p>
                                             </template>
                                         </div>
