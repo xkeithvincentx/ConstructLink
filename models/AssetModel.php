@@ -7,21 +7,21 @@
 class AssetModel extends BaseModel {
     protected $table = 'assets';
     protected $fillable = [
-        'ref', 'category_id', 'name', 'description', 'project_id', 'maker_id', 
+        'ref', 'category_id', 'name', 'description', 'project_id', 'maker_id',
         'vendor_id', 'client_id', 'acquired_date', 'status', 'is_client_supplied',
-        'acquisition_cost', 'serial_number', 'model', 'qr_code', 'procurement_order_id', 
+        'acquisition_cost', 'serial_number', 'model', 'qr_code', 'procurement_order_id',
         'procurement_item_id', 'unit_cost', 'quantity', 'available_quantity', 'unit',
-        'asset_source', 'sub_location', 'workflow_status', 'made_by', 'verified_by', 
+        'asset_source', 'sub_location', 'workflow_status', 'made_by', 'verified_by',
         'authorized_by', 'verification_date', 'authorization_date',
         // Equipment classification fields
         'equipment_type_id', 'subtype_id', 'generated_name', 'name_components',
         // Asset details fields
-        'specifications', 'warranty_expiry', 'location', 'condition_notes',
-        // Brand standardization fields  
-        'brand_id', 'standardized_name', 'original_name', 'asset_type_id', 
+        'specifications', 'warranty_expiry', 'location', 'condition_notes', 'current_condition',
+        // Brand standardization fields
+        'brand_id', 'standardized_name', 'original_name', 'asset_type_id',
         'discipline_tags',
         // QR tag tracking fields
-        'qr_tag_printed', 'qr_tag_applied', 'qr_tag_verified', 
+        'qr_tag_printed', 'qr_tag_applied', 'qr_tag_verified',
         'qr_tag_applied_by', 'qr_tag_verified_by', 'tag_notes'
     ];
     
