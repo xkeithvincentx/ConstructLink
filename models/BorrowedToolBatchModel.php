@@ -1077,5 +1077,151 @@ class BorrowedToolBatchModel extends BaseModel {
             ];
         }
     }
+
+    /**
+     * Get time-based statistics for operational dashboards
+     * Returns day-to-day and weekly metrics useful for warehouse operations
+     *
+     * @param int|null $projectId Optional project filter
+     * @return array Time-based statistics
+     */
+    public function getTimeBasedStatistics($projectId = null) {
+        try {
+            $stats = [];
+
+            // Project filter condition for all queries
+            $projectJoin = "";
+            $projectWhere = "";
+            $projectParams = [];
+
+            if ($projectId) {
+                $projectJoin = "INNER JOIN borrowed_tools bt ON btb.id = bt.batch_id
+                                INNER JOIN assets a ON bt.asset_id = a.id";
+                $projectWhere = "AND a.project_id = ?";
+                $projectParams = [$projectId];
+            }
+
+            // 1. Borrowed Today (batches created/released today)
+            $sql = "
+                SELECT COUNT(DISTINCT btb.id) as count
+                FROM borrowed_tool_batches btb
+                {$projectJoin}
+                WHERE DATE(btb.created_at) = CURDATE()
+                  AND btb.status IN ('Released', 'Borrowed', 'Partially Returned')
+                  {$projectWhere}
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectParams);
+            $stats['borrowed_today'] = $stmt->fetch()['count'] ?? 0;
+
+            // 2. Returned Today (batches fully returned today OR items returned today)
+            $sql = "
+                SELECT COUNT(DISTINCT bt.id) as count
+                FROM borrowed_tools bt
+                INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                WHERE DATE(bt.return_date) = CURDATE()
+                  AND bt.status = 'Returned'
+                  " . ($projectId ? "AND a.project_id = ?" : "") . "
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectId ? [$projectId] : []);
+            $stats['returned_today'] = $stmt->fetch()['count'] ?? 0;
+
+            // 3. Due Today (expected return date is today, still not fully returned)
+            $sql = "
+                SELECT COUNT(DISTINCT btb.id) as count
+                FROM borrowed_tool_batches btb
+                {$projectJoin}
+                WHERE DATE(btb.expected_return) = CURDATE()
+                  AND btb.status IN ('Released', 'Borrowed', 'Partially Returned')
+                  {$projectWhere}
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectParams);
+            $stats['due_today'] = $stmt->fetch()['count'] ?? 0;
+
+            // 4. Due This Week (expected return within next 7 days, excluding today)
+            $sql = "
+                SELECT COUNT(DISTINCT btb.id) as count
+                FROM borrowed_tool_batches btb
+                {$projectJoin}
+                WHERE btb.expected_return > CURDATE()
+                  AND btb.expected_return <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+                  AND btb.status IN ('Released', 'Borrowed', 'Partially Returned')
+                  {$projectWhere}
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectParams);
+            $stats['due_this_week'] = $stmt->fetch()['count'] ?? 0;
+
+            // 5. This Week's Activity (borrowings + returns in the past 7 days)
+            $sql = "
+                SELECT
+                    (SELECT COUNT(DISTINCT btb.id)
+                     FROM borrowed_tool_batches btb
+                     {$projectJoin}
+                     WHERE btb.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                       AND btb.status IN ('Released', 'Borrowed', 'Partially Returned', 'Returned')
+                       {$projectWhere}
+                    ) +
+                    (SELECT COUNT(DISTINCT bt.id)
+                     FROM borrowed_tools bt
+                     INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                     " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                     WHERE bt.return_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                       AND bt.status = 'Returned'
+                       " . ($projectId ? "AND a.project_id = ?" : "") . "
+                    ) as count
+            ";
+            $params = $projectId ? array_merge($projectParams, [$projectId]) : [];
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $stats['activity_this_week'] = $stmt->fetch()['count'] ?? 0;
+
+            // 6. Borrowed This Month (batches created this month)
+            $sql = "
+                SELECT COUNT(DISTINCT btb.id) as count
+                FROM borrowed_tool_batches btb
+                {$projectJoin}
+                WHERE YEAR(btb.created_at) = YEAR(CURDATE())
+                  AND MONTH(btb.created_at) = MONTH(CURDATE())
+                  AND btb.status IN ('Released', 'Borrowed', 'Partially Returned', 'Returned')
+                  {$projectWhere}
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectParams);
+            $stats['borrowed_this_month'] = $stmt->fetch()['count'] ?? 0;
+
+            // 7. Returned This Month (items returned this month)
+            $sql = "
+                SELECT COUNT(DISTINCT bt.id) as count
+                FROM borrowed_tools bt
+                INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                WHERE YEAR(bt.return_date) = YEAR(CURDATE())
+                  AND MONTH(bt.return_date) = MONTH(CURDATE())
+                  AND bt.status = 'Returned'
+                  " . ($projectId ? "AND a.project_id = ?" : "") . "
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectId ? [$projectId] : []);
+            $stats['returned_this_month'] = $stmt->fetch()['count'] ?? 0;
+
+            return $stats;
+
+        } catch (Exception $e) {
+            error_log("Get time-based statistics error: " . $e->getMessage());
+            return [
+                'borrowed_today' => 0,
+                'returned_today' => 0,
+                'due_today' => 0,
+                'due_this_week' => 0,
+                'activity_this_week' => 0,
+                'borrowed_this_month' => 0,
+                'returned_this_month' => 0,
+            ];
+        }
+    }
 }
 ?>

@@ -219,8 +219,12 @@ class BorrowedToolController {
                 $availableEquipmentCount = 0;
             }
 
+            // Get time-based statistics for operational roles
+            $timeStats = $batchModel->getTimeBasedStatistics($projectFilter);
+
             // Transform batch stats to match expected format in views
             $borrowedToolStats = [
+                // MVA workflow stats
                 'pending_verification' => $batchStats['pending_verification'] ?? 0,
                 'pending_approval' => $batchStats['pending_approval'] ?? 0,
                 'available_equipment' => $availableEquipmentCount ?? 0,
@@ -229,7 +233,18 @@ class BorrowedToolController {
                 'returned' => $batchStats['returned'] ?? 0,
                 'canceled' => $batchStats['canceled'] ?? 0,
                 'total_borrowings' => $batchStats['total_batches'] ?? 0,
-                'overdue' => 0  // Will calculate separately
+                'overdue' => 0,  // Will calculate separately
+
+                // Time-based stats for operational roles
+                'borrowed_today' => $timeStats['borrowed_today'] ?? 0,
+                'returned_today' => $timeStats['returned_today'] ?? 0,
+                'due_today' => $timeStats['due_today'] ?? 0,
+                'due_this_week' => $timeStats['due_this_week'] ?? 0,
+                'activity_this_week' => $timeStats['activity_this_week'] ?? 0,
+
+                // Monthly stats for management roles
+                'borrowed_this_month' => $timeStats['borrowed_this_month'] ?? 0,
+                'returned_this_month' => $timeStats['returned_this_month'] ?? 0,
             ];
 
             // Get overdue batches (Released batches past expected_return date)
