@@ -126,6 +126,31 @@
                                 <?php endif; ?>
                             </div>
 
+                            <!-- Condition Information -->
+                            <?php if (!$isBatch && (!empty($tool['condition_out']) || !empty($tool['condition_returned']))): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block mb-1">Condition</small>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <?php if (!empty($tool['condition_out'])): ?>
+                                            <div>
+                                                <small class="text-muted">Out:</small>
+                                                <span class="badge <?= $tool['condition_out'] === 'Good' ? 'bg-success' : ($tool['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                    <?= htmlspecialchars($tool['condition_out']) ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($tool['condition_returned'])): ?>
+                                            <div>
+                                                <small class="text-muted">In:</small>
+                                                <span class="badge <?= $tool['condition_returned'] === 'Good' ? 'bg-success' : ($tool['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                    <?= htmlspecialchars($tool['condition_returned']) ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
                             <!-- Return Schedule -->
                             <div class="mb-2">
                                 <small class="text-muted d-block mb-1">
@@ -252,6 +277,21 @@
                                             <?php if (!empty($item['serial_number'])): ?>
                                                 <small class="text-muted">S/N: <code><?= htmlspecialchars($item['serial_number']) ?></code></small>
                                             <?php endif; ?>
+                                            <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
+                                                <div class="mt-1">
+                                                    <small class="text-muted">Condition: </small>
+                                                    <?php if (!empty($item['condition_out'])): ?>
+                                                        <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                            Out: <?= htmlspecialchars($item['condition_out']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($item['condition_returned'])): ?>
+                                                        <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                            In: <?= htmlspecialchars($item['condition_returned']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -293,6 +333,7 @@
                                     <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
                                 <?php endif; ?>
                             </th>
+                            <th>Condition</th>
                             <th class="sortable" data-sort="status">
                                 Status
                                 <?php if (isset($currentSort) && $currentSort === 'status'): ?>
@@ -451,6 +492,32 @@
                                         <br><small class="text-success">
                                             Returned on time
                                         </small>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Condition -->
+                                <td>
+                                    <?php if (!$isBatch && (!empty($tool['condition_out']) || !empty($tool['condition_returned']))): ?>
+                                        <div class="d-flex flex-column gap-1">
+                                            <?php if (!empty($tool['condition_out'])): ?>
+                                                <div>
+                                                    <small class="text-muted">Out:</small>
+                                                    <span class="badge badge-sm <?= $tool['condition_out'] === 'Good' ? 'bg-success' : ($tool['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                        <?= htmlspecialchars($tool['condition_out']) ?>
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($tool['condition_returned'])): ?>
+                                                <div>
+                                                    <small class="text-muted">In:</small>
+                                                    <span class="badge badge-sm <?= $tool['condition_returned'] === 'Good' ? 'bg-success' : ($tool['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                        <?= htmlspecialchars($tool['condition_returned']) ?>
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-muted">—</span>
                                     <?php endif; ?>
                                 </td>
 
@@ -786,8 +853,19 @@
                                                                 <td class="text-center"><span class="badge bg-success"><?= $returned ?></span></td>
                                                                 <td class="text-center"><span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>"><?= $remaining ?></span></td>
                                                                 <td>
-                                                                    <?php if ($remaining == 0 && !empty($item['condition_returned'])): ?>
-                                                                        <span class="badge bg-info"><?= htmlspecialchars($item['condition_returned']) ?></span>
+                                                                    <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
+                                                                        <div class="d-flex flex-column gap-1">
+                                                                            <?php if (!empty($item['condition_out'])): ?>
+                                                                                <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                                                    Out: <?= htmlspecialchars($item['condition_out']) ?>
+                                                                                </span>
+                                                                            <?php endif; ?>
+                                                                            <?php if (!empty($item['condition_returned'])): ?>
+                                                                                <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                                                    In: <?= htmlspecialchars($item['condition_returned']) ?>
+                                                                                </span>
+                                                                            <?php endif; ?>
+                                                                        </div>
                                                                     <?php else: ?>
                                                                         <span class="text-muted">-</span>
                                                                     <?php endif; ?>

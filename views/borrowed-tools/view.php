@@ -236,6 +236,25 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                             </span>
                                         </div>
                                     </div>
+
+                                    <!-- Condition info -->
+                                    <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block mb-1">Condition</small>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <?php if (!empty($item['condition_out'])): ?>
+                                                    <span class="badge <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                        Out: <?= htmlspecialchars($item['condition_out']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($item['condition_returned'])): ?>
+                                                    <span class="badge <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                        In: <?= htmlspecialchars($item['condition_returned']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -271,6 +290,7 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                     <th class="text-center">Borrowed</th>
                                     <th class="text-center">Returned</th>
                                     <th class="text-center">Remaining</th>
+                                    <th>Condition</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -298,6 +318,24 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                             <span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>">
                                                 <?= $remaining ?>
                                             </span>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <?php if (!empty($item['condition_out'])): ?>
+                                                        <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                            Out: <?= htmlspecialchars($item['condition_out']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($item['condition_returned'])): ?>
+                                                        <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                            In: <?= htmlspecialchars($item['condition_returned']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="text-muted">—</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php
@@ -398,6 +436,24 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                         <?= htmlspecialchars($singleItem['status']) ?>
                                     </span>
                                 </dd>
+
+                                <?php if (!empty($singleItem['condition_out']) || !empty($singleItem['condition_returned'])): ?>
+                                    <dt class="col-sm-5">Condition:</dt>
+                                    <dd class="col-sm-7">
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <?php if (!empty($singleItem['condition_out'])): ?>
+                                                <span class="badge <?= $singleItem['condition_out'] === 'Good' ? 'bg-success' : ($singleItem['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                    Out: <?= htmlspecialchars($singleItem['condition_out']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($singleItem['condition_returned'])): ?>
+                                                <span class="badge <?= $singleItem['condition_returned'] === 'Good' ? 'bg-success' : ($singleItem['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                                    In: <?= htmlspecialchars($singleItem['condition_returned']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </dd>
+                                <?php endif; ?>
                             </dl>
                         </div>
                     </div>
