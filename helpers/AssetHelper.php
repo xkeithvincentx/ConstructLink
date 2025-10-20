@@ -115,12 +115,19 @@ class AssetHelper
      * Load module JavaScript file
      *
      * @param string $module - Module name (e.g., 'index', 'ajax-handler')
-     * @param string $type - Script type ('module' or 'text/javascript')
+     * @param array|string $options - Options array or type string for backward compatibility
      * @param bool $print - Whether to echo or return the HTML
      * @return string HTML script tag
      */
-    public static function loadModuleJS(string $module, string $type = 'module', bool $print = true): string
+    public static function loadModuleJS(string $module, $options = 'module', bool $print = true): string
     {
+        // Handle options - can be string (type) or array (options)
+        if (is_array($options)) {
+            $type = $options['type'] ?? 'module';
+        } else {
+            $type = $options;
+        }
+
         $baseUrl = self::getAssetsBaseUrl();
         $version = self::getVersion();
         $src = "{$baseUrl}/js/borrowed-tools/{$module}.js?v={$version}";

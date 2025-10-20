@@ -92,6 +92,9 @@ if (!defined('MAINTENANCE_MODE')) define('MAINTENANCE_MODE', false);
 if (!defined('MAINTENANCE_MESSAGE')) define('MAINTENANCE_MESSAGE', 'We are currently performing system maintenance. Please check back shortly.');
 if (!defined('MAINTENANCE_ALLOWED_IPS')) define('MAINTENANCE_ALLOWED_IPS', ['127.0.0.1', '::1']);
 
+// Assets URL Configuration
+if (!defined('ASSETS_URL')) define('ASSETS_URL', '/assets');
+
 // Asset Status Constants
 define('ASSET_STATUS_AVAILABLE', 'available');
 define('ASSET_STATUS_IN_USE', 'in_use');
