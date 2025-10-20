@@ -63,7 +63,15 @@ usort($displayItems, function($a, $b) {
     $idB = $b['type'] === 'batch' ? $b['primary']['id'] : $b['item']['id'];
     return $idB - $idA;
 });
+
+// Generate CSRF token for JavaScript
+$csrfToken = CSRFProtection::generateToken();
 ?>
+
+<!-- Borrowed Tools Module Container with Configuration -->
+<div id="borrowed-tools-app"
+     data-csrf-token="<?= htmlspecialchars($csrfToken) ?>"
+     data-auto-refresh-interval="<?= config('business_rules.ui.auto_refresh_interval', 300) ?>">
 
 <!-- Page Header & Action Buttons -->
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
@@ -216,11 +224,6 @@ usort($displayItems, function($a, $b) {
 <?php
 require_once APP_ROOT . '/helpers/AssetHelper.php';
 AssetHelper::loadModuleCSS('borrowed-tools');
-?>
-
-<?php
-// Generate CSRF tokens for modals
-$csrfToken = CSRFProtection::generateToken();
 ?>
 
 <!-- Batch Verification Modal -->
@@ -602,26 +605,13 @@ include APP_ROOT . '/views/components/modal.php';
     </div>
 </div>
 
-<!-- Load external JavaScript modules -->
-<script type="module">
-    import { init } from '/assets/js/borrowed-tools/index.js';
-    import { refreshBorrowedTools } from '/assets/js/borrowed-tools/list-utils.js';
+<!-- Close borrowed-tools-app container -->
+</div>
 
-    // Set CSRF token globally for the module
-    window.borrowedToolsCsrfToken = '<?= $csrfToken ?>';
-
-    // Set auto-refresh interval from config
-    document.body.dataset.autoRefreshInterval = '<?= config('business_rules.ui.auto_refresh_interval', 300) ?>';
-
-    // Initialize the module
-    init(window.borrowedToolsCsrfToken);
-
-    // Attach refresh button handler
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', refreshBorrowedTools);
-    }
-</script>
+<!-- Load external JavaScript module -->
+<?php
+AssetHelper::loadModuleJS('borrowed-tools/init', ['type' => 'module']);
+?>
 
 <?php
 // Capture content and assign to variable
