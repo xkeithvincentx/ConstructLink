@@ -94,6 +94,7 @@ return [
     'borrowed-tools/authorize-critical' => ['Asset Director', 'Finance Director', 'System Admin'],
     'borrowed-tools/return' => ['Warehouseman', 'Site Inventory Clerk', 'System Admin'],
     'borrowed-tools/view' => ['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'],
+    'borrowed-tools/view_statistics' => ['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'],
     'borrowed-tools/extend' => ['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager'],
     'borrowed-tools' => [
         'maker' => ['Warehouseman'], // Logs tool issuance
