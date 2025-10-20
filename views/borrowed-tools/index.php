@@ -65,55 +65,92 @@ usort($displayItems, function($a, $b) {
 });
 ?>
 
-<!-- Action Buttons -->
-<div class="mb-4">
-    <!-- Mobile: Full width buttons stacked -->
-    <div class="d-lg-none d-grid gap-2">
-        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
-            <a href="?route=borrowed-tools/create-batch"
-               class="btn btn-primary"
-               aria-label="Borrow equipment">
-                <i class="bi bi-cart-plus me-1" aria-hidden="true"></i>Borrow Equipment
-            </a>
-        <?php endif; ?>
-        <a href="?route=borrowed-tools/print-blank-form"
-           class="btn btn-outline-primary"
-           target="_blank"
-           aria-label="Print blank form"
-           title="Print blank forms">
-            <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Blank Form
-        </a>
+<!-- Page Header & Action Buttons -->
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="mb-1">Borrowed Equipment</h2>
+        <p class="text-muted mb-0">Manage and track all equipment borrowing requests</p>
     </div>
 
-    <!-- Desktop: Horizontal layout with left/right split -->
-    <div class="d-none d-lg-flex justify-content-between align-items-center">
-        <div class="btn-toolbar gap-2" role="toolbar" aria-label="Borrowed tools actions">
-            <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
-                <a href="?route=borrowed-tools/create-batch"
-                   class="btn btn-primary btn-sm"
-                   aria-label="Borrow equipment">
-                    <i class="bi bi-cart-plus me-1" aria-hidden="true"></i>Borrow Equipment
-                </a>
-            <?php endif; ?>
-            <a href="?route=borrowed-tools/print-blank-form"
-               class="btn btn-outline-primary btn-sm"
-               target="_blank"
-               aria-label="Print blank form"
-               title="Print blank forms">
-                <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Blank Form
+    <!-- Desktop: Action Buttons -->
+    <div class="d-none d-md-flex gap-2">
+        <a href="?route=borrowed-tools/statistics"
+           class="btn btn-outline-info btn-sm"
+           aria-label="View statistics dashboard">
+            <i class="bi bi-graph-up me-1" aria-hidden="true"></i>Statistics
+        </a>
+        <a href="?route=borrowed-tools/print-blank-form"
+           class="btn btn-outline-secondary btn-sm"
+           target="_blank"
+           aria-label="Print blank form">
+            <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Form
+        </a>
+        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
+            <a href="?route=borrowed-tools/create-batch"
+               class="btn btn-success btn-sm"
+               aria-label="Create new borrow request">
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>New Request
             </a>
-        </div>
+        <?php endif; ?>
         <button type="button"
                 class="btn btn-outline-secondary btn-sm"
                 onclick="refreshBorrowedTools()"
-                aria-label="Refresh borrowed tools list">
+                aria-label="Refresh list">
             <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
         </button>
     </div>
 </div>
 
-<!-- Statistics Cards -->
-<?php include APP_ROOT . '/views/borrowed-tools/partials/_statistics_cards.php'; ?>
+<!-- Mobile: Action Buttons -->
+<div class="d-md-none d-grid gap-2 mb-4">
+    <a href="?route=borrowed-tools/statistics" class="btn btn-outline-info">
+        <i class="bi bi-graph-up me-1"></i>View Statistics
+    </a>
+    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
+        <a href="?route=borrowed-tools/create-batch" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>New Borrow Request
+        </a>
+    <?php endif; ?>
+    <a href="?route=borrowed-tools/print-blank-form" class="btn btn-outline-secondary" target="_blank">
+        <i class="bi bi-printer me-1"></i>Print Blank Form
+    </a>
+</div>
+
+<!-- Quick Stats Summary (Minimal) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-primary">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Currently Out</small>
+                <h4 class="mb-0 text-primary"><?= $borrowedToolStats['borrowed'] ?? 0 ?></h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-danger">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Overdue</small>
+                <h4 class="mb-0 text-danger"><?= $borrowedToolStats['overdue'] ?? 0 ?></h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-warning">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Pending Approval</small>
+                <h4 class="mb-0 text-warning"><?= ($borrowedToolStats['pending_verification'] ?? 0) + ($borrowedToolStats['pending_approval'] ?? 0) ?></h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-success">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Available</small>
+                <h4 class="mb-0 text-success"><?= $borrowedToolStats['available_equipment'] ?? 0 ?></h4>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- MVA Workflow Info Banner -->
 <div class="alert alert-info mb-4" role="status" aria-label="MVA workflow information">
@@ -739,11 +776,11 @@ include APP_ROOT . '/views/components/modal.php';
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Borrowed Tools - ConstructLink™';
-$pageHeader = 'Borrowed Tools Management';
+$pageTitle = 'Borrowed Equipment - ConstructLink™';
+$pageHeader = 'Borrowed Equipment Requests';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools']
+    ['title' => 'Borrowed Equipment', 'url' => '?route=borrowed-tools']
 ];
 
 // Include main layout

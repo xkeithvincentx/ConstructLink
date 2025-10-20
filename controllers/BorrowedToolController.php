@@ -347,7 +347,101 @@ class BorrowedToolController {
             include APP_ROOT . '/views/errors/500.php';
         }
     }
-    
+
+    /**
+     * Display statistics dashboard for borrowed tools
+     * Dedicated analytics view separate from operational index
+     */
+    public function statistics() {
+        // Centralized RBAC: Only users with view_statistics permission can access
+        if (!$this->hasBorrowedToolPermission('view_statistics')) {
+            http_response_code(403);
+            include APP_ROOT . '/views/errors/403.php';
+            return;
+        }
+
+        // Ensure user has project assignment and get current user
+        $this->requireProjectAssignment();
+        $currentUser = $this->auth->getCurrentUser();
+
+        // Apply project filtering based on user role
+        $projectFilter = $this->getProjectFilter();
+        // MVA oversight roles: no project filtering (see all projects)
+        // Operational roles: filter by their assigned project
+
+        try {
+            // Get comprehensive statistics
+            $batchModel = new BorrowedToolBatchModel();
+            $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
+
+            // Get available non-consumable equipment count
+            try {
+                $db = Database::getInstance()->getConnection();
+                $availableEquipmentSql = "SELECT COUNT(*) FROM assets a
+                    JOIN categories c ON a.category_id = c.id
+                    WHERE c.is_consumable = 0
+                      AND a.status = 'available'
+                      AND a.workflow_status = 'approved'";
+                $availableParams = [];
+                if ($projectFilter) {
+                    $availableEquipmentSql .= " AND a.project_id = ?";
+                    $availableParams[] = $projectFilter;
+                }
+                $availableStmt = $db->prepare($availableEquipmentSql);
+                $availableStmt->execute($availableParams);
+                $availableEquipmentCount = $availableStmt->fetchColumn();
+            } catch (Exception $e) {
+                $availableEquipmentCount = 0;
+            }
+
+            // Get time-based statistics
+            $timeStats = $batchModel->getTimeBasedStatistics($projectFilter);
+
+            // Transform batch stats to match expected format in views
+            $borrowedToolStats = [
+                // MVA workflow stats
+                'pending_verification' => $batchStats['pending_verification'] ?? 0,
+                'pending_approval' => $batchStats['pending_approval'] ?? 0,
+                'available_equipment' => $availableEquipmentCount ?? 0,
+                'borrowed' => $batchStats['released'] ?? 0,  // "Released" batches are currently borrowed
+                'partially_returned' => $batchStats['partially_returned'] ?? 0,
+                'returned' => $batchStats['returned'] ?? 0,
+                'canceled' => $batchStats['canceled'] ?? 0,
+                'total_borrowings' => $batchStats['total_batches'] ?? 0,
+                'overdue' => 0,  // Will calculate separately
+
+                // Time-based stats
+                'borrowed_today' => $timeStats['borrowed_today'] ?? 0,
+                'returned_today' => $timeStats['returned_today'] ?? 0,
+                'due_today' => $timeStats['due_today'] ?? 0,
+                'due_this_week' => $timeStats['due_this_week'] ?? 0,
+                'activity_this_week' => $timeStats['activity_this_week'] ?? 0,
+
+                // Monthly stats
+                'borrowed_this_month' => $timeStats['borrowed_this_month'] ?? 0,
+                'returned_this_month' => $timeStats['returned_this_month'] ?? 0,
+            ];
+
+            // Get overdue batches
+            $overdueCount = $batchModel->getOverdueBatchCount($projectFilter);
+            $borrowedToolStats['overdue'] = $overdueCount;
+
+            // Get detailed overdue tools for the report
+            $overdueTools = $this->borrowedToolModel->getOverdueBorrowedTools($projectFilter);
+
+            // Pass auth instance to view
+            $auth = $this->auth;
+            $user = $currentUser;
+
+            include APP_ROOT . '/views/borrowed-tools/statistics.php';
+
+        } catch (Exception $e) {
+            error_log("Borrowed tools statistics error: " . $e->getMessage());
+            $error = 'Failed to load statistics';
+            include APP_ROOT . '/views/errors/500.php';
+        }
+    }
+
     /**
      * Display create borrowed tool form
      * Redirects to create-batch which handles both single and multiple items
