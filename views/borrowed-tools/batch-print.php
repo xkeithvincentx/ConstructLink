@@ -21,190 +21,16 @@ $criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowing Form - <?= htmlspecialchars($batch['batch_reference']) ?></title>
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 5mm;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            color: #000;
-            background: #fff;
-        }
-
-        /* Single Form Container - Quarter Size (same as 2x2 grid) */
-        .form-container {
-            width: 95mm;  /* Half of A4 width */
-            height: 135mm; /* Half of A4 height */
-            margin: 0 auto;
-            border: 2px solid #000;
-            padding: 3mm;
-        }
-
-        .form-header {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 2mm;
-        }
-
-        .form-header h1 {
-            font-size: 8pt;
-            font-weight: bold;
-            line-height: 1.1;
-        }
-
-        /* Info Section - Compact */
-        .info-section {
-            font-size: 6pt;
-            margin-bottom: 2mm;
-        }
-
-        .info-row {
-            display: flex;
-            gap: 2mm;
-            margin-bottom: 1mm;
-        }
-
-        .info-field {
-            flex: 1;
-            display: flex;
-            align-items: center;
-        }
-
-        .info-label {
-            font-weight: bold;
-            margin-right: 1mm;
-            white-space: nowrap;
-        }
-
-        .info-value {
-            border-bottom: 1px solid #000;
-            flex: 1;
-            min-height: 3mm;
-            padding: 0 1mm;
-        }
-
-        /* Equipment Table - Compact */
-        .equipment-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #000;
-            margin-bottom: 2mm;
-            font-size: 5.5pt;
-        }
-
-        .equipment-table th {
-            background: #000;
-            color: #fff;
-            padding: 0.5mm;
-            font-size: 5pt;
-            font-weight: bold;
-            text-align: center;
-            border: 1px solid #000;
-        }
-
-        .equipment-table td {
-            padding: 0.5mm 1mm;
-            border: 0.5px solid #999;
-            vertical-align: middle;
-        }
-
-        .checkbox {
-            width: 2.5mm;
-            height: 2.5mm;
-            border: 1px solid #000;
-            display: inline-block;
-        }
-
-        .qty-col {
-            width: 8mm;
-            text-align: center;
-        }
-
-        .return-col {
-            background: #f0f0f0;
-        }
-
-        /* Signature Section - Compact */
-        .signature-section {
-            display: flex;
-            gap: 1mm;
-            font-size: 5pt;
-        }
-
-        .sig-box {
-            flex: 1;
-            text-align: center;
-            border: 1px solid #000;
-            padding: 1mm;
-            min-height: 12mm;
-        }
-
-        .sig-label {
-            font-weight: bold;
-            margin-bottom: 0.5mm;
-        }
-
-        .sig-space {
-            min-height: 8mm;
-            border-bottom: 1px solid #000;
-            margin-bottom: 0.5mm;
-        }
-
-        /* Footer */
-        .form-footer {
-            text-align: center;
-            margin-top: 1mm;
-            padding-top: 0.5mm;
-            border-top: 0.5px solid #ccc;
-            font-size: 4pt;
-            color: #666;
-        }
-
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-
-        .print-controls {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #fff;
-            padding: 15px;
-            border: 2px solid #000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-
-        @media print {
-            .print-controls {
-                display: none;
-            }
-        }
-    </style>
+    <?php AssetHelper::loadModuleCSS('borrowed-tools-print-filled'); ?>
 </head>
 <body>
 
 <!-- Print Controls -->
 <div class="print-controls no-print">
-    <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #007bff; color: #fff; border: none; border-radius: 4px; font-weight: bold;">
+    <button data-action="print" class="btn-print">
         🖨️ Print Form
     </button>
-    <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #6c757d; color: #fff; border: none; border-radius: 4px; margin-left: 5px;">
+    <button data-action="close" class="btn-close-window">
         ✕ Close
     </button>
 </div>
@@ -258,20 +84,20 @@ $criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
     <table class="equipment-table">
             <thead>
                 <tr>
-                    <th style="width: 4mm;"></th>
-                    <th style="text-align: left;">EQUIPMENT</th>
-                    <th style="width: 8mm;">Qty<br>Out</th>
-                    <th style="width: 8mm;">Qty<br>In</th>
+                    <th class="col-checkbox"></th>
+                    <th class="text-left">EQUIPMENT</th>
+                    <th class="col-qty">Qty<br>Out</th>
+                    <th class="col-qty">Qty<br>In</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($batch['items'] as $item): ?>
                 <tr>
-                    <td style="text-align: center;"><span class="checkbox"></span></td>
-                    <td style="font-weight: <?= ($item['acquisition_cost'] > $criticalThreshold) ? 'bold' : 'normal' ?>;">
+                    <td class="text-center"><span class="checkbox"></span></td>
+                    <td<?= ($item['acquisition_cost'] > $criticalThreshold) ? ' class="critical-item"' : '' ?>>
                         <?= htmlspecialchars($item['asset_name']) ?>
                         <?php if ($item['acquisition_cost'] > $criticalThreshold): ?>
-                            <span style="color: #f00;">★</span>
+                            <span class="critical-star">★</span>
                         <?php endif; ?>
                     </td>
                     <td class="qty-col"><?= $item['quantity'] ?></td>
@@ -288,33 +114,33 @@ $criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
         <div class="sig-box">
             <div class="sig-label">BORROWED BY</div>
             <div class="sig-space">
-                <div style="margin-top: 4mm; font-size: 6pt; font-weight: bold;">
+                <div class="sig-name">
                     <?= htmlspecialchars($batch['borrower_name']) ?>
                 </div>
             </div>
-            <div style="font-size: 5pt;">Signature / Printed Name</div>
+            <div class="sig-role">Signature / Printed Name</div>
         </div>
         <div class="sig-box">
             <div class="sig-label">RELEASED BY</div>
             <div class="sig-space">
                 <?php if ($batch['released_by_name']): ?>
-                    <div style="margin-top: 4mm; font-size: 6pt; font-weight: bold;">
+                    <div class="sig-name">
                         <?= htmlspecialchars($batch['released_by_name']) ?>
                     </div>
                 <?php endif; ?>
             </div>
-            <div style="font-size: 5pt;">Warehouseman</div>
+            <div class="sig-role">Warehouseman</div>
         </div>
         <div class="sig-box">
             <div class="sig-label">RETURNED TO</div>
             <div class="sig-space">
                 <?php if ($batch['returned_by_name']): ?>
-                    <div style="margin-top: 4mm; font-size: 6pt; font-weight: bold;">
+                    <div class="sig-name">
                         <?= htmlspecialchars($batch['returned_by_name']) ?>
                     </div>
                 <?php endif; ?>
             </div>
-            <div style="font-size: 5pt;">Received By</div>
+            <div class="sig-role">Received By</div>
         </div>
     </div>
 
@@ -324,13 +150,6 @@ $criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
     </div>
 </div><!-- End form-container -->
 
-<script>
-// Auto-print on load (optional - can be disabled)
-window.addEventListener('load', function() {
-    // Uncomment to auto-print:
-    // setTimeout(() => window.print(), 500);
-});
-</script>
-
+<?php AssetHelper::loadModuleJS('borrowed-tools/print-controls'); ?>
 </body>
 </html>

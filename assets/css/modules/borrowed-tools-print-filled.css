@@ -1,0 +1,237 @@
+/**
+ * ConstructLink - Filled Printable Borrowing Form Styles
+ * Developed by: Ranoa Digital Solutions
+ *
+ * Purpose: Print-optimized CSS for pre-filled forms with actual borrowing data
+ * Format: Single form matching quarter size from 2x2 grid layout
+ */
+
+@page {
+    size: A4 portrait;
+    margin: 5mm;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    color: #000;
+    background: #fff;
+}
+
+/* Single Form Container - Quarter Size (same as 2x2 grid) */
+.form-container {
+    width: 95mm;  /* Half of A4 width */
+    height: 135mm; /* Half of A4 height */
+    margin: 0 auto;
+    border: 2px solid #000;
+    padding: 3mm;
+}
+
+.form-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 1mm;
+    margin-bottom: 2mm;
+}
+
+.form-header h1 {
+    font-size: 8pt;
+    font-weight: bold;
+    line-height: 1.1;
+}
+
+/* Info Section - Compact */
+.info-section {
+    font-size: 6pt;
+    margin-bottom: 2mm;
+}
+
+.info-row {
+    display: flex;
+    gap: 2mm;
+    margin-bottom: 1mm;
+}
+
+.info-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.info-label {
+    font-weight: bold;
+    margin-right: 1mm;
+    white-space: nowrap;
+}
+
+.info-value {
+    border-bottom: 1px solid #000;
+    flex: 1;
+    min-height: 3mm;
+    padding: 0 1mm;
+}
+
+/* Equipment Table - Compact */
+.equipment-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+    margin-bottom: 2mm;
+    font-size: 5.5pt;
+}
+
+.equipment-table th {
+    background: #000;
+    color: #fff;
+    padding: 0.5mm;
+    font-size: 5pt;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid #000;
+}
+
+.equipment-table td {
+    padding: 0.5mm 1mm;
+    border: 0.5px solid #999;
+    vertical-align: middle;
+}
+
+.checkbox {
+    width: 2.5mm;
+    height: 2.5mm;
+    border: 1px solid #000;
+    display: inline-block;
+}
+
+.qty-col {
+    width: 8mm;
+    text-align: center;
+}
+
+.return-col {
+    background: #f0f0f0;
+}
+
+/* Signature Section - Compact */
+.signature-section {
+    display: flex;
+    gap: 1mm;
+    font-size: 5pt;
+}
+
+.sig-box {
+    flex: 1;
+    text-align: center;
+    border: 1px solid #000;
+    padding: 1mm;
+    min-height: 12mm;
+}
+
+.sig-label {
+    font-weight: bold;
+    margin-bottom: 0.5mm;
+}
+
+.sig-space {
+    min-height: 8mm;
+    border-bottom: 1px solid #000;
+    margin-bottom: 0.5mm;
+}
+
+/* Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 1mm;
+    padding-top: 0.5mm;
+    border-top: 0.5px solid #ccc;
+    font-size: 4pt;
+    color: #666;
+}
+
+/* Print Controls - Screen Only */
+.print-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #fff;
+    padding: 15px;
+    border: 2px solid #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.print-controls .btn-print {
+    padding: 12px 24px;
+    font-size: 14pt;
+    cursor: pointer;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.print-controls .btn-close-window {
+    padding: 12px 24px;
+    font-size: 14pt;
+    cursor: pointer;
+    background: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+/* Table Column Width Utilities */
+.equipment-table th.col-checkbox {
+    width: 4mm;
+}
+
+.equipment-table th.col-qty {
+    width: 8mm;
+}
+
+.equipment-table th.text-left {
+    text-align: left;
+}
+
+.equipment-table td.text-center {
+    text-align: center;
+}
+
+/* Critical Item Indicator */
+.equipment-table td.critical-item {
+    font-weight: bold;
+}
+
+.critical-star {
+    color: #f00;
+}
+
+/* Signature Section Utilities */
+.sig-name {
+    margin-top: 4mm;
+    font-size: 6pt;
+    font-weight: bold;
+}
+
+.sig-role {
+    font-size: 5pt;
+}
+
+/* Print Media Queries */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    .no-print,
+    .print-controls {
+        display: none !important;
+    }
+}

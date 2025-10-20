@@ -19,251 +19,16 @@ $systemName = $stmt->fetchColumn() ?: 'ConstructLink™';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blank Borrowed Tools Form - ConstructLink™</title>
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 5mm;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            color: #000;
-            background: #fff;
-        }
-
-        /* 2x2 Grid Container */
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 0;
-            width: 100%;
-            height: 287mm; /* A4 height minus margins */
-        }
-
-        /* Each Quarter Form */
-        .form-quarter {
-            border: 1px dashed #999; /* Dashed cutting guide */
-            padding: 3mm;
-            overflow: hidden;
-            page-break-inside: avoid;
-        }
-
-        /* Solid border on outer edges only */
-        .form-quarter:first-child {
-            border-top: 2px solid #000;
-            border-left: 2px solid #000;
-        }
-
-        .form-quarter:nth-child(2) {
-            border-top: 2px solid #000;
-            border-right: 2px solid #000;
-        }
-
-        .form-quarter:nth-child(3) {
-            border-bottom: 2px solid #000;
-            border-left: 2px solid #000;
-        }
-
-        .form-quarter:nth-child(4) {
-            border-bottom: 2px solid #000;
-            border-right: 2px solid #000;
-        }
-
-        .form-header {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 2mm;
-        }
-
-        .form-header h1 {
-            font-size: 8pt;
-            font-weight: bold;
-            line-height: 1.1;
-        }
-
-        .copy-label {
-            font-size: 6pt;
-            font-weight: bold;
-            color: #666;
-        }
-
-        /* Info Section - Compact */
-        .info-section {
-            font-size: 6pt;
-            margin-bottom: 2mm;
-        }
-
-        .info-row {
-            display: flex;
-            gap: 2mm;
-            margin-bottom: 1mm;
-        }
-
-        .info-field {
-            flex: 1;
-            display: flex;
-            align-items: center;
-        }
-
-        .info-label {
-            font-weight: bold;
-            margin-right: 1mm;
-            white-space: nowrap;
-        }
-
-        .info-value {
-            border-bottom: 1px solid #000;
-            flex: 1;
-            min-height: 3mm;
-        }
-
-        /* Equipment Table */
-        .equipment-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #000;
-            margin-bottom: 2mm;
-            font-size: 5.5pt;
-        }
-
-        .equipment-table th {
-            background: #000;
-            color: #fff;
-            padding: 0.5mm;
-            font-size: 5pt;
-            font-weight: bold;
-            text-align: center;
-            border: 1px solid #000;
-        }
-
-        .equipment-table td {
-            padding: 0.5mm 1mm;
-            border: 0.5px solid #999;
-            vertical-align: middle;
-        }
-
-        .category-row {
-            background: #d0d0d0;
-            font-weight: bold;
-            font-size: 6pt;
-        }
-
-        .checkbox {
-            width: 2.5mm;
-            height: 2.5mm;
-            border: 1px solid #000;
-            display: inline-block;
-        }
-
-        .qty-col {
-            width: 8mm;
-            text-align: center;
-        }
-
-        .return-col {
-            background: #f0f0f0;
-        }
-
-        /* Signature Section - Simplified */
-        .signature-section {
-            display: flex;
-            gap: 1mm;
-            font-size: 5pt;
-        }
-
-        .sig-box {
-            flex: 1;
-            text-align: center;
-            border: 1px solid #000;
-            padding: 1mm;
-            min-height: 12mm;
-        }
-
-        .sig-label {
-            font-weight: bold;
-            margin-bottom: 0.5mm;
-        }
-
-        .sig-space {
-            min-height: 8mm;
-            border-bottom: 1px solid #000;
-            margin-bottom: 0.5mm;
-        }
-
-        .date-field {
-            border-bottom: 1px solid #000;
-            min-height: 3mm;
-            margin-top: 0.5mm;
-        }
-
-        /* Footer */
-        .form-footer {
-            text-align: center;
-            margin-top: 1mm;
-            padding-top: 0.5mm;
-            border-top: 0.5px solid #ccc;
-            font-size: 4pt;
-            color: #666;
-        }
-
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-
-        .print-controls {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #fff;
-            padding: 15px;
-            border: 2px solid #000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-
-        @media print {
-            .print-controls {
-                display: none;
-            }
-        }
-
-        .instructions {
-            background: #fffacd;
-            border: 3px solid #000;
-            padding: 15px;
-            margin: 15px;
-            font-size: 11pt;
-        }
-
-        @media print {
-            .instructions {
-                display: none;
-            }
-        }
-    </style>
+    <?php AssetHelper::loadModuleCSS('borrowed-tools-print-blank'); ?>
 </head>
 <body>
 
 <!-- Print Controls -->
 <div class="print-controls no-print">
-    <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #007bff; color: #fff; border: none; border-radius: 4px; font-weight: bold;">
+    <button data-action="print" class="btn-print">
         🖨️ Print Form
     </button>
-    <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #6c757d; color: #fff; border: none; border-radius: 4px; margin-left: 5px;">
+    <button data-action="close" class="btn-close-window">
         ✕ Close
     </button>
 </div>
@@ -331,10 +96,10 @@ for ($copy = 1; $copy <= 4; $copy++):
         <table class="equipment-table">
             <thead>
                 <tr>
-                    <th style="width: 4mm;"></th>
-                    <th style="text-align: left;">EQUIPMENT</th>
-                    <th style="width: 8mm;">Qty<br>Out</th>
-                    <th style="width: 8mm;">Qty<br>In</th>
+                    <th class="col-checkbox"></th>
+                    <th class="text-left">EQUIPMENT</th>
+                    <th class="col-qty">Qty<br>Out</th>
+                    <th class="col-qty">Qty<br>In</th>
                 </tr>
             </thead>
             <tbody>
@@ -346,7 +111,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                 if (!empty($powerTools)) {
                     foreach ($powerTools as $tool) {
                         echo '<tr>';
-                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td class="text-center"><span class="checkbox"></span></td>';
                         echo '<td>' . htmlspecialchars($tool['display_name']) . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
@@ -361,7 +126,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                     ];
                     foreach ($fallbackPowerTools as $tool) {
                         echo '<tr>';
-                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td class="text-center"><span class="checkbox"></span></td>';
                         echo '<td>' . $tool . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
@@ -378,7 +143,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                 if (!empty($handTools)) {
                     foreach ($handTools as $tool) {
                         echo '<tr>';
-                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td class="text-center"><span class="checkbox"></span></td>';
                         echo '<td>' . htmlspecialchars($tool['display_name']) . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
@@ -395,7 +160,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                     ];
                     foreach ($fallbackHandTools as $tool) {
                         echo '<tr>';
-                        echo '<td style="text-align: center;"><span class="checkbox"></span></td>';
+                        echo '<td class="text-center"><span class="checkbox"></span></td>';
                         echo '<td>' . $tool . '</td>';
                         echo '<td class="qty-col"></td>';
                         echo '<td class="qty-col return-col"></td>';
@@ -410,8 +175,8 @@ for ($copy = 1; $copy <= 4; $copy++):
                 </tr>
                 <?php for ($i = 1; $i <= 5; $i++): ?>
                 <tr>
-                    <td style="text-align: center;"><span class="checkbox"></span></td>
-                    <td style="border-bottom: 1px solid #999;"></td>
+                    <td class="text-center"><span class="checkbox"></span></td>
+                    <td class="border-bottom-dashed"></td>
                     <td class="qty-col"></td>
                     <td class="qty-col return-col"></td>
                 </tr>
@@ -424,17 +189,17 @@ for ($copy = 1; $copy <= 4; $copy++):
             <div class="sig-box">
                 <div class="sig-label">BORROWER</div>
                 <div class="sig-space"></div>
-                <div style="font-size: 4pt;">Signature</div>
+                <div class="sig-text-small">Signature</div>
             </div>
             <div class="sig-box">
                 <div class="sig-label">OIC</div>
                 <div class="sig-space"></div>
-                <div style="font-size: 4pt;">Signature (Optional)</div>
+                <div class="sig-text-small">Signature (Optional)</div>
             </div>
             <div class="sig-box">
                 <div class="sig-label">RELEASED BY</div>
                 <div class="sig-space"></div>
-                <div style="font-size: 4pt;">Signature</div>
+                <div class="sig-text-small">Signature</div>
             </div>
         </div>
 
@@ -446,5 +211,6 @@ for ($copy = 1; $copy <= 4; $copy++):
 <?php endfor; ?>
 </div>
 
+<?php AssetHelper::loadModuleJS('borrowed-tools/print-controls'); ?>
 </body>
 </html>
