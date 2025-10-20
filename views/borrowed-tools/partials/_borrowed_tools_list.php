@@ -48,17 +48,8 @@
                     $isOverdue = $tool['status'] === 'Borrowed' && strtotime($expectedReturn) < time();
                     $isDueSoon = !$isOverdue && $tool['status'] === 'Borrowed' && strtotime($expectedReturn) <= strtotime('+3 days');
 
-                    // Status configuration
-                    $statusConfig = [
-                        'Pending Verification' => ['class' => 'bg-primary', 'icon' => 'clock'],
-                        'Pending Approval' => ['class' => 'bg-warning text-dark', 'icon' => 'hourglass-split'],
-                        'Approved' => ['class' => 'bg-info', 'icon' => 'check-circle'],
-                        'Borrowed' => ['class' => 'bg-secondary', 'icon' => 'box-arrow-up'],
-                        'Returned' => ['class' => 'bg-success', 'icon' => 'check-square'],
-                        'Overdue' => ['class' => 'bg-danger', 'icon' => 'exclamation-triangle'],
-                        'Canceled' => ['class' => 'bg-dark', 'icon' => 'x-circle']
-                    ];
-                    $config = $statusConfig[$tool['status']] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
+                    // Load ViewHelper if not already loaded
+                    require_once APP_ROOT . '/helpers/ViewHelper.php';
                     ?>
                     <div class="card mb-3 <?= $isOverdue ? 'border-danger' : ($isDueSoon ? 'border-warning' : '') ?>">
                         <div class="card-body">
@@ -84,10 +75,7 @@
                                         <i class="bi bi-clock-fill text-warning ms-1" title="Due Soon"></i>
                                     <?php endif; ?>
                                 </div>
-                                <span class="badge <?= $config['class'] ?>">
-                                    <i class="bi bi-<?= $config['icon'] ?> me-1"></i>
-                                    <?= htmlspecialchars($tool['status']) ?>
-                                </span>
+                                <?= ViewHelper::renderStatusBadge($tool['status']) ?>
                             </div>
 
                             <!-- Item Details -->
@@ -131,22 +119,7 @@
                                 <div class="mb-2">
                                     <small class="text-muted d-block mb-1">Condition</small>
                                     <div class="d-flex gap-2 flex-wrap">
-                                        <?php if (!empty($tool['condition_out'])): ?>
-                                            <div>
-                                                <small class="text-muted">Out:</small>
-                                                <span class="badge <?= $tool['condition_out'] === 'Good' ? 'bg-success' : ($tool['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                    <?= htmlspecialchars($tool['condition_out']) ?>
-                                                </span>
-                                            </div>
-                                        <?php endif; ?>
-                                        <?php if (!empty($tool['condition_returned'])): ?>
-                                            <div>
-                                                <small class="text-muted">In:</small>
-                                                <span class="badge <?= $tool['condition_returned'] === 'Good' ? 'bg-success' : ($tool['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                    <?= htmlspecialchars($tool['condition_returned']) ?>
-                                                </span>
-                                            </div>
-                                        <?php endif; ?>
+                                        <?= ViewHelper::renderConditionBadges($tool['condition_out'] ?? null, $tool['condition_returned'] ?? null) ?>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -268,9 +241,7 @@
                                         <div class="card card-body mb-2 bg-light">
                                             <div class="d-flex justify-content-between align-items-start mb-1">
                                                 <small class="text-muted">#<?= $index + 1 ?></small>
-                                                <span class="badge <?= $statusConfig[$item['status']]['class'] ?? 'bg-secondary' ?>">
-                                                    <?= $item['status'] ?>
-                                                </span>
+                                                <?= ViewHelper::renderStatusBadge($item['status'], false) ?>
                                             </div>
                                             <div class="fw-medium"><?= htmlspecialchars($item['asset_name']) ?></div>
                                             <small class="text-muted"><?= htmlspecialchars($item['asset_ref']) ?></small>
@@ -280,16 +251,7 @@
                                             <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
                                                 <div class="mt-1">
                                                     <small class="text-muted">Condition: </small>
-                                                    <?php if (!empty($item['condition_out'])): ?>
-                                                        <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                            Out: <?= htmlspecialchars($item['condition_out']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($item['condition_returned'])): ?>
-                                                        <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                            In: <?= htmlspecialchars($item['condition_returned']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
+                                                    <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null) ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -497,25 +459,8 @@
 
                                 <!-- Condition -->
                                 <td>
-                                    <?php if (!$isBatch && (!empty($tool['condition_out']) || !empty($tool['condition_returned']))): ?>
-                                        <div class="d-flex flex-column gap-1">
-                                            <?php if (!empty($tool['condition_out'])): ?>
-                                                <div>
-                                                    <small class="text-muted">Out:</small>
-                                                    <span class="badge badge-sm <?= $tool['condition_out'] === 'Good' ? 'bg-success' : ($tool['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                        <?= htmlspecialchars($tool['condition_out']) ?>
-                                                    </span>
-                                                </div>
-                                            <?php endif; ?>
-                                            <?php if (!empty($tool['condition_returned'])): ?>
-                                                <div>
-                                                    <small class="text-muted">In:</small>
-                                                    <span class="badge badge-sm <?= $tool['condition_returned'] === 'Good' ? 'bg-success' : ($tool['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                        <?= htmlspecialchars($tool['condition_returned']) ?>
-                                                    </span>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
+                                    <?php if (!$isBatch): ?>
+                                        <?= ViewHelper::renderConditionBadges($tool['condition_out'] ?? null, $tool['condition_returned'] ?? null, false) ?>
                                     <?php else: ?>
                                         <span class="text-muted">—</span>
                                     <?php endif; ?>
@@ -523,22 +468,7 @@
 
                                 <!-- Status -->
                                 <td>
-                                    <?php
-                                    $statusConfig = [
-                                        'Pending Verification' => 'bg-warning text-dark',
-                                        'Pending Approval' => 'bg-info',
-                                        'Approved' => 'bg-primary',
-                                        'Released' => 'bg-secondary',
-                                        'Borrowed' => 'bg-secondary',
-                                        'Partially Returned' => 'bg-warning text-dark',
-                                        'Returned' => 'bg-success',
-                                        'Canceled' => 'bg-dark'
-                                    ];
-                                    $badgeClass = $statusConfig[$tool['status']] ?? 'bg-secondary';
-                                    ?>
-                                    <span class="badge <?= $badgeClass ?>">
-                                        <?= htmlspecialchars($tool['status']) ?>
-                                    </span>
+                                    <?= ViewHelper::renderStatusBadge($tool['status']) ?>
                                 </td>
 
                                 <!-- MVA Workflow (Management Roles) -->
@@ -760,8 +690,9 @@
                                                 <?php if ($isOverdue && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
                                                     <button type="button" class="btn btn-sm btn-outline-warning"
                                                             onclick="sendOverdueReminder(<?= $tool['id'] ?>)"
+                                                            aria-label="Send overdue reminder"
                                                             title="Send overdue reminder">
-                                                        <i class="bi bi-bell"></i>
+                                                        <i class="bi bi-bell" aria-hidden="true"></i>
                                                     </button>
                                                 <?php endif; ?>
 
@@ -853,22 +784,7 @@
                                                                 <td class="text-center"><span class="badge bg-success"><?= $returned ?></span></td>
                                                                 <td class="text-center"><span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>"><?= $remaining ?></span></td>
                                                                 <td>
-                                                                    <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
-                                                                        <div class="d-flex flex-column gap-1">
-                                                                            <?php if (!empty($item['condition_out'])): ?>
-                                                                                <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                                                    Out: <?= htmlspecialchars($item['condition_out']) ?>
-                                                                                </span>
-                                                                            <?php endif; ?>
-                                                                            <?php if (!empty($item['condition_returned'])): ?>
-                                                                                <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                                                    In: <?= htmlspecialchars($item['condition_returned']) ?>
-                                                                                </span>
-                                                                            <?php endif; ?>
-                                                                        </div>
-                                                                    <?php else: ?>
-                                                                        <span class="text-muted">-</span>
-                                                                    <?php endif; ?>
+                                                                    <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null, false) ?>
                                                                 </td>
                                                                 <td>
                                                                     <?php if (!empty($item['serial_number'])): ?>
@@ -881,20 +797,8 @@
                                                                     <?php
                                                                     // Determine actual status based on remaining quantity
                                                                     $actualStatus = $remaining > 0 ? 'Borrowed' : 'Returned';
-
-                                                                    $statusConfig = [
-                                                                        'Pending Verification' => ['class' => 'bg-primary', 'icon' => 'clock'],
-                                                                        'Pending Approval' => ['class' => 'bg-warning text-dark', 'icon' => 'hourglass-split'],
-                                                                        'Approved' => ['class' => 'bg-info', 'icon' => 'check-circle'],
-                                                                        'Borrowed' => ['class' => 'bg-secondary', 'icon' => 'box-arrow-up'],
-                                                                        'Returned' => ['class' => 'bg-success', 'icon' => 'check-square'],
-                                                                        'Canceled' => ['class' => 'bg-dark', 'icon' => 'x-circle']
-                                                                    ];
-                                                                    $config = $statusConfig[$actualStatus] ?? ['class' => 'bg-secondary', 'icon' => 'question'];
                                                                     ?>
-                                                                    <span class="badge <?= $config['class'] ?>">
-                                                                        <i class="bi bi-<?= $config['icon'] ?> me-1"></i><?= $actualStatus ?>
-                                                                    </span>
+                                                                    <?= ViewHelper::renderStatusBadge($actualStatus) ?>
                                                                 </td>
                                                                 <td>
                                                                     <?php if (!empty($item['line_notes'])): ?>

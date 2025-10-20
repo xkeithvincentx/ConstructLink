@@ -12,6 +12,9 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 
+// Load ViewHelper for reusable UI components
+require_once APP_ROOT . '/helpers/ViewHelper.php';
+
 if (!isset($batch) || !$batch) {
     echo '<div class="alert alert-danger">Request not found</div>';
     return;
@@ -23,21 +26,6 @@ $isSingleItem = count($batch['items']) === 1;
 
 // For single item, extract the first (and only) item
 $singleItem = $isSingleItem ? $batch['items'][0] : null;
-
-// Status badge colors
-$statusColors = [
-    'Draft' => 'secondary',
-    'Pending Verification' => 'warning',
-    'Pending Approval' => 'info',
-    'Approved' => 'success',
-    'Released' => 'primary',
-    'Partially Returned' => 'warning',
-    'Returned' => 'secondary',
-    'Overdue' => 'danger',
-    'Canceled' => 'dark'
-];
-
-$statusColor = $statusColors[$batch['status']] ?? 'secondary';
 ?>
 
 <!-- Request Header -->
@@ -74,16 +62,14 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
             </div>
             <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
                 <div class="d-flex flex-column align-items-md-end align-items-start gap-2">
-                    <span class="badge bg-<?= $statusColor ?> fs-6">
-                        <?= htmlspecialchars($batch['status']) ?>
-                    </span>
+                    <span class="fs-6"><?= ViewHelper::renderStatusBadge($batch['status']) ?></span>
                     <?php if ($batch['is_critical_batch']): ?>
                         <span class="badge bg-warning text-dark">
-                            <i class="bi bi-shield-check me-1"></i>Critical Equipment - Full MVA
+                            <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Critical Equipment - Full MVA
                         </span>
                     <?php else: ?>
                         <span class="badge bg-success">
-                            <i class="bi bi-lightning me-1"></i>Basic Equipment - Streamlined
+                            <i class="bi bi-lightning me-1" aria-hidden="true"></i>Basic Equipment - Streamlined
                         </span>
                     <?php endif; ?>
                 </div>
@@ -187,15 +173,6 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                         <?php foreach ($batch['items'] as $item): ?>
                             <?php
                             $remaining = $item['quantity'] - $item['quantity_returned'];
-                            $itemStatusColors = [
-                                'Pending Verification' => 'warning',
-                                'Pending Approval' => 'info',
-                                'Approved' => 'success',
-                                'Borrowed' => 'primary',
-                                'Returned' => 'secondary',
-                                'Canceled' => 'dark'
-                            ];
-                            $itemStatusColor = $itemStatusColors[$item['status']] ?? 'secondary';
                             ?>
                             <div class="card mb-3 border">
                                 <div class="card-body">
@@ -206,16 +183,12 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                             <small class="text-muted d-block"><?= htmlspecialchars($item['asset_ref']) ?></small>
                                             <small class="text-muted d-block"><?= htmlspecialchars($item['category_name']) ?></small>
                                         </div>
-                                        <span class="badge bg-<?= $itemStatusColor ?>">
-                                            <?= htmlspecialchars($item['status']) ?>
-                                        </span>
+                                        <?= ViewHelper::renderStatusBadge($item['status']) ?>
                                     </div>
 
                                     <?php if ($item['acquisition_cost'] > 50000): ?>
                                         <div class="mb-2">
-                                            <span class="badge bg-warning text-dark">
-                                                <i class="bi bi-shield-check me-1"></i>Critical Item
-                                            </span>
+                                            <?= ViewHelper::renderCriticalToolBadge($item['acquisition_cost']) ?>
                                         </div>
                                     <?php endif; ?>
 
@@ -242,16 +215,7 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                         <div class="mt-2">
                                             <small class="text-muted d-block mb-1">Condition</small>
                                             <div class="d-flex gap-2 justify-content-center">
-                                                <?php if (!empty($item['condition_out'])): ?>
-                                                    <span class="badge <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                        Out: <?= htmlspecialchars($item['condition_out']) ?>
-                                                    </span>
-                                                <?php endif; ?>
-                                                <?php if (!empty($item['condition_returned'])): ?>
-                                                    <span class="badge <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                        In: <?= htmlspecialchars($item['condition_returned']) ?>
-                                                    </span>
-                                                <?php endif; ?>
+                                                <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null) ?>
                                             </div>
                                         </div>
                                     <?php endif; ?>
@@ -320,38 +284,10 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
                                             </span>
                                         </td>
                                         <td>
-                                            <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
-                                                <div class="d-flex flex-column gap-1">
-                                                    <?php if (!empty($item['condition_out'])): ?>
-                                                        <span class="badge badge-sm <?= $item['condition_out'] === 'Good' ? 'bg-success' : ($item['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                            Out: <?= htmlspecialchars($item['condition_out']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($item['condition_returned'])): ?>
-                                                        <span class="badge badge-sm <?= $item['condition_returned'] === 'Good' ? 'bg-success' : ($item['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                            In: <?= htmlspecialchars($item['condition_returned']) ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php else: ?>
-                                                <span class="text-muted">—</span>
-                                            <?php endif; ?>
+                                            <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null, false) ?>
                                         </td>
                                         <td>
-                                            <?php
-                                            $itemStatusColors = [
-                                                'Pending Verification' => 'warning',
-                                                'Pending Approval' => 'info',
-                                                'Approved' => 'success',
-                                                'Borrowed' => 'primary',
-                                                'Returned' => 'secondary',
-                                                'Canceled' => 'dark'
-                                            ];
-                                            $itemStatusColor = $itemStatusColors[$item['status']] ?? 'secondary';
-                                            ?>
-                                            <span class="badge bg-<?= $itemStatusColor ?>">
-                                                <?= htmlspecialchars($item['status']) ?>
-                                            </span>
+                                            <?= ViewHelper::renderStatusBadge($item['status']) ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -429,29 +365,13 @@ $statusColor = $statusColors[$batch['status']] ?? 'secondary';
 
                                 <dt class="col-sm-5">Status:</dt>
                                 <dd class="col-sm-7">
-                                    <?php
-                                    $itemStatusColor = $statusColors[$singleItem['status']] ?? 'secondary';
-                                    ?>
-                                    <span class="badge bg-<?= $itemStatusColor ?>">
-                                        <?= htmlspecialchars($singleItem['status']) ?>
-                                    </span>
+                                    <?= ViewHelper::renderStatusBadge($singleItem['status']) ?>
                                 </dd>
 
                                 <?php if (!empty($singleItem['condition_out']) || !empty($singleItem['condition_returned'])): ?>
                                     <dt class="col-sm-5">Condition:</dt>
                                     <dd class="col-sm-7">
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <?php if (!empty($singleItem['condition_out'])): ?>
-                                                <span class="badge <?= $singleItem['condition_out'] === 'Good' ? 'bg-success' : ($singleItem['condition_out'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                    Out: <?= htmlspecialchars($singleItem['condition_out']) ?>
-                                                </span>
-                                            <?php endif; ?>
-                                            <?php if (!empty($singleItem['condition_returned'])): ?>
-                                                <span class="badge <?= $singleItem['condition_returned'] === 'Good' ? 'bg-success' : ($singleItem['condition_returned'] === 'Fair' ? 'bg-warning text-dark' : 'bg-danger') ?>">
-                                                    In: <?= htmlspecialchars($singleItem['condition_returned']) ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
+                                        <?= ViewHelper::renderConditionBadges($singleItem['condition_out'] ?? null, $singleItem['condition_returned'] ?? null) ?>
                                     </dd>
                                 <?php endif; ?>
                             </dl>
