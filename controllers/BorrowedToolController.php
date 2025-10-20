@@ -2228,6 +2228,9 @@ class BorrowedToolController {
         }
 
         try {
+            // Load AssetHelper for standalone print view
+            require_once APP_ROOT . '/helpers/AssetHelper.php';
+
             $batchModel = new BorrowedToolBatchModel();
             $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
 
@@ -2263,6 +2266,9 @@ class BorrowedToolController {
      */
     public function printBlankForm() {
         try {
+            // Load AssetHelper for standalone print view
+            require_once APP_ROOT . '/helpers/AssetHelper.php';
+
             $db = Database::getInstance()->getConnection();
 
             // Fetch Power Tools with all their subtypes grouped
