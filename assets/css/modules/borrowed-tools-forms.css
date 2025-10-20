@@ -1,0 +1,69 @@
+/**
+ * Borrowed Tools Forms - Stylesheet
+ * Extracted from create-batch.php inline styles
+ * Includes shopping cart interface and batch creation styles
+ */
+
+/* Category tabs */
+.category-tab {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-tab:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.category-tab.active {
+    border-left: 4px solid #0d6efd;
+    background-color: #e7f1ff;
+}
+
+/* Equipment cards */
+.equipment-card {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.equipment-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.equipment-card.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+/* Floating cart badge (mobile) */
+.cart-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+@media (min-width: 992px) {
+    .cart-badge {
+        display: none;
+    }
+}
+
+/* Quantity input */
+.quantity-input {
+    width: 70px;
+}
+
+/* Borrower autocomplete suggestions */
+.borrower-suggestion {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.borrower-suggestion:hover {
+    background-color: #f8f9fa;
+}

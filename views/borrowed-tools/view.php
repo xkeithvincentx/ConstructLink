@@ -495,22 +495,11 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
     </div>
 </div>
 
-<style>
-.stat-item {
-    padding: 10px;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.stat-label {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 5px;
-}
-</style>
+<!-- Load borrowed tools detail view CSS -->
+<?php
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+AssetHelper::loadModuleCSS('borrowed-tools-detail');
+?>
 
 <?php
 // Capture the buffered content

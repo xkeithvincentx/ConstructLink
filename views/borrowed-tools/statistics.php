@@ -241,31 +241,11 @@ $isManagementRole = in_array($userRole, ['Project Manager', 'Asset Director', 'F
     </div>
 </div>
 
-<style>
-/* Statistics Page Specific Styles */
-.display-6 {
-    font-size: 2rem;
-    font-weight: 300;
-}
-
-.card-header {
-    border-bottom: 2px solid rgba(0,0,0,0.125);
-}
-
-/* Ensure mobile responsiveness */
-@media (max-width: 768px) {
-    .btn-group {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .btn-group .btn {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
-}
-</style>
+<!-- Load borrowed tools statistics CSS -->
+<?php
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+AssetHelper::loadModuleCSS('borrowed-tools-statistics');
+?>
 
 <?php
 // Capture content

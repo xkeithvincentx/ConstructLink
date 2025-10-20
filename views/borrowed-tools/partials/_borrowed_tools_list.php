@@ -10,11 +10,11 @@
     <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
         <h6 class="card-title mb-0">Borrowed Tools</h6>
         <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
+            <button class="btn btn-sm btn-outline-primary" id="exportBtn" data-action="export">
                 <i class="bi bi-file-earmark-excel me-1"></i>
                 <span class="d-none d-md-inline">Export</span>
             </button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="printTable()">
+            <button class="btn btn-sm btn-outline-secondary" id="printBtn" data-action="print">
                 <i class="bi bi-printer me-1"></i>
                 <span class="d-none d-md-inline">Print</span>
             </button>
@@ -688,8 +688,9 @@
 
                                                 <!-- Overdue Reminder Button (if applicable) -->
                                                 <?php if ($isOverdue && $auth->hasRole(['System Admin', 'Asset Director', 'Project Manager'])): ?>
-                                                    <button type="button" class="btn btn-sm btn-outline-warning"
-                                                            onclick="sendOverdueReminder(<?= $tool['id'] ?>)"
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-warning overdue-reminder-btn"
+                                                            data-tool-id="<?= $tool['id'] ?>"
                                                             aria-label="Send overdue reminder"
                                                             title="Send overdue reminder">
                                                         <i class="bi bi-bell" aria-hidden="true"></i>
@@ -891,44 +892,4 @@
     </div>
 </div>
 
-<script>
-// Toggle batch items in mobile view
-document.querySelectorAll('.batch-toggle-mobile').forEach(button => {
-    button.addEventListener('click', function() {
-        const batchId = this.getAttribute('data-batch-id');
-        const batchItems = document.querySelector(`.batch-items-mobile[data-batch-id="${batchId}"]`);
-        const icon = this.querySelector('i');
-
-        if (batchItems.style.display === 'none') {
-            batchItems.style.display = 'block';
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-up');
-            this.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Items';
-        } else {
-            batchItems.style.display = 'none';
-            icon.classList.remove('bi-chevron-up');
-            icon.classList.add('bi-chevron-down');
-            this.innerHTML = '<i class="bi bi-chevron-down me-1"></i>View Items';
-        }
-    });
-});
-
-// Toggle batch items in desktop table
-document.querySelectorAll('.batch-toggle').forEach(button => {
-    button.addEventListener('click', function() {
-        const batchId = this.getAttribute('data-batch-id');
-        const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
-        const icon = this.querySelector('i');
-
-        if (batchItemsRow.style.display === 'none') {
-            batchItemsRow.style.display = '';
-            icon.classList.remove('bi-chevron-right');
-            icon.classList.add('bi-chevron-down');
-        } else {
-            batchItemsRow.style.display = 'none';
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-right');
-        }
-    });
-});
-</script>
+<!-- List utilities are loaded via external module list-utils.js -->

@@ -94,7 +94,7 @@ usort($displayItems, function($a, $b) {
         <?php endif; ?>
         <button type="button"
                 class="btn btn-outline-secondary btn-sm"
-                onclick="refreshBorrowedTools()"
+                id="refreshBtn"
                 aria-label="Refresh list">
             <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
         </button>
@@ -212,166 +212,11 @@ usort($displayItems, function($a, $b) {
 </div>
 <?php endif; ?>
 
-<style>
-/* Enhanced Borrowed Tools Index Styles */
-
-/* Sortable columns */
-th.sortable {
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    transition: background-color 0.2s;
-}
-
-th.sortable:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-th.sortable i {
-    font-size: 0.75rem;
-    margin-left: 0.25rem;
-}
-
-/* Fix hidden batch items row spacing */
-tr.batch-items-row[style*="display: none"] {
-    display: none !important;
-    height: 0 !important;
-    line-height: 0 !important;
-}
-
-tr.batch-items-row[style*="display: none"] td {
-    padding: 0 !important;
-    border: 0 !important;
-}
-
-/* Fix action buttons spacing */
-.action-buttons {
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 1 !important;
-}
-
-.action-buttons .d-flex {
-    margin: 0 !important;
-}
-
-.workflow-step {
-    text-align: center;
-    min-width: 100px;
-}
-
-.workflow-steps .badge {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.75rem;
-}
-
-.status-cell .progress {
-    width: 60px;
-    margin-top: 2px;
-}
-
-.purpose-cell {
-    max-width: 200px;
-}
-
-.mva-workflow .badge-sm {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.4rem;
-    width: 20px;
-    text-align: center;
-}
-
-.return-schedule {
-    min-width: 120px;
-}
-
-.action-buttons .btn-group {
-    white-space: nowrap;
-}
-
-.table-danger {
-    --bs-table-bg: rgba(220, 53, 69, 0.1);
-    border-left: 4px solid #dc3545;
-}
-
-.table-warning {
-    --bs-table-bg: rgba(255, 193, 7, 0.1);
-    border-left: 4px solid #ffc107;
-}
-
-.text-truncated-hover:hover {
-    overflow: visible;
-    white-space: normal;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    position: relative;
-    z-index: 1000;
-}
-
-.card-body .workflow-steps {
-    justify-content: center;
-}
-
-@media (max-width: 768px) {
-    .workflow-steps {
-        flex-direction: column;
-        gap: 1rem !important;
-    }
-
-    .workflow-steps .bi-arrow-right {
-        transform: rotate(90deg);
-    }
-
-    .col-lg-2 {
-        margin-bottom: 1rem;
-    }
-}
-
-/* Priority indicators */
-.priority-high {
-    border-left: 4px solid #dc3545;
-}
-
-.priority-medium {
-    border-left: 4px solid #ffc107;
-}
-
-.priority-low {
-    border-left: 4px solid #198754;
-}
-
-/* Enhanced badge styles */
-.badge.position-relative .badge {
-    font-size: 0.55rem;
-}
-
-/* Smooth transitions */
-.card, .btn, .badge {
-    transition: all 0.2s ease-in-out;
-}
-
-.card:hover {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-/* Print styles */
-@media print {
-    .btn, .dropdown, .alert, .card-header {
-        display: none !important;
-    }
-
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    .table-responsive {
-        overflow: visible !important;
-    }
-}
-</style>
+<!-- Load borrowed tools module CSS -->
+<?php
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+AssetHelper::loadModuleCSS('borrowed-tools');
+?>
 
 <?php
 // Generate CSRF tokens for modals
@@ -757,9 +602,10 @@ include APP_ROOT . '/views/components/modal.php';
     </div>
 </div>
 
-<!-- Load external JavaScript module -->
+<!-- Load external JavaScript modules -->
 <script type="module">
     import { init } from '/assets/js/borrowed-tools/index.js';
+    import { refreshBorrowedTools } from '/assets/js/borrowed-tools/list-utils.js';
 
     // Set CSRF token globally for the module
     window.borrowedToolsCsrfToken = '<?= $csrfToken ?>';
@@ -769,6 +615,12 @@ include APP_ROOT . '/views/components/modal.php';
 
     // Initialize the module
     init(window.borrowedToolsCsrfToken);
+
+    // Attach refresh button handler
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshBorrowedTools);
+    }
 </script>
 
 <?php

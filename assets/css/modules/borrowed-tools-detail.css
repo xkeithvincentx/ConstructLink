@@ -1,0 +1,20 @@
+/**
+ * Borrowed Tools Detail View - Stylesheet
+ * Extracted from view.php inline styles
+ */
+
+/* Statistics item styling */
+.stat-item {
+    padding: 10px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
