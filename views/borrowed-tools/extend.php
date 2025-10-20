@@ -100,18 +100,19 @@ if (!$borrowedTool) {
                     </div>
                 </div>
 
-                <form method="POST" action="?route=borrowed-tools/extend&id=<?= $borrowedTool['id'] ?>" class="needs-validation" novalidate x-data="extendForm()">
+                <form method="POST" action="?route=borrowed-tools/extend&id=<?= $borrowedTool['id'] ?>" class="needs-validation" novalidate x-data="extendForm">
                     <?= CSRFProtection::getTokenField() ?>
                     
                     <!-- New Expected Return Date -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="new_expected_return" class="form-label">New Expected Return Date <span class="text-danger">*</span></label>
-                            <input type="date" 
-                                   class="form-control" 
-                                   id="new_expected_return" 
-                                   name="new_expected_return" 
-                                   value="<?= htmlspecialchars($formData['new_expected_return'] ?? '') ?>" 
+                            <input type="date"
+                                   class="form-control"
+                                   id="new_expected_return"
+                                   name="new_expected_return"
+                                   value="<?= htmlspecialchars($formData['new_expected_return'] ?? '') ?>"
+                                   data-original-date="<?= $borrowedTool['expected_return'] ?>"
                                    required
                                    x-model="formData.new_expected_return">
                             <div class="form-text">Select the new date when the tool should be returned</div>
@@ -308,142 +309,13 @@ if (!$borrowedTool) {
 </div>
 <?php endif; ?>
 
-<script>
-function extendForm() {
-    return {
-        formData: {
-            new_expected_return: '<?= htmlspecialchars($formData['new_expected_return'] ?? '') ?>',
-            reason: '<?= htmlspecialchars($formData['reason'] ?? '') ?>'
-        },
-        
-        init() {
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            const newReturnInput = document.getElementById('new_expected_return');
-            newReturnInput.min = today;
-            
-            // Set default to 7 days from original return date if not set
-            if (!this.formData.new_expected_return) {
-                const originalReturn = new Date('<?= $borrowedTool['expected_return'] ?>');
-                originalReturn.setDate(originalReturn.getDate() + 7);
-                this.formData.new_expected_return = originalReturn.toISOString().split('T')[0];
-                this.calculateExtension();
-            }
-            
-            // Calculate extension when date changes
-            this.$watch('formData.new_expected_return', () => {
-                this.calculateExtension();
-            });
-        },
-        
-        calculateExtension() {
-            const extensionDisplay = document.getElementById('extensionPeriod');
-            const extensionDays = document.getElementById('extensionDays');
-            
-            if (this.formData.new_expected_return) {
-                const originalReturn = new Date('<?= $borrowedTool['expected_return'] ?>');
-                const newReturn = new Date(this.formData.new_expected_return);
-                const diffTime = newReturn - originalReturn;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays > 0) {
-                    extensionDisplay.innerHTML = `<span class="text-success"><i class="bi bi-calendar-plus me-1"></i>${diffDays} day(s) extension</span>`;
-                    extensionDays.textContent = `${diffDays} day(s)`;
-                } else if (diffDays === 0) {
-                    extensionDisplay.innerHTML = `<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Same date selected</span>`;
-                    extensionDays.textContent = 'No extension';
-                } else {
-                    extensionDisplay.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Earlier date selected</span>`;
-                    extensionDays.textContent = 'Invalid';
-                }
-            } else {
-                extensionDisplay.innerHTML = `<span class="text-muted">Select new return date to see extension</span>`;
-                extensionDays.textContent = '-';
-            }
-        },
-        
-        formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            });
-        }
-    }
-}
-
-// Form validation
-(function() {
-    'use strict';
-    window.addEventListener('load', function() {
-        var forms = document.getElementsByClassName('needs-validation');
-        var validation = Array.prototype.filter.call(forms, function(form) {
-            form.addEventListener('submit', function(event) {
-                if (form.checkValidity() === false) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-    }, false);
-})();
-
-// Auto-dismiss alerts after 5 seconds
-setTimeout(function() {
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(function(alert) {
-        const bsAlert = new bootstrap.Alert(alert);
-        bsAlert.close();
-    });
-}, 5000);
-</script>
-
-<style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -35px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: #dee2e6;
-}
-
-.timeline-title {
-    font-size: 0.9rem;
-    margin-bottom: 5px;
-}
-
-.timeline-text {
-    margin-bottom: 0;
-}
-</style>
-
 <?php
 // Capture content and assign to variable
 $content = ob_get_clean();
+
+// Load module-specific assets
+AssetHelper::loadModuleCSS('borrowed-tools-extend');
+AssetHelper::loadModuleJS('borrowed-tools/extend');
 
 // Set page variables
 $pageTitle = 'Extend Borrowing - ConstructLink™';

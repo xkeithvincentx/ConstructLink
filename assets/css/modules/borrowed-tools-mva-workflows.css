@@ -1,0 +1,148 @@
+/**
+ * MVA Workflows - Shared Styles
+ * ConstructLink™ Borrowed Tools Module
+ * Developed by: Ranoa Digital Solutions
+ *
+ * Shared styles for approve.php, verify.php, borrow.php, cancel.php
+ */
+
+/* Workflow Card Layouts */
+.workflow-card {
+    margin-bottom: 1.5rem;
+}
+
+.workflow-card .card-header {
+    font-weight: 600;
+}
+
+/* Tool Details Tables */
+.tool-details-table {
+    margin-bottom: 1.5rem;
+}
+
+.tool-details-table .table-sm td {
+    padding: 0.5rem;
+    vertical-align: top;
+}
+
+.tool-details-table .table-sm td:first-child {
+    width: 40%;
+    font-weight: 500;
+}
+
+/* Workflow Progress Indicators */
+.workflow-progress {
+    margin-top: 1.5rem;
+}
+
+.workflow-progress .progress {
+    height: 20px;
+    margin-bottom: 1rem;
+}
+
+.workflow-progress .progress-bar small {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.workflow-stage {
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.workflow-stage small {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.workflow-stage i {
+    font-size: 1.5rem;
+}
+
+/* Checklist Forms */
+.checklist-form .form-check {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.checklist-form .form-check:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.checklist-form .form-check-input {
+    margin-top: 0.3rem;
+}
+
+.checklist-form .form-check-label {
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+/* Critical Tool Indicators */
+.critical-tool-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Notes and Alerts */
+.workflow-notes {
+    background-color: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.workflow-notes h6 {
+    margin-bottom: 0.5rem;
+    color: #0d6efd;
+}
+
+/* Action Buttons */
+.workflow-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Cancellation Warning */
+.cancellation-warning {
+    border-left: 4px solid #dc3545;
+    background-color: #fff5f5;
+}
+
+/* Status Badges in Tables */
+.status-badge-cell {
+    white-space: nowrap;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .tool-details-table .table-sm td:first-child {
+        width: 100%;
+    }
+
+    .workflow-stage {
+        padding: 0.25rem 0;
+    }
+
+    .workflow-stage i {
+        font-size: 1.25rem;
+    }
+
+    .workflow-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .workflow-actions .btn {
+        width: 100%;
+    }
+}

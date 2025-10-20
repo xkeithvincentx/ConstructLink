@@ -11,12 +11,10 @@ if (!defined('APP_ROOT')) {
 // Start output buffering to capture content
 ob_start();
 
-$isCritical = false;
-$criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
-if (isset($borrowedTool['acquisition_cost']) && $borrowedTool['acquisition_cost'] > $criticalThreshold) {
-    $isCritical = true;
-}
+// Check if tool is critical
+$isCritical = ViewHelper::isCriticalTool($borrowedTool['acquisition_cost'] ?? 0);
 
+// Also check category-based criticality
 $criticalCategories = ['Equipment', 'Machinery', 'Safety', 'Heavy Equipment'];
 if (in_array($borrowedTool['category_name'], $criticalCategories)) {
     $isCritical = true;
@@ -37,7 +35,7 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                 </div>
                 <div class="card-body">
                     <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger" role="alert">
                             <ul class="mb-0">
                                 <?php foreach ($errors as $error): ?>
                                     <li><?= htmlspecialchars($error) ?></li>
@@ -46,69 +44,16 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                         </div>
                     <?php endif; ?>
 
+                    <?php if ($isCritical): ?>
+                        <?= ViewHelper::renderCriticalToolWarning() ?>
+                    <?php endif; ?>
+
                     <!-- Tool Details -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Tool Information</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Asset Reference:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['asset_ref']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Asset Name:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['asset_name']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Category:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['category_name']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Project:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['project_name']) ?></td>
-                                </tr>
-                                <?php if ($borrowedTool['acquisition_cost']): ?>
-                                <tr>
-                                    <td><strong>Asset Value:</strong></td>
-                                    <td>₱<?= number_format($borrowedTool['acquisition_cost'], 2) ?></td>
-                                </tr>
-                                <?php endif; ?>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Borrowing Details</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Borrower:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['borrower_name']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Contact:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['borrower_contact']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Expected Return:</strong></td>
-                                    <td><?= date('M d, Y', strtotime($borrowedTool['expected_return'])) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Purpose:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['purpose']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Approved By:</strong></td>
-                                    <td><?= htmlspecialchars($borrowedTool['approved_by_name']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Approval Date:</strong></td>
-                                    <td><?= date('M d, Y g:i A', strtotime($borrowedTool['approval_date'])) ?></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+                    <?= ViewHelper::renderToolDetailsTable($borrowedTool) ?>
 
                     <!-- Approval Notes -->
-                    <?php if ($borrowedTool['notes']): ?>
-                    <div class="alert alert-success mb-4">
+                    <?php if (!empty($borrowedTool['notes'])): ?>
+                    <div class="workflow-notes">
                         <h6 class="fw-bold">Approval Notes:</h6>
                         <p class="mb-0"><?= htmlspecialchars($borrowedTool['notes']) ?></p>
                     </div>
@@ -120,9 +65,9 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                             <h6 class="fw-bold mb-0">Physical Handover Checklist</h6>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="?route=borrowed-tools/borrow&id=<?= $borrowedTool['id'] ?>">
+                            <form method="POST" action="?route=borrowed-tools/borrow&id=<?= $borrowedTool['id'] ?>" class="checklist-form">
                                 <?= CSRFProtection::getTokenField() ?>
-                                
+
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Handover Requirements:</label>
                                     <div class="form-check">
@@ -173,21 +118,21 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
 
                                 <div class="mb-3">
                                     <label for="borrow_notes" class="form-label">Handover Notes</label>
-                                    <textarea class="form-control" id="borrow_notes" name="borrow_notes" rows="3" placeholder="Enter condition notes, special instructions, or comments..."></textarea>
-                                    <div class="form-text">Document the condition of the tool and any special instructions given to the borrower.</div>
+                                    <textarea class="form-control" id="borrow_notes" name="borrow_notes" rows="3" placeholder="Enter condition notes, special instructions, or comments..." aria-describedby="borrow_notes_help"></textarea>
+                                    <div id="borrow_notes_help" class="form-text">Document the condition of the tool and any special instructions given to the borrower.</div>
                                 </div>
 
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle"></i>
+                                <div class="alert alert-warning" role="alert">
+                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                     <strong>Important:</strong> By completing this handover, you confirm that the tool has been physically handed over to the borrower and all required procedures have been followed.
                                 </div>
 
-                                <div class="d-flex justify-content-between">
+                                <div class="workflow-actions">
                                     <a href="?route=borrowed-tools/view&id=<?= $borrowedTool['id'] ?>" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left"></i> Back to Details
+                                        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Details
                                     </a>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-box-arrow-down"></i> Complete Handover
+                                        <i class="bi bi-box-arrow-down" aria-hidden="true"></i> Complete Handover
                                     </button>
                                 </div>
                             </form>
@@ -195,29 +140,29 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                     </div>
 
                     <!-- Workflow Status -->
-                    <div class="mt-4">
+                    <div class="workflow-progress">
                         <h6 class="fw-bold">MVA Workflow Status</h6>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 75%">
+                        <div class="progress">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
                                 <small>Ready for Handover</small>
                             </div>
                         </div>
                         <div class="row mt-2">
-                            <div class="col-3 text-center">
-                                <small class="text-muted">Created</small><br>
-                                <i class="bi bi-check-circle text-success"></i>
+                            <div class="col-3 workflow-stage">
+                                <small class="text-muted">Created</small>
+                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
                             </div>
-                            <div class="col-3 text-center">
-                                <small class="text-muted">Verified</small><br>
-                                <i class="bi bi-check-circle text-success"></i>
+                            <div class="col-3 workflow-stage">
+                                <small class="text-muted">Verified</small>
+                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
                             </div>
-                            <div class="col-3 text-center">
-                                <small class="text-muted">Approved</small><br>
-                                <i class="bi bi-check-circle text-success"></i>
+                            <div class="col-3 workflow-stage">
+                                <small class="text-muted">Approved</small>
+                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
                             </div>
-                            <div class="col-3 text-center">
-                                <small class="text-primary">Handover</small><br>
-                                <i class="bi bi-hourglass-split text-primary"></i>
+                            <div class="col-3 workflow-stage">
+                                <small class="text-primary">Handover</small>
+                                <i class="bi bi-hourglass-split text-primary" aria-hidden="true"></i>
                             </div>
                         </div>
                     </div>
@@ -230,6 +175,9 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
 <?php
 // Capture content and assign to variable
 $content = ob_get_clean();
+
+// Load module-specific assets
+AssetHelper::loadModuleCSS('borrowed-tools-mva-workflows');
 
 // Set page variables
 $pageTitle = 'Mark as Borrowed - ConstructLink™';

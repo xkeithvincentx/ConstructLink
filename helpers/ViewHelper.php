@@ -304,4 +304,168 @@ class ViewHelper
             htmlspecialchars($userName)
         );
     }
+
+    /**
+     * Check if tool is critical based on acquisition cost
+     *
+     * @param float $cost Acquisition cost
+     * @param float|null $threshold Custom threshold (defaults to config)
+     * @return bool True if cost >= threshold
+     */
+    public static function isCriticalTool(float $cost, ?float $threshold = null): bool
+    {
+        if ($threshold === null) {
+            $threshold = 50000; // Default threshold
+            // Try to get from config if available
+            if (function_exists('config')) {
+                $threshold = config('business_rules.critical_tool_threshold', 50000);
+            }
+        }
+
+        return $cost >= $threshold;
+    }
+
+    /**
+     * Render critical tool warning alert
+     *
+     * @return string HTML alert for critical tools
+     */
+    public static function renderCriticalToolWarning(): string
+    {
+        return '<div class="alert alert-warning mb-3" role="alert">' .
+               '<i class="bi bi-shield-exclamation" aria-hidden="true"></i> ' .
+               '<strong>Critical Tool - Requires Verification &amp; Approval</strong>' .
+               '</div>';
+    }
+
+    /**
+     * Render tool details table for MVA workflows
+     *
+     * @param array $tool Tool data with all required fields
+     * @param bool $showActions Show actions column (default: false)
+     * @return string HTML table with tool details
+     */
+    public static function renderToolDetailsTable(array $tool, bool $showActions = false): string
+    {
+        $html = '<div class="row mb-4">';
+
+        // Tool Information Column
+        $html .= '<div class="col-md-6 mb-3 mb-md-0">';
+        $html .= '<h6 class="fw-bold">Tool Information</h6>';
+        $html .= '<div class="table-responsive">';
+        $html .= '<table class="table table-sm">';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Asset Reference:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['asset_ref']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Asset Name:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['asset_name']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Category:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['category_name']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Project:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['project_name']) . '</td>';
+        $html .= '</tr>';
+
+        if (isset($tool['acquisition_cost']) && $tool['acquisition_cost']) {
+            $html .= '<tr>';
+            $html .= '<td><strong>Asset Value:</strong></td>';
+            $html .= '<td>₱' . number_format($tool['acquisition_cost'], 2);
+
+            // Add critical tool badge if applicable
+            if (self::isCriticalTool($tool['acquisition_cost'])) {
+                $html .= ' ' . self::renderCriticalToolBadge($tool['acquisition_cost']);
+            }
+
+            $html .= '</td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</table>';
+        $html .= '</div>'; // table-responsive
+        $html .= '</div>'; // col-md-6
+
+        // Borrowing Details Column
+        $html .= '<div class="col-md-6">';
+        $html .= '<h6 class="fw-bold">Borrowing Details</h6>';
+        $html .= '<div class="table-responsive">';
+        $html .= '<table class="table table-sm">';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Borrower:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['borrower_name']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Contact:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['borrower_contact']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Expected Return:</strong></td>';
+        $html .= '<td>' . date('M d, Y', strtotime($tool['expected_return'])) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Purpose:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['purpose']) . '</td>';
+        $html .= '</tr>';
+
+        $html .= '<tr>';
+        $html .= '<td><strong>Issued By:</strong></td>';
+        $html .= '<td>' . htmlspecialchars($tool['issued_by_name']) . '</td>';
+        $html .= '</tr>';
+
+        // Add workflow-specific rows based on what data is available
+        if (isset($tool['created_at'])) {
+            $html .= '<tr>';
+            $html .= '<td><strong>Request Date:</strong></td>';
+            $html .= '<td>' . date('M d, Y g:i A', strtotime($tool['created_at'])) . '</td>';
+            $html .= '</tr>';
+        }
+
+        if (isset($tool['verified_by_name']) && $tool['verified_by_name']) {
+            $html .= '<tr>';
+            $html .= '<td><strong>Verified By:</strong></td>';
+            $html .= '<td>' . htmlspecialchars($tool['verified_by_name']) . '</td>';
+            $html .= '</tr>';
+
+            if (isset($tool['verification_date'])) {
+                $html .= '<tr>';
+                $html .= '<td><strong>Verification Date:</strong></td>';
+                $html .= '<td>' . date('M d, Y g:i A', strtotime($tool['verification_date'])) . '</td>';
+                $html .= '</tr>';
+            }
+        }
+
+        if (isset($tool['approved_by_name']) && $tool['approved_by_name']) {
+            $html .= '<tr>';
+            $html .= '<td><strong>Approved By:</strong></td>';
+            $html .= '<td>' . htmlspecialchars($tool['approved_by_name']) . '</td>';
+            $html .= '</tr>';
+
+            if (isset($tool['approval_date'])) {
+                $html .= '<tr>';
+                $html .= '<td><strong>Approval Date:</strong></td>';
+                $html .= '<td>' . date('M d, Y g:i A', strtotime($tool['approval_date'])) . '</td>';
+                $html .= '</tr>';
+            }
+        }
+
+        $html .= '</table>';
+        $html .= '</div>'; // table-responsive
+        $html .= '</div>'; // col-md-6
+
+        $html .= '</div>'; // row
+
+        return $html;
+    }
 }
