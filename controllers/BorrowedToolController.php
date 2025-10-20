@@ -350,9 +350,15 @@ class BorrowedToolController {
 
     /**
      * Display statistics dashboard for borrowed tools
-     * Dedicated analytics view separate from operational index
+     *
+     * @deprecated This method is deprecated as statistics have been consolidated into the main index view.
+     *             Statistics are now available as an expandable section in the index page.
+     *             This method is kept for backward compatibility but will redirect to index.
      */
     public function statistics() {
+        // Redirect to main index page where statistics are now integrated
+        header('Location: ?route=borrowed-tools');
+        exit;
         // Centralized RBAC: Only users with view_statistics permission can access
         if (!$this->hasBorrowedToolPermission('view_statistics')) {
             http_response_code(403);

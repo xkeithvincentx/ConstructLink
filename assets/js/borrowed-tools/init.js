@@ -42,4 +42,48 @@ document.addEventListener('DOMContentLoaded', function() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', refreshBorrowedTools);
     }
+
+    // Initialize statistics toggle with session persistence
+    initializeStatisticsToggle();
 });
+
+/**
+ * Initialize statistics collapse toggle with session persistence
+ * Remembers user's preference to show/hide detailed statistics
+ */
+function initializeStatisticsToggle() {
+    const toggleBtn = document.getElementById('toggleDetailedStats');
+    const toggleText = document.getElementById('toggleStatsText');
+    const toggleIcon = document.getElementById('toggleStatsIcon');
+    const statsCollapse = document.getElementById('detailedStatsCollapse');
+
+    if (!statsCollapse || !toggleBtn) {
+        return; // Elements not found, exit gracefully
+    }
+
+    // Restore previous state from sessionStorage
+    const statsExpanded = sessionStorage.getItem('borrowedTools_statsExpanded') === 'true';
+    if (statsExpanded) {
+        const bsCollapse = new bootstrap.Collapse(statsCollapse, { toggle: false });
+        bsCollapse.show();
+    }
+
+    // Listen for collapse state changes
+    statsCollapse.addEventListener('show.bs.collapse', function() {
+        if (toggleText) toggleText.textContent = 'Hide Detailed Statistics';
+        if (toggleIcon) {
+            toggleIcon.classList.remove('bi-chevron-down');
+            toggleIcon.classList.add('bi-chevron-up');
+        }
+        sessionStorage.setItem('borrowedTools_statsExpanded', 'true');
+    });
+
+    statsCollapse.addEventListener('hide.bs.collapse', function() {
+        if (toggleText) toggleText.textContent = 'View Detailed Statistics';
+        if (toggleIcon) {
+            toggleIcon.classList.remove('bi-chevron-up');
+            toggleIcon.classList.add('bi-chevron-down');
+        }
+        sessionStorage.setItem('borrowedTools_statsExpanded', 'false');
+    });
+}

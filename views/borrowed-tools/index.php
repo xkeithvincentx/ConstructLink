@@ -82,11 +82,6 @@ $csrfToken = CSRFProtection::generateToken();
 
     <!-- Desktop: Action Buttons -->
     <div class="d-none d-md-flex gap-2">
-        <a href="?route=borrowed-tools/statistics"
-           class="btn btn-outline-info btn-sm"
-           aria-label="View statistics dashboard">
-            <i class="bi bi-graph-up me-1" aria-hidden="true"></i>Statistics
-        </a>
         <a href="?route=borrowed-tools/print-blank-form"
            class="btn btn-outline-secondary btn-sm"
            target="_blank"
@@ -111,9 +106,6 @@ $csrfToken = CSRFProtection::generateToken();
 
 <!-- Mobile: Action Buttons -->
 <div class="d-md-none d-grid gap-2 mb-4">
-    <a href="?route=borrowed-tools/statistics" class="btn btn-outline-info">
-        <i class="bi bi-graph-up me-1"></i>View Statistics
-    </a>
     <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
         <a href="?route=borrowed-tools/create-batch" class="btn btn-success">
             <i class="bi bi-plus-circle me-1"></i>New Borrow Request
@@ -124,7 +116,7 @@ $csrfToken = CSRFProtection::generateToken();
     </a>
 </div>
 
-<!-- Quick Stats Summary (Minimal) -->
+<!-- Quick Stats Summary (Always Visible) -->
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
         <div class="card border-primary">
@@ -157,6 +149,27 @@ $csrfToken = CSRFProtection::generateToken();
                 <h4 class="mb-0 text-success"><?= $borrowedToolStats['available_equipment'] ?? 0 ?></h4>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Detailed Statistics (Expandable) -->
+<div class="mb-4">
+    <div class="d-grid mb-3">
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#detailedStatsCollapse"
+                aria-expanded="false"
+                aria-controls="detailedStatsCollapse"
+                id="toggleDetailedStats">
+            <i class="bi bi-bar-chart-line me-2" aria-hidden="true"></i>
+            <span id="toggleStatsText">View Detailed Statistics</span>
+            <i class="bi bi-chevron-down ms-2" aria-hidden="true" id="toggleStatsIcon"></i>
+        </button>
+    </div>
+
+    <div class="collapse" id="detailedStatsCollapse">
+        <?php include APP_ROOT . '/views/borrowed-tools/partials/_statistics_cards.php'; ?>
     </div>
 </div>
 

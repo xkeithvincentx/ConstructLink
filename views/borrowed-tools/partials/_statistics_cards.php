@@ -63,25 +63,8 @@ function renderStatCard(array $config): string {
 }
 ?>
 
-<!-- Borrowed Tools Statistics Cards -->
-<!-- Mobile: Collapsible, Desktop: Always visible -->
-<div class="mb-4">
-    <!-- Mobile Toggle Button -->
-    <button class="btn btn-outline-secondary btn-sm w-100 d-md-none mb-3"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#statsCollapse"
-            aria-expanded="false"
-            aria-controls="statsCollapse"
-            aria-label="Toggle statistics visibility">
-        <i class="bi bi-bar-chart-line me-1" aria-hidden="true"></i>
-        <span>View Statistics</span>
-        <i class="bi bi-chevron-down ms-auto" aria-hidden="true"></i>
-    </button>
-
-    <!-- Collapsible on mobile, always visible on desktop -->
-    <div class="collapse d-md-block" id="statsCollapse">
-        <div class="row g-3 mb-4">
+<!-- Borrowed Tools Detailed Statistics Cards -->
+<div class="row g-3">
 
             <?php if ($isOperationalRole): ?>
                 <!-- OPERATIONAL ROLE CARDS (Warehouseman, Site Inventory Clerk) -->
@@ -269,6 +252,4 @@ function renderStatCard(array $config): string {
 
             <?php endif; ?>
 
-        </div><!-- End row -->
-    </div><!-- End collapse -->
-</div><!-- End statistics section -->
+</div><!-- End row -->

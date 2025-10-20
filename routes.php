@@ -502,12 +502,6 @@ $routes = [
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/cancel')
     ],
-    'borrowed-tools/statistics' => [
-        'controller' => 'BorrowedToolController',
-        'action' => 'statistics',
-        'auth' => true,
-        'roles' => getRolesFor('borrowed-tools/view_statistics')
-    ],
 
     // Multi-Item Batch Borrowing Routes
     'borrowed-tools/create-batch' => [
