@@ -1211,9 +1211,26 @@ class ApiController {
      * Get user notifications
      */
     public function getNotifications() {
+        // Clear any output buffering to prevent HTML errors
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        ob_start();
+
+        // Ensure JSON response even if errors occur before constructor
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+
+        // Suppress display_errors to prevent HTML error output
+        $previousDisplayErrors = ini_get('display_errors');
+        ini_set('display_errors', '0');
+
         if (!$this->auth->isAuthenticated()) {
             http_response_code(401);
             echo json_encode(['error' => 'Authentication required']);
+            ini_set('display_errors', $previousDisplayErrors);
+            ob_end_flush();
             return;
         }
 
@@ -1245,7 +1262,7 @@ class ApiController {
                         'unread' => !$dbNotif['is_read']
                     ];
                 }
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 // Table might not exist yet - log and continue with system notifications only
                 error_log("NotificationModel error (table may not exist): " . $e->getMessage());
             }
@@ -1253,8 +1270,12 @@ class ApiController {
             // Get overdue withdrawals (limit to reduce load time)
             if (hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
                 try {
-                    $withdrawalModel = new WithdrawalModel();
-                    $overdueWithdrawals = $withdrawalModel->getOverdueWithdrawals();
+                    if (class_exists('WithdrawalModel')) {
+                        $withdrawalModel = new WithdrawalModel();
+                        $overdueWithdrawals = $withdrawalModel->getOverdueWithdrawals();
+                    } else {
+                        $overdueWithdrawals = [];
+                    }
 
                     $count = 0;
                     foreach ($overdueWithdrawals as $withdrawal) {
@@ -1272,7 +1293,7 @@ class ApiController {
                         ];
                         $count++;
                     }
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     error_log("Withdrawal notifications error: " . $e->getMessage());
                 }
             }
@@ -1306,7 +1327,7 @@ class ApiController {
                             }
                         }
                     }
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     error_log("Maintenance notifications error: " . $e->getMessage());
                 }
             }
@@ -1338,7 +1359,7 @@ class ApiController {
                             }
                         }
                     }
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     error_log("Incident notifications error: " . $e->getMessage());
                 }
             }
@@ -1389,7 +1410,7 @@ class ApiController {
                             $count++;
                         }
                     }
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     error_log("Delivery notifications error: " . $e->getMessage());
                 }
             }
@@ -1410,7 +1431,7 @@ class ApiController {
             
             // Apply pagination
             $notifications = array_slice($notifications, $offset, $limit);
-            
+
             echo json_encode([
                 'success' => true,
                 'notifications' => $notifications,
@@ -1420,14 +1441,28 @@ class ApiController {
                 'offset' => $offset,
                 'limit' => $limit
             ]);
-            
-        } catch (Exception $e) {
+
+            // Restore display_errors setting
+            ini_set('display_errors', $previousDisplayErrors);
+
+            // Flush output buffer
+            ob_end_flush();
+
+        } catch (Throwable $e) {
             error_log("Get notifications API error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'error' => 'Failed to load notifications'
+                'error' => 'Failed to load notifications',
+                'notifications' => [],
+                'unread_count' => 0
             ]);
+
+            // Restore display_errors setting
+            ini_set('display_errors', $previousDisplayErrors);
+
+            // Flush output buffer
+            ob_end_flush();
         }
     }
     
@@ -1435,18 +1470,27 @@ class ApiController {
      * Mark notification as read
      */
     public function markNotificationAsRead() {
+        // Ensure JSON response even if errors occur before constructor
+        header('Content-Type: application/json');
+
+        // Suppress display_errors to prevent HTML error output
+        $previousDisplayErrors = ini_get('display_errors');
+        ini_set('display_errors', '0');
+
         if (!$this->auth->isAuthenticated()) {
             http_response_code(401);
             echo json_encode(['error' => 'Authentication required']);
+            ini_set('display_errors', $previousDisplayErrors);
             return;
         }
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['error' => 'Method not allowed']);
+            ini_set('display_errors', $previousDisplayErrors);
             return;
         }
-        
+
         try {
             $input = json_decode(file_get_contents('php://input'), true);
             $notificationId = $input['notification_id'] ?? '';
@@ -1456,9 +1500,10 @@ class ApiController {
                     'success' => false,
                     'error' => 'Notification ID is required'
                 ]);
+                ini_set('display_errors', $previousDisplayErrors);
                 return;
             }
-            
+
             // Mark notification as read in database
             require_once APP_ROOT . '/models/NotificationModel.php';
             $notificationModel = new NotificationModel();
@@ -1469,7 +1514,10 @@ class ApiController {
                 'success' => $result,
                 'message' => $result ? 'Notification marked as read' : 'Failed to mark notification as read'
             ]);
-            
+
+            // Restore display_errors setting
+            ini_set('display_errors', $previousDisplayErrors);
+
         } catch (Exception $e) {
             error_log("Mark notification read API error: " . $e->getMessage());
             http_response_code(500);
@@ -1477,6 +1525,9 @@ class ApiController {
                 'success' => false,
                 'error' => 'Failed to mark notification as read'
             ]);
+
+            // Restore display_errors setting
+            ini_set('display_errors', $previousDisplayErrors);
         }
     }
     
