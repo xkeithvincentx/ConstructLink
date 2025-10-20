@@ -219,12 +219,12 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
                                             </template>
                                         </div>
                                         <div class="text-end">
-                                            <template x-if="item.acquisition_cost > 50000">
+                                            <template x-if="item.acquisition_cost > CRITICAL_TOOL_THRESHOLD">
                                                 <span class="badge bg-warning text-dark mb-2">
                                                     <i class="bi bi-shield-check"></i> Critical
                                                 </span>
                                             </template>
-                                            <template x-if="item.acquisition_cost <= 50000">
+                                            <template x-if="item.acquisition_cost <= CRITICAL_TOOL_THRESHOLD">
                                                 <span class="badge bg-success mb-2">
                                                     <i class="bi bi-lightning"></i> Basic
                                                 </span>
@@ -593,6 +593,9 @@ $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_pr
 
 <script>
 function batchBorrowingApp() {
+    // Configuration from PHP
+    const CRITICAL_TOOL_THRESHOLD = <?= config('business_rules.critical_tool_threshold', 50000) ?>;
+
     return {
         // Equipment data
         categories: <?= json_encode($groupedEquipment) ?>,
@@ -628,7 +631,7 @@ function batchBorrowingApp() {
         },
 
         get hasCriticalTools() {
-            return this.cart.some(item => item.acquisition_cost > 50000);
+            return this.cart.some(item => item.acquisition_cost > CRITICAL_TOOL_THRESHOLD);
         },
 
         get minDate() {

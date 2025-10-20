@@ -57,8 +57,7 @@ class BorrowedToolBatchModel extends BaseModel {
             return sprintf('BRW-%s-%s-%04d', $projectCode, $year, $sequence);
 
         } catch (Exception $e) {
-            error_log("Batch reference generation error: " . $e->getMessage());
-            // Fallback to timestamp-based unique reference
+            // Fallback to timestamp-based unique reference if generation fails
             return 'BRW-UNK-' . date('Ymd') . '-' . substr(uniqid(), -4);
         }
     }
@@ -176,7 +175,7 @@ class BorrowedToolBatchModel extends BaseModel {
                 }
 
                 // Check if critical tool
-                if ($asset['acquisition_cost'] > 50000) {
+                if ($asset['acquisition_cost'] > config('business_rules.critical_tool_threshold')) {
                     $isCriticalBatch = true;
                 }
 

@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Auto-refresh for overdue tools with visual indicator
 if (document.querySelector('.table-danger') || document.querySelector('.bg-danger')) {
-    let refreshTimer = 300; // 5 minutes for overdue items
+    let refreshTimer = <?= config('business_rules.ui.auto_refresh_interval', 300) ?>; // Configured refresh interval
     
     // Show refresh countdown
     const createRefreshIndicator = () => {

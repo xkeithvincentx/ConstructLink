@@ -483,9 +483,6 @@ class BorrowedToolModel extends BaseModel {
         $orderByColumn = $orderByMap[$sortBy] ?? 'bt.created_at';
         $orderByClause = "ORDER BY {$orderByColumn} {$sortOrder}";
 
-        // Debug: Log the SQL and parameters (remove this after testing)
-        error_log("DEBUG - SQL WHERE: " . $whereClause . ", Params: " . json_encode($params));
-        
         // Count total records
         $countSql = "
             SELECT COUNT(*)
@@ -543,13 +540,7 @@ class BorrowedToolModel extends BaseModel {
         $stmt = $this->db->prepare($dataSql);
         $stmt->execute($params);
         $data = $stmt->fetchAll();
-        
-        // Debug: Log what data was actually returned
-        $recordDetails = array_map(function($record) {
-            return "ID:" . $record['id'] . ",Asset:" . $record['asset_id'] . ",Status:" . $record['status'];
-        }, $data);
-        error_log("DEBUG - Data returned: " . count($data) . " records - " . json_encode($recordDetails) . ", Projects: " . json_encode(array_unique(array_column($data, 'project_name'))));
-        
+
         return [
             'data' => $data,
             'pagination' => [
@@ -655,11 +646,11 @@ class BorrowedToolModel extends BaseModel {
             }
             
             // Critical tools criteria:
-            // 1. High-value assets (>50,000)
+            // 1. High-value assets (>threshold from config)
             // 2. Specific categories (Equipment, Machinery)
             // 3. Safety-critical items
-            
-            if ($assetCost > 50000) {
+
+            if ($assetCost > config('business_rules.critical_tool_threshold')) {
                 return true;
             }
             

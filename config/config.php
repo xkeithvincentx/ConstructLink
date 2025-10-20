@@ -139,6 +139,13 @@ define('PERM_MANAGE_PROCUREMENT', 'manage_procurement');
 define('PERM_RELEASE_ASSETS', 'release_assets');
 define('PERM_RECEIVE_ASSETS', 'receive_assets');
 
+// Pagination Configuration
+define('PAGINATION_PER_PAGE_DEFAULT', 20);
+define('PAGINATION_PER_PAGE_ASSETS', 20);
+define('PAGINATION_PER_PAGE_BORROWED_TOOLS', 20);
+define('PAGINATION_PER_PAGE_WITHDRAWALS', 20);
+define('PAGINATION_PER_PAGE_TRANSFERS', 20);
+
 // Error Handling
 if (APP_DEBUG) {
     error_reporting(E_ALL);
@@ -154,9 +161,53 @@ if (APP_DEBUG) {
 ini_set('memory_limit', '1G');
 ini_set('max_execution_time', 120);
 
-// Function to get configuration value with default
+// Configuration cache for loaded config files
+$GLOBALS['_config_cache'] = [];
+
+/**
+ * Get configuration value with default
+ * Supports both constants and config file keys using dot notation
+ *
+ * @param string $key Configuration key (e.g., 'business_rules.critical_tool_threshold')
+ * @param mixed $default Default value if key not found
+ * @return mixed Configuration value or default
+ */
 function config($key, $default = null) {
-    return defined($key) ? constant($key) : $default;
+    // First check if it's a constant
+    if (defined($key)) {
+        return constant($key);
+    }
+
+    // Handle dot notation for config files (e.g., 'business_rules.critical_tool_threshold')
+    if (strpos($key, '.') !== false) {
+        $parts = explode('.', $key, 2);
+        $configFile = $parts[0];
+        $configKey = $parts[1];
+
+        // Load config file if not already cached
+        if (!isset($GLOBALS['_config_cache'][$configFile])) {
+            $configPath = APP_ROOT . '/config/' . $configFile . '.php';
+            if (file_exists($configPath)) {
+                $GLOBALS['_config_cache'][$configFile] = require $configPath;
+            } else {
+                $GLOBALS['_config_cache'][$configFile] = [];
+            }
+        }
+
+        // Navigate through nested keys (e.g., 'mva_workflow.critical_requires_verification')
+        $value = $GLOBALS['_config_cache'][$configFile];
+        foreach (explode('.', $configKey) as $segment) {
+            if (is_array($value) && array_key_exists($segment, $value)) {
+                $value = $value[$segment];
+            } else {
+                return $default;
+            }
+        }
+
+        return $value;
+    }
+
+    return $default;
 }
 
 // Function to check if feature is enabled

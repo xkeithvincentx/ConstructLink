@@ -12,7 +12,8 @@ if (!defined('APP_ROOT')) {
 ob_start();
 
 $isCritical = false;
-if (isset($borrowedTool['acquisition_cost']) && $borrowedTool['acquisition_cost'] > 50000) {
+$criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
+if (isset($borrowedTool['acquisition_cost']) && $borrowedTool['acquisition_cost'] > $criticalThreshold) {
     $isCritical = true;
 }
 

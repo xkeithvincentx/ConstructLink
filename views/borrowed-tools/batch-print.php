@@ -11,6 +11,9 @@
 $db = Database::getInstance()->getConnection();
 $stmt = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'system_name' LIMIT 1");
 $systemName = $stmt->fetchColumn() ?: 'ConstructLink™';
+
+// Get critical tool threshold from config
+$criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -265,9 +268,9 @@ $systemName = $stmt->fetchColumn() ?: 'ConstructLink™';
                 <?php foreach ($batch['items'] as $item): ?>
                 <tr>
                     <td style="text-align: center;"><span class="checkbox"></span></td>
-                    <td style="font-weight: <?= ($item['acquisition_cost'] > 50000) ? 'bold' : 'normal' ?>;">
+                    <td style="font-weight: <?= ($item['acquisition_cost'] > $criticalThreshold) ? 'bold' : 'normal' ?>;">
                         <?= htmlspecialchars($item['asset_name']) ?>
-                        <?php if ($item['acquisition_cost'] > 50000): ?>
+                        <?php if ($item['acquisition_cost'] > $criticalThreshold): ?>
                             <span style="color: #f00;">★</span>
                         <?php endif; ?>
                     </td>

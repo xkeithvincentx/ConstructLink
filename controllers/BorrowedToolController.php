@@ -26,74 +26,97 @@ class BorrowedToolController {
 
     /**
      * Centralized RBAC permission check for borrowed tools
+     * Uses permissions configuration from config/permissions.php
      */
     private function hasBorrowedToolPermission($action, $tool = null) {
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
-        
+
         // System Admin has all permissions
         if ($userRole === 'System Admin') return true;
-        
+
         // Check if tool is critical (requires full MVA workflow)
         $isCritical = false;
         if ($tool && isset($tool['asset_id'])) {
             $isCritical = $this->borrowedToolModel->isCriticalTool($tool['asset_id'], $tool['acquisition_cost'] ?? null);
         }
-        
-        // Handle MVA workflow permissions
+
+        // Handle MVA workflow permissions using configuration
         switch ($action) {
             case 'create':
-                // Maker: Warehouseman, Site Inventory Clerk, Project Manager (System Admin already handled above)
-                return in_array($userRole, ['Warehouseman', 'Site Inventory Clerk', 'Project Manager']);
-                
+                // Maker roles from config
+                $allowedRoles = config('permissions.borrowed_tools.create', []);
+                return in_array($userRole, $allowedRoles);
+
             case 'create_and_process':
                 // For streamlined workflow when same user can do all steps (Basic tools only)
-                // Only Warehouseman can do streamlined processing for Basic tools
-                return in_array($userRole, ['Warehouseman']) && !$isCritical;
-                
+                // Only roles that can release can do streamlined processing for Basic tools
+                $allowedRoles = config('permissions.borrowed_tools.release', []);
+                return in_array($userRole, $allowedRoles) && !$isCritical;
+
             case 'verify':
-                // Verifier: Project Manager (for critical tools only)
+                // Verifier roles from config (for critical tools only)
                 // Basic tools skip verification step in streamlined workflow
                 if ($isCritical) {
-                    return in_array($userRole, ['Project Manager']);
+                    $allowedRoles = config('permissions.borrowed_tools.verify', []);
+                    return in_array($userRole, $allowedRoles);
                 } else {
                     // Basic tools don't need separate verification
                     return false;
                 }
-                
+
             case 'approve':
-                // Authorizer: Asset Director/Finance Director (for critical tools only)
+                // Authorizer roles from config (for critical tools only)
                 // Basic tools skip approval step in streamlined workflow
                 if ($isCritical) {
-                    return in_array($userRole, ['Asset Director', 'Finance Director']);
+                    $allowedRoles = config('permissions.borrowed_tools.approve', []);
+                    return in_array($userRole, $allowedRoles);
                 } else {
                     // Basic tools don't need separate approval
                     return false;
                 }
-                
+
             case 'borrow':
-                // After approval, Warehouseman can mark as borrowed
-                return in_array($userRole, ['Warehouseman']);
-                
+            case 'release':
+                // Roles that can mark as borrowed/released
+                $allowedRoles = config('permissions.borrowed_tools.release', []);
+                return in_array($userRole, $allowedRoles);
+
             case 'return':
-                // Can return if user is Warehouseman or Site Inventory Clerk
-                return in_array($userRole, ['Warehouseman', 'Site Inventory Clerk']);
-                
+                // Roles that can process returns
+                $allowedRoles = config('permissions.borrowed_tools.return', []);
+                return in_array($userRole, $allowedRoles);
+
             case 'extend':
-                // Can extend if user has management permissions
-                return in_array($userRole, ['Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk']);
-                
+            case 'edit':
+                // Roles that can edit batches
+                $allowedRoles = config('permissions.borrowed_tools.edit', []);
+                return in_array($userRole, $allowedRoles);
+
             case 'cancel':
-                // Can cancel if user created the request or has management permissions
+                // Can cancel if user created the request or has cancel permissions
                 if ($tool && $tool['issued_by'] == $currentUser['id']) {
                     return true;
                 }
-                return in_array($userRole, ['Project Manager', 'Asset Director', 'Warehouseman']);
-                
+                $allowedRoles = config('permissions.borrowed_tools.cancel', []);
+                return in_array($userRole, $allowedRoles);
+
+            case 'delete':
+                // Delete permissions
+                $allowedRoles = config('permissions.borrowed_tools.delete', []);
+                return in_array($userRole, $allowedRoles);
+
             case 'view':
-                // All relevant roles can view
-                return in_array($userRole, ['Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk']);
-                
+            case 'view_statistics':
+                // View permissions
+                $allowedRoles = config('permissions.borrowed_tools.view', []);
+                return in_array($userRole, $allowedRoles);
+
+            case 'mva_oversight':
+                // MVA oversight permissions
+                $allowedRoles = config('permissions.borrowed_tools.mva_oversight', []);
+                return in_array($userRole, $allowedRoles);
+
             default:
                 // Check standard role configuration
                 $allowedRoles = $this->roleConfig['borrowed-tools/' . $action] ?? [];
@@ -110,7 +133,85 @@ class BorrowedToolController {
     }
 
     /**
-     * Display borrowed tools listing
+     * Send JSON error response and exit
+     *
+     * @param string $message Error message
+     * @param int $code HTTP status code (default: 400)
+     * @return void
+     */
+    private function jsonError($message, $code = 400) {
+        http_response_code($code);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => $message]);
+        exit;
+    }
+
+    /**
+     * Send JSON success response and exit
+     *
+     * @param string $message Success message
+     * @param array $data Additional data to include in response
+     * @return void
+     */
+    private function jsonSuccess($message, $data = []) {
+        header('Content-Type: application/json');
+        echo json_encode(array_merge(['success' => true, 'message' => $message], $data));
+        exit;
+    }
+
+    /**
+     * Redirect with error message and exit
+     *
+     * @param string $message Error message
+     * @param string $route Target route (default: borrowed-tools)
+     * @return void
+     */
+    private function redirectWithError($message, $route = 'borrowed-tools') {
+        $_SESSION['error'] = $message;
+        header('Location: ?route=' . $route);
+        exit;
+    }
+
+    /**
+     * Redirect with success message and exit
+     *
+     * @param string $message Success message
+     * @param string $route Target route (default: borrowed-tools)
+     * @return void
+     */
+    private function redirectWithSuccess($message, $route = 'borrowed-tools') {
+        $_SESSION['success'] = $message;
+        header('Location: ?route=' . $route);
+        exit;
+    }
+
+    /**
+     * Render error page and exit
+     *
+     * @param int $code HTTP status code (403, 404, 500)
+     * @param string|null $message Optional custom error message
+     * @return void
+     */
+    private function renderError($code = 403, $message = null) {
+        http_response_code($code);
+        if ($message) {
+            $error = $message;
+        }
+        include APP_ROOT . "/views/errors/{$code}.php";
+        exit;
+    }
+
+    /**
+     * Display borrowed tools listing with filters, pagination, and statistics
+     *
+     * Handles the main borrowed tools index page with:
+     * - Filtering by status, search, date range, priority
+     * - Sorting by various columns
+     * - Pagination (20 items per page)
+     * - Project-based filtering for operational roles
+     * - Statistics cards showing MVA workflow states and time-based metrics
+     *
+     * @return void Renders the borrowed tools index view
      */
     public function index() {
         // Centralized RBAC: Only users with view permission can access
@@ -123,9 +224,9 @@ class BorrowedToolController {
         // Ensure user has project assignment and get current user
         $this->requireProjectAssignment();
         $currentUser = $this->auth->getCurrentUser();
-        
+
         $page = (int)($_GET['page'] ?? 1);
-        $perPage = 20;
+        $perPage = PAGINATION_PER_PAGE_BORROWED_TOOLS;
         
         // Build filters
         $filters = [];
@@ -161,39 +262,12 @@ class BorrowedToolController {
         }
         // MVA oversight roles: no project filtering (see all projects)
         
-        // Debug: Log the project filter being applied (remove this after testing)
-        error_log("DEBUG - Borrowed Tools Filter: User=" . ($currentUser['full_name'] ?? 'Unknown') . " (ID:" . ($currentUser['id'] ?? 'N/A') . "), Role=" . ($currentUser['role_name'] ?? 'N/A') . ", ProjectID=" . $projectFilter);
-        
-        // Debug: Test what should be visible for this user
-        if ($projectFilter) {
-            $db = Database::getInstance()->getConnection();
-            $testSql = "SELECT bt.id, bt.asset_id, a.name as asset_name, a.project_id, p.name as project_name 
-                       FROM borrowed_tools bt 
-                       INNER JOIN assets a ON bt.asset_id = a.id 
-                       INNER JOIN projects p ON a.project_id = p.id 
-                       WHERE bt.status IN ('Borrowed', 'Pending Verification', 'Pending Approval', 'Approved')";
-            $testStmt = $db->prepare($testSql);
-            $testStmt->execute();
-            $allTools = $testStmt->fetchAll();
-            error_log("DEBUG - All borrowed tools in DB: " . json_encode($allTools));
-            
-            $filteredSql = $testSql . " AND a.project_id = ?";
-            $filteredStmt = $db->prepare($filteredSql);
-            $filteredStmt->execute([$projectFilter]);
-            $filteredTools = $filteredStmt->fetchAll();
-            error_log("DEBUG - Filtered tools for project " . $projectFilter . ": " . json_encode($filteredTools));
-        }
-        
         try {
             // Get borrowed tools with pagination
             $result = $this->borrowedToolModel->getBorrowedToolsWithFilters($filters, $page, $perPage);
             $borrowedTools = $result['data'] ?? [];
             $pagination = $result['pagination'] ?? [];
-            
-            // Debug: Log what we actually got back (remove this after testing)
-            $projectsInResults = array_unique(array_column($borrowedTools, 'project_name'));
-            error_log("DEBUG - Results: Count=" . count($borrowedTools) . ", Projects=" . json_encode($projectsInResults));
-            
+
             // Get statistics (filtered by project for operational roles, all projects for MVA oversight roles)
             $batchModel = new BorrowedToolBatchModel();
             $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
@@ -215,7 +289,6 @@ class BorrowedToolController {
                 $availableStmt->execute($availableParams);
                 $availableEquipmentCount = $availableStmt->fetchColumn();
             } catch (Exception $e) {
-                error_log("ERROR - Failed to get available equipment count: " . $e->getMessage());
                 $availableEquipmentCount = 0;
             }
 
@@ -284,98 +357,18 @@ class BorrowedToolController {
         header('Location: ?route=borrowed-tools/create-batch');
         exit;
     }
-
-    /**
-     * Old single-item create method - kept for reference
-     * TODO: Remove after confirming all functionality moved to create-batch
-     */
-    private function oldCreate_DEPRECATED() {
-        // Centralized RBAC: Only users with create permission can access
-        if (!$this->hasBorrowedToolPermission('create')) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
-
-        $errors = [];
-        $messages = [];
-        $formData = [];
-
-        // Pre-fill asset_id if passed from asset index page
-        if (isset($_GET['asset_id']) && is_numeric($_GET['asset_id'])) {
-            $formData['asset_id'] = (int)$_GET['asset_id'];
-        }
-
-        // Check if user has an assigned project
-        $currentUser = $this->auth->getCurrentUser();
-        if (!$currentUser['current_project_id']) {
-            $errors[] = 'You must be assigned to a project to borrow tools. Please contact your administrator.';
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            CSRFProtection::validateRequest();
-            
-            $formData = [
-                'asset_id' => (int)($_POST['asset_id'] ?? 0),
-                'borrower_name' => Validator::sanitize($_POST['borrower_name'] ?? ''),
-                'borrower_contact' => Validator::sanitize($_POST['borrower_contact'] ?? ''),
-                'expected_return' => $_POST['expected_return'] ?? '',
-                'purpose' => Validator::sanitize($_POST['purpose'] ?? ''),
-                'condition_out' => Validator::sanitize($_POST['condition_out'] ?? ''),
-                'issued_by' => $this->auth->getCurrentUser()['id']
-            ];
-            
-            // Check if this is a basic tool that can use streamlined workflow
-            $isCriticalTool = false;
-            if ($formData['asset_id']) {
-                $isCriticalTool = $this->borrowedToolModel->isCriticalTool($formData['asset_id']);
-            }
-            
-            if (!$isCriticalTool && $this->hasBorrowedToolPermission('create_and_process')) {
-                // Streamlined workflow for basic tools - create and immediately process to borrowed status
-                $result = $this->borrowedToolModel->createAndProcessBasicTool($formData);
-                
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/view&id=' . $result['borrowed_tool']['id'] . '&message=tool_processed_streamlined');
-                    exit;
-                } else {
-                    if (isset($result['errors'])) {
-                        $errors = $result['errors'];
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                }
-            } else {
-                // Standard MVA workflow for critical tools
-                $result = $this->borrowedToolModel->createBorrowedTool($formData);
-                
-                if ($result['success']) {
-                    $messageType = $isCriticalTool ? 'tool_critical_created' : 'tool_borrowed';
-                    header('Location: ?route=borrowed-tools/view&id=' . $result['borrowed_tool']['id'] . '&message=' . $messageType);
-                    exit;
-                } else {
-                    if (isset($result['errors'])) {
-                        $errors = $result['errors'];
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                }
-            }
-        }
-        
-        // Get available assets - with comprehensive filtering
-        try {
-            $availableAssets = $this->getAvailableAssetsForBorrowing();
-        } catch (Exception $e) {
-            error_log("Assets loading error: " . $e->getMessage());
-            $availableAssets = [];
-        }
-        
-        include APP_ROOT . '/views/borrowed-tools/create.php';
-    }
     
     /**
-     * Display borrowed tool details
+     * Display borrowed tool details (single item or batch)
+     *
+     * Handles viewing both:
+     * - Modern batch requests (multiple items)
+     * - Legacy single item requests (backwards compatibility)
+     *
+     * Automatically loads batch if item belongs to one, otherwise
+     * converts single item to batch format for unified display.
+     *
+     * @return void Renders the borrowed tools view page
      */
     public function view() {
         $id = $_GET['id'] ?? 0;
@@ -429,7 +422,7 @@ class BorrowedToolController {
                 'expected_return' => $borrowedTool['expected_return'] ?? date('Y-m-d'),
                 'actual_return' => $borrowedTool['actual_return'] ?? null,
                 'status' => $borrowedTool['status'] ?? 'Unknown',
-                'is_critical_batch' => ($borrowedTool['acquisition_cost'] ?? 0) > 50000,
+                'is_critical_batch' => ($borrowedTool['acquisition_cost'] ?? 0) > config('business_rules.critical_tool_threshold'),
                 'purpose' => $borrowedTool['purpose'] ?? '',
                 'created_at' => $borrowedTool['created_at'] ?? date('Y-m-d H:i:s'),
                 'issued_by_name' => $borrowedTool['issued_by_name'] ?? 'Unknown',
@@ -481,7 +474,15 @@ class BorrowedToolController {
     }
     
     /**
-     * Return borrowed tool
+     * Return borrowed tool (legacy single item return)
+     *
+     * Processes the return of a single borrowed tool with:
+     * - Condition assessment (Good, Fair, Poor, Damaged, Lost)
+     * - Return notes
+     * - Asset status update
+     * - Automatic incident creation for Damaged/Lost items
+     *
+     * @return void Renders return form (GET) or processes return (POST)
      */
     public function returnTool() {
         // Centralized RBAC: Only users with return permission can access
@@ -620,7 +621,12 @@ class BorrowedToolController {
     }
     
     /**
-     * Mark tool as overdue (AJAX)
+     * Mark tool as overdue (AJAX endpoint)
+     *
+     * Updates a single borrowed tool's status to 'Overdue'.
+     * Used for manual overdue marking by authorized users.
+     *
+     * @return void Outputs JSON response
      */
     public function markOverdue() {
         // Centralized RBAC: Only users with mark_overdue permission can access
@@ -787,7 +793,18 @@ class BorrowedToolController {
     
     
     /**
-     * Verify borrowed tool (Verifier step)
+     * Verify borrowed tool request (MVA Verifier step)
+     *
+     * Second step in MVA workflow for critical tools:
+     * 1. Maker creates request (Pending Verification)
+     * 2. **Verifier reviews and verifies** (Pending Approval)
+     * 3. Authorizer approves (Approved)
+     * 4. Release officer releases tool (Released/Borrowed)
+     *
+     * Only required for critical tools (acquisition cost > threshold).
+     * Basic tools skip this step in streamlined workflow.
+     *
+     * @return void Renders verification form (GET) or processes verification (POST)
      */
     public function verify() {
         // Ensure user has project assignment
@@ -851,7 +868,18 @@ class BorrowedToolController {
     }
     
     /**
-     * Approve borrowed tool (Authorizer step)
+     * Approve borrowed tool request (MVA Authorizer step)
+     *
+     * Third step in MVA workflow for critical tools:
+     * 1. Maker creates request (Pending Verification)
+     * 2. Verifier reviews (Pending Approval)
+     * 3. **Authorizer approves** (Approved)
+     * 4. Release officer releases tool (Released/Borrowed)
+     *
+     * Only required for critical tools (acquisition cost > threshold).
+     * Basic tools skip this step in streamlined workflow.
+     *
+     * @return void Renders approval form (GET) or processes approval (POST)
      */
     public function approve() {
         // Ensure user has project assignment
@@ -1044,17 +1072,17 @@ class BorrowedToolController {
     
     /**
      * Check if current user has project assignment, redirect with error if not
-     * MVA oversight roles (System Admin, Finance Director, Asset Director) are exempt
+     * MVA oversight roles are exempt from project assignment requirement
      */
     private function requireProjectAssignment() {
         $currentUser = $this->auth->getCurrentUser();
-        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
-        
+        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
+
         // MVA oversight roles don't need project assignment
         if (in_array($currentUser['role_name'], $mvaOversightRoles)) {
             return null; // No project restriction for oversight roles
         }
-        
+
         // Operational roles must have project assignment
         if (!$currentUser['current_project_id']) {
             $error = 'You must be assigned to a project to access borrowed tools. Please contact your administrator.';
@@ -1063,22 +1091,22 @@ class BorrowedToolController {
         }
         return $currentUser['current_project_id'];
     }
-    
+
     /**
-     * Get project filter for current user 
+     * Get project filter for current user
      * MVA oversight roles see all projects, operational roles see only their assigned project
      */
      private function getProjectFilter() {
         $currentUser = $this->auth->getCurrentUser();
-        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
-        
+        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
+
         // MVA oversight roles see all projects (no filtering)
         if (in_array($currentUser['role_name'], $mvaOversightRoles)) {
             return null;
         }
-        
+
         // Operational roles see only their assigned project
-        return !empty($currentUser['current_project_id']) 
+        return !empty($currentUser['current_project_id'])
             ? $currentUser['current_project_id'] : null;
     }
     
@@ -1100,89 +1128,80 @@ class BorrowedToolController {
     
     /**
      * Get available assets for borrowing (excluding already borrowed/withdrawn/transferred assets)
+     * REFACTORED: Eliminated N+1 queries by using LEFT JOIN aggregation
      */
     private function getAvailableAssetsForBorrowing() {
         try {
             $db = Database::getInstance()->getConnection();
             $currentUser = $this->auth->getCurrentUser();
             $currentProjectId = $currentUser['current_project_id'] ?? null;
-            
-            // Build query with enhanced filtering
+
+            // Build query with enhanced filtering using LEFT JOIN to avoid N+1 queries
+            // This single query replaces the previous loop with 3 queries per asset
             $sql = "
-                SELECT a.id, a.ref, a.name, a.status, 
-                       c.name as category_name, 
-                       c.is_consumable,
-                       p.name as project_name,
-                       a.acquisition_cost,
-                       a.model,
-                       a.serial_number
+                SELECT
+                    a.id,
+                    a.ref,
+                    a.name,
+                    a.status,
+                    c.name as category_name,
+                    c.is_consumable,
+                    p.name as project_name,
+                    a.acquisition_cost,
+                    a.model,
+                    a.serial_number,
+                    -- Aggregate checks for asset usage (eliminates N+1 problem)
+                    COUNT(DISTINCT bt.id) as active_borrowings,
+                    COUNT(DISTINCT w.id) as active_withdrawals,
+                    COUNT(DISTINCT t.id) as active_transfers
                 FROM assets a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
+                -- Check for active borrowed tools (not returned)
+                LEFT JOIN borrowed_tools bt ON a.id = bt.asset_id
+                    AND bt.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Borrowed', 'Overdue')
+                -- Check for active withdrawals
+                LEFT JOIN withdrawals w ON a.id = w.asset_id
+                    AND w.status IN ('pending', 'released')
+                -- Check for active transfers
+                LEFT JOIN transfers t ON a.id = t.asset_id
+                    AND t.status IN ('pending', 'approved')
                 WHERE a.status = 'available'
                   AND p.is_active = 1
                   AND c.is_consumable = 0  -- Exclude consumable items
             ";
-            
+
             $params = [];
-            
+
             // Filter by user's current project if assigned
             if ($currentProjectId) {
                 $sql .= " AND a.project_id = ?";
                 $params[] = $currentProjectId;
             }
-            
-            $sql .= " ORDER BY a.name ASC";
-            
+
+            $sql .= "
+                GROUP BY a.id, a.ref, a.name, a.status, c.name, c.is_consumable,
+                         p.name, a.acquisition_cost, a.model, a.serial_number
+                -- Only include assets that are NOT in use (all counts are 0)
+                HAVING active_borrowings = 0
+                   AND active_withdrawals = 0
+                   AND active_transfers = 0
+                ORDER BY a.name ASC
+            ";
+
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            $allAvailableAssets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Now filter out assets that are currently in use
-            $filteredAssets = [];
-            
-            foreach ($allAvailableAssets as $asset) {
-                $assetId = $asset['id'];
-                $isInUse = false;
-                
-                // Check if currently borrowed (not returned)
-                $borrowCheck = $db->prepare("
-                    SELECT COUNT(*) 
-                    FROM borrowed_tools 
-                    WHERE asset_id = ? 
-                    AND status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Borrowed', 'Overdue')
-                ");
-                $borrowCheck->execute([$assetId]);
-                if ($borrowCheck->fetchColumn() > 0) {
-                    $isInUse = true;
-                }
-                
-                // Check if in pending/released withdrawal
-                if (!$isInUse) {
-                    $withdrawalCheck = $db->prepare("SELECT COUNT(*) FROM withdrawals WHERE asset_id = ? AND status IN ('pending', 'released')");
-                    $withdrawalCheck->execute([$assetId]);
-                    if ($withdrawalCheck->fetchColumn() > 0) {
-                        $isInUse = true;
-                    }
-                }
-                
-                // Check if in pending/approved transfer
-                if (!$isInUse) {
-                    $transferCheck = $db->prepare("SELECT COUNT(*) FROM transfers WHERE asset_id = ? AND status IN ('pending', 'approved')");
-                    $transferCheck->execute([$assetId]);
-                    if ($transferCheck->fetchColumn() > 0) {
-                        $isInUse = true;
-                    }
-                }
-                
-                // If not in use, add to filtered list
-                if (!$isInUse) {
-                    $filteredAssets[] = $asset;
-                }
+            $availableAssets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Remove the aggregation columns before returning
+            foreach ($availableAssets as &$asset) {
+                unset($asset['active_borrowings']);
+                unset($asset['active_withdrawals']);
+                unset($asset['active_transfers']);
             }
-            
-            return $filteredAssets;
-            
+
+            return $availableAssets;
+
         } catch (Exception $e) {
             error_log("Get available assets for borrowing error: " . $e->getMessage());
             return [];
@@ -1298,6 +1317,14 @@ class BorrowedToolController {
 
     /**
      * Display multi-item batch creation form
+     *
+     * Unified interface for borrowing single or multiple tools with:
+     * - Shopping cart-style item selection
+     * - QR code scanning support
+     * - Real-time available equipment filtering
+     * - Automatic MVA workflow determination (critical vs basic tools)
+     *
+     * @return void Renders the batch creation form
      */
     public function createBatch() {
         if (!$this->hasBorrowedToolPermission('create')) {
@@ -1308,7 +1335,7 @@ class BorrowedToolController {
 
         // Check project assignment (MVA oversight roles exempt)
         $currentUser = $this->auth->getCurrentUser();
-        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
 
         if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
             $error = 'You must be assigned to a project to borrow tools. Please contact your administrator.';
@@ -1324,7 +1351,15 @@ class BorrowedToolController {
     }
 
     /**
-     * Store new batch (AJAX/POST)
+     * Store new batch (AJAX/POST endpoint)
+     *
+     * Creates a new borrowed tools batch with automatic workflow:
+     * - **Critical Tools** (cost > threshold): Full MVA workflow
+     *   - Creates batch → Pending Verification
+     * - **Basic Tools**: Streamlined workflow
+     *   - Creates batch → Auto-release → Released (Borrowed)
+     *
+     * @return void Outputs JSON response with batch_id and workflow_type
      */
     public function storeBatch() {
         // Suppress error output to prevent breaking JSON response
@@ -1347,7 +1382,7 @@ class BorrowedToolController {
 
         // Validate user has project assignment (except MVA oversight roles)
         $currentUser = $this->auth->getCurrentUser();
-        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
 
         if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
             http_response_code(403);
@@ -1454,7 +1489,12 @@ class BorrowedToolController {
     }
 
     /**
-     * Verify batch (Verifier step)
+     * Verify batch request (MVA Verifier step for batches)
+     *
+     * Batch-level verification for critical tool batches.
+     * Verifies all items in the batch as a single unit.
+     *
+     * @return void Redirects to borrowed-tools index with status message
      */
     public function verifyBatch() {
         $this->requireProjectAssignment();
@@ -1622,7 +1662,16 @@ class BorrowedToolController {
     }
 
     /**
-     * Return batch (full or partial)
+     * Return batch (full or partial returns supported)
+     *
+     * Processes batch returns with:
+     * - **Partial Returns**: Return some items, keep others borrowed
+     * - **Full Returns**: Return all items in batch
+     * - Per-item condition assessment
+     * - Automatic incident creation for Damaged/Lost items
+     * - Batch status updates (Partially Returned → Returned)
+     *
+     * @return void Outputs JSON (AJAX) or redirects with status message
      */
     public function returnBatch() {
         // Suppress error output to prevent breaking JSON response
@@ -1631,7 +1680,7 @@ class BorrowedToolController {
 
         // Check project assignment (MVA oversight roles exempt)
         $currentUser = $this->auth->getCurrentUser();
-        $mvaOversightRoles = ['System Admin', 'Finance Director', 'Asset Director'];
+        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
 
         if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
             $error = 'You must be assigned to a project to return tools. Please contact your administrator.';
@@ -2064,7 +2113,16 @@ class BorrowedToolController {
     }
 
     /**
-     * Print batch form (4 per page)
+     * Print batch form (4 per page layout)
+     *
+     * Generates printable batch form with:
+     * - Batch details and borrower information
+     * - All items in batch with specifications
+     * - MVA workflow signatures section
+     * - Equipment condition assessment fields
+     * - Optimized for 4 forms per page printing
+     *
+     * @return void Renders printable batch form
      */
     public function printBatchForm() {
         $batchId = $_GET['id'] ?? 0;
@@ -2098,9 +2156,16 @@ class BorrowedToolController {
     }
 
     /**
-     * Print blank borrowing form with actual equipment types and subtypes from database
-     * Format: Equipment Type [Subtype1, Subtype2, Subtype3] - saves space for printing
-     * Example: Drill [Cordless, Electric, Hammer, Impact]
+     * Print blank borrowing form with equipment types and subtypes from database
+     *
+     * Generates a blank form for manual borrowing requests with:
+     * - Power tools section with subtypes (e.g., "Drill [Cordless, Electric, Hammer]")
+     * - Hand tools section with subtypes
+     * - Borrower information fields
+     * - MVA workflow signature sections
+     * - Space-optimized format for printing
+     *
+     * @return void Renders printable blank form
      */
     public function printBlankForm() {
         try {
