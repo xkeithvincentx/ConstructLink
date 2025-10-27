@@ -150,6 +150,6 @@ $criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
     </div>
 </div><!-- End form-container -->
 
-<?php AssetHelper::loadModuleJS('borrowed-tools/print-controls'); ?>
+<?php AssetHelper::loadModuleJS('print-controls'); ?>
 </body>
 </html>

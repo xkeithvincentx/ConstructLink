@@ -211,6 +211,6 @@ for ($copy = 1; $copy <= 4; $copy++):
 <?php endfor; ?>
 </div>
 
-<?php AssetHelper::loadModuleJS('borrowed-tools/print-controls'); ?>
+<?php AssetHelper::loadModuleJS('print-controls'); ?>
 </body>
 </html>

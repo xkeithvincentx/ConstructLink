@@ -623,7 +623,7 @@ include APP_ROOT . '/views/components/modal.php';
 
 <!-- Load external JavaScript module -->
 <?php
-AssetHelper::loadModuleJS('borrowed-tools/init', ['type' => 'module']);
+AssetHelper::loadModuleJS('init', ['type' => 'module']);
 ?>
 
 <?php

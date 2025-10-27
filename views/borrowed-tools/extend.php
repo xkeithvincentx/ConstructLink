@@ -315,7 +315,7 @@ $content = ob_get_clean();
 
 // Load module-specific assets
 AssetHelper::loadModuleCSS('borrowed-tools-extend');
-AssetHelper::loadModuleJS('borrowed-tools/extend');
+AssetHelper::loadModuleJS('extend');
 
 // Set page variables
 $pageTitle = 'Extend Borrowing - ConstructLink™';
