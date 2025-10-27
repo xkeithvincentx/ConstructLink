@@ -245,39 +245,3 @@ $showExpanded = $showExpanded ?? false;
         </div>
     </div>
 </div>
-
-<style>
-/* Timeline Styles */
-.timeline-item {
-    position: relative;
-    padding-left: 10px;
-    border-left: 2px solid #dee2e6;
-}
-
-.timeline-item:last-child {
-    border-left: 2px solid transparent;
-}
-
-.timeline-marker {
-    position: relative;
-    left: -13px;
-}
-
-.timeline-item .badge {
-    font-size: 0.75rem;
-}
-
-/* Smooth collapse transition */
-.collapse {
-    transition: height 0.35s ease;
-}
-
-/* Button toggle icon rotation */
-[data-bs-toggle="collapse"] .bi-chevron-down {
-    transition: transform 0.3s ease;
-}
-
-[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
-}
-</style>

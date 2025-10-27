@@ -116,6 +116,43 @@ export function refreshBorrowedTools() {
 }
 
 /**
+ * Quick filter borrowed tools by status or priority
+ * @param {string} filterValue - Filter value (status name or 'overdue')
+ */
+export function quickFilter(filterValue) {
+    const form = document.getElementById('filter-form');
+    if (!form) {
+        console.error('Filter form not found');
+        return;
+    }
+
+    // Clear all existing filters
+    form.querySelectorAll('input:not([name="route"]), select').forEach(el => {
+        if (el.name !== 'route') {
+            el.value = '';
+        }
+    });
+
+    // Set the appropriate filter based on value
+    if (filterValue === 'overdue') {
+        // For overdue, use priority filter if available
+        const priorityFilter = form.querySelector('[name="priority"]');
+        if (priorityFilter) {
+            priorityFilter.value = 'overdue';
+        }
+    } else {
+        // For status filters
+        const statusFilter = form.querySelector('[name="status"]');
+        if (statusFilter) {
+            statusFilter.value = filterValue;
+        }
+    }
+
+    // Submit the form
+    form.submit();
+}
+
+/**
  * Initialize all list utilities
  */
 export function initListUtils() {
@@ -148,6 +185,17 @@ export function initListUtils() {
         btn.removeAttribute('onclick');
         btn.addEventListener('click', () => sendOverdueReminder(toolId));
     });
+
+    // Event delegation for quick filter buttons
+    document.addEventListener('click', (e) => {
+        const quickFilterBtn = e.target.closest('.quick-filter-btn');
+        if (quickFilterBtn) {
+            const filterValue = quickFilterBtn.getAttribute('data-quick-filter');
+            if (filterValue) {
+                quickFilter(filterValue);
+            }
+        }
+    });
 }
 
 // Auto-initialize on DOM ready
@@ -165,5 +213,6 @@ export default {
     exportToExcel,
     printTable,
     sendOverdueReminder,
-    refreshBorrowedTools
+    refreshBorrowedTools,
+    quickFilter
 };

@@ -10,12 +10,12 @@
     <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
         <h6 class="card-title mb-0">Borrowed Tools</h6>
         <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-outline-primary" id="exportBtn" data-action="export">
-                <i class="bi bi-file-earmark-excel me-1"></i>
+            <button class="btn btn-sm btn-outline-primary" id="exportBtn" data-action="export" aria-label="Export to Excel">
+                <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>
                 <span class="d-none d-md-inline">Export</span>
             </button>
-            <button class="btn btn-sm btn-outline-secondary" id="printBtn" data-action="print">
-                <i class="bi bi-printer me-1"></i>
+            <button class="btn btn-sm btn-outline-secondary" id="printBtn" data-action="print" aria-label="Print list">
+                <i class="bi bi-printer me-1" aria-hidden="true"></i>
                 <span class="d-none d-md-inline">Print</span>
             </button>
         </div>
@@ -70,9 +70,9 @@
                                         </a>
                                     <?php endif; ?>
                                     <?php if ($isOverdue): ?>
-                                        <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Overdue"></i>
+                                        <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Overdue" aria-hidden="true"></i>
                                     <?php elseif ($isDueSoon): ?>
-                                        <i class="bi bi-clock-fill text-warning ms-1" title="Due Soon"></i>
+                                        <i class="bi bi-clock-fill text-warning ms-1" title="Due Soon" aria-hidden="true"></i>
                                     <?php endif; ?>
                                 </div>
                                 <?= ViewHelper::renderStatusBadge($tool['status']) ?>
@@ -85,8 +85,10 @@
                                     <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
                                     <button class="btn btn-sm btn-outline-secondary mt-1 w-100 batch-toggle-mobile"
                                             type="button"
-                                            data-batch-id="<?= $batchId ?>">
-                                        <i class="bi bi-chevron-down me-1"></i>View Items
+                                            data-batch-id="<?= $batchId ?>"
+                                            aria-label="Expand batch items"
+                                            aria-expanded="false">
+                                        <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>View Items
                                     </button>
                                 <?php else: ?>
                                     <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
@@ -234,7 +236,7 @@
 
                             <!-- Expandable Batch Items (Mobile) -->
                             <?php if ($isBatch): ?>
-                                <div class="batch-items-mobile mt-3" data-batch-id="<?= $batchId ?>" style="display: none;">
+                                <div class="batch-items-mobile mt-3" data-batch-id="<?= $batchId ?>">
                                     <hr>
                                     <h6 class="mb-2"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
                                     <?php foreach ($batchItems as $index => $item): ?>
@@ -334,14 +336,16 @@
                                             <button class="btn btn-sm btn-outline-secondary me-2 batch-toggle"
                                                     type="button"
                                                     data-batch-id="<?= $batchId ?>"
+                                                    aria-label="Expand batch items"
+                                                    aria-expanded="false"
                                                     title="Click to expand/collapse batch items">
-                                                <i class="bi bi-chevron-right"></i>
+                                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                             </button>
                                         <?php endif; ?>
                                         <?php if ($isOverdue): ?>
-                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="Overdue"></i>
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="Overdue" aria-hidden="true"></i>
                                         <?php elseif ($isDueSoon): ?>
-                                            <i class="bi bi-clock-fill text-warning me-1" title="Due Soon"></i>
+                                            <i class="bi bi-clock-fill text-warning me-1" title="Due Soon" aria-hidden="true"></i>
                                         <?php endif; ?>
                                         <a href="?route=borrowed-tools/view&id=<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>" class="text-decoration-none fw-medium">
                                             <?php if (!empty($tool['batch_reference'])): ?>
@@ -390,7 +394,7 @@
                                     <td>
                                         <div class="purpose-cell" title="<?= htmlspecialchars($tool['purpose'] ?? '') ?>">
                                             <?php if (!empty($tool['purpose'])): ?>
-                                                <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                                                <span class="text-truncate d-inline-block text-truncate-200">
                                                     <?= htmlspecialchars($tool['purpose']) ?>
                                                 </span>
                                             <?php else: ?>
@@ -477,14 +481,14 @@
                                         <div class="mva-workflow small">
                                             <div class="d-flex align-items-center mb-1">
                                                 <span class="badge badge-sm bg-light text-dark me-1">M</span>
-                                                <span class="text-truncate" style="max-width: 80px;">
+                                                <span class="text-truncate text-truncate-80">
                                                     <?= htmlspecialchars($tool['created_by_name'] ?? 'Unknown') ?>
                                                 </span>
                                             </div>
                                             <?php if (!empty($tool['verified_by_name'])): ?>
                                                 <div class="d-flex align-items-center mb-1">
                                                     <span class="badge badge-sm bg-warning text-dark me-1">V</span>
-                                                    <span class="text-truncate" style="max-width: 80px;">
+                                                    <span class="text-truncate text-truncate-80">
                                                         <?= htmlspecialchars($tool['verified_by_name']) ?>
                                                     </span>
                                                 </div>
@@ -492,7 +496,7 @@
                                             <?php if (!empty($tool['approved_by_name'])): ?>
                                                 <div class="d-flex align-items-center">
                                                     <span class="badge badge-sm bg-success text-white me-1">A</span>
-                                                    <span class="text-truncate" style="max-width: 80px;">
+                                                    <span class="text-truncate text-truncate-80">
                                                         <?= htmlspecialchars($tool['approved_by_name']) ?>
                                                     </span>
                                                 </div>
@@ -701,8 +705,10 @@
                                                 <?php if (!empty($secondaryActions)): ?>
                                                     <div class="btn-group btn-group-sm">
                                                         <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                                data-bs-toggle="dropdown"
+                                                                aria-expanded="false"
+                                                                aria-label="More actions">
+                                                            <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                                                         </button>
                                                         <ul class="dropdown-menu">
                                                             <?php foreach ($secondaryActions as $action): ?>
@@ -745,7 +751,7 @@
 
                             <!-- Expandable Batch Items Row (hidden by default) -->
                             <?php if ($isBatch): ?>
-                                <tr class="batch-items-row" data-batch-id="<?= $batchId ?>" style="display: none;">
+                                <tr class="batch-items-row" data-batch-id="<?= $batchId ?>">
                                     <td colspan="100%" class="p-0">
                                         <div class="batch-items-container bg-light p-3">
                                             <h6 class="mb-3"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
@@ -753,16 +759,16 @@
                                                 <table class="table table-sm table-bordered mb-0 batch-items-table">
                                                     <thead class="table-secondary">
                                                         <tr>
-                                                            <th style="width: 5%">#</th>
-                                                            <th style="width: 25%">Equipment</th>
-                                                            <th style="width: 10%">Reference</th>
-                                                            <th style="width: 6%">Borrowed</th>
-                                                            <th style="width: 6%">Returned</th>
-                                                            <th style="width: 6%">Remaining</th>
-                                                            <th style="width: 8%">Condition</th>
-                                                            <th style="width: 10%">Serial Number</th>
-                                                            <th style="width: 8%">Status</th>
-                                                            <th style="width: 16%">Notes</th>
+                                                            <th>#</th>
+                                                            <th>Equipment</th>
+                                                            <th>Reference</th>
+                                                            <th>Borrowed</th>
+                                                            <th>Returned</th>
+                                                            <th>Remaining</th>
+                                                            <th>Condition</th>
+                                                            <th>Serial Number</th>
+                                                            <th>Status</th>
+                                                            <th>Notes</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -818,9 +824,9 @@
                                 </tr>
                             <?php else: ?>
                                 <!-- Hidden Single Item Data Row (for modal) -->
-                                <tr class="batch-items-row" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>" style="display: none;">
+                                <tr class="batch-items-row" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>">
                                     <td colspan="100%" class="p-0">
-                                        <div class="batch-items-container" style="display: none;">
+                                        <div class="batch-items-container">
                                             <table class="batch-items-table">
                                                 <tbody>
                                                     <tr data-item-id="<?= $tool['id'] ?>" data-asset-id="<?= $tool['asset_id'] ?>">
@@ -839,7 +845,7 @@
                                                         <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
                                                         <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
                                                         <td><?= !empty($tool['line_notes']) ? htmlspecialchars($tool['line_notes']) : '-' ?></td>
-                                                        <td style="display:none;"><?= $tool['asset_id'] ?></td>
+                                                        <td class="hidden-asset-id"><?= $tool['asset_id'] ?></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -858,7 +864,7 @@
                     <ul class="pagination justify-content-center">
                         <?php if ($pagination['current_page'] > 1): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?route=borrowed-tools&page=<?= $pagination['current_page'] - 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
+                                <a class="page-link" href="?route=borrowed-tools&page=<?= $pagination['current_page'] - 1 ?>&<?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
                                     Previous
                                 </a>
                             </li>
@@ -871,7 +877,7 @@
                                 </li>
                             <?php else: ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="?route=borrowed-tools&page=<?= $i ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
+                                    <a class="page-link" href="?route=borrowed-tools&page=<?= $i ?>&<?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
                                         <?= $i ?>
                                     </a>
                                 </li>
@@ -880,7 +886,7 @@
 
                         <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?route=borrowed-tools&page=<?= $pagination['current_page'] + 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
+                                <a class="page-link" href="?route=borrowed-tools&page=<?= $pagination['current_page'] + 1 ?>&<?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">
                                     Next
                                 </a>
                             </li>

@@ -73,13 +73,8 @@ $csrfToken = CSRFProtection::generateToken();
      data-csrf-token="<?= htmlspecialchars($csrfToken) ?>"
      data-auto-refresh-interval="<?= config('business_rules.ui.auto_refresh_interval', 300) ?>">
 
-<!-- Page Header & Action Buttons -->
+<!-- Action Buttons -->
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
-    <div>
-        <h2 class="mb-1">Borrowed Equipment</h2>
-        <p class="text-muted mb-0">Manage and track all equipment borrowing requests</p>
-    </div>
-
     <!-- Desktop: Action Buttons -->
     <div class="d-none d-md-flex gap-2">
         <a href="?route=borrowed-tools/print-blank-form"
@@ -116,72 +111,30 @@ $csrfToken = CSRFProtection::generateToken();
     </a>
 </div>
 
-<!-- Quick Stats Summary (Always Visible) -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-6">
-        <div class="card border-primary">
-            <div class="card-body py-2 px-3">
-                <small class="text-muted d-block">Currently Out</small>
-                <h4 class="mb-0 text-primary"><?= $borrowedToolStats['borrowed'] ?? 0 ?></h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-danger">
-            <div class="card-body py-2 px-3">
-                <small class="text-muted d-block">Overdue</small>
-                <h4 class="mb-0 text-danger"><?= $borrowedToolStats['overdue'] ?? 0 ?></h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-warning">
-            <div class="card-body py-2 px-3">
-                <small class="text-muted d-block">Pending Approval</small>
-                <h4 class="mb-0 text-warning"><?= ($borrowedToolStats['pending_verification'] ?? 0) + ($borrowedToolStats['pending_approval'] ?? 0) ?></h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card border-success">
-            <div class="card-body py-2 px-3">
-                <small class="text-muted d-block">Available</small>
-                <h4 class="mb-0 text-success"><?= $borrowedToolStats['available_equipment'] ?? 0 ?></h4>
-            </div>
-        </div>
-    </div>
+<!-- MVA Workflow Help (Collapsible) -->
+<div class="mb-3">
+    <button class="btn btn-link btn-sm text-decoration-none p-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mvaHelp"
+            aria-expanded="false"
+            aria-controls="mvaHelp">
+        <i class="bi bi-question-circle me-1" aria-hidden="true"></i>
+        How does the MVA workflow work?
+    </button>
 </div>
 
-<!-- Detailed Statistics (Expandable) -->
-<div class="mb-4">
-    <div class="d-grid mb-3">
-        <button class="btn btn-outline-secondary btn-sm"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#detailedStatsCollapse"
-                aria-expanded="false"
-                aria-controls="detailedStatsCollapse"
-                id="toggleDetailedStats">
-            <i class="bi bi-bar-chart-line me-2" aria-hidden="true"></i>
-            <span id="toggleStatsText">View Detailed Statistics</span>
-            <i class="bi bi-chevron-down ms-2" aria-hidden="true" id="toggleStatsIcon"></i>
-        </button>
+<div class="collapse" id="mvaHelp">
+    <div class="alert alert-info mb-4" role="status">
+        <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
+        <ol class="mb-0 ps-3 mt-2">
+            <li><strong>Maker</strong> (Warehouseman) creates borrowing request</li>
+            <li><strong>Verifier</strong> (Project Manager) verifies equipment matches on-site needs</li>
+            <li><strong>Authorizer</strong> (Asset/Finance Director) approves budget and authorization</li>
+            <li>Warehouseman releases equipment (status: <span class="badge bg-success">Approved</span> → <span class="badge bg-primary">Borrowed</span>)</li>
+            <li>Equipment returned and checked in (status: <span class="badge bg-secondary">Returned</span>)</li>
+        </ol>
     </div>
-
-    <div class="collapse" id="detailedStatsCollapse">
-        <?php include APP_ROOT . '/views/borrowed-tools/partials/_statistics_cards.php'; ?>
-    </div>
-</div>
-
-<!-- MVA Workflow Info Banner -->
-<div class="alert alert-info mb-4" role="status" aria-label="MVA workflow information">
-    <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
-    <span class="badge bg-primary">Maker</span> (Warehouseman) →
-    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
-    <span class="badge bg-info">Authorizer</span> (Asset/Finance Director) →
-    <span class="badge bg-success">Approved</span> →
-    <span class="badge bg-primary">Borrowed</span> →
-    <span class="badge bg-secondary">Returned</span>
 </div>
 
 <!-- Filters -->
@@ -632,7 +585,7 @@ $content = ob_get_clean();
 
 // Set page variables
 $pageTitle = 'Borrowed Equipment - ConstructLink™';
-$pageHeader = 'Borrowed Equipment Requests';
+$pageHeader = 'Borrowed Equipment';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
     ['title' => 'Borrowed Equipment', 'url' => '?route=borrowed-tools']

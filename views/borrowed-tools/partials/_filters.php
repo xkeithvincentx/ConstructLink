@@ -97,15 +97,15 @@ function renderQuickActions(Auth $auth): string {
     $buttons = [];
 
     if ($auth->hasRole(['System Admin', 'Project Manager'])) {
-        $buttons[] = '<button type="button" class="btn btn-outline-warning btn-sm" onclick="quickFilter(\'Pending Verification\')" aria-label="Filter pending verifications"><i class="bi bi-clock me-1" aria-hidden="true"></i>My Verifications</button>';
+        $buttons[] = '<button type="button" class="btn btn-outline-warning btn-sm quick-filter-btn" data-quick-filter="Pending Verification" aria-label="Filter pending verifications"><i class="bi bi-clock me-1" aria-hidden="true"></i>My Verifications</button>';
     }
 
     if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director'])) {
-        $buttons[] = '<button type="button" class="btn btn-outline-info btn-sm" onclick="quickFilter(\'Pending Approval\')" aria-label="Filter pending approvals"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>My Approvals</button>';
+        $buttons[] = '<button type="button" class="btn btn-outline-info btn-sm quick-filter-btn" data-quick-filter="Pending Approval" aria-label="Filter pending approvals"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>My Approvals</button>';
     }
 
-    $buttons[] = '<button type="button" class="btn btn-outline-primary btn-sm" onclick="quickFilter(\'Borrowed\')" aria-label="Filter currently borrowed items"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Currently Out</button>';
-    $buttons[] = '<button type="button" class="btn btn-outline-danger btn-sm" onclick="quickFilter(\'overdue\')" aria-label="Filter overdue items"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Overdue</button>';
+    $buttons[] = '<button type="button" class="btn btn-outline-primary btn-sm quick-filter-btn" data-quick-filter="Borrowed" aria-label="Filter currently borrowed items"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Currently Out</button>';
+    $buttons[] = '<button type="button" class="btn btn-outline-danger btn-sm quick-filter-btn" data-quick-filter="overdue" aria-label="Filter overdue items"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Overdue</button>';
 
     return implode("\n", $buttons);
 }
@@ -288,16 +288,21 @@ function renderQuickActions(Auth $auth): string {
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="col-12 d-flex align-items-end gap-2 flex-wrap">
-                    <button type="submit" class="btn btn-primary btn-sm" aria-label="Apply filters">
-                        <i class="bi bi-search me-1" aria-hidden="true"></i>Apply Filters
-                    </button>
-                    <a href="?route=borrowed-tools" class="btn btn-outline-secondary btn-sm" aria-label="Clear all filters">
-                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear All
-                    </a>
+                <div class="col-12">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-primary btn-sm" aria-label="Apply filters">
+                            <i class="bi bi-search me-1" aria-hidden="true"></i>Apply Filters
+                        </button>
+                        <a href="?route=borrowed-tools" class="btn btn-outline-secondary btn-sm" aria-label="Clear all filters">
+                            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear All
+                        </a>
 
-                    <!-- Quick Action Buttons -->
-                    <?= renderQuickActions($auth) ?>
+                        <!-- Divider -->
+                        <div class="vr d-none d-lg-block filter-divider"></div>
+
+                        <!-- Quick Action Buttons -->
+                        <?= renderQuickActions($auth) ?>
+                    </div>
                 </div>
             </form>
         </div>
