@@ -1,7 +1,6 @@
 <?php
 /**
  * ConstructLink Business Rules Configuration
- * Developed by: Ranoa Digital Solutions
  *
  * This configuration file centralizes business logic rules to eliminate hardcoded values
  * throughout the application. Changes to business rules should be made here rather than

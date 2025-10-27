@@ -1,7 +1,6 @@
 <?php
 /**
  * ConstructLink™ - Blank Printable Borrowing Form (2x2 Grid)
- * Developed by: Ranoa Digital Solutions
  *
  * Purpose: Pre-printed blank forms with checklist for handwritten use
  * Format: 4 copies per A4 page in 2x2 grid (saves paper)

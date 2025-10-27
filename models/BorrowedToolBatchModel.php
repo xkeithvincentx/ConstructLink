@@ -2,7 +2,6 @@
 /**
  * ConstructLink™ Borrowed Tool Batch Model
  * Handles multi-item borrowed tool batch operations
- * Developed by: Ranoa Digital Solutions
  */
 
 class BorrowedToolBatchModel extends BaseModel {

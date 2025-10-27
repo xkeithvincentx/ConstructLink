@@ -28,6 +28,21 @@ class BorrowedToolController {
     }
 
     /**
+     * Guard method to require permission and terminate on failure
+     * Consolidates duplicate permission checking with error handling
+     *
+     * @param string $action Permission action to check
+     * @param mixed $tool Optional tool/batch data for context-specific checks
+     * @param int $errorCode HTTP error code (default: 403)
+     * @return void Terminates with error page if permission denied
+     */
+    private function requirePermission($action, $tool = null, $errorCode = 403) {
+        if (!$this->hasBorrowedToolPermission($action, $tool)) {
+            $this->renderError($errorCode, 'You do not have permission to perform this action');
+        }
+    }
+
+    /**
      * Centralized RBAC permission check for borrowed tools
      * Uses permissions configuration from config/permissions.php
      */
@@ -213,21 +228,6 @@ class BorrowedToolController {
     }
 
     /**
-     * Send JSON error response and exit
-     *
-     * @deprecated Use sendError() instead for automatic format detection
-     * @param string $message Error message
-     * @param int $code HTTP status code (default: 400)
-     * @return void
-     */
-    private function jsonError($message, $code = 400) {
-        http_response_code($code);
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => $message]);
-        exit;
-    }
-
-    /**
      * Send JSON success response and exit
      *
      * @param string $message Success message
@@ -280,6 +280,144 @@ class BorrowedToolController {
         }
         include APP_ROOT . "/views/errors/{$code}.php";
         exit;
+    }
+
+    /**
+     * Template method for Batch MVA workflow actions
+     * Consolidates duplicate code across verifyBatch/approveBatch/releaseBatch/cancelBatch methods
+     *
+     * @param array $config Configuration array with keys:
+     *   - action: string (verify|approve|release|cancel)
+     *   - permission: string Permission name to check
+     *   - modelMethod: string Model method to call
+     *   - notesField: string POST field name for notes
+     *   - successMessage: string Success message
+     *   - errorPrefix: string Error message prefix
+     * @return void
+     */
+    private function handleBatchMVAAction($config) {
+        $this->requireProjectAssignment();
+
+        // Only accept POST requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->sendError('Invalid request method', 400, 'borrowed-tools');
+            return;
+        }
+
+        $batchId = $_POST['batch_id'] ?? 0;
+        if (!$batchId) {
+            $this->sendError('Batch ID required', 400, 'borrowed-tools');
+            return;
+        }
+
+        try {
+            CSRFProtection::validateRequest();
+
+            $batchModel = new BorrowedToolBatchModel();
+            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
+
+            if (!$batch) {
+                $this->sendError('Batch not found', 404, 'borrowed-tools');
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission($config['permission'], $batch)) {
+                $this->sendError('Permission denied', 403, 'borrowed-tools');
+                return;
+            }
+
+            $notes = Validator::sanitize($_POST[$config['notesField']] ?? '');
+            $userId = $this->auth->getCurrentUser()['id'];
+
+            $result = $batchModel->{$config['modelMethod']}($batchId, $userId, $notes);
+
+            if ($result['success']) {
+                $this->sendSuccess($config['successMessage'], [], 'borrowed-tools');
+            } else {
+                $this->sendError($result['message'], 400, 'borrowed-tools');
+            }
+
+        } catch (Exception $e) {
+            error_log("Batch {$config['action']} error: " . $e->getMessage());
+            $this->sendError($config['errorPrefix'] . ' failed', 500, 'borrowed-tools');
+        }
+    }
+
+    /**
+     * Template method for MVA workflow actions
+     * Consolidates duplicate code across verify/approve/borrow/cancel methods
+     *
+     * @param array $config Configuration array with keys:
+     *   - action: string (verify|approve|borrow|cancel)
+     *   - permission: string Permission name to check
+     *   - modelMethod: string Model method to call
+     *   - notesField: string POST field name for notes
+     *   - pageTitle: string Page title
+     *   - viewFile: string View file path
+     *   - successRoute: string Success redirect route
+     *   - successMessage: string Success message key
+     * @return void
+     */
+    private function handleMVAWorkflowAction($config) {
+        $this->requireProjectAssignment();
+
+        $borrowId = $_GET['id'] ?? 0;
+        if (!$borrowId) {
+            $this->renderError(404);
+            return;
+        }
+
+        $errors = [];
+
+        try {
+            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
+            if (!$borrowedTool) {
+                $this->renderError(404);
+                return;
+            }
+
+            // Check permission
+            if (!$this->hasBorrowedToolPermission($config['permission'], $borrowedTool)) {
+                $this->renderError(403);
+                return;
+            }
+
+            // Process POST request
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                CSRFProtection::validateRequest();
+
+                $notes = Validator::sanitize($_POST[$config['notesField']] ?? '');
+                $userId = $this->auth->getCurrentUser()['id'];
+
+                $result = $this->borrowedToolModel->{$config['modelMethod']}($borrowId, $userId, $notes);
+
+                if ($result['success']) {
+                    $this->redirectWithSuccess(
+                        $config['successMessage'],
+                        $config['successRoute'] . $borrowId
+                    );
+                } else {
+                    $errors[] = $result['message'];
+                }
+            }
+
+            // Render view
+            $pageTitle = $config['pageTitle'];
+            $pageHeader = $config['pageHeader'] . htmlspecialchars($borrowedTool['asset_name']);
+            $breadcrumbs = [
+                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
+                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
+                ['title' => $config['breadcrumbTitle'], 'url' => '?route=borrowed-tools/' . $config['action'] . '&id=' . $borrowId]
+            ];
+
+            include APP_ROOT . $config['viewFile'];
+
+        } catch (Exception $e) {
+            error_log("Borrowed tool {$config['action']} error: " . $e->getMessage());
+            $error = "Failed to process borrowed tool {$config['action']}";
+            $this->renderError(500, $error);
+        }
     }
 
     /**
@@ -998,64 +1136,18 @@ class BorrowedToolController {
      * @return void Renders verification form (GET) or processes verification (POST)
      */
     public function verify() {
-        // Ensure user has project assignment
-        $this->requireProjectAssignment();
-        
-        $borrowId = $_GET['id'] ?? 0;
-        if (!$borrowId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
-        }
-
-        $errors = [];
-        
-        try {
-            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
-            if (!$borrowedTool) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-
-            // Check if user has permission to verify
-            if (!$this->hasBorrowedToolPermission('verify', $borrowedTool)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                
-                $notes = Validator::sanitize($_POST['verification_notes'] ?? '');
-                $verifiedBy = $this->auth->getCurrentUser()['id'];
-                
-                $result = $this->borrowedToolModel->verifyBorrowedTool($borrowId, $verifiedBy, $notes);
-                
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/view&id=' . $borrowId . '&message=tool_verified');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
-            }
-            
-            $pageTitle = 'Verify Borrowed Tool - ConstructLink™';
-            $pageHeader = 'Verify Borrowed Tool: ' . htmlspecialchars($borrowedTool['asset_name']);
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
-                ['title' => 'Verify', 'url' => '?route=borrowed-tools/verify&id=' . $borrowId]
-            ];
-            
-            include APP_ROOT . '/views/borrowed-tools/verify.php';
-            
-        } catch (Exception $e) {
-            error_log("Borrowed tool verification error: " . $e->getMessage());
-            $error = 'Failed to process borrowed tool verification';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        $this->handleMVAWorkflowAction([
+            'action' => 'verify',
+            'permission' => 'verify',
+            'modelMethod' => 'verifyBorrowedTool',
+            'notesField' => 'verification_notes',
+            'pageTitle' => 'Verify Borrowed Tool - ConstructLink™',
+            'pageHeader' => 'Verify Borrowed Tool: ',
+            'breadcrumbTitle' => 'Verify',
+            'viewFile' => '/views/borrowed-tools/verify.php',
+            'successRoute' => 'borrowed-tools/view&id=',
+            'successMessage' => 'Tool verified successfully'
+        ]);
     }
     
     /**
@@ -1073,192 +1165,54 @@ class BorrowedToolController {
      * @return void Renders approval form (GET) or processes approval (POST)
      */
     public function approve() {
-        // Ensure user has project assignment
-        $this->requireProjectAssignment();
-        
-        $borrowId = $_GET['id'] ?? 0;
-        if (!$borrowId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
-        }
-
-        $errors = [];
-        
-        try {
-            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
-            if (!$borrowedTool) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-
-            // Check if user has permission to approve
-            if (!$this->hasBorrowedToolPermission('approve', $borrowedTool)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                
-                $notes = Validator::sanitize($_POST['approval_notes'] ?? '');
-                $approvedBy = $this->auth->getCurrentUser()['id'];
-                
-                $result = $this->borrowedToolModel->approveBorrowedTool($borrowId, $approvedBy, $notes);
-                
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/view&id=' . $borrowId . '&message=tool_approved');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
-            }
-            
-            $pageTitle = 'Approve Borrowed Tool - ConstructLink™';
-            $pageHeader = 'Approve Borrowed Tool: ' . htmlspecialchars($borrowedTool['asset_name']);
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
-                ['title' => 'Approve', 'url' => '?route=borrowed-tools/approve&id=' . $borrowId]
-            ];
-            
-            include APP_ROOT . '/views/borrowed-tools/approve.php';
-            
-        } catch (Exception $e) {
-            error_log("Borrowed tool approval error: " . $e->getMessage());
-            $error = 'Failed to process borrowed tool approval';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        $this->handleMVAWorkflowAction([
+            'action' => 'approve',
+            'permission' => 'approve',
+            'modelMethod' => 'approveBorrowedTool',
+            'notesField' => 'approval_notes',
+            'pageTitle' => 'Approve Borrowed Tool - ConstructLink™',
+            'pageHeader' => 'Approve Borrowed Tool: ',
+            'breadcrumbTitle' => 'Approve',
+            'viewFile' => '/views/borrowed-tools/approve.php',
+            'successRoute' => 'borrowed-tools/view&id=',
+            'successMessage' => 'Tool approved successfully'
+        ]);
     }
 
     /**
      * Mark tool as borrowed (after approval)
      */
     public function borrow() {
-        // Ensure user has project assignment
-        $this->requireProjectAssignment();
-        
-        $borrowId = $_GET['id'] ?? 0;
-        if (!$borrowId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
-        }
-
-        $errors = [];
-        
-        try {
-            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
-            if (!$borrowedTool) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-
-            // Check if user has permission to mark as borrowed
-            if (!$this->hasBorrowedToolPermission('borrow', $borrowedTool)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                
-                $notes = Validator::sanitize($_POST['borrow_notes'] ?? '');
-                $borrowedBy = $this->auth->getCurrentUser()['id'];
-                
-                $result = $this->borrowedToolModel->borrowTool($borrowId, $borrowedBy, $notes);
-                
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/view&id=' . $borrowId . '&message=tool_borrowed');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
-            }
-            
-            $pageTitle = 'Borrow Tool - ConstructLink™';
-            $pageHeader = 'Borrow Tool: ' . htmlspecialchars($borrowedTool['asset_name']);
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
-                ['title' => 'Borrow', 'url' => '?route=borrowed-tools/borrow&id=' . $borrowId]
-            ];
-            
-            include APP_ROOT . '/views/borrowed-tools/borrow.php';
-            
-        } catch (Exception $e) {
-            error_log("Borrowed tool borrow error: " . $e->getMessage());
-            $error = 'Failed to process tool borrowing';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        $this->handleMVAWorkflowAction([
+            'action' => 'borrow',
+            'permission' => 'borrow',
+            'modelMethod' => 'borrowTool',
+            'notesField' => 'borrow_notes',
+            'pageTitle' => 'Borrow Tool - ConstructLink™',
+            'pageHeader' => 'Borrow Tool: ',
+            'breadcrumbTitle' => 'Borrow',
+            'viewFile' => '/views/borrowed-tools/borrow.php',
+            'successRoute' => 'borrowed-tools/view&id=',
+            'successMessage' => 'Tool borrowed successfully'
+        ]);
     }
 
     /**
      * Cancel borrowed tool request
      */
     public function cancel() {
-        // Ensure user has project assignment
-        $this->requireProjectAssignment();
-        
-        $borrowId = $_GET['id'] ?? 0;
-        if (!$borrowId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
-        }
-
-        $errors = [];
-        
-        try {
-            $borrowedTool = $this->borrowedToolModel->getBorrowedToolWithMVADetails($borrowId, $this->getProjectFilter());
-            if (!$borrowedTool) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-
-            // Check if user has permission to cancel
-            if (!$this->hasBorrowedToolPermission('cancel', $borrowedTool)) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                
-                $reason = Validator::sanitize($_POST['cancellation_reason'] ?? '');
-                $canceledBy = $this->auth->getCurrentUser()['id'];
-                
-                $result = $this->borrowedToolModel->cancelBorrowedTool($borrowId, $canceledBy, $reason);
-                
-                if ($result['success']) {
-                    header('Location: ?route=borrowed-tools/view&id=' . $borrowId . '&message=tool_canceled');
-                    exit;
-                } else {
-                    $errors[] = $result['message'];
-                }
-            }
-            
-            $pageTitle = 'Cancel Borrowed Tool - ConstructLink™';
-            $pageHeader = 'Cancel Borrowed Tool: ' . htmlspecialchars($borrowedTool['asset_name']);
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
-                ['title' => 'Cancel', 'url' => '?route=borrowed-tools/cancel&id=' . $borrowId]
-            ];
-            
-            include APP_ROOT . '/views/borrowed-tools/cancel.php';
-            
-        } catch (Exception $e) {
-            error_log("Borrowed tool cancellation error: " . $e->getMessage());
-            $error = 'Failed to process tool cancellation';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        $this->handleMVAWorkflowAction([
+            'action' => 'cancel',
+            'permission' => 'cancel',
+            'modelMethod' => 'cancelBorrowedTool',
+            'notesField' => 'cancellation_reason',
+            'pageTitle' => 'Cancel Borrowed Tool - ConstructLink™',
+            'pageHeader' => 'Cancel Borrowed Tool: ',
+            'breadcrumbTitle' => 'Cancel',
+            'viewFile' => '/views/borrowed-tools/cancel.php',
+            'successRoute' => 'borrowed-tools/view&id=',
+            'successMessage' => 'Tool canceled successfully'
+        ]);
     }
     
     /**
@@ -1702,168 +1656,42 @@ class BorrowedToolController {
      * @return void Redirects to borrowed-tools index with status message
      */
     public function verifyBatch() {
-        $this->requireProjectAssignment();
-
-        // Only accept POST requests (form handled by modal in index.php)
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ?route=borrowed-tools&error=invalid_request');
-            exit;
-        }
-
-        $batchId = $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            header('Location: ?route=borrowed-tools&error=batch_id_required');
-            exit;
-        }
-
-        try {
-            CSRFProtection::validateRequest();
-
-            $batchModel = new BorrowedToolBatchModel();
-            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
-
-            if (!$batch) {
-                header('Location: ?route=borrowed-tools&error=batch_not_found');
-                exit;
-            }
-
-            // Check permission
-            if (!$this->hasBorrowedToolPermission('verify', $batch)) {
-                header('Location: ?route=borrowed-tools&error=permission_denied');
-                exit;
-            }
-
-            $notes = Validator::sanitize($_POST['verification_notes'] ?? '');
-            $verifiedBy = $this->auth->getCurrentUser()['id'];
-
-            $result = $batchModel->verifyBatch($batchId, $verifiedBy, $notes);
-
-            if ($result['success']) {
-                header('Location: ?route=borrowed-tools&message=batch_verified');
-                exit;
-            } else {
-                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
-                exit;
-            }
-
-        } catch (Exception $e) {
-            error_log("Batch verification error: " . $e->getMessage());
-            header('Location: ?route=borrowed-tools&error=verification_failed');
-            exit;
-        }
+        $this->handleBatchMVAAction([
+            'action' => 'verify',
+            'permission' => 'verify',
+            'modelMethod' => 'verifyBatch',
+            'notesField' => 'verification_notes',
+            'successMessage' => 'Batch verified successfully',
+            'errorPrefix' => 'Batch verification'
+        ]);
     }
 
     /**
      * Approve batch (Authorizer step)
      */
     public function approveBatch() {
-        $this->requireProjectAssignment();
-
-        // Only accept POST requests (form handled by modal in index.php)
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ?route=borrowed-tools&error=invalid_request');
-            exit;
-        }
-
-        $batchId = $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            header('Location: ?route=borrowed-tools&error=batch_id_required');
-            exit;
-        }
-
-        try {
-            CSRFProtection::validateRequest();
-
-            $batchModel = new BorrowedToolBatchModel();
-            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
-
-            if (!$batch) {
-                header('Location: ?route=borrowed-tools&error=batch_not_found');
-                exit;
-            }
-
-            // Check permission
-            if (!$this->hasBorrowedToolPermission('approve', $batch)) {
-                header('Location: ?route=borrowed-tools&error=permission_denied');
-                exit;
-            }
-
-            $notes = Validator::sanitize($_POST['approval_notes'] ?? '');
-            $approvedBy = $this->auth->getCurrentUser()['id'];
-
-            $result = $batchModel->approveBatch($batchId, $approvedBy, $notes);
-
-            if ($result['success']) {
-                header('Location: ?route=borrowed-tools&message=batch_approved');
-                exit;
-            } else {
-                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
-                exit;
-            }
-
-        } catch (Exception $e) {
-            error_log("Batch approval error: " . $e->getMessage());
-            header('Location: ?route=borrowed-tools&error=approval_failed');
-            exit;
-        }
+        $this->handleBatchMVAAction([
+            'action' => 'approve',
+            'permission' => 'approve',
+            'modelMethod' => 'approveBatch',
+            'notesField' => 'approval_notes',
+            'successMessage' => 'Batch approved successfully',
+            'errorPrefix' => 'Batch approval'
+        ]);
     }
 
     /**
      * Release batch to borrower
      */
     public function releaseBatch() {
-        $this->requireProjectAssignment();
-
-        // Only accept POST requests (form handled by modal in index.php)
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ?route=borrowed-tools&error=invalid_request');
-            exit;
-        }
-
-        $batchId = $_POST['batch_id'] ?? 0;
-
-        if (!$batchId) {
-            header('Location: ?route=borrowed-tools&error=batch_id_required');
-            exit;
-        }
-
-        try {
-            CSRFProtection::validateRequest();
-
-            $batchModel = new BorrowedToolBatchModel();
-            $batch = $batchModel->getBatchWithItems($batchId, $this->getProjectFilter());
-
-            if (!$batch) {
-                header('Location: ?route=borrowed-tools&error=batch_not_found');
-                exit;
-            }
-
-            // Check permission
-            if (!$this->hasBorrowedToolPermission('borrow', $batch)) {
-                header('Location: ?route=borrowed-tools&error=permission_denied');
-                exit;
-            }
-
-            $notes = Validator::sanitize($_POST['release_notes'] ?? '');
-            $releasedBy = $this->auth->getCurrentUser()['id'];
-
-            $result = $batchModel->releaseBatch($batchId, $releasedBy, $notes);
-
-            if ($result['success']) {
-                header('Location: ?route=borrowed-tools&message=batch_released');
-                exit;
-            } else {
-                header('Location: ?route=borrowed-tools&error=' . urlencode($result['message']));
-                exit;
-            }
-
-        } catch (Exception $e) {
-            error_log("Batch release error: " . $e->getMessage());
-            header('Location: ?route=borrowed-tools&error=release_failed');
-            exit;
-        }
+        $this->handleBatchMVAAction([
+            'action' => 'release',
+            'permission' => 'borrow',
+            'modelMethod' => 'releaseBatch',
+            'notesField' => 'release_notes',
+            'successMessage' => 'Batch released successfully',
+            'errorPrefix' => 'Batch release'
+        ]);
     }
 
     /**

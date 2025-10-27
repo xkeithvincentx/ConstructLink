@@ -2,7 +2,6 @@
 /**
  * ConstructLink™ - Borrowed Equipment Request Details
  * View and manage single or multiple item borrowing requests
- * Developed by: Ranoa Digital Solutions
  */
 
 // Start output buffering

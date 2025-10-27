@@ -2,7 +2,6 @@
 /**
  * ConstructLink™ - Multi-Item Batch Borrowing
  * Shopping cart style interface for borrowing multiple tools at once
- * Developed by: Ranoa Digital Solutions
  */
 
 // Start output buffering to capture content

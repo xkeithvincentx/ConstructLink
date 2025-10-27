@@ -1,7 +1,6 @@
 <?php
 /**
  * View Helper - Reusable UI Component Renderers
- * Developed by: Ranoa Digital Solutions
  *
  * Provides centralized methods for rendering common UI components
  * to eliminate code duplication and improve maintainability.

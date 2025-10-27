@@ -2,7 +2,6 @@
 /**
  * ConstructLink™ Equipment Category Helper
  * Groups equipment into simplified categories for borrower-friendly forms
- * Developed by: Ranoa Digital Solutions
  */
 
 class EquipmentCategoryHelper {

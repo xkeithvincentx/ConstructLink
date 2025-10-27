@@ -1,7 +1,6 @@
 <?php
 /**
  * ConstructLink™ - Printable Borrowing Form (2x2 Grid - Filled)
- * Developed by: Ranoa Digital Solutions
  *
  * Purpose: Pre-filled form with actual borrowing data
  * Format: 4 copies per A4 page in 2x2 grid (matching blank form layout)

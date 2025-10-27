@@ -1,6 +1,5 @@
 /**
  * ConstructLink - Print Controls for Borrowed Tools Print Views
- * Developed by: Ranoa Digital Solutions
  *
  * Purpose: Handles print and close button functionality for print-specific views
  * Usage: Shared module for print-blank-form.php and batch-print.php

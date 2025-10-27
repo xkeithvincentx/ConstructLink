@@ -1,7 +1,6 @@
 <?php
 /**
  * ConstructLink Borrowed Tool Status Constants
- * Developed by: Ranoa Digital Solutions
  *
  * This helper class centralizes all borrowed tool status values to eliminate
  * hardcoded strings throughout the application.

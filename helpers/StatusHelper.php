@@ -2,7 +2,6 @@
 /**
  * ConstructLink™ Status Helper
  * Centralized status calculation logic for borrowed tools
- * Developed by: Ranoa Digital Solutions
  */
 
 class StatusHelper {

@@ -1,6 +1,5 @@
 /**
  * AJAX Handler for Borrowed Tools
- * Developed by: Ranoa Digital Solutions
  *
  * Provides centralized AJAX functionality for borrowed tools operations
  * with proper error handling and accessibility features.

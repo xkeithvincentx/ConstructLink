@@ -1,7 +1,6 @@
 <?php
 /**
  * ConstructLink Permissions Configuration
- * Developed by: Ranoa Digital Solutions
  *
  * This configuration file defines role-based permissions for all modules.
  * Each permission maps to a list of roles that are authorized to perform that action.

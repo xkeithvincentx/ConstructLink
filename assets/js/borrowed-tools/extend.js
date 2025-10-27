@@ -1,7 +1,6 @@
 /**
  * Extend Borrowing Period - Form Handler
  * ConstructLink™ Borrowed Tools Module
- * Developed by: Ranoa Digital Solutions
  */
 
 /**

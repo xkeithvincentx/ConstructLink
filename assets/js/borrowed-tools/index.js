@@ -1,6 +1,5 @@
 /**
  * Borrowed Tools Index Page - JavaScript Module
- * Developed by: Ranoa Digital Solutions
  *
  * Handles all JavaScript functionality for the borrowed tools index page:
  * - Batch expansion/collapse

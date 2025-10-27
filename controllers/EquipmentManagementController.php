@@ -12,7 +12,6 @@
  * - Usage statistics and reports
  * - Equipment catalog management
  *
- * Developed by: Ranoa Digital Solutions
  */
 
 class EquipmentManagementController {
