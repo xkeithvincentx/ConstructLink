@@ -57,6 +57,9 @@ class BorrowedToolPrintController {
                 return;
             }
 
+            // Load AssetHelper for print view
+            require_once APP_ROOT . '/helpers/AssetHelper.php';
+
             // Update printed_at timestamp
             $this->batchModel->update($batchId, [
                 'printed_at' => date('Y-m-d H:i:s')

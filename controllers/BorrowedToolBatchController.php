@@ -380,16 +380,12 @@ class BorrowedToolBatchController {
                 }
             }
 
-            // Check if at least one item has quantity > 0
-            $hasReturns = false;
-            foreach ($returnData['items'] as $itemData) {
-                if ($itemData['quantity'] > 0) {
-                    $hasReturns = true;
-                    break;
-                }
-            }
+            // Remove items with quantity = 0 (not being returned)
+            $returnData['items'] = array_filter($returnData['items'], function($itemData) {
+                return $itemData['quantity'] > 0;
+            });
 
-            if (!$hasReturns) {
+            if (empty($returnData['items'])) {
                 BorrowedToolsResponseHelper::sendError('Please specify at least one item to return', 400, 'borrowed-tools');
                 return;
             }
