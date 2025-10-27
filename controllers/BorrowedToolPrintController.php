@@ -39,8 +39,8 @@ class BorrowedToolPrintController {
      */
     public function printBatchForm() {
         try {
-            // Check print permission
-            $this->permissionGuard->requirePermission('print');
+            // Check view permission (anyone who can view can print)
+            $this->permissionGuard->requirePermission('view');
 
             $batchId = $_GET['batch_id'] ?? 0;
             if (!$batchId) {
@@ -86,8 +86,8 @@ class BorrowedToolPrintController {
      */
     public function printBlankForm() {
         try {
-            // Check print permission
-            $this->permissionGuard->requirePermission('print');
+            // Check view permission (anyone who can view can print)
+            $this->permissionGuard->requirePermission('view');
 
             // Load AssetHelper for standalone print view
             require_once APP_ROOT . '/helpers/AssetHelper.php';

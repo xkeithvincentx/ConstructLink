@@ -300,14 +300,103 @@ class BorrowedToolBatchController {
     }
 
     /**
-     * Return batch - handles both GET and POST
-     * Note: returnBatch logic moved to service layer for Phase 2.4
-     * Keeping simplified version for now to maintain compatibility
+     * Return batch - handles both GET (show form) and POST (process return)
      */
     public function returnBatch() {
-        // Implementation will be added from refactored service layer
-        // Placeholder to prevent routing errors
-        BorrowedToolsResponseHelper::renderError(501, 'Return batch implementation in progress');
+        $this->permissionGuard->requireProjectAssignment();
+
+        // GET request - redirect to batch view (return handled via modal)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $batchId = $_GET['id'] ?? $_GET['batch_id'] ?? 0;
+            if ($batchId) {
+                header('Location: ?route=borrowed-tools/batch/view&batch_id=' . $batchId);
+                exit;
+            }
+            BorrowedToolsResponseHelper::renderError(404);
+            return;
+        }
+
+        // POST request - process return
+        if (!$this->permissionGuard->hasPermission('return')) {
+            BorrowedToolsResponseHelper::sendError('Access denied', 403, 'borrowed-tools');
+            return;
+        }
+
+        $batchId = $_POST['batch_id'] ?? 0;
+        if (!$batchId) {
+            BorrowedToolsResponseHelper::sendError('Batch ID required', 400, 'borrowed-tools');
+            return;
+        }
+
+        try {
+            CSRFProtection::validateRequest();
+
+            $projectFilter = $this->permissionGuard->getProjectFilter();
+            $batch = $this->batchModel->getBatchWithItems($batchId, $projectFilter);
+
+            if (!$batch) {
+                BorrowedToolsResponseHelper::sendError('Batch not found', 404, 'borrowed-tools');
+                return;
+            }
+
+            // Check permission
+            if (!$this->permissionGuard->hasPermission('return', $batch)) {
+                BorrowedToolsResponseHelper::sendError('Permission denied', 403, 'borrowed-tools');
+                return;
+            }
+
+            // Parse returned items data
+            $returnData = [
+                'return_notes' => Validator::sanitize($_POST['return_notes'] ?? ''),
+                'items' => []
+            ];
+
+            // Parse items - support both array format (qty_in[], condition[], item_id[])
+            if (isset($_POST['qty_in']) && is_array($_POST['qty_in'])) {
+                $qtyIn = $_POST['qty_in'];
+                $conditions = $_POST['condition'] ?? [];
+                $itemIds = $_POST['item_id'] ?? [];
+                $itemNotes = $_POST['item_notes'] ?? [];
+
+                foreach ($qtyIn as $index => $qty) {
+                    if (empty($qty) || $qty <= 0) {
+                        continue;
+                    }
+
+                    $borrowedToolId = $itemIds[$index] ?? '';
+                    if ($borrowedToolId) {
+                        $returnData['items'][] = [
+                            'borrowed_tool_id' => (int)$borrowedToolId,
+                            'quantity_returned' => (int)$qty,
+                            'condition' => Validator::sanitize($conditions[$index] ?? 'Good'),
+                            'notes' => Validator::sanitize($itemNotes[$index] ?? '')
+                        ];
+                    }
+                }
+            }
+
+            if (empty($returnData['items'])) {
+                BorrowedToolsResponseHelper::sendError('Please specify at least one item to return', 400, 'borrowed-tools');
+                return;
+            }
+
+            // Use service to process return
+            require_once APP_ROOT . '/services/BorrowedToolReturnService.php';
+            $returnService = new BorrowedToolReturnService();
+
+            $userId = $this->permissionGuard->getCurrentUser()['id'];
+            $result = $returnService->processBatchReturn($batchId, $userId, $returnData);
+
+            if ($result['success']) {
+                BorrowedToolsResponseHelper::sendSuccess($result['message'], $result, 'borrowed-tools');
+            } else {
+                BorrowedToolsResponseHelper::sendError($result['message'], 400, 'borrowed-tools');
+            }
+
+        } catch (Exception $e) {
+            error_log("Batch return error: " . $e->getMessage());
+            BorrowedToolsResponseHelper::sendError('Batch return failed', 500, 'borrowed-tools');
+        }
     }
 
     /**
