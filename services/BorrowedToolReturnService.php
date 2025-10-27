@@ -66,7 +66,7 @@ class BorrowedToolReturnService {
 
         if ($allReturned) {
             $updateData['status'] = BorrowedToolStatus::RETURNED;
-            $updateData['returned_at'] = date('Y-m-d H:i:s');
+            $updateData['return_date'] = date('Y-m-d H:i:s');
             $updateData['returned_by'] = $userId;
         }
 
@@ -125,9 +125,9 @@ class BorrowedToolReturnService {
             'returned_by' => $userId
         ];
 
-        // Only set returned_at and status if fully returned
+        // Only set return_date and status if fully returned
         if ($isFullyReturned) {
-            $updateData['returned_at'] = date('Y-m-d H:i:s');
+            $updateData['return_date'] = date('Y-m-d H:i:s');
             $updateData['status'] = BorrowedToolStatus::RETURNED;
         }
 
@@ -280,9 +280,9 @@ class BorrowedToolReturnService {
      * @return array Return statistics
      */
     public function calculateReturnStatistics($batch) {
-        $expectedReturnDate = strtotime($batch['expected_return_date'] ?? 'now');
-        $actualReturnDate = strtotime($batch['returned_at'] ?? 'now');
-        $borrowedDate = strtotime($batch['borrowed_date'] ?? 'now');
+        $expectedReturnDate = strtotime($batch['expected_return'] ?? 'now');
+        $actualReturnDate = strtotime($batch['return_date'] ?? 'now');
+        $borrowedDate = strtotime($batch['created_at'] ?? 'now');
 
         $stats = [
             'borrowed_duration_days' => ceil(($actualReturnDate - $borrowedDate) / 86400),
