@@ -174,24 +174,33 @@ class BorrowedToolReturnService {
     private function validateReturnData($batch, $returnData) {
         $errors = [];
 
-        // Check all items are accounted for
-        $batchItemIds = array_column($batch['items'] ?? [], 'id');
-        $returnItemIds = array_keys($returnData['items'] ?? []);
-
-        foreach ($batchItemIds as $itemId) {
-            if (!in_array($itemId, $returnItemIds)) {
-                $errors[] = "Item #{$itemId} is missing from return data";
-            }
+        // Validate return data is not empty
+        if (empty($returnData['items'])) {
+            $errors[] = "No items specified for return";
+            return [
+                'valid' => false,
+                'errors' => $errors
+            ];
         }
 
-        // Validate each item return
+        // Validate each item being returned
+        $batchItemIds = array_column($batch['items'] ?? [], 'id');
+
         foreach ($returnData['items'] ?? [] as $itemId => $itemReturn) {
+            // Check item belongs to this batch
+            if (!in_array($itemId, $batchItemIds)) {
+                $errors[] = "Item #{$itemId}: Not part of this batch";
+                continue;
+            }
+
+            // Validate condition
             if (empty($itemReturn['condition'])) {
                 $errors[] = "Item #{$itemId}: Condition is required";
             }
 
-            if (isset($itemReturn['quantity']) && $itemReturn['quantity'] < 1) {
-                $errors[] = "Item #{$itemId}: Invalid quantity";
+            // Validate quantity
+            if (!isset($itemReturn['quantity']) || $itemReturn['quantity'] < 1) {
+                $errors[] = "Item #{$itemId}: Invalid quantity (must be at least 1)";
             }
         }
 
