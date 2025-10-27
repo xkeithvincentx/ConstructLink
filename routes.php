@@ -505,61 +505,67 @@ $routes = [
 
     // Multi-Item Batch Borrowing Routes
     'borrowed-tools/create-batch' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'createBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/create')
     ],
     'borrowed-tools/batch/create' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'storeBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/create')
     ],
     'borrowed-tools/batch/view' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'viewBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/view')
     ],
     'borrowed-tools/batch/verify' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'verifyBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/verify')
     ],
     'borrowed-tools/batch/approve' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'approveBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/approve')
     ],
     'borrowed-tools/batch/release' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'releaseBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/borrow')
     ],
     'borrowed-tools/batch/return' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'returnBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/return')
     ],
+    'borrowed-tools/batch/extend' => [
+        'controller' => 'BorrowedToolBatchController',
+        'action' => 'extendBatch',
+        'auth' => true,
+        'roles' => getRolesFor('borrowed-tools/extend')
+    ],
     'borrowed-tools/batch/cancel' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolBatchController',
         'action' => 'cancelBatch',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/cancel')
     ],
     'borrowed-tools/batch/print' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolPrintController',
         'action' => 'printBatchForm',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/view')
     ],
     'borrowed-tools/print-blank-form' => [
-        'controller' => 'BorrowedToolController',
+        'controller' => 'BorrowedToolPrintController',
         'action' => 'printBlankForm',
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/view')
