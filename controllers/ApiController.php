@@ -1352,7 +1352,7 @@ class ApiController {
                                     'message' => "Incident #{$incident['id']}: {$incident['type']}",
                                     'icon' => 'bi bi-exclamation-circle',
                                     'url' => '?route=incidents/view&id=' . $incident['id'],
-                                    'time' => $this->timeAgo($incident['reported_at']),
+                                    'time' => $this->timeAgo($incident['date_reported']),
                                     'unread' => true
                                 ];
                                 $count++;
