@@ -14,9 +14,10 @@
                     $assetData = $dashboardData['role_specific']['asset_director'] ?? [];
                     $pendingItems = [
                         ['label' => 'Procurement Verification', 'count' => $assetData['pending_procurement_verification'] ?? 0, 'route' => 'procurement-orders?status=Pending', 'icon' => 'bi-box-seam', 'color' => 'primary'],
+                        ['label' => 'Equipment Approvals', 'count' => $dashboardData['borrowed_tools']['pending_approval'] ?? 0, 'route' => 'borrowed-tools?status=Pending+Approval', 'icon' => 'bi-clipboard-check', 'color' => 'info'],
                         ['label' => 'Delivery Discrepancies', 'count' => $assetData['pending_discrepancies'] ?? 0, 'route' => 'delivery-tracking?status=Discrepancy+Reported', 'icon' => 'bi-truck', 'color' => 'danger'],
                         ['label' => 'Incident Resolution', 'count' => $assetData['pending_incident_resolution'] ?? 0, 'route' => 'incidents?status=Pending+Authorization', 'icon' => 'bi-shield-exclamation', 'color' => 'warning'],
-                        ['label' => 'Maintenance Authorization', 'count' => $assetData['pending_maintenance_authorization'] ?? 0, 'route' => 'maintenance?status=scheduled', 'icon' => 'bi-tools', 'color' => 'info']
+                        ['label' => 'Maintenance Authorization', 'count' => $assetData['pending_maintenance_authorization'] ?? 0, 'route' => 'maintenance?status=scheduled', 'icon' => 'bi-tools', 'color' => 'success']
                     ];
                     
                     foreach ($pendingItems as $item):
@@ -124,6 +125,9 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
+                    <a href="?route=borrowed-tools?status=Pending+Approval" class="btn btn-info btn-sm">
+                        <i class="bi bi-clipboard-check"></i> Approve Equipment
+                    </a>
                     <a href="?route=assets/create" class="btn btn-success btn-sm">
                         <i class="bi bi-plus-circle"></i> Add New Asset
                     </a>

@@ -14,6 +14,7 @@
                     $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                     $pendingItems = [
                         ['label' => 'Request Reviews', 'count' => $projectData['pending_request_reviews'] ?? 0, 'route' => 'requests?status=Submitted', 'icon' => 'bi-file-earmark-text', 'color' => 'primary'],
+                        ['label' => 'Equipment Verifications', 'count' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0, 'route' => 'borrowed-tools?status=Pending+Verification', 'icon' => 'bi-tools', 'color' => 'warning'],
                         ['label' => 'Withdrawal Approvals', 'count' => $projectData['pending_withdrawal_approvals'] ?? 0, 'route' => 'withdrawals?status=Pending+Approval', 'icon' => 'bi-box-arrow-right', 'color' => 'success'],
                         ['label' => 'Transfer Approvals', 'count' => $projectData['pending_transfer_approvals'] ?? 0, 'route' => 'transfers?status=Pending+Verification', 'icon' => 'bi-arrow-left-right', 'color' => 'warning'],
                         ['label' => 'Receipt Confirmations', 'count' => $projectData['pending_receipt_confirmations'] ?? 0, 'route' => 'procurement-orders?status=Delivered', 'icon' => 'bi-check-circle', 'color' => 'info']
@@ -106,6 +107,9 @@
                 <div class="d-grid gap-2">
                     <a href="?route=requests?status=Submitted" class="btn btn-primary btn-sm">
                         <i class="bi bi-clipboard-check"></i> Review Requests
+                    </a>
+                    <a href="?route=borrowed-tools?status=Pending+Verification" class="btn btn-warning btn-sm">
+                        <i class="bi bi-tools"></i> Verify Equipment
                     </a>
                     <a href="?route=withdrawals?status=Pending+Approval" class="btn btn-success btn-sm">
                         <i class="bi bi-check2-square"></i> Approve Withdrawals
@@ -224,6 +228,12 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span><i class="bi bi-file-earmark-text text-primary"></i> Requests to Review</span>
                             <span class="badge bg-primary"><?= $projectData['pending_request_reviews'] ?? 0 ?></span>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-tools text-warning"></i> Equipment to Verify</span>
+                            <span class="badge bg-warning"><?= $dashboardData['borrowed_tools']['pending_verification'] ?? 0 ?></span>
                         </div>
                     </div>
                     <div class="list-group-item px-0">

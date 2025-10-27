@@ -128,7 +128,44 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Project Equipment -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>Project Equipment
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-box-arrow-right text-primary"></i> Currently Borrowed</span>
+                        <span class="badge bg-primary"><?= $dashboardData['borrowed_tools']['project_borrowed'] ?? 0 ?></span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-exclamation-triangle text-danger"></i> Overdue Returns</span>
+                        <span class="badge bg-danger"><?= $dashboardData['borrowed_tools']['project_overdue'] ?? 0 ?></span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-calendar-event text-warning"></i> Due This Week</span>
+                        <span class="badge bg-warning"><?= $dashboardData['borrowed_tools']['project_due_soon'] ?? 0 ?></span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-box-seam text-success"></i> Available</span>
+                        <span class="badge bg-success"><?= $dashboardData['borrowed_tools']['project_available'] ?? 0 ?></span>
+                    </div>
+                </div>
+                <div class="mt-3 d-grid gap-2">
+                    <a href="?route=borrowed-tools" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> View All Equipment
+                    </a>
+                    <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Borrow Equipment
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Incident Management -->
         <div class="card mb-4">
             <div class="card-header">
