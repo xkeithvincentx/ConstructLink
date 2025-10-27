@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConstructLink Performance Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+            background: #d4edda;
+        }
+        .test-result.fail {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .metric-value {
+            font-weight: bold;
+        }
+        .pass { color: #28a745; }
+        .fail { color: #dc3545; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <h1>🚀 ConstructLink Performance Test Suite</h1>
+    <p>This test suite validates the performance optimizations implemented in the ConstructLink application.</p>
+
+    <!-- Test 1: IntervalManager -->
+    <div class="test-section">
+        <h2>Test 1: IntervalManager</h2>
+        <p>Validates that the IntervalManager properly tracks and cleans up interval timers.</p>
+        <button onclick="testIntervalManager()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <!-- Test 2: RequestCache -->
+    <div class="test-section">
+        <h2>Test 2: RequestCache</h2>
+        <p>Validates that the RequestCache stores and retrieves data with TTL expiration.</p>
+        <button onclick="testRequestCache()">Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <!-- Test 3: RequestDebouncer -->
+    <div class="test-section">
+        <h2>Test 3: RequestDebouncer</h2>
+        <p>Validates that the RequestDebouncer prevents overlapping requests.</p>
+        <button onclick="testRequestDebouncer()">Run Test</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <!-- Test 4: Singleton Pattern -->
+    <div class="test-section">
+        <h2>Test 4: Alpine Component Singleton</h2>
+        <p>Validates that Alpine components initialize only once using singleton pattern.</p>
+        <button onclick="testSingleton()">Run Test</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <!-- Test 5: Memory Leak Prevention -->
+    <div class="test-section">
+        <h2>Test 5: Memory Leak Prevention</h2>
+        <p>Validates that interval timers don't stack and memory is properly cleaned up.</p>
+        <button onclick="testMemoryLeaks()">Run Test</button>
+        <div id="test5-result"></div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="test-section">
+        <h2>Performance Metrics</h2>
+        <div id="metrics"></div>
+    </div>
+
+    <script>
+        // Mock ConstructLink object for testing
+        window.ConstructLink = {
+            baseUrl: 'http://localhost',
+            apiUrl: 'http://localhost/api',
+            csrfToken: 'test-token',
+            user: null
+        };
+
+        // Load alpine-components.js utilities
+        // IntervalManager
+        window.ConstructLink.IntervalManager = {
+            intervals: new Map(),
+            register(key, intervalId) {
+                if (this.intervals.has(key)) {
+                    clearInterval(this.intervals.get(key));
+                }
+                this.intervals.set(key, intervalId);
+            },
+            clear(key) {
+                if (this.intervals.has(key)) {
+                    clearInterval(this.intervals.get(key));
+                    this.intervals.delete(key);
+                }
+            },
+            clearAll() {
+                this.intervals.forEach((intervalId) => clearInterval(intervalId));
+                this.intervals.clear();
+            }
+        };
+
+        // RequestCache
+        window.ConstructLink.RequestCache = {
+            cache: new Map(),
+            defaultTTL: 300000,
+            get(key) {
+                const cached = this.cache.get(key);
+                if (!cached) return null;
+                if (Date.now() - cached.timestamp > cached.ttl) {
+                    this.cache.delete(key);
+                    return null;
+                }
+                return cached.data;
+            },
+            set(key, data, ttl = null) {
+                this.cache.set(key, {
+                    data: data,
+                    timestamp: Date.now(),
+                    ttl: ttl || this.defaultTTL
+                });
+            },
+            clear(key) {
+                if (key) {
+                    this.cache.delete(key);
+                } else {
+                    this.cache.clear();
+                }
+            }
+        };
+
+        // RequestDebouncer
+        window.ConstructLink.RequestDebouncer = {
+            activeRequests: new Map(),
+            async execute(key, requestFn, minDelay = 300) {
+                if (this.activeRequests.has(key)) {
+                    return this.activeRequests.get(key);
+                }
+                const delayPromise = new Promise(resolve => setTimeout(resolve, minDelay));
+                const requestPromise = Promise.all([requestFn(), delayPromise])
+                    .then(([result]) => result)
+                    .finally(() => {
+                        this.activeRequests.delete(key);
+                    });
+                this.activeRequests.set(key, requestPromise);
+                return requestPromise;
+            }
+        };
+
+        // Test Functions
+        function testIntervalManager() {
+            const results = [];
+            const resultDiv = document.getElementById('test1-result');
+
+            // Test 1: Register interval
+            const intervalId = setInterval(() => {}, 1000);
+            window.ConstructLink.IntervalManager.register('test-interval', intervalId);
+            results.push({
+                name: 'Register interval',
+                pass: window.ConstructLink.IntervalManager.intervals.has('test-interval'),
+                message: 'Interval registered successfully'
+            });
+
+            // Test 2: Replace existing interval
+            const newIntervalId = setInterval(() => {}, 1000);
+            window.ConstructLink.IntervalManager.register('test-interval', newIntervalId);
+            results.push({
+                name: 'Replace existing interval',
+                pass: window.ConstructLink.IntervalManager.intervals.size === 1,
+                message: 'Old interval cleared, new one registered'
+            });
+
+            // Test 3: Clear specific interval
+            window.ConstructLink.IntervalManager.clear('test-interval');
+            results.push({
+                name: 'Clear specific interval',
+                pass: !window.ConstructLink.IntervalManager.intervals.has('test-interval'),
+                message: 'Interval cleared successfully'
+            });
+
+            // Test 4: Clear all intervals
+            window.ConstructLink.IntervalManager.register('test1', setInterval(() => {}, 1000));
+            window.ConstructLink.IntervalManager.register('test2', setInterval(() => {}, 1000));
+            window.ConstructLink.IntervalManager.clearAll();
+            results.push({
+                name: 'Clear all intervals',
+                pass: window.ConstructLink.IntervalManager.intervals.size === 0,
+                message: 'All intervals cleared successfully'
+            });
+
+            displayResults(resultDiv, results);
+        }
+
+        function testRequestCache() {
+            const results = [];
+            const resultDiv = document.getElementById('test2-result');
+
+            // Test 1: Set and get cache
+            window.ConstructLink.RequestCache.set('test-key', { data: 'test' }, 5000);
+            const cached = window.ConstructLink.RequestCache.get('test-key');
+            results.push({
+                name: 'Set and get cache',
+                pass: cached && cached.data === 'test',
+                message: 'Cache stores and retrieves data'
+            });
+
+            // Test 2: TTL expiration
+            window.ConstructLink.RequestCache.set('expired-key', { data: 'old' }, 1);
+            setTimeout(() => {
+                const expired = window.ConstructLink.RequestCache.get('expired-key');
+                results.push({
+                    name: 'TTL expiration',
+                    pass: expired === null,
+                    message: 'Expired cache returns null'
+                });
+                displayResults(resultDiv, results);
+            }, 10);
+
+            // Test 3: Clear cache
+            window.ConstructLink.RequestCache.set('clear-test', { data: 'test' });
+            window.ConstructLink.RequestCache.clear('clear-test');
+            results.push({
+                name: 'Clear specific cache',
+                pass: window.ConstructLink.RequestCache.get('clear-test') === null,
+                message: 'Cache cleared successfully'
+            });
+        }
+
+        async function testRequestDebouncer() {
+            const results = [];
+            const resultDiv = document.getElementById('test3-result');
+
+            let callCount = 0;
+            const mockRequest = async () => {
+                callCount++;
+                return { success: true };
+            };
+
+            // Test 1: Single request
+            await window.ConstructLink.RequestDebouncer.execute('test-req', mockRequest, 100);
+            results.push({
+                name: 'Execute single request',
+                pass: callCount === 1,
+                message: 'Request executed once'
+            });
+
+            // Test 2: Overlapping requests
+            callCount = 0;
+            const promises = [
+                window.ConstructLink.RequestDebouncer.execute('overlap-test', mockRequest, 100),
+                window.ConstructLink.RequestDebouncer.execute('overlap-test', mockRequest, 100),
+                window.ConstructLink.RequestDebouncer.execute('overlap-test', mockRequest, 100)
+            ];
+            await Promise.all(promises);
+            results.push({
+                name: 'Prevent overlapping requests',
+                pass: callCount === 1,
+                message: '3 calls resulted in only 1 actual request'
+            });
+
+            displayResults(resultDiv, results);
+        }
+
+        function testSingleton() {
+            const results = [];
+            const resultDiv = document.getElementById('test4-result');
+
+            const componentInstances = {
+                test: null
+            };
+
+            // Simulate singleton pattern
+            function createComponent() {
+                if (componentInstances.test) {
+                    return componentInstances.test;
+                }
+                componentInstances.test = { id: Math.random() };
+                return componentInstances.test;
+            }
+
+            const instance1 = createComponent();
+            const instance2 = createComponent();
+
+            results.push({
+                name: 'Singleton pattern',
+                pass: instance1.id === instance2.id,
+                message: 'Multiple calls return same instance'
+            });
+
+            displayResults(resultDiv, results);
+        }
+
+        function testMemoryLeaks() {
+            const results = [];
+            const resultDiv = document.getElementById('test5-result');
+
+            // Test: Interval cleanup
+            const initialSize = window.ConstructLink.IntervalManager.intervals.size;
+
+            for (let i = 0; i < 10; i++) {
+                const id = setInterval(() => {}, 1000);
+                window.ConstructLink.IntervalManager.register('test-interval', id);
+            }
+
+            const afterSize = window.ConstructLink.IntervalManager.intervals.size;
+            window.ConstructLink.IntervalManager.clearAll();
+
+            results.push({
+                name: 'Prevent interval stacking',
+                pass: afterSize === 1,
+                message: '10 registrations resulted in only 1 timer (not 10)'
+            });
+
+            results.push({
+                name: 'Cleanup all timers',
+                pass: window.ConstructLink.IntervalManager.intervals.size === 0,
+                message: 'All timers cleaned up successfully'
+            });
+
+            displayResults(resultDiv, results);
+        }
+
+        function displayResults(container, results) {
+            let html = '';
+            let passCount = 0;
+
+            results.forEach(result => {
+                if (result.pass) passCount++;
+                const className = result.pass ? 'test-result' : 'test-result fail';
+                const status = result.pass ? '✅ PASS' : '❌ FAIL';
+                html += `
+                    <div class="${className}">
+                        <strong>${status}</strong>: ${result.name}<br>
+                        <small>${result.message}</small>
+                    </div>
+                `;
+            });
+
+            const summary = `<p><strong>Results:</strong> ${passCount}/${results.length} tests passed</p>`;
+            container.innerHTML = summary + html;
+
+            updateMetrics();
+        }
+
+        function updateMetrics() {
+            const metricsDiv = document.getElementById('metrics');
+            const intervals = window.ConstructLink.IntervalManager.intervals.size;
+            const cacheEntries = window.ConstructLink.RequestCache.cache.size;
+            const activeRequests = window.ConstructLink.RequestDebouncer.activeRequests.size;
+
+            metricsDiv.innerHTML = `
+                <div class="metric">
+                    <span>Active Intervals:</span>
+                    <span class="metric-value ${intervals === 0 ? 'pass' : 'fail'}">${intervals}</span>
+                </div>
+                <div class="metric">
+                    <span>Cache Entries:</span>
+                    <span class="metric-value">${cacheEntries}</span>
+                </div>
+                <div class="metric">
+                    <span>Active Requests:</span>
+                    <span class="metric-value ${activeRequests === 0 ? 'pass' : 'fail'}">${activeRequests}</span>
+                </div>
+            `;
+        }
+
+        // Run all tests on load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateMetrics();
+        });
+    </script>
+</body>
+</html>

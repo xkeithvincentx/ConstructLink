@@ -2,11 +2,15 @@
 /**
  * ConstructLink™ - Verify Borrowed Tool Request
  * MVA Workflow: Verifier Step
+ * REFACTORED: Using reusable components for DRY principles
  */
 
 if (!defined('APP_ROOT')) {
     die('Direct access not permitted');
 }
+
+// Load helpers
+require_once APP_ROOT . '/helpers/ButtonHelper.php';
 
 // Start output buffering to capture content
 ob_start();
@@ -34,15 +38,16 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                    <?php
+                    // Display errors using reusable component
+                    if (!empty($errors)) {
+                        $alertConfig = [
+                            'type' => 'danger',
+                            'messages' => $errors
+                        ];
+                        include APP_ROOT . '/views/components/alert_message.php';
+                    }
+                    ?>
 
                     <?php if ($isCritical): ?>
                         <?= ViewHelper::renderCriticalToolWarning() ?>
@@ -60,41 +65,25 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                             <form method="POST" action="?route=borrowed-tools/verify&id=<?= $borrowedTool['id'] ?>" class="checklist-form">
                                 <?= CSRFProtection::getTokenField() ?>
 
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Verification Requirements:</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_asset_available" required>
-                                        <label class="form-check-label" for="check_asset_available">
-                                            Asset is available and in good condition
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_borrower_valid" required>
-                                        <label class="form-check-label" for="check_borrower_valid">
-                                            Borrower identity and contact information verified
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_purpose_valid" required>
-                                        <label class="form-check-label" for="check_purpose_valid">
-                                            Purpose of borrowing is legitimate and appropriate
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_return_date" required>
-                                        <label class="form-check-label" for="check_return_date">
-                                            Expected return date is reasonable
-                                        </label>
-                                    </div>
-                                    <?php if ($isCritical): ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_critical_approval" required>
-                                        <label class="form-check-label" for="check_critical_approval">
-                                            <strong>Critical tool borrowing requires proper authorization</strong>
-                                        </label>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
+                                <?php
+                                // Build checklist items
+                                $checklistItems = [
+                                    ['id' => 'check_asset_available', 'label' => 'Asset is available and in good condition', 'required' => true],
+                                    ['id' => 'check_borrower_valid', 'label' => 'Borrower identity and contact information verified', 'required' => true],
+                                    ['id' => 'check_purpose_valid', 'label' => 'Purpose of borrowing is legitimate and appropriate', 'required' => true],
+                                    ['id' => 'check_return_date', 'label' => 'Expected return date is reasonable', 'required' => true]
+                                ];
+
+                                if ($isCritical) {
+                                    $checklistItems[] = ['id' => 'check_critical_approval', 'label' => 'Critical tool borrowing requires proper authorization', 'required' => true, 'bold' => true];
+                                }
+
+                                $checklistConfig = [
+                                    'title' => 'Verification Requirements:',
+                                    'items' => $checklistItems
+                                ];
+                                include APP_ROOT . '/views/components/checklist_form.php';
+                                ?>
 
                                 <div class="mb-3">
                                     <label for="verification_notes" class="form-label">Verification Notes</label>
@@ -102,45 +91,35 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                                     <div id="verification_notes_help" class="form-text">Optional: Add any conditions or special instructions for the borrowing.</div>
                                 </div>
 
-                                <div class="workflow-actions">
-                                    <a href="?route=borrowed-tools/view&id=<?= $borrowedTool['id'] ?>" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Details
-                                    </a>
-                                    <button type="submit" class="btn btn-warning">
-                                        <i class="bi bi-check-circle" aria-hidden="true"></i> Verify Tool Request
-                                    </button>
-                                </div>
+                                <?php
+                                echo ButtonHelper::renderWorkflowActions(
+                                    ['url' => "?route=borrowed-tools/view&id={$borrowedTool['id']}"],
+                                    [
+                                        'text' => 'Verify Tool Request',
+                                        'type' => 'submit',
+                                        'style' => 'warning',
+                                        'icon' => 'check-circle'
+                                    ]
+                                );
+                                ?>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Workflow Status -->
-                    <div class="workflow-progress">
-                        <h6 class="fw-bold">MVA Workflow Status</h6>
-                        <div class="progress">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
-                                <small>Pending Verification</small>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Created</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-warning">Verifying</small>
-                                <i class="bi bi-hourglass-split text-warning" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Approval</small>
-                                <i class="bi bi-circle text-muted" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Borrowed</small>
-                                <i class="bi bi-circle text-muted" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    // Workflow progress using reusable component
+                    $workflowConfig = [
+                        'currentStage' => 'verification',
+                        'completedStages' => ['creation'],
+                        'stages' => [
+                            ['name' => 'creation', 'label' => 'Created'],
+                            ['name' => 'verification', 'label' => 'Verifying'],
+                            ['name' => 'approval', 'label' => 'Approval'],
+                            ['name' => 'handover', 'label' => 'Borrowed']
+                        ]
+                    ];
+                    include APP_ROOT . '/views/components/workflow_progress.php';
+                    ?>
                 </div>
             </div>
         </div>

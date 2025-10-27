@@ -1,7 +1,7 @@
 <?php
 /**
  * Reusable Modal Component
- * Developed by: Ranoa Digital Solutions
+ * Developed by: <?= SYSTEM_VENDOR ?>
  *
  * Usage Example:
  * <?php

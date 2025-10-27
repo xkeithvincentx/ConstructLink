@@ -129,15 +129,22 @@ const ConstructLink = {
     // Handle navigation clicks
     handleNavigation: function(event) {
         const link = event.target.closest("a");
-        
+
         if (link && link.classList.contains("nav-link")) {
-            // Don't show loading state for PDF generation or file download links
+            // Don't show loading state for:
+            // - Dropdown toggles (notification, user menu)
+            // - PDF generation or file download links
+            // - Links with # (modal triggers, dropdowns)
             const href = link.getAttribute("href");
-            if (href && (href.includes("generatePO") || href.includes("download") || href.includes("export"))) {
-                return; // Let the browser handle these normally
+            const isDropdownToggle = link.hasAttribute("data-bs-toggle");
+            const isHashLink = href === "#" || (href && href.startsWith("#"));
+            const isFileDownload = href && (href.includes("generatePO") || href.includes("download") || href.includes("export"));
+
+            if (isDropdownToggle || isHashLink || isFileDownload) {
+                return; // Let the browser handle these normally without loading overlay
             }
-            
-            // Add loading state to navigation
+
+            // Add loading state only for actual page navigation
             this.showLoadingState();
         }
     },
@@ -154,6 +161,12 @@ const ConstructLink = {
     
     // Show loading state
     showLoadingState: function() {
+        // Remove existing loader if present
+        const existingLoader = document.querySelector(".loading-overlay");
+        if (existingLoader) {
+            existingLoader.remove();
+        }
+
         const loader = document.createElement("div");
         loader.className = "loading-overlay";
         loader.innerHTML = `
@@ -162,12 +175,19 @@ const ConstructLink = {
             </div>
         `;
         document.body.appendChild(loader);
-        
-        setTimeout(() => {
+
+        // Remove loader when page starts loading or after 3 seconds max
+        const removeLoader = () => {
             if (loader.parentNode) {
-                loader.parentNode.removeChild(loader);
+                loader.remove();
             }
-        }, 5000);
+        };
+
+        // Remove on page navigation start
+        window.addEventListener("beforeunload", removeLoader, { once: true });
+
+        // Fallback timeout (reduced from 5s to 3s)
+        setTimeout(removeLoader, 3000);
     },
     
     // Check if user is active

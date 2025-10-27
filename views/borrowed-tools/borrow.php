@@ -2,11 +2,15 @@
 /**
  * ConstructLink™ - Mark Tool as Borrowed
  * MVA Workflow: Final Step - Physical Handover
+ * REFACTORED: Using reusable components for DRY principles
  */
 
 if (!defined('APP_ROOT')) {
     die('Direct access not permitted');
 }
+
+// Load helpers
+require_once APP_ROOT . '/helpers/ButtonHelper.php';
 
 // Start output buffering to capture content
 ob_start();
@@ -34,15 +38,16 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                    <?php
+                    // Display errors using reusable component
+                    if (!empty($errors)) {
+                        $alertConfig = [
+                            'type' => 'danger',
+                            'messages' => $errors
+                        ];
+                        include APP_ROOT . '/views/components/alert_message.php';
+                    }
+                    ?>
 
                     <?php if ($isCritical): ?>
                         <?= ViewHelper::renderCriticalToolWarning() ?>
@@ -68,53 +73,28 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                             <form method="POST" action="?route=borrowed-tools/borrow&id=<?= $borrowedTool['id'] ?>" class="checklist-form">
                                 <?= CSRFProtection::getTokenField() ?>
 
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Handover Requirements:</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_id_verified" required>
-                                        <label class="form-check-label" for="check_id_verified">
-                                            Borrower identity verified and matches request
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_tool_condition" required>
-                                        <label class="form-check-label" for="check_tool_condition">
-                                            Tool condition inspected and documented
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_safety_briefing" required>
-                                        <label class="form-check-label" for="check_safety_briefing">
-                                            Safety briefing provided for tool operation
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_return_date" required>
-                                        <label class="form-check-label" for="check_return_date">
-                                            Return date and conditions clearly communicated
-                                        </label>
-                                    </div>
-                                    <?php if ($isCritical): ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_special_instructions" required>
-                                        <label class="form-check-label" for="check_special_instructions">
-                                            <strong>Special handling instructions for critical tool provided</strong>
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_emergency_contact" required>
-                                        <label class="form-check-label" for="check_emergency_contact">
-                                            <strong>Emergency contact information provided</strong>
-                                        </label>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_borrower_acknowledged" required>
-                                        <label class="form-check-label" for="check_borrower_acknowledged">
-                                            Borrower acknowledged receipt and responsibility
-                                        </label>
-                                    </div>
-                                </div>
+                                <?php
+                                // Build checklist items
+                                $checklistItems = [
+                                    ['id' => 'check_id_verified', 'label' => 'Borrower identity verified and matches request', 'required' => true],
+                                    ['id' => 'check_tool_condition', 'label' => 'Tool condition inspected and documented', 'required' => true],
+                                    ['id' => 'check_safety_briefing', 'label' => 'Safety briefing provided for tool operation', 'required' => true],
+                                    ['id' => 'check_return_date', 'label' => 'Return date and conditions clearly communicated', 'required' => true]
+                                ];
+
+                                if ($isCritical) {
+                                    $checklistItems[] = ['id' => 'check_special_instructions', 'label' => 'Special handling instructions for critical tool provided', 'required' => true, 'bold' => true];
+                                    $checklistItems[] = ['id' => 'check_emergency_contact', 'label' => 'Emergency contact information provided', 'required' => true, 'bold' => true];
+                                }
+
+                                $checklistItems[] = ['id' => 'check_borrower_acknowledged', 'label' => 'Borrower acknowledged receipt and responsibility', 'required' => true];
+
+                                $checklistConfig = [
+                                    'title' => 'Handover Requirements:',
+                                    'items' => $checklistItems
+                                ];
+                                include APP_ROOT . '/views/components/checklist_form.php';
+                                ?>
 
                                 <div class="mb-3">
                                     <label for="borrow_notes" class="form-label">Handover Notes</label>
@@ -122,50 +102,45 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                                     <div id="borrow_notes_help" class="form-text">Document the condition of the tool and any special instructions given to the borrower.</div>
                                 </div>
 
-                                <div class="alert alert-warning" role="alert">
-                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                    <strong>Important:</strong> By completing this handover, you confirm that the tool has been physically handed over to the borrower and all required procedures have been followed.
-                                </div>
+                                <?php
+                                // Alert message component
+                                $alertConfig = [
+                                    'type' => 'warning',
+                                    'message' => 'By completing this handover, you confirm that the tool has been physically handed over to the borrower and all required procedures have been followed.',
+                                    'dismissible' => false
+                                ];
+                                include APP_ROOT . '/views/components/alert_message.php';
+                                ?>
 
-                                <div class="workflow-actions">
-                                    <a href="?route=borrowed-tools/view&id=<?= $borrowedTool['id'] ?>" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Details
-                                    </a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-box-arrow-down" aria-hidden="true"></i> Complete Handover
-                                    </button>
-                                </div>
+                                <?php
+                                echo ButtonHelper::renderWorkflowActions(
+                                    ['url' => "?route=borrowed-tools/view&id={$borrowedTool['id']}"],
+                                    [
+                                        'text' => 'Complete Handover',
+                                        'type' => 'submit',
+                                        'style' => 'primary',
+                                        'icon' => 'box-arrow-down'
+                                    ]
+                                );
+                                ?>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Workflow Status -->
-                    <div class="workflow-progress">
-                        <h6 class="fw-bold">MVA Workflow Status</h6>
-                        <div class="progress">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
-                                <small>Ready for Handover</small>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Created</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Verified</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Approved</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-primary">Handover</small>
-                                <i class="bi bi-hourglass-split text-primary" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    // Workflow progress using reusable component
+                    $workflowConfig = [
+                        'currentStage' => 'handover',
+                        'completedStages' => ['creation', 'verification', 'approval'],
+                        'stages' => [
+                            ['name' => 'creation', 'label' => 'Created'],
+                            ['name' => 'verification', 'label' => 'Verified'],
+                            ['name' => 'approval', 'label' => 'Approved'],
+                            ['name' => 'handover', 'label' => 'Handover']
+                        ]
+                    ];
+                    include APP_ROOT . '/views/components/workflow_progress.php';
+                    ?>
                 </div>
             </div>
         </div>

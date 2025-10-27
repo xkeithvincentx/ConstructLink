@@ -2,11 +2,15 @@
 /**
  * ConstructLink™ - Cancel Borrowed Tool Request
  * MVA Workflow: Cancellation at any stage before borrowed
+ * REFACTORED: Using reusable components for DRY principles
  */
 
 if (!defined('APP_ROOT')) {
     die('Direct access not permitted');
 }
+
+// Load helpers
+require_once APP_ROOT . '/helpers/ButtonHelper.php';
 
 // Start output buffering to capture content
 ob_start();
@@ -22,20 +26,25 @@ ob_start();
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                    <?php
+                    // Display errors using reusable component
+                    if (!empty($errors)) {
+                        $alertConfig = [
+                            'type' => 'danger',
+                            'messages' => $errors
+                        ];
+                        include APP_ROOT . '/views/components/alert_message.php';
+                    }
 
-                    <div class="alert alert-warning cancellation-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                        <strong>Warning:</strong> You are about to cancel this borrowed tool request. This action cannot be undone.
-                    </div>
+                    // Display warning message
+                    $alertConfig = [
+                        'type' => 'warning',
+                        'title' => 'Warning:',
+                        'message' => 'You are about to cancel this borrowed tool request. This action cannot be undone.',
+                        'dismissible' => false
+                    ];
+                    include APP_ROOT . '/views/components/alert_message.php';
+                    ?>
 
                     <!-- Tool Details -->
                     <?= ViewHelper::renderToolDetailsTable($borrowedTool) ?>
@@ -62,21 +71,19 @@ ob_start();
                             <form method="POST" action="?route=borrowed-tools/cancel&id=<?= $borrowedTool['id'] ?>" class="checklist-form">
                                 <?= CSRFProtection::getTokenField() ?>
 
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Cancellation Confirmation:</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="confirm_cancellation" required>
-                                        <label class="form-check-label" for="confirm_cancellation">
-                                            I confirm that I want to cancel this borrowed tool request
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="understand_implications" required>
-                                        <label class="form-check-label" for="understand_implications">
-                                            I understand this action cannot be undone and will require a new request
-                                        </label>
-                                    </div>
-                                </div>
+                                <?php
+                                // Build checklist items
+                                $checklistItems = [
+                                    ['id' => 'confirm_cancellation', 'label' => 'I confirm that I want to cancel this borrowed tool request', 'required' => true],
+                                    ['id' => 'understand_implications', 'label' => 'I understand this action cannot be undone and will require a new request', 'required' => true]
+                                ];
+
+                                $checklistConfig = [
+                                    'title' => 'Cancellation Confirmation:',
+                                    'items' => $checklistItems
+                                ];
+                                include APP_ROOT . '/views/components/checklist_form.php';
+                                ?>
 
                                 <div class="mb-3">
                                     <label for="cancellation_reason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
@@ -84,25 +91,33 @@ ob_start();
                                     <div id="cancellation_reason_help" class="form-text">Please provide a clear reason for cancelling this request for record keeping purposes.</div>
                                 </div>
 
-                                <div class="alert alert-danger" role="alert">
-                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                    <strong>Important:</strong> Cancelling this request will:
-                                    <ul class="mb-0 mt-2">
-                                        <li>Permanently cancel the borrowing request</li>
-                                        <li>Make the asset available for other requests</li>
-                                        <li>Require a new request to be submitted if needed later</li>
-                                        <li>Create an audit record of the cancellation</li>
-                                    </ul>
-                                </div>
+                                <?php
+                                // Display important notice
+                                $alertConfig = [
+                                    'type' => 'danger',
+                                    'title' => 'Important:',
+                                    'messages' => [
+                                        'Permanently cancel the borrowing request',
+                                        'Make the asset available for other requests',
+                                        'Require a new request to be submitted if needed later',
+                                        'Create an audit record of the cancellation'
+                                    ],
+                                    'dismissible' => false
+                                ];
+                                include APP_ROOT . '/views/components/alert_message.php';
+                                ?>
 
-                                <div class="workflow-actions">
-                                    <a href="?route=borrowed-tools/view&id=<?= $borrowedTool['id'] ?>" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Details
-                                    </a>
-                                    <button type="submit" class="btn btn-danger">
-                                        <i class="bi bi-x-circle" aria-hidden="true"></i> Cancel Request
-                                    </button>
-                                </div>
+                                <?php
+                                echo ButtonHelper::renderWorkflowActions(
+                                    ['url' => "?route=borrowed-tools/view&id={$borrowedTool['id']}"],
+                                    [
+                                        'text' => 'Cancel Request',
+                                        'type' => 'submit',
+                                        'style' => 'danger',
+                                        'icon' => 'x-circle'
+                                    ]
+                                );
+                                ?>
                             </form>
                         </div>
                     </div>

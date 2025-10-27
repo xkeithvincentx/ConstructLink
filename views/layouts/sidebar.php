@@ -248,7 +248,7 @@ $navigationMenu = getNavigationMenu($userRole);
         </ul>
         
         <!-- Quick Stats Widget -->
-        <div class="mt-4 p-3 bg-light rounded mx-3" x-data="sidebarStats" x-init="loadStats()">
+        <div class="mt-4 p-3 bg-light rounded mx-3" x-data="sidebarStats">
             <h6 class="text-muted mb-3">Quick Stats</h6>
             
             <div class="d-flex justify-content-between mb-2">
@@ -282,60 +282,13 @@ $navigationMenu = getNavigationMenu($userRole);
         <div class="mt-3 p-2 mx-3 text-center">
             <small class="text-muted">
                 ConstructLink™ v<?= APP_VERSION ?><br>
-                by Ranoa Digital Solutions
+                by <?= SYSTEM_VENDOR ?>
             </small>
         </div>
     </div>
 </nav>
 
-<!-- JavaScript for Badge Notifications -->
-<script>
-// Badge notification functions
-function updateBadgeCount(badgeId, count) {
-    const badge = document.getElementById(badgeId);
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-// Load procurement stats and update badges
-async function loadProcurementBadges() {
-    // Procurement API not yet implemented
-    console.log('Procurement badges disabled - API not yet available');
-}
-
-// Load operations stats and update badges
-async function loadOperationsBadges() {
-    // Operations API not yet implemented
-    console.log('Operations badges disabled - API not yet available');
-}
-
-// Initialize badge updates
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial badge counts
-    loadProcurementBadges();
-    loadOperationsBadges();
-    
-    // Update badges every 60 seconds
-    setInterval(function() {
-        loadProcurementBadges();
-        loadOperationsBadges();
-    }, 60000);
-});
-
-// Refresh badges when user returns to the page
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        loadProcurementBadges();
-        loadOperationsBadges();
-    }
-});
-</script>
+<!-- Badge notifications handled by sidebarStats Alpine component -->
 
 <style>
 .sidebar {

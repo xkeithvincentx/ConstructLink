@@ -2,11 +2,15 @@
 /**
  * ConstructLink™ - Approve Borrowed Tool Request
  * MVA Workflow: Authorizer Step
+ * REFACTORED: Using reusable components for DRY principles
  */
 
 if (!defined('APP_ROOT')) {
     die('Direct access not permitted');
 }
+
+// Load helpers
+require_once APP_ROOT . '/helpers/ButtonHelper.php';
 
 // Start output buffering to capture content
 ob_start();
@@ -34,15 +38,16 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                    <?php
+                    // Display errors using reusable component
+                    if (!empty($errors)) {
+                        $alertConfig = [
+                            'type' => 'danger',
+                            'messages' => $errors
+                        ];
+                        include APP_ROOT . '/views/components/alert_message.php';
+                    }
+                    ?>
 
                     <?php if ($isCritical): ?>
                         <?= ViewHelper::renderCriticalToolWarning() ?>
@@ -68,47 +73,27 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                             <form method="POST" action="?route=borrowed-tools/approve&id=<?= $borrowedTool['id'] ?>" class="checklist-form">
                                 <?= CSRFProtection::getTokenField() ?>
 
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Authorization Requirements:</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_authority" required>
-                                        <label class="form-check-label" for="check_authority">
-                                            I have the authority to approve this tool borrowing request
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_verification" required>
-                                        <label class="form-check-label" for="check_verification">
-                                            Verification has been completed and requirements met
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_risk_assessment" required>
-                                        <label class="form-check-label" for="check_risk_assessment">
-                                            Risk assessment completed and acceptable
-                                        </label>
-                                    </div>
-                                    <?php if ($isCritical): ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_high_value" required>
-                                        <label class="form-check-label" for="check_high_value">
-                                            <strong>High-value/critical asset borrowing justified and approved</strong>
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_insurance" required>
-                                        <label class="form-check-label" for="check_insurance">
-                                            <strong>Insurance and liability considerations reviewed</strong>
-                                        </label>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="check_policy_compliance" required>
-                                        <label class="form-check-label" for="check_policy_compliance">
-                                            Borrowing complies with company policies and procedures
-                                        </label>
-                                    </div>
-                                </div>
+                                <?php
+                                // Build checklist items
+                                $checklistItems = [
+                                    ['id' => 'check_authority', 'label' => 'I have the authority to approve this tool borrowing request', 'required' => true],
+                                    ['id' => 'check_verification', 'label' => 'Verification has been completed and requirements met', 'required' => true],
+                                    ['id' => 'check_risk_assessment', 'label' => 'Risk assessment completed and acceptable', 'required' => true]
+                                ];
+
+                                if ($isCritical) {
+                                    $checklistItems[] = ['id' => 'check_high_value', 'label' => 'High-value/critical asset borrowing justified and approved', 'required' => true, 'bold' => true];
+                                    $checklistItems[] = ['id' => 'check_insurance', 'label' => 'Insurance and liability considerations reviewed', 'required' => true, 'bold' => true];
+                                }
+
+                                $checklistItems[] = ['id' => 'check_policy_compliance', 'label' => 'Borrowing complies with company policies and procedures', 'required' => true];
+
+                                $checklistConfig = [
+                                    'title' => 'Authorization Requirements:',
+                                    'items' => $checklistItems
+                                ];
+                                include APP_ROOT . '/views/components/checklist_form.php';
+                                ?>
 
                                 <div class="mb-3">
                                     <label for="approval_notes" class="form-label">Approval Notes</label>
@@ -116,45 +101,35 @@ if (in_array($borrowedTool['category_name'], $criticalCategories)) {
                                     <div id="approval_notes_help" class="form-text">Optional: Add any conditions or special instructions for the approved borrowing.</div>
                                 </div>
 
-                                <div class="workflow-actions">
-                                    <a href="?route=borrowed-tools/view&id=<?= $borrowedTool['id'] ?>" class="btn btn-secondary">
-                                        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Details
-                                    </a>
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="bi bi-person-check" aria-hidden="true"></i> Approve Tool Request
-                                    </button>
-                                </div>
+                                <?php
+                                echo ButtonHelper::renderWorkflowActions(
+                                    ['url' => "?route=borrowed-tools/view&id={$borrowedTool['id']}"],
+                                    [
+                                        'text' => 'Approve Tool Request',
+                                        'type' => 'submit',
+                                        'style' => 'success',
+                                        'icon' => 'person-check'
+                                    ]
+                                );
+                                ?>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Workflow Status -->
-                    <div class="workflow-progress">
-                        <h6 class="fw-bold">MVA Workflow Status</h6>
-                        <div class="progress">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
-                                <small>Pending Approval</small>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Created</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Verified</small>
-                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-warning">Approving</small>
-                                <i class="bi bi-hourglass-split text-warning" aria-hidden="true"></i>
-                            </div>
-                            <div class="col-3 workflow-stage">
-                                <small class="text-muted">Borrowed</small>
-                                <i class="bi bi-circle text-muted" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    // Workflow progress using reusable component
+                    $workflowConfig = [
+                        'currentStage' => 'approval',
+                        'completedStages' => ['creation', 'verification'],
+                        'stages' => [
+                            ['name' => 'creation', 'label' => 'Created'],
+                            ['name' => 'verification', 'label' => 'Verified'],
+                            ['name' => 'approval', 'label' => 'Approving'],
+                            ['name' => 'handover', 'label' => 'Borrowed']
+                        ]
+                    ];
+                    include APP_ROOT . '/views/components/workflow_progress.php';
+                    ?>
                 </div>
             </div>
         </div>

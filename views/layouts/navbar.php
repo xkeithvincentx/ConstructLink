@@ -69,6 +69,20 @@ $userRole = $user['role_name'] ?? 'Guest';
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
                         <li><h6 class="dropdown-header">Notifications</h6></li>
+
+                        <!-- Loading skeleton -->
+                        <template x-if="isLoading && notifications.length === 0">
+                            <li class="dropdown-item">
+                                <div class="d-flex">
+                                    <div class="placeholder-glow w-100">
+                                        <span class="placeholder col-12"></span>
+                                        <span class="placeholder col-8"></span>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+
+                        <!-- Notifications list -->
                         <template x-for="notification in notifications" :key="notification.id">
                             <li>
                                 <a class="dropdown-item" :href="notification.url">
@@ -85,6 +99,14 @@ $userRole = $user['role_name'] ?? 'Guest';
                                 </a>
                             </li>
                         </template>
+
+                        <!-- Empty state -->
+                        <template x-if="!isLoading && notifications.length === 0">
+                            <li class="dropdown-item text-muted text-center">
+                                No new notifications
+                            </li>
+                        </template>
+
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-center" href="?route=notifications">View All Notifications</a></li>
                     </ul>

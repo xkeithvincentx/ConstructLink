@@ -1,7 +1,7 @@
 <?php
 /**
  * Borrowed Tools Index View
- * Developed by: Ranoa Digital Solutions
+ * Developed by: <?= SYSTEM_VENDOR ?>
  *
  * REFACTORED: Removed 900+ lines of inline JavaScript, converted modals to components,
  * added comprehensive ARIA labels, and centralized configuration.
