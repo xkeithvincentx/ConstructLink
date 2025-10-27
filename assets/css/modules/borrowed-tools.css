@@ -282,15 +282,8 @@ tr.batch-items-row[style*="display: none"] td {
 .batch-items-table th:nth-child(10) { width: 16%; } /* Actions */
 
 /* ============================================
-   10. HIDDEN ELEMENTS (JavaScript toggles)
+   10. HIDDEN ELEMENTS
    ============================================ */
-
-/* Hidden by default, shown via JavaScript */
-.batch-items-mobile,
-.batch-items-row,
-.batch-items-container {
-    display: none;
-}
 
 /* Force hide asset_id column even if JS fails */
 .hidden-asset-id {

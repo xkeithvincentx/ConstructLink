@@ -83,13 +83,6 @@
                                 <small class="text-muted d-block mb-1">Item</small>
                                 <?php if ($isBatch): ?>
                                     <div class="fw-medium"><?= $batchCount ?> Equipment Items</div>
-                                    <button class="btn btn-sm btn-outline-secondary mt-1 w-100 batch-toggle-mobile"
-                                            type="button"
-                                            data-batch-id="<?= $batchId ?>"
-                                            aria-label="Expand batch items"
-                                            aria-expanded="false">
-                                        <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>View Items
-                                    </button>
                                 <?php else: ?>
                                     <div class="fw-medium"><?= htmlspecialchars($tool['asset_name']) ?></div>
                                     <small class="text-muted">
@@ -233,33 +226,6 @@
                                     </a>
                                 <?php endif; ?>
                             </div>
-
-                            <!-- Expandable Batch Items (Mobile) -->
-                            <?php if ($isBatch): ?>
-                                <div class="batch-items-mobile mt-3" data-batch-id="<?= $batchId ?>">
-                                    <hr>
-                                    <h6 class="mb-2"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
-                                    <?php foreach ($batchItems as $index => $item): ?>
-                                        <div class="card card-body mb-2 bg-light">
-                                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                                <small class="text-muted">#<?= $index + 1 ?></small>
-                                                <?= ViewHelper::renderStatusBadge($item['status'], false) ?>
-                                            </div>
-                                            <div class="fw-medium"><?= htmlspecialchars($item['asset_name']) ?></div>
-                                            <small class="text-muted"><?= htmlspecialchars($item['asset_ref']) ?></small>
-                                            <?php if (!empty($item['serial_number'])): ?>
-                                                <small class="text-muted">S/N: <code><?= htmlspecialchars($item['serial_number']) ?></code></small>
-                                            <?php endif; ?>
-                                            <?php if (!empty($item['condition_out']) || !empty($item['condition_returned'])): ?>
-                                                <div class="mt-1">
-                                                    <small class="text-muted">Condition: </small>
-                                                    <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null) ?>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -332,16 +298,6 @@
                                 <!-- ID with Visual Priority Indicators and Batch Badge -->
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <?php if ($isBatch): ?>
-                                            <button class="btn btn-sm btn-outline-secondary me-2 batch-toggle"
-                                                    type="button"
-                                                    data-batch-id="<?= $batchId ?>"
-                                                    aria-label="Expand batch items"
-                                                    aria-expanded="false"
-                                                    title="Click to expand/collapse batch items">
-                                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                                            </button>
-                                        <?php endif; ?>
                                         <?php if ($isOverdue): ?>
                                             <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="Overdue" aria-hidden="true"></i>
                                         <?php elseif ($isDueSoon): ?>
@@ -749,82 +705,8 @@
                                 </td>
                             </tr>
 
-                            <!-- Expandable Batch Items Row (hidden by default) -->
-                            <?php if ($isBatch): ?>
-                                <tr class="batch-items-row" data-batch-id="<?= $batchId ?>">
-                                    <td colspan="100%" class="p-0">
-                                        <div class="batch-items-container bg-light p-3">
-                                            <h6 class="mb-3"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-bordered mb-0 batch-items-table">
-                                                    <thead class="table-secondary">
-                                                        <tr>
-                                                            <th>#</th>
-                                                            <th>Equipment</th>
-                                                            <th>Reference</th>
-                                                            <th>Borrowed</th>
-                                                            <th>Returned</th>
-                                                            <th>Remaining</th>
-                                                            <th>Condition</th>
-                                                            <th>Serial Number</th>
-                                                            <th>Status</th>
-                                                            <th>Notes</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <?php foreach ($batchItems as $index => $item): ?>
-                                                            <?php
-                                                            $borrowed = $item['quantity'] ?? 1;
-                                                            $returned = $item['quantity_returned'] ?? 0;
-                                                            $remaining = $borrowed - $returned;
-                                                            ?>
-                                                            <tr data-item-id="<?= $item['id'] ?>" data-asset-id="<?= $item['asset_id'] ?>">
-                                                                <td><?= $index + 1 ?></td>
-                                                                <td>
-                                                                    <strong><?= htmlspecialchars($item['asset_name']) ?></strong>
-                                                                    <?php if (!empty($item['asset_category'])): ?>
-                                                                        <br><small class="text-muted"><?= htmlspecialchars($item['asset_category']) ?></small>
-                                                                    <?php endif; ?>
-                                                                </td>
-                                                                <td><?= htmlspecialchars($item['asset_ref']) ?></td>
-                                                                <td class="text-center"><span class="badge bg-primary"><?= $borrowed ?></span></td>
-                                                                <td class="text-center"><span class="badge bg-success"><?= $returned ?></span></td>
-                                                                <td class="text-center"><span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>"><?= $remaining ?></span></td>
-                                                                <td>
-                                                                    <?= ViewHelper::renderConditionBadges($item['condition_out'] ?? null, $item['condition_returned'] ?? null, false) ?>
-                                                                </td>
-                                                                <td>
-                                                                    <?php if (!empty($item['serial_number'])): ?>
-                                                                        <code><?= htmlspecialchars($item['serial_number']) ?></code>
-                                                                    <?php else: ?>
-                                                                        <span class="text-muted">-</span>
-                                                                    <?php endif; ?>
-                                                                </td>
-                                                                <td>
-                                                                    <?php
-                                                                    // Determine actual status based on remaining quantity
-                                                                    $actualStatus = $remaining > 0 ? 'Borrowed' : 'Returned';
-                                                                    ?>
-                                                                    <?= ViewHelper::renderStatusBadge($actualStatus) ?>
-                                                                </td>
-                                                                <td>
-                                                                    <?php if (!empty($item['line_notes'])): ?>
-                                                                        <small class="text-muted"><?= htmlspecialchars($item['line_notes']) ?></small>
-                                                                    <?php else: ?>
-                                                                        <span class="text-muted">-</span>
-                                                                    <?php endif; ?>
-                                                                </td>
-                                                            </tr>
-                                                        <?php endforeach; ?>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php else: ?>
-                                <!-- Hidden Single Item Data Row (for modal) -->
-                                <tr class="batch-items-row" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>">
+                            <!-- Hidden Item Data Row (for modals - return, extend) -->
+                            <tr class="batch-items-row collapsed" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>">
                                     <td colspan="100%" class="p-0">
                                         <div class="batch-items-container">
                                             <table class="batch-items-table">
@@ -852,7 +734,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endif; ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>

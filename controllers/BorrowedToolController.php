@@ -144,14 +144,14 @@ class BorrowedToolController {
 
             // Get overdue tools
             $overdueTools = $this->borrowedToolModel->getOverdueBorrowedTools($projectFilter);
-            
+
             $pageTitle = 'Borrowed Tools - ConstructLink™';
             $pageHeader = 'Borrowed Tools Management';
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard'],
                 ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools']
             ];
-            
+
             // Pass data to view
             $auth = $this->permissionGuard; // For permission checks in view
             $currentSort = $filters['sort_by'];

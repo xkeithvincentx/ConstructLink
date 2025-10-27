@@ -553,7 +553,7 @@ class BorrowedToolModel extends BaseModel {
             ]
         ];
     }
-    
+
     /**
      * Get borrowed tool with detailed information
      */

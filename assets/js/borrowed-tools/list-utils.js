@@ -1,56 +1,8 @@
 /**
  * Borrowed Tools List Utilities
  * Extracted from _borrowed_tools_list.php inline JavaScript
- * Handles batch toggle, export, and print functionality
+ * Handles export and print functionality
  */
-
-/**
- * Initialize batch toggle functionality for mobile view
- */
-export function initMobileBatchToggle() {
-    document.querySelectorAll('.batch-toggle-mobile').forEach(button => {
-        button.addEventListener('click', function() {
-            const batchId = this.getAttribute('data-batch-id');
-            const batchItems = document.querySelector(`.batch-items-mobile[data-batch-id="${batchId}"]`);
-            const icon = this.querySelector('i');
-
-            if (batchItems.style.display === 'none') {
-                batchItems.style.display = 'block';
-                icon.classList.remove('bi-chevron-down');
-                icon.classList.add('bi-chevron-up');
-                this.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Items';
-            } else {
-                batchItems.style.display = 'none';
-                icon.classList.remove('bi-chevron-up');
-                icon.classList.add('bi-chevron-down');
-                this.innerHTML = '<i class="bi bi-chevron-down me-1"></i>View Items';
-            }
-        });
-    });
-}
-
-/**
- * Initialize batch toggle functionality for desktop table
- */
-export function initDesktopBatchToggle() {
-    document.querySelectorAll('.batch-toggle').forEach(button => {
-        button.addEventListener('click', function() {
-            const batchId = this.getAttribute('data-batch-id');
-            const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
-            const icon = this.querySelector('i');
-
-            if (batchItemsRow.style.display === 'none') {
-                batchItemsRow.style.display = '';
-                icon.classList.remove('bi-chevron-right');
-                icon.classList.add('bi-chevron-down');
-            } else {
-                batchItemsRow.style.display = 'none';
-                icon.classList.remove('bi-chevron-down');
-                icon.classList.add('bi-chevron-right');
-            }
-        });
-    });
-}
 
 /**
  * Export table to Excel
