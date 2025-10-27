@@ -36,7 +36,7 @@ export function init(token) {
  * Initialize all event listeners
  */
 function initializeEventListeners() {
-    // Batch action modals - load batch data when modal opens
+    // Batch action modals - load batch data when modal opens (except return modal)
     document.querySelectorAll('.batch-action-btn').forEach(button => {
         button.addEventListener('click', function() {
             const batchId = this.getAttribute('data-batch-id');
@@ -45,7 +45,10 @@ function initializeEventListeners() {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.setAttribute('data-batch-id', batchId);
-                loadBatchItemsIntoModal(batchId, modalId);
+                // Don't use loadBatchItemsIntoModal for return and extend modals - they have custom handlers
+                if (modalId !== 'batchReturnModal' && modalId !== 'batchExtendModal') {
+                    loadBatchItemsIntoModal(batchId, modalId);
+                }
             }
         });
     });
@@ -157,19 +160,34 @@ function loadBatchItemsIntoModal(batchId, modalId) {
 /**
  * Handle batch return modal show
  */
-function handleBatchReturnModalShow() {
+function handleBatchReturnModalShow(event) {
+    // Get batch ID - it's set by the click handler on the modal element
     const batchId = this.getAttribute('data-batch-id');
-    const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
 
-    if (!batchItemsRow) {
-        console.error('Batch items row not found for batch ID:', batchId);
+    if (!batchId) {
+        console.error('ERROR: Batch ID not found on modal');
         return;
     }
 
+    console.log('Loading return items for batch ID:', batchId);
+
+    // Find the hidden batch items row
+    const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
+
+    if (!batchItemsRow) {
+        // Debug: show what batch IDs are available
+        const allBatchRows = document.querySelectorAll('.batch-items-row');
+        const availableIds = Array.from(allBatchRows).map(row => row.getAttribute('data-batch-id'));
+        console.error('ERROR: Batch items row not found for ID:', batchId, '| Available IDs:', availableIds);
+        return;
+    }
+
+    // Set form values
     document.getElementById('returnBatchId').value = batchId;
     document.getElementById('returnCsrfToken').value = csrfToken;
 
-    const items = batchItemsRow.querySelectorAll('tbody tr');
+    // Get items from the hidden batch items table
+    const items = batchItemsRow.querySelectorAll('.batch-items-table tbody tr');
     const returnTableBody = document.getElementById('batchReturnItems');
 
     if (!returnTableBody) {
@@ -180,6 +198,7 @@ function handleBatchReturnModalShow() {
     returnTableBody.innerHTML = '';
 
     if (items.length === 0) {
+        console.error('No items found in batch. batchId:', batchId);
         returnTableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No items found in batch</td></tr>';
         return;
     }

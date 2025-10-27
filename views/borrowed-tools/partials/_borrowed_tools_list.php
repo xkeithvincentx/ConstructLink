@@ -750,7 +750,7 @@
                                         <div class="batch-items-container bg-light p-3">
                                             <h6 class="mb-3"><i class="bi bi-list-ul me-2"></i>Batch Items (<?= $batchCount ?>)</h6>
                                             <div class="table-responsive">
-                                                <table class="table table-sm table-bordered mb-0">
+                                                <table class="table table-sm table-bordered mb-0 batch-items-table">
                                                     <thead class="table-secondary">
                                                         <tr>
                                                             <th style="width: 5%">#</th>
