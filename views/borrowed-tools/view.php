@@ -2,6 +2,12 @@
 /**
  * ConstructLink™ - Borrowed Equipment Request Details
  * View and manage single or multiple item borrowing requests
+ *
+ * Refactored for:
+ * - CSP compliance (no inline styles/scripts)
+ * - WCAG 2.1 AA accessibility
+ * - MVC separation (business logic in helper)
+ * - DRY principles (reusable partials)
  */
 
 // Start output buffering
@@ -11,11 +17,12 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 
-// Load ViewHelper for reusable UI components
+// Load helpers
 require_once APP_ROOT . '/helpers/ViewHelper.php';
+require_once APP_ROOT . '/helpers/BorrowedToolsViewHelper.php';
 
 if (!isset($batch) || !$batch) {
-    echo '<div class="alert alert-danger">Request not found</div>';
+    echo '<div class="alert alert-danger" role="alert">Request not found</div>';
     return;
 }
 
@@ -27,33 +34,36 @@ $isSingleItem = count($batch['items']) === 1;
 $singleItem = $isSingleItem ? $batch['items'][0] : null;
 ?>
 
+<!-- Main Content -->
+<main aria-label="Request details">
+
 <!-- Request Header -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <div class="row align-items-start">
             <div class="col-12 col-md-8">
                 <h4 class="mb-2">
-                    <i class="bi bi-<?= $isMultiItem ? 'cart3' : 'box-seam' ?> me-2"></i>
+                    <i class="bi bi-<?= BorrowedToolsViewHelper::getRequestIcon($isMultiItem) ?> me-2" aria-hidden="true"></i>
                     <span class="d-inline-block"><?= htmlspecialchars($batch['batch_reference']) ?></span>
                     <?php if ($isSingleItem): ?>
                         <span class="text-muted fs-6 d-block d-md-inline mt-1 mt-md-0">— <?= htmlspecialchars($singleItem['asset_name']) ?></span>
                     <?php endif; ?>
                 </h4>
                 <p class="text-muted mb-2">
-                    <i class="bi bi-person me-1"></i>
+                    <i class="bi bi-person me-1" aria-hidden="true"></i>
                     <strong>Borrower:</strong> <?= htmlspecialchars($batch['borrower_name']) ?>
                     <?php if ($batch['borrower_contact']): ?>
                         <span class="ms-2">
-                            <i class="bi bi-telephone me-1"></i><?= htmlspecialchars($batch['borrower_contact']) ?>
+                            <i class="bi bi-telephone me-1" aria-hidden="true"></i><?= htmlspecialchars($batch['borrower_contact']) ?>
                         </span>
                     <?php endif; ?>
                 </p>
                 <p class="text-muted mb-0">
-                    <i class="bi bi-calendar me-1"></i>
+                    <i class="bi bi-calendar me-1" aria-hidden="true"></i>
                     <strong>Expected Return:</strong> <?= date('M d, Y', strtotime($batch['expected_return'])) ?>
                     <?php if ($batch['actual_return']): ?>
                         <span class="ms-3 text-success">
-                            <i class="bi bi-check-circle me-1"></i>
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
                             <strong>Returned:</strong> <?= date('M d, Y', strtotime($batch['actual_return'])) ?>
                         </span>
                     <?php endif; ?>
@@ -63,11 +73,11 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                 <div class="d-flex flex-column align-items-md-end align-items-start gap-2">
                     <span class="fs-6"><?= ViewHelper::renderStatusBadge($batch['status']) ?></span>
                     <?php if ($batch['is_critical_batch']): ?>
-                        <span class="badge bg-warning text-dark">
+                        <span class="badge bg-warning text-dark" role="status">
                             <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Critical Equipment - Full MVA
                         </span>
                     <?php else: ?>
-                        <span class="badge bg-success">
+                        <span class="badge bg-success" role="status">
                             <i class="bi bi-lightning me-1" aria-hidden="true"></i>Basic Equipment - Streamlined
                         </span>
                     <?php endif; ?>
@@ -79,77 +89,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
 
 <!-- Action Buttons -->
 <div class="mb-4">
-    <!-- Mobile: Stacked buttons -->
-    <div class="d-md-none d-grid gap-2">
-        <a href="?route=borrowed-tools" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
-        </a>
-
-        <?php if ($batch['status'] === 'Pending Verification' && hasRole(['Project Manager', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/verify&id=<?= $batch['id'] ?>" class="btn btn-warning">
-                <i class="bi bi-check-square me-1"></i>Verify Request
-            </a>
-        <?php endif; ?>
-
-        <?php if ($batch['status'] === 'Pending Approval' && hasRole(['Asset Director', 'Finance Director', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/approve&id=<?= $batch['id'] ?>" class="btn btn-info">
-                <i class="bi bi-shield-check me-1"></i>Approve Request
-            </a>
-        <?php endif; ?>
-
-        <?php if ($batch['status'] === 'Approved' && hasRole(['Warehouseman', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/release&id=<?= $batch['id'] ?>" class="btn btn-success">
-                <i class="bi bi-box-arrow-right me-1"></i>Release to Borrower
-            </a>
-        <?php endif; ?>
-
-
-        <?php if (in_array($batch['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
-            <a href="?route=borrowed-tools/batch/cancel&id=<?= $batch['id'] ?>" class="btn btn-danger">
-                <i class="bi bi-x-circle me-1"></i>Cancel Request
-            </a>
-        <?php endif; ?>
-
-        <a href="?route=borrowed-tools/batch/print&id=<?= $batch['id'] ?>" class="btn btn-outline-primary" target="_blank">
-            <i class="bi bi-printer me-1"></i>Print Form
-        </a>
-    </div>
-
-    <!-- Desktop: Inline buttons -->
-    <div class="d-none d-md-flex gap-2 flex-wrap">
-        <a href="?route=borrowed-tools" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back to List
-        </a>
-
-        <?php if ($batch['status'] === 'Pending Verification' && hasRole(['Project Manager', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/verify&id=<?= $batch['id'] ?>" class="btn btn-warning">
-                <i class="bi bi-check-square me-1"></i>Verify Request
-            </a>
-        <?php endif; ?>
-
-        <?php if ($batch['status'] === 'Pending Approval' && hasRole(['Asset Director', 'Finance Director', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/approve&id=<?= $batch['id'] ?>" class="btn btn-info">
-                <i class="bi bi-shield-check me-1"></i>Approve Request
-            </a>
-        <?php endif; ?>
-
-        <?php if ($batch['status'] === 'Approved' && hasRole(['Warehouseman', 'System Admin'])): ?>
-            <a href="?route=borrowed-tools/batch/release&id=<?= $batch['id'] ?>" class="btn btn-success">
-                <i class="bi bi-box-arrow-right me-1"></i>Release to Borrower
-            </a>
-        <?php endif; ?>
-
-
-        <?php if (in_array($batch['status'], ['Pending Verification', 'Pending Approval', 'Approved'])): ?>
-            <a href="?route=borrowed-tools/batch/cancel&id=<?= $batch['id'] ?>" class="btn btn-danger">
-                <i class="bi bi-x-circle me-1"></i>Cancel Request
-            </a>
-        <?php endif; ?>
-
-        <a href="?route=borrowed-tools/batch/print&id=<?= $batch['id'] ?>" class="btn btn-outline-primary" target="_blank">
-            <i class="bi bi-printer me-1"></i>Print Form
-        </a>
-    </div>
+    <?php include APP_ROOT . '/views/borrowed-tools/partials/_action_buttons.php'; ?>
 </div>
 
 <div class="row">
@@ -158,7 +98,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
                 <h5 class="mb-0">
-                    <i class="bi bi-<?= $isMultiItem ? 'list-ul' : 'box-seam' ?> me-2"></i>
+                    <i class="bi bi-<?= BorrowedToolsViewHelper::getRequestIcon($isMultiItem) ?> me-2" aria-hidden="true"></i>
                     <?= $isMultiItem ? 'Items in This Request' : 'Item Details' ?>
                     <?php if ($isMultiItem): ?>
                         <span class="badge bg-primary ms-2"><?= count($batch['items']) ?></span>
@@ -170,9 +110,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                     <!-- Multi-item: Mobile Card View -->
                     <div class="d-md-none">
                         <?php foreach ($batch['items'] as $item): ?>
-                            <?php
-                            $remaining = $item['quantity'] - $item['quantity_returned'];
-                            ?>
+                            <?php $remaining = BorrowedToolsViewHelper::getRemainingQuantity($item); ?>
                             <div class="card mb-3 border">
                                 <div class="card-body">
                                     <!-- Header with name and status -->
@@ -185,7 +123,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                         <?= ViewHelper::renderStatusBadge($item['status']) ?>
                                     </div>
 
-                                    <?php if ($item['acquisition_cost'] > 50000): ?>
+                                    <?php if (BorrowedToolsViewHelper::isCriticalEquipment($item['acquisition_cost'])): ?>
                                         <div class="mb-2">
                                             <?= ViewHelper::renderCriticalToolBadge($item['acquisition_cost']) ?>
                                         </div>
@@ -203,7 +141,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                         </div>
                                         <div class="col-4">
                                             <small class="text-muted d-block">Remaining</small>
-                                            <span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>">
+                                            <span class="badge <?= BorrowedToolsViewHelper::getRemainingQuantityBadgeClass($remaining) ?>">
                                                 <?= $remaining ?>
                                             </span>
                                         </div>
@@ -233,11 +171,11 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                     </div>
                                     <div class="col-4">
                                         <small class="text-muted d-block">Returned</small>
-                                        <strong><?= array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                        <strong><?= BorrowedToolsViewHelper::getTotalReturned($batch['items']) ?></strong>
                                     </div>
                                     <div class="col-4">
                                         <small class="text-muted d-block">Remaining</small>
-                                        <strong><?= $batch['total_quantity'] - array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                        <strong><?= BorrowedToolsViewHelper::getTotalRemaining($batch) ?></strong>
                                     </div>
                                 </div>
                             </div>
@@ -249,16 +187,17 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Item</th>
-                                    <th class="text-center">Borrowed</th>
-                                    <th class="text-center">Returned</th>
-                                    <th class="text-center">Remaining</th>
-                                    <th>Condition</th>
-                                    <th>Status</th>
+                                    <th scope="col">Item</th>
+                                    <th scope="col" class="text-center">Borrowed</th>
+                                    <th scope="col" class="text-center">Returned</th>
+                                    <th scope="col" class="text-center">Remaining</th>
+                                    <th scope="col">Condition</th>
+                                    <th scope="col">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($batch['items'] as $item): ?>
+                                    <?php $remaining = BorrowedToolsViewHelper::getRemainingQuantity($item); ?>
                                     <tr>
                                         <td>
                                             <strong><?= htmlspecialchars($item['asset_name']) ?></strong>
@@ -266,7 +205,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                             <small class="text-muted"><?= htmlspecialchars($item['asset_ref']) ?></small>
                                             <br>
                                             <small class="text-muted"><?= htmlspecialchars($item['category_name']) ?></small>
-                                            <?php if ($item['acquisition_cost'] > 50000): ?>
+                                            <?php if (BorrowedToolsViewHelper::isCriticalEquipment($item['acquisition_cost'])): ?>
                                                 <br><span class="badge bg-warning text-dark">Critical</span>
                                             <?php endif; ?>
                                         </td>
@@ -277,8 +216,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                             <span class="badge bg-success"><?= $item['quantity_returned'] ?></span>
                                         </td>
                                         <td class="text-center">
-                                            <?php $remaining = $item['quantity'] - $item['quantity_returned']; ?>
-                                            <span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>">
+                                            <span class="badge <?= BorrowedToolsViewHelper::getRemainingQuantityBadgeClass($remaining) ?>">
                                                 <?= $remaining ?>
                                             </span>
                                         </td>
@@ -293,16 +231,17 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
-                                    <th>Total</th>
+                                    <th scope="row">Total</th>
                                     <th class="text-center">
                                         <strong><?= $batch['total_quantity'] ?></strong>
                                     </th>
                                     <th class="text-center">
-                                        <strong><?= array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                        <strong><?= BorrowedToolsViewHelper::getTotalReturned($batch['items']) ?></strong>
                                     </th>
                                     <th class="text-center">
-                                        <strong><?= $batch['total_quantity'] - array_sum(array_column($batch['items'], 'quantity_returned')) ?></strong>
+                                        <strong><?= BorrowedToolsViewHelper::getTotalRemaining($batch) ?></strong>
                                     </th>
+                                    <th></th>
                                     <th></th>
                                 </tr>
                             </tfoot>
@@ -310,6 +249,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                     </div>
                 <?php else: ?>
                     <!-- Single Item: Detailed View -->
+                    <?php $remaining = BorrowedToolsViewHelper::getRemainingQuantity($singleItem); ?>
                     <div class="row">
                         <div class="col-md-6">
                             <dl class="row">
@@ -332,11 +272,11 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                     <span class="badge bg-primary"><?= $singleItem['quantity'] ?></span>
                                 </dd>
 
-                                <?php if ($singleItem['acquisition_cost'] > 50000): ?>
+                                <?php if (BorrowedToolsViewHelper::isCriticalEquipment($singleItem['acquisition_cost'])): ?>
                                     <dt class="col-sm-5">Item Type:</dt>
                                     <dd class="col-sm-7">
                                         <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-shield-check me-1"></i>Critical (>₱50,000)
+                                            <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Critical (>₱50,000)
                                         </span>
                                     </dd>
                                 <?php endif; ?>
@@ -356,8 +296,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
 
                                 <dt class="col-sm-5">Remaining:</dt>
                                 <dd class="col-sm-7">
-                                    <?php $remaining = $singleItem['quantity'] - $singleItem['quantity_returned']; ?>
-                                    <span class="badge bg-<?= $remaining > 0 ? 'warning' : 'secondary' ?>">
+                                    <span class="badge <?= BorrowedToolsViewHelper::getRemainingQuantityBadgeClass($remaining) ?>">
                                         <?= $remaining ?>
                                     </span>
                                 </dd>
@@ -385,50 +324,33 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
                                     <div class="row text-center">
                                         <div class="col-6">
                                             <div class="stat-item">
-                                                <?php
-                                                // Use release_date as start, or created_at if not released yet
-                                                $startDateStr = $batch['release_date'] ?? $batch['created_at'];
-                                                $startDate = new DateTime($startDateStr);
-
-                                                // If returned, use return_date, otherwise use today
-                                                if (in_array($batch['status'], ['Returned', 'Partially Returned']) && $batch['return_date']) {
-                                                    $endDate = new DateTime($batch['return_date']);
-                                                } elseif (in_array($batch['status'], ['Released', 'Borrowed', 'Partially Returned'])) {
-                                                    $endDate = new DateTime();
-                                                } else {
-                                                    // Not yet released (Pending, Approved, etc)
-                                                    $endDate = $startDate;
-                                                }
-
-                                                $duration = $startDate->diff($endDate);
-                                                ?>
-                                                <div class="stat-value text-primary"><?= $duration->days ?></div>
+                                                <?php $daysInUse = BorrowedToolsViewHelper::getDaysInUse($batch); ?>
+                                                <div class="stat-value text-primary"><?= $daysInUse ?></div>
                                                 <div class="stat-label">Days in Use</div>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="stat-item">
-                                                <?php
-                                                // Show remaining/overdue if currently borrowed
-                                                if (in_array($batch['status'], ['Released', 'Borrowed', 'Partially Returned'])):
-                                                    $expectedDate = new DateTime($batch['expected_return']);
-                                                    $today = new DateTime();
-                                                    $remainingDiff = $today->diff($expectedDate);
-                                                    $daysRemaining = $today > $expectedDate ? -$remainingDiff->days : $remainingDiff->days;
-                                                ?>
-                                                    <div class="stat-value <?= $daysRemaining < 0 ? 'text-danger' : 'text-success' ?>">
-                                                        <?= abs($daysRemaining) ?>
+                                                <?php if (BorrowedToolsViewHelper::isBorrowed($batch['status'])): ?>
+                                                    <?php
+                                                    $daysRemaining = BorrowedToolsViewHelper::getDaysRemaining($batch['expected_return']);
+                                                    $formatted = BorrowedToolsViewHelper::formatDaysRemaining($daysRemaining);
+                                                    ?>
+                                                    <div class="stat-value <?= $formatted['class'] ?>">
+                                                        <?= $formatted['value'] ?>
                                                     </div>
                                                     <div class="stat-label">
-                                                        <?= $daysRemaining < 0 ? 'Days Overdue' : 'Days Remaining' ?>
+                                                        <?= htmlspecialchars($formatted['text']) ?>
                                                     </div>
-                                                <?php elseif ($batch['status'] === 'Returned'): ?>
+                                                <?php elseif ($batch['status'] === BorrowedToolsViewHelper::STATUS_RETURNED): ?>
                                                     <div class="stat-value text-success">
-                                                        <i class="bi bi-check-circle"></i>
+                                                        <i class="bi bi-check-circle" aria-hidden="true"></i>
                                                     </div>
                                                     <div class="stat-label">Returned</div>
                                                 <?php else: ?>
-                                                    <div class="stat-value text-muted">-</div>
+                                                    <div class="stat-value text-muted">
+                                                        <span aria-label="Not applicable">—</span>
+                                                    </div>
                                                     <div class="stat-label">Not Released</div>
                                                 <?php endif; ?>
                                             </div>
@@ -447,7 +369,7 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="bi bi-card-text me-2"></i>Purpose
+                        <i class="bi bi-card-text me-2" aria-hidden="true"></i>Purpose
                     </h6>
                 </div>
                 <div class="card-body">
@@ -460,12 +382,12 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
     </div>
 
     <!-- Right Column: Details & Timeline -->
-    <div class="col-lg-4">
+    <aside class="col-lg-4" aria-label="Request metadata and timeline">
         <!-- Request Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
                 <h6 class="mb-0">
-                    <i class="bi bi-info-circle me-2"></i>Request Details
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Request Details
                 </h6>
             </div>
             <div class="card-body">
@@ -491,8 +413,10 @@ $singleItem = $isSingleItem ? $batch['items'][0] : null;
         $showExpanded = false; // Collapsed by default for cleaner view
         include APP_ROOT . '/views/borrowed-tools/partials/_workflow_timeline.php';
         ?>
-    </div>
+    </aside>
 </div>
+
+</main>
 
 <!-- Load borrowed tools detail view CSS -->
 <?php

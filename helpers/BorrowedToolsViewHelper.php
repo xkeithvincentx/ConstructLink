@@ -7,6 +7,8 @@
  * - Date calculations (overdue, due soon, days remaining)
  * - Status determination
  * - Visual styling (row classes, badges)
+ * - Quantity calculations
+ * - Request type determination
  *
  * @package ConstructLink
  * @subpackage Helpers
@@ -18,6 +20,23 @@ class BorrowedToolsViewHelper
      * Days threshold for "due soon" indicator
      */
     const DUE_SOON_THRESHOLD_DAYS = 3;
+
+    /**
+     * Critical equipment acquisition cost threshold
+     */
+    const CRITICAL_EQUIPMENT_THRESHOLD = 50000;
+
+    /**
+     * Status constants - eliminates magic strings
+     */
+    const STATUS_PENDING_VERIFICATION = 'Pending Verification';
+    const STATUS_PENDING_APPROVAL = 'Pending Approval';
+    const STATUS_APPROVED = 'Approved';
+    const STATUS_RELEASED = 'Released';
+    const STATUS_BORROWED = 'Borrowed';
+    const STATUS_RETURNED = 'Returned';
+    const STATUS_PARTIALLY_RETURNED = 'Partially Returned';
+    const STATUS_CANCELED = 'Canceled';
 
     /**
      * Check if a borrowed tool is overdue
@@ -195,5 +214,169 @@ class BorrowedToolsViewHelper
         ];
 
         return $badgeMap[$status] ?? 'bg-secondary';
+    }
+
+    /**
+     * Calculate days in use for a batch
+     * Uses release_date as start, or created_at if not released yet
+     * Uses return_date as end if returned, otherwise uses today
+     *
+     * @param array $batch Batch data with release_date, created_at, status, return_date
+     * @return int Number of days in use
+     */
+    public static function getDaysInUse(array $batch): int
+    {
+        // Use release_date as start, or created_at if not released yet
+        $startDateStr = $batch['release_date'] ?? $batch['created_at'];
+        $startDate = new DateTime($startDateStr);
+
+        // If returned, use return_date, otherwise use today
+        if (in_array($batch['status'], [self::STATUS_RETURNED, self::STATUS_PARTIALLY_RETURNED]) && !empty($batch['return_date'])) {
+            $endDate = new DateTime($batch['return_date']);
+        } elseif (in_array($batch['status'], [self::STATUS_RELEASED, self::STATUS_BORROWED, self::STATUS_PARTIALLY_RETURNED])) {
+            $endDate = new DateTime();
+        } else {
+            // Not yet released (Pending, Approved, etc)
+            $endDate = $startDate;
+        }
+
+        $duration = $startDate->diff($endDate);
+        return $duration->days;
+    }
+
+    /**
+     * Format days remaining with status text and CSS class
+     *
+     * @param int $daysRemaining Positive = days remaining, negative = days overdue
+     * @return array ['value' => int, 'text' => string, 'class' => string]
+     */
+    public static function formatDaysRemaining(int $daysRemaining): array
+    {
+        if ($daysRemaining < 0) {
+            return [
+                'value' => abs($daysRemaining),
+                'text' => 'Days Overdue',
+                'class' => 'text-danger'
+            ];
+        } else {
+            return [
+                'value' => $daysRemaining,
+                'text' => 'Days Remaining',
+                'class' => 'text-success'
+            ];
+        }
+    }
+
+    /**
+     * Get Bootstrap badge class for remaining quantity
+     *
+     * @param int $remaining Remaining quantity
+     * @return string Bootstrap badge class
+     */
+    public static function getRemainingQuantityBadgeClass(int $remaining): string
+    {
+        return $remaining > 0 ? 'bg-warning' : 'bg-secondary';
+    }
+
+    /**
+     * Check if equipment is critical based on acquisition cost
+     *
+     * @param float|null $acquisitionCost Equipment acquisition cost (null if unknown)
+     * @return bool True if critical (cost > threshold), false if cost is null
+     */
+    public static function isCriticalEquipment(?float $acquisitionCost): bool
+    {
+        if ($acquisitionCost === null) {
+            return false;
+        }
+        return $acquisitionCost > self::CRITICAL_EQUIPMENT_THRESHOLD;
+    }
+
+    /**
+     * Calculate remaining quantity for an item
+     *
+     * @param array $item Item data with quantity and quantity_returned
+     * @return int Remaining quantity
+     */
+    public static function getRemainingQuantity(array $item): int
+    {
+        return ($item['quantity'] ?? 0) - ($item['quantity_returned'] ?? 0);
+    }
+
+    /**
+     * Calculate total returned quantity across all items
+     *
+     * @param array $items Array of item data
+     * @return int Total returned quantity
+     */
+    public static function getTotalReturned(array $items): int
+    {
+        return array_sum(array_column($items, 'quantity_returned'));
+    }
+
+    /**
+     * Calculate total remaining quantity for a batch
+     *
+     * @param array $batch Batch data with total_quantity and items
+     * @return int Total remaining quantity
+     */
+    public static function getTotalRemaining(array $batch): int
+    {
+        return ($batch['total_quantity'] ?? 0) - self::getTotalReturned($batch['items'] ?? []);
+    }
+
+    /**
+     * Check if a batch can be canceled based on status
+     *
+     * @param string $status Batch status
+     * @return bool True if cancelable
+     */
+    public static function isCancelable(string $status): bool
+    {
+        return in_array($status, [
+            self::STATUS_PENDING_VERIFICATION,
+            self::STATUS_PENDING_APPROVAL,
+            self::STATUS_APPROVED
+        ]);
+    }
+
+    /**
+     * Check if a batch is returned
+     *
+     * @param string $status Batch status
+     * @return bool True if returned or partially returned
+     */
+    public static function isReturned(string $status): bool
+    {
+        return in_array($status, [
+            self::STATUS_RETURNED,
+            self::STATUS_PARTIALLY_RETURNED
+        ]);
+    }
+
+    /**
+     * Check if a batch is currently borrowed
+     *
+     * @param string $status Batch status
+     * @return bool True if released, borrowed, or partially returned
+     */
+    public static function isBorrowed(string $status): bool
+    {
+        return in_array($status, [
+            self::STATUS_RELEASED,
+            self::STATUS_BORROWED,
+            self::STATUS_PARTIALLY_RETURNED
+        ]);
+    }
+
+    /**
+     * Get Bootstrap icon for request type
+     *
+     * @param bool $isMultiItem True if multi-item request
+     * @return string Bootstrap icon name (without 'bi-' prefix)
+     */
+    public static function getRequestIcon(bool $isMultiItem): string
+    {
+        return $isMultiItem ? 'cart3' : 'box-seam';
     }
 }

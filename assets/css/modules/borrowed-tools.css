@@ -322,7 +322,61 @@ tr.batch-items-row[style*="display: none"] td {
 }
 
 /* ============================================
-   12. PRINT STYLES
+   12. ACTION BUTTONS - RESPONSIVE LAYOUT
+   ============================================ */
+
+/* Action buttons container - responsive layout without HTML duplication */
+.action-buttons-container {
+    display: flex;
+    gap: 0.5rem; /* Bootstrap's gap-2 */
+    flex-wrap: wrap;
+}
+
+/* Mobile: Stack vertically */
+@media (max-width: 767.98px) {
+    .action-buttons-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .action-buttons-container .btn {
+        width: 100%;
+    }
+}
+
+/* Desktop: Inline with wrapping */
+@media (min-width: 768px) {
+    .action-buttons-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+/* ============================================
+   13. DETAIL VIEW - QUICK STATS
+   ============================================ */
+
+/* Stats items in single-item detail view */
+.stat-item {
+    padding: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   14. PRINT STYLES
    ============================================ */
 
 @media print {
