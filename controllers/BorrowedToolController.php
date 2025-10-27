@@ -491,25 +491,9 @@ class BorrowedToolController {
             $batchModel = new BorrowedToolBatchModel();
             $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
 
-            // Get available non-consumable equipment count
-            try {
-                $db = Database::getInstance()->getConnection();
-                $availableEquipmentSql = "SELECT COUNT(*) FROM assets a
-                    JOIN categories c ON a.category_id = c.id
-                    WHERE c.is_consumable = 0
-                      AND a.status = 'available'
-                      AND a.workflow_status = 'approved'";
-                $availableParams = [];
-                if ($projectFilter) {
-                    $availableEquipmentSql .= " AND a.project_id = ?";
-                    $availableParams[] = $projectFilter;
-                }
-                $availableStmt = $db->prepare($availableEquipmentSql);
-                $availableStmt->execute($availableParams);
-                $availableEquipmentCount = $availableStmt->fetchColumn();
-            } catch (Exception $e) {
-                $availableEquipmentCount = 0;
-            }
+            // Get available non-consumable equipment count (moved to AssetModel)
+            $assetModel = new AssetModel();
+            $availableEquipmentCount = $assetModel->getAvailableEquipmentCount($projectFilter);
 
             // Get time-based statistics for operational roles
             $timeStats = $batchModel->getTimeBasedStatistics($projectFilter);
@@ -599,25 +583,9 @@ class BorrowedToolController {
             $batchModel = new BorrowedToolBatchModel();
             $batchStats = $batchModel->getBatchStats(null, null, $projectFilter);
 
-            // Get available non-consumable equipment count
-            try {
-                $db = Database::getInstance()->getConnection();
-                $availableEquipmentSql = "SELECT COUNT(*) FROM assets a
-                    JOIN categories c ON a.category_id = c.id
-                    WHERE c.is_consumable = 0
-                      AND a.status = 'available'
-                      AND a.workflow_status = 'approved'";
-                $availableParams = [];
-                if ($projectFilter) {
-                    $availableEquipmentSql .= " AND a.project_id = ?";
-                    $availableParams[] = $projectFilter;
-                }
-                $availableStmt = $db->prepare($availableEquipmentSql);
-                $availableStmt->execute($availableParams);
-                $availableEquipmentCount = $availableStmt->fetchColumn();
-            } catch (Exception $e) {
-                $availableEquipmentCount = 0;
-            }
+            // Get available non-consumable equipment count (moved to AssetModel)
+            $assetModel = new AssetModel();
+            $availableEquipmentCount = $assetModel->getAvailableEquipmentCount($projectFilter);
 
             // Get time-based statistics
             $timeStats = $batchModel->getTimeBasedStatistics($projectFilter);
@@ -1257,107 +1225,24 @@ class BorrowedToolController {
     
     /**
      * Check if asset belongs to user's project
+     * Updated to use AssetModel (Phase 2.1)
      */
     private function isAssetInUserProject($assetId, $userProjectId) {
-        try {
-            $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT project_id FROM assets WHERE id = ?");
-            $stmt->execute([$assetId]);
-            $assetProjectId = $stmt->fetchColumn();
-            return $assetProjectId == $userProjectId;
-        } catch (Exception $e) {
-            error_log("Error checking asset project: " . $e->getMessage());
-            return false;
-        }
+        $assetModel = new AssetModel();
+        $assetProjectId = $assetModel->getAssetProjectId($assetId);
+        return $assetProjectId && $assetProjectId == $userProjectId;
     }
     
     /**
-     * Get available assets for borrowing (excluding already borrowed/withdrawn/transferred assets)
-     * REFACTORED: Eliminated N+1 queries by using LEFT JOIN aggregation
+     * Get available assets for borrowing
+     * Updated to use AssetModel (Phase 2.1)
      */
     private function getAvailableAssetsForBorrowing() {
-        try {
-            $db = Database::getInstance()->getConnection();
-            $currentUser = $this->auth->getCurrentUser();
-            $currentProjectId = $currentUser['current_project_id'] ?? null;
+        $currentUser = $this->auth->getCurrentUser();
+        $currentProjectId = $currentUser['current_project_id'] ?? null;
 
-            // Build query with enhanced filtering using LEFT JOIN to avoid N+1 queries
-            // This single query replaces the previous loop with 3 queries per asset
-            $sql = "
-                SELECT
-                    a.id,
-                    a.ref,
-                    a.name,
-                    a.status,
-                    c.name as category_name,
-                    c.is_consumable,
-                    p.name as project_name,
-                    a.acquisition_cost,
-                    a.model,
-                    a.serial_number,
-                    -- Aggregate checks for asset usage (eliminates N+1 problem)
-                    COUNT(DISTINCT bt.id) as active_borrowings,
-                    COUNT(DISTINCT w.id) as active_withdrawals,
-                    COUNT(DISTINCT t.id) as active_transfers
-                FROM assets a
-                LEFT JOIN categories c ON a.category_id = c.id
-                LEFT JOIN projects p ON a.project_id = p.id
-                -- Check for active borrowed tools (not returned)
-                LEFT JOIN borrowed_tools bt ON a.id = bt.asset_id
-                    AND bt.status IN (?, ?, ?, ?, ?)
-                -- Check for active withdrawals
-                LEFT JOIN withdrawals w ON a.id = w.asset_id
-                    AND w.status IN ('pending', 'released')
-                -- Check for active transfers
-                LEFT JOIN transfers t ON a.id = t.asset_id
-                    AND t.status IN ('pending', 'approved')
-                WHERE a.status = 'available'
-                  AND p.is_active = 1
-                  AND c.is_consumable = 0  -- Exclude consumable items
-            ";
-
-            // Initialize params with borrowed tool status constants
-            $params = [
-                BorrowedToolStatus::PENDING_VERIFICATION,
-                BorrowedToolStatus::PENDING_APPROVAL,
-                BorrowedToolStatus::APPROVED,
-                BorrowedToolStatus::BORROWED,
-                BorrowedToolStatus::OVERDUE
-            ];
-
-            // Filter by user's current project if assigned
-            if ($currentProjectId) {
-                $sql .= " AND a.project_id = ?";
-                $params[] = $currentProjectId;
-            }
-
-            $sql .= "
-                GROUP BY a.id, a.ref, a.name, a.status, c.name, c.is_consumable,
-                         p.name, a.acquisition_cost, a.model, a.serial_number
-                -- Only include assets that are NOT in use (all counts are 0)
-                HAVING active_borrowings = 0
-                   AND active_withdrawals = 0
-                   AND active_transfers = 0
-                ORDER BY a.name ASC
-            ";
-
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            $availableAssets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Remove the aggregation columns before returning
-            foreach ($availableAssets as &$asset) {
-                unset($asset['active_borrowings']);
-                unset($asset['active_withdrawals']);
-                unset($asset['active_transfers']);
-            }
-
-            return $availableAssets;
-
-        } catch (Exception $e) {
-            error_log("Get available assets for borrowing error: " . $e->getMessage());
-            return [];
-        }
+        $assetModel = new AssetModel();
+        return $assetModel->getAvailableForBorrowing($currentProjectId);
     }
     
     /**
@@ -2240,65 +2125,12 @@ class BorrowedToolController {
             // Load AssetHelper for standalone print view
             require_once APP_ROOT . '/helpers/AssetHelper.php';
 
-            $db = Database::getInstance()->getConnection();
+            // Fetch equipment types using EquipmentTypeModel (Phase 2.1)
+            require_once APP_ROOT . '/models/EquipmentTypeModel.php';
+            $equipmentTypeModel = new EquipmentTypeModel();
 
-            // Fetch Power Tools with all their subtypes grouped
-            $powerToolsQuery = "
-                SELECT
-                    et.name as type_name,
-                    GROUP_CONCAT(es.subtype_name ORDER BY es.subtype_name SEPARATOR ', ') as subtypes
-                FROM equipment_types et
-                INNER JOIN categories c ON et.category_id = c.id
-                LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id AND es.is_active = 1
-                WHERE c.name IN ('Power Tools', 'Drilling Tools', 'Cutting Tools', 'Grinding Tools')
-                  AND et.is_active = 1
-                GROUP BY et.id, et.name
-                ORDER BY et.name ASC
-            ";
-            $powerToolsRaw = $db->query($powerToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
-
-            // Format: Type [Subtype1, Subtype2, ...]
-            $powerTools = [];
-            foreach ($powerToolsRaw as $tool) {
-                if ($tool['subtypes']) {
-                    $powerTools[] = [
-                        'display_name' => $tool['type_name'] . ' [' . $tool['subtypes'] . ']'
-                    ];
-                } else {
-                    $powerTools[] = [
-                        'display_name' => $tool['type_name']
-                    ];
-                }
-            }
-
-            // Fetch Hand Tools with all their subtypes grouped
-            $handToolsQuery = "
-                SELECT
-                    et.name as type_name,
-                    GROUP_CONCAT(es.subtype_name ORDER BY es.subtype_name SEPARATOR ', ') as subtypes
-                FROM equipment_types et
-                INNER JOIN categories c ON et.category_id = c.id
-                LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id AND es.is_active = 1
-                WHERE c.name IN ('Hand Tools', 'Fastening Tools', 'Measuring Tools')
-                  AND et.is_active = 1
-                GROUP BY et.id, et.name
-                ORDER BY et.name ASC
-            ";
-            $handToolsRaw = $db->query($handToolsQuery)->fetchAll(PDO::FETCH_ASSOC);
-
-            // Format: Type [Subtype1, Subtype2, ...]
-            $handTools = [];
-            foreach ($handToolsRaw as $tool) {
-                if ($tool['subtypes']) {
-                    $handTools[] = [
-                        'display_name' => $tool['type_name'] . ' [' . $tool['subtypes'] . ']'
-                    ];
-                } else {
-                    $handTools[] = [
-                        'display_name' => $tool['type_name']
-                    ];
-                }
-            }
+            $powerTools = $equipmentTypeModel->getPowerTools();
+            $handTools = $equipmentTypeModel->getHandTools();
 
             include APP_ROOT . '/views/borrowed-tools/print-blank-form.php';
 

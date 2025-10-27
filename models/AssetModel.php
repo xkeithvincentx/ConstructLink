@@ -3125,4 +3125,146 @@ class AssetModel extends BaseModel {
             'category_info' => $category ?? null
         ];
     }
+
+    /**
+     * Get count of available non-consumable equipment
+     * Moved from BorrowedToolController (Phase 2.1)
+     *
+     * @param int|null $projectFilter Optional project ID filter
+     * @return int Count of available equipment
+     */
+    public function getAvailableEquipmentCount($projectFilter = null) {
+        try {
+            $sql = "SELECT COUNT(*) FROM assets a
+                JOIN categories c ON a.category_id = c.id
+                WHERE c.is_consumable = 0
+                  AND a.status = 'available'
+                  AND a.workflow_status = 'approved'";
+
+            $params = [];
+            if ($projectFilter) {
+                $sql .= " AND a.project_id = ?";
+                $params[] = $projectFilter;
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+
+        } catch (Exception $e) {
+            error_log("Get available equipment count error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get available assets for borrowing
+     * Excludes assets that are already borrowed, withdrawn, or transferred
+     * Uses optimized LEFT JOIN aggregation to eliminate N+1 queries
+     * Moved from BorrowedToolController (Phase 2.1)
+     *
+     * @param int|null $projectId Optional project ID filter
+     * @return array Available assets with details
+     */
+    public function getAvailableForBorrowing($projectId = null) {
+        try {
+            require_once APP_ROOT . '/helpers/BorrowedToolStatus.php';
+
+            // Build query with enhanced filtering using LEFT JOIN to avoid N+1 queries
+            // This single query replaces the previous loop with 3 queries per asset
+            $sql = "
+                SELECT
+                    a.id,
+                    a.ref,
+                    a.name,
+                    a.status,
+                    c.name as category_name,
+                    c.is_consumable,
+                    p.name as project_name,
+                    a.acquisition_cost,
+                    a.model,
+                    a.serial_number,
+                    -- Aggregate checks for asset usage (eliminates N+1 problem)
+                    COUNT(DISTINCT bt.id) as active_borrowings,
+                    COUNT(DISTINCT w.id) as active_withdrawals,
+                    COUNT(DISTINCT t.id) as active_transfers
+                FROM assets a
+                LEFT JOIN categories c ON a.category_id = c.id
+                LEFT JOIN projects p ON a.project_id = p.id
+                -- Check for active borrowed tools (not returned)
+                LEFT JOIN borrowed_tools bt ON a.id = bt.asset_id
+                    AND bt.status IN (?, ?, ?, ?, ?)
+                -- Check for active withdrawals
+                LEFT JOIN withdrawals w ON a.id = w.asset_id
+                    AND w.status IN ('pending', 'released')
+                -- Check for active transfers
+                LEFT JOIN transfers t ON a.id = t.asset_id
+                    AND t.status IN ('pending', 'approved')
+                WHERE a.status = 'available'
+                  AND p.is_active = 1
+                  AND c.is_consumable = 0  -- Exclude consumable items
+            ";
+
+            // Initialize params with borrowed tool status constants
+            $params = [
+                BorrowedToolStatus::PENDING_VERIFICATION,
+                BorrowedToolStatus::PENDING_APPROVAL,
+                BorrowedToolStatus::APPROVED,
+                BorrowedToolStatus::BORROWED,
+                BorrowedToolStatus::OVERDUE
+            ];
+
+            // Filter by project if specified
+            if ($projectId) {
+                $sql .= " AND a.project_id = ?";
+                $params[] = $projectId;
+            }
+
+            $sql .= "
+                GROUP BY a.id, a.ref, a.name, a.status, c.name, c.is_consumable,
+                         p.name, a.acquisition_cost, a.model, a.serial_number
+                -- Only include assets that are NOT in use (all counts are 0)
+                HAVING active_borrowings = 0
+                   AND active_withdrawals = 0
+                   AND active_transfers = 0
+                ORDER BY a.name ASC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $availableAssets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Remove the aggregation columns before returning
+            foreach ($availableAssets as &$asset) {
+                unset($asset['active_borrowings']);
+                unset($asset['active_withdrawals']);
+                unset($asset['active_transfers']);
+            }
+
+            return $availableAssets;
+
+        } catch (Exception $e) {
+            error_log("Get available assets for borrowing error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get project ID for a specific asset
+     * Moved from BorrowedToolController (Phase 2.1)
+     *
+     * @param int $assetId Asset ID
+     * @return int|null Project ID or null if not found
+     */
+    public function getAssetProjectId($assetId) {
+        try {
+            $stmt = $this->db->prepare("SELECT project_id FROM assets WHERE id = ?");
+            $stmt->execute([$assetId]);
+            $projectId = $stmt->fetchColumn();
+            return $projectId ? (int)$projectId : null;
+        } catch (Exception $e) {
+            error_log("Error getting asset project ID: " . $e->getMessage());
+            return null;
+        }
+    }
 }
