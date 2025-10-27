@@ -93,185 +93,73 @@ class BorrowedToolBatchModel extends BaseModel {
     /**
      * Create batch with multiple items
      *
+     * This method orchestrates the batch creation process by coordinating
+     * validation, asset locking, workflow determination, and record creation.
+     * Refactored from a 197-line god method into focused, single-responsibility methods.
+     *
      * @param array $batchData Batch information
      * @param array $items Array of items with [asset_id, quantity, line_notes]
      * @return array Result with success status and batch data
      */
     public function createBatch($batchData, $items) {
-        // Validation
-        $validation = $this->validate($batchData, [
-            'borrower_name' => 'required|max:100',
-            'expected_return' => 'required|date',
-            'issued_by' => 'required|integer'
-        ]);
-
-        if (!$validation['valid']) {
-            return ['success' => false, 'errors' => $validation['errors']];
-        }
-
-        if (empty($items)) {
-            return ['success' => false, 'message' => 'At least one item must be selected'];
-        }
-
-        // Validate expected return date
-        if (strtotime($batchData['expected_return']) < strtotime(date('Y-m-d'))) {
-            return ['success' => false, 'message' => 'Expected return date cannot be in the past'];
+        // Step 1: Validate batch data
+        $validationResult = $this->validateBatchData($batchData, $items);
+        if (!$validationResult['valid']) {
+            return $validationResult;
         }
 
         try {
             $this->db->beginTransaction();
 
-            // Check if any item is critical (>50K) to determine workflow
-            $isCriticalBatch = false;
-            $assetModel = new AssetModel();
-            $validatedItems = [];
-            $totalQuantity = 0;
-            $projectId = null;
-
-            foreach ($items as $item) {
-                // CONCURRENCY FIX: Lock asset row for reading to prevent double-booking
-                // SELECT ... FOR UPDATE ensures no other transaction can modify this asset
-                // until our transaction commits
-                $lockSql = "SELECT * FROM assets WHERE id = ? FOR UPDATE";
-                $lockStmt = $this->db->prepare($lockSql);
-                $lockStmt->execute([$item['asset_id']]);
-                $asset = $lockStmt->fetch(PDO::FETCH_ASSOC);
-
-                if (!$asset) {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => 'Asset ID ' . $item['asset_id'] . ' not found'];
-                }
-
-                if ($asset['status'] !== 'available') {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing (status: ' . $asset['status'] . ')'];
-                }
-
-                // CRITICAL SECURITY FIX: Check if asset is already reserved in another active batch
-                // This prevents double-booking during the approval workflow
-                $checkReservationSql = "
-                    SELECT bt.id, btb.batch_reference, btb.status
-                    FROM borrowed_tools bt
-                    INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                    WHERE bt.asset_id = ?
-                      AND btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Partially Returned')
-                    LIMIT 1
-                ";
-                $checkStmt = $this->db->prepare($checkReservationSql);
-                $checkStmt->execute([$asset['id']]);
-                $existingReservation = $checkStmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($existingReservation) {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => $asset['name'] . ' is already reserved in batch ' . $existingReservation['batch_reference'] . ' (status: ' . $existingReservation['status'] . ')'];
-                }
-
-                // Validate all items belong to same project
-                if ($projectId === null) {
-                    $projectId = $asset['project_id'];
-                } elseif ($projectId !== $asset['project_id']) {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => 'All items in a batch must belong to the same project'];
-                }
-
-                // Check if critical tool
-                if ($asset['acquisition_cost'] > config('business_rules.critical_tool_threshold')) {
-                    $isCriticalBatch = true;
-                }
-
-                $quantity = (int)($item['quantity'] ?? 1);
-                if ($quantity < 1) {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => 'Quantity must be at least 1 for ' . $asset['name']];
-                }
-
-                $validatedItems[] = [
-                    'asset' => $asset,
-                    'quantity' => $quantity,
-                    'line_notes' => $item['line_notes'] ?? null
-                ];
-
-                $totalQuantity += $quantity;
-            }
-
-            // Validate we have a project ID
-            if (!$projectId) {
+            // Step 2: Validate and lock items (prevents double-booking)
+            $itemsResult = $this->validateAndLockItems($items);
+            if (!$itemsResult['success']) {
                 $this->db->rollBack();
-                return ['success' => false, 'message' => 'Unable to determine project for batch items'];
+                return $itemsResult;
             }
 
-            // Generate batch reference with project code
+            $validatedItems = $itemsResult['validated_items'];
+            $projectId = $itemsResult['project_id'];
+            $isCriticalBatch = $itemsResult['is_critical'];
+            $totalQuantity = $itemsResult['total_quantity'];
+
+            // Step 3: Generate batch reference with project code
             $batchReference = $this->generateBatchReference($projectId);
 
-            // Determine initial status based on critical flag and streamlined workflow
-            $initialStatus = 'Pending Verification'; // Default: MVA workflow
+            // Step 4: Determine workflow status based on criticality and user role
+            $workflowStatus = $this->determineBatchWorkflow($isCriticalBatch);
 
-            // For non-critical batches, check if user can do streamlined processing
-            if (!$isCriticalBatch) {
-                $currentUser = Auth::getInstance()->getCurrentUser();
-                if (in_array($currentUser['role_name'], ['Warehouseman', 'System Admin'])) {
-                    // Streamlined: skip to Released status
-                    $initialStatus = 'Approved'; // Will be released immediately after
-                }
-            }
+            // Step 5: Create batch record
+            $batchResult = $this->createBatchRecord(
+                $batchData,
+                $batchReference,
+                $workflowStatus,
+                $isCriticalBatch,
+                count($validatedItems),
+                $totalQuantity
+            );
 
-            // Create batch record
-            $batch = $this->create([
-                'batch_reference' => $batchReference,
-                'borrower_name' => $batchData['borrower_name'],
-                'borrower_contact' => $batchData['borrower_contact'] ?? null,
-                'expected_return' => $batchData['expected_return'],
-                'purpose' => $batchData['purpose'] ?? null,
-                'status' => $initialStatus,
-                'issued_by' => $batchData['issued_by'],
-                'is_critical_batch' => $isCriticalBatch ? 1 : 0,
-                'total_items' => count($validatedItems),
-                'total_quantity' => $totalQuantity,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-
-            if (!$batch) {
+            if (!$batchResult['success']) {
                 $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to create batch'];
+                return $batchResult;
             }
 
-            // Create individual borrowed_tools records
-            $borrowedToolModel = new BorrowedToolModel();
-            $currentDateTime = date('Y-m-d H:i:s');
+            $batch = $batchResult['batch'];
 
-            foreach ($validatedItems as $item) {
-                $borrowData = [
-                    'batch_id' => $batch['id'],
-                    'asset_id' => $item['asset']['id'],
-                    'quantity' => $item['quantity'],
-                    'quantity_returned' => 0,
-                    'borrower_name' => $batchData['borrower_name'],
-                    'borrower_contact' => $batchData['borrower_contact'] ?? null,
-                    'expected_return' => $batchData['expected_return'],
-                    'issued_by' => $batchData['issued_by'],
-                    'purpose' => $batchData['purpose'] ?? null,
-                    'line_notes' => $item['line_notes'],
-                    'status' => $initialStatus,
-                    'created_at' => $currentDateTime
-                ];
+            // Step 6: Create batch items
+            $itemsCreationResult = $this->createBatchItems(
+                $batch['id'],
+                $validatedItems,
+                $batchData,
+                $workflowStatus
+            );
 
-                // For streamlined workflow (basic tools only)
-                if ($initialStatus === 'Approved') {
-                    $borrowData['verified_by'] = $batchData['issued_by'];
-                    $borrowData['verification_date'] = $currentDateTime;
-                    $borrowData['approved_by'] = $batchData['issued_by'];
-                    $borrowData['approval_date'] = $currentDateTime;
-                }
-
-                $created = $borrowedToolModel->create($borrowData);
-
-                if (!$created) {
-                    $this->db->rollBack();
-                    return ['success' => false, 'message' => 'Failed to create line item for ' . $item['asset']['name']];
-                }
+            if (!$itemsCreationResult['success']) {
+                $this->db->rollBack();
+                return $itemsCreationResult;
             }
 
-            // Log activity
+            // Step 7: Log activity
             $this->logActivity(
                 'create_borrowed_batch',
                 "Created borrowed tool batch {$batchReference} with " . count($validatedItems) . " items for {$batchData['borrower_name']}",
@@ -294,6 +182,247 @@ class BorrowedToolBatchModel extends BaseModel {
             error_log("Batch creation error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Failed to create batch'];
         }
+    }
+
+    /**
+     * Validate batch data and items array
+     *
+     * Performs input validation on batch data and ensures items array is not empty.
+     * Validates expected return date is not in the past.
+     *
+     * @param array $batchData Batch information
+     * @param array $items Array of items
+     * @return array Validation result with ['valid' => bool, 'errors'|'message' => string|array]
+     */
+    private function validateBatchData($batchData, $items) {
+        // Validate required batch fields
+        $validation = $this->validate($batchData, [
+            'borrower_name' => 'required|max:100',
+            'expected_return' => 'required|date',
+            'issued_by' => 'required|integer'
+        ]);
+
+        if (!$validation['valid']) {
+            return ['success' => false, 'valid' => false, 'errors' => $validation['errors']];
+        }
+
+        // Validate items array is not empty
+        if (empty($items)) {
+            return ['success' => false, 'valid' => false, 'message' => 'At least one item must be selected'];
+        }
+
+        // Validate expected return date is not in the past
+        if (strtotime($batchData['expected_return']) < strtotime(date('Y-m-d'))) {
+            return ['success' => false, 'valid' => false, 'message' => 'Expected return date cannot be in the past'];
+        }
+
+        return ['valid' => true];
+    }
+
+    /**
+     * Validate and lock items for borrowing
+     *
+     * For each item:
+     * - Locks asset row using SELECT ... FOR UPDATE (prevents double-booking)
+     * - Validates asset exists and is available
+     * - Checks for existing reservations in active batches
+     * - Validates all items belong to same project
+     * - Determines if batch contains critical tools (>50K)
+     * - Validates quantity is at least 1
+     *
+     * @param array $items Array of items with [asset_id, quantity, line_notes]
+     * @return array Result with validated_items, project_id, is_critical, total_quantity
+     */
+    private function validateAndLockItems($items) {
+        $validatedItems = [];
+        $totalQuantity = 0;
+        $projectId = null;
+        $isCriticalBatch = false;
+
+        foreach ($items as $item) {
+            // CONCURRENCY FIX: Lock asset row for reading to prevent double-booking
+            // SELECT ... FOR UPDATE ensures no other transaction can modify this asset
+            // until our transaction commits
+            $lockSql = "SELECT * FROM assets WHERE id = ? FOR UPDATE";
+            $lockStmt = $this->db->prepare($lockSql);
+            $lockStmt->execute([$item['asset_id']]);
+            $asset = $lockStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$asset) {
+                return ['success' => false, 'message' => 'Asset ID ' . $item['asset_id'] . ' not found'];
+            }
+
+            if ($asset['status'] !== 'available') {
+                return ['success' => false, 'message' => $asset['name'] . ' is not available for borrowing (status: ' . $asset['status'] . ')'];
+            }
+
+            // CRITICAL SECURITY FIX: Check if asset is already reserved in another active batch
+            // This prevents double-booking during the approval workflow
+            $checkReservationSql = "
+                SELECT bt.id, btb.batch_reference, btb.status
+                FROM borrowed_tools bt
+                INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                WHERE bt.asset_id = ?
+                  AND btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Partially Returned')
+                LIMIT 1
+            ";
+            $checkStmt = $this->db->prepare($checkReservationSql);
+            $checkStmt->execute([$asset['id']]);
+            $existingReservation = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingReservation) {
+                return ['success' => false, 'message' => $asset['name'] . ' is already reserved in batch ' . $existingReservation['batch_reference'] . ' (status: ' . $existingReservation['status'] . ')'];
+            }
+
+            // Validate all items belong to same project
+            if ($projectId === null) {
+                $projectId = $asset['project_id'];
+            } elseif ($projectId !== $asset['project_id']) {
+                return ['success' => false, 'message' => 'All items in a batch must belong to the same project'];
+            }
+
+            // Check if critical tool
+            if ($asset['acquisition_cost'] > config('business_rules.critical_tool_threshold')) {
+                $isCriticalBatch = true;
+            }
+
+            $quantity = (int)($item['quantity'] ?? 1);
+            if ($quantity < 1) {
+                return ['success' => false, 'message' => 'Quantity must be at least 1 for ' . $asset['name']];
+            }
+
+            $validatedItems[] = [
+                'asset' => $asset,
+                'quantity' => $quantity,
+                'line_notes' => $item['line_notes'] ?? null
+            ];
+
+            $totalQuantity += $quantity;
+        }
+
+        // Validate we have a project ID
+        if (!$projectId) {
+            return ['success' => false, 'message' => 'Unable to determine project for batch items'];
+        }
+
+        return [
+            'success' => true,
+            'validated_items' => $validatedItems,
+            'project_id' => $projectId,
+            'is_critical' => $isCriticalBatch,
+            'total_quantity' => $totalQuantity
+        ];
+    }
+
+    /**
+     * Determine batch workflow status based on criticality and user role
+     *
+     * Workflow Logic:
+     * - Critical tools (>50K): Always use full MVA workflow (Pending Verification)
+     * - Basic tools: Use streamlined workflow for authorized roles (Warehouseman, System Admin)
+     *   - Streamlined workflow skips to 'Approved' status for immediate release
+     *
+     * @param bool $isCritical Whether batch contains critical tools
+     * @return string Initial workflow status
+     */
+    private function determineBatchWorkflow($isCritical) {
+        // Critical tools always use full MVA workflow
+        if ($isCritical) {
+            return 'Pending Verification';
+        }
+
+        // For non-critical batches, check if user can do streamlined processing
+        $currentUser = Auth::getInstance()->getCurrentUser();
+        if (in_array($currentUser['role_name'], ['Warehouseman', 'System Admin'])) {
+            // Streamlined: skip to Approved status (will be released immediately after)
+            return 'Approved';
+        }
+
+        // Default to MVA workflow
+        return 'Pending Verification';
+    }
+
+    /**
+     * Create batch record in database
+     *
+     * @param array $batchData Original batch data from user input
+     * @param string $batchReference Generated batch reference number
+     * @param string $workflowStatus Initial workflow status
+     * @param bool $isCritical Whether batch contains critical tools
+     * @param int $totalItems Total number of distinct items
+     * @param int $totalQuantity Total quantity across all items
+     * @return array Result with success status and batch data
+     */
+    private function createBatchRecord($batchData, $batchReference, $workflowStatus, $isCritical, $totalItems, $totalQuantity) {
+        $batch = $this->create([
+            'batch_reference' => $batchReference,
+            'borrower_name' => $batchData['borrower_name'],
+            'borrower_contact' => $batchData['borrower_contact'] ?? null,
+            'expected_return' => $batchData['expected_return'],
+            'purpose' => $batchData['purpose'] ?? null,
+            'status' => $workflowStatus,
+            'issued_by' => $batchData['issued_by'],
+            'is_critical_batch' => $isCritical ? 1 : 0,
+            'total_items' => $totalItems,
+            'total_quantity' => $totalQuantity,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        if (!$batch) {
+            return ['success' => false, 'message' => 'Failed to create batch'];
+        }
+
+        return ['success' => true, 'batch' => $batch];
+    }
+
+    /**
+     * Create individual borrowed_tools records for each item in batch
+     *
+     * For streamlined workflow (Approved status), auto-populates verification
+     * and approval fields with issuer information.
+     *
+     * @param int $batchId The created batch ID
+     * @param array $validatedItems Array of validated items with asset, quantity, line_notes
+     * @param array $batchData Original batch data
+     * @param string $workflowStatus Current workflow status
+     * @return array Result with success status
+     */
+    private function createBatchItems($batchId, $validatedItems, $batchData, $workflowStatus) {
+        $borrowedToolModel = new BorrowedToolModel();
+        $currentDateTime = date('Y-m-d H:i:s');
+
+        foreach ($validatedItems as $item) {
+            $borrowData = [
+                'batch_id' => $batchId,
+                'asset_id' => $item['asset']['id'],
+                'quantity' => $item['quantity'],
+                'quantity_returned' => 0,
+                'borrower_name' => $batchData['borrower_name'],
+                'borrower_contact' => $batchData['borrower_contact'] ?? null,
+                'expected_return' => $batchData['expected_return'],
+                'issued_by' => $batchData['issued_by'],
+                'purpose' => $batchData['purpose'] ?? null,
+                'line_notes' => $item['line_notes'],
+                'status' => $workflowStatus,
+                'created_at' => $currentDateTime
+            ];
+
+            // For streamlined workflow (basic tools only)
+            if ($workflowStatus === 'Approved') {
+                $borrowData['verified_by'] = $batchData['issued_by'];
+                $borrowData['verification_date'] = $currentDateTime;
+                $borrowData['approved_by'] = $batchData['issued_by'];
+                $borrowData['approval_date'] = $currentDateTime;
+            }
+
+            $created = $borrowedToolModel->create($borrowData);
+
+            if (!$created) {
+                return ['success' => false, 'message' => 'Failed to create line item for ' . $item['asset']['name']];
+            }
+        }
+
+        return ['success' => true];
     }
 
     /**
