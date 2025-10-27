@@ -57,10 +57,7 @@
             }
         }
     </style>
-    
-    <!-- Alpine.js for reactive components -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <!-- Meta tags -->
     <meta name="description" content="ConstructLink™ - Asset and Inventory Management System for V CUTAMORA CONSTRUCTION INC.">
     <meta name="author" content="<?= SYSTEM_VENDOR ?>">
@@ -169,15 +166,7 @@
     <!-- Custom JavaScript -->
     <script src="/assets/js/app.js"></script>
 
-    <!-- Page-specific scripts -->
-    <?php if (isset($pageScripts)): ?>
-        <?= $pageScripts ?>
-    <?php endif; ?>
-
-    <!-- Alpine.js Components (Optimized) -->
-    <script src="/assets/js/alpine-components.js"></script>
-    
-    <!-- Global JavaScript Configuration -->
+    <!-- Global JavaScript Configuration (must load before components) -->
     <script>
         // Initialize ConstructLink global object
         window.ConstructLink = window.ConstructLink || {};
@@ -195,5 +184,23 @@
 
         console.log('ConstructLink™ initialized - Performance optimized');
     </script>
+
+    <!-- Defer Alpine.js auto-start -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine.js components registered');
+        });
+    </script>
+
+    <!-- Alpine.js Components (load first) -->
+    <script src="/assets/js/alpine-components.js"></script>
+
+    <!-- Alpine.js (loads last and auto-starts after components registered) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Page-specific scripts -->
+    <?php if (isset($pageScripts)): ?>
+        <?= $pageScripts ?>
+    <?php endif; ?>
 </body>
 </html>
