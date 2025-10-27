@@ -345,13 +345,22 @@ class BorrowedToolBatchController {
                 return;
             }
 
-            // Parse returned items data
+            // Parse returned items data - service expects ALL items with itemId as key
             $returnData = [
-                'return_notes' => Validator::sanitize($_POST['return_notes'] ?? ''),
+                'notes' => Validator::sanitize($_POST['return_notes'] ?? ''),
                 'items' => []
             ];
 
-            // Parse items - support both array format (qty_in[], condition[], item_id[])
+            // Initialize all items from batch with default values
+            foreach ($batch['items'] as $item) {
+                $returnData['items'][$item['id']] = [
+                    'condition' => 'Good',
+                    'quantity' => 0,
+                    'notes' => ''
+                ];
+            }
+
+            // Parse items - support array format (qty_in[], condition[], item_id[])
             if (isset($_POST['qty_in']) && is_array($_POST['qty_in'])) {
                 $qtyIn = $_POST['qty_in'];
                 $conditions = $_POST['condition'] ?? [];
@@ -359,15 +368,11 @@ class BorrowedToolBatchController {
                 $itemNotes = $_POST['item_notes'] ?? [];
 
                 foreach ($qtyIn as $index => $qty) {
-                    if (empty($qty) || $qty <= 0) {
-                        continue;
-                    }
+                    $borrowedToolId = isset($itemIds[$index]) ? (int)$itemIds[$index] : 0;
 
-                    $borrowedToolId = $itemIds[$index] ?? '';
-                    if ($borrowedToolId) {
-                        $returnData['items'][] = [
-                            'borrowed_tool_id' => (int)$borrowedToolId,
-                            'quantity_returned' => (int)$qty,
+                    if ($borrowedToolId && isset($returnData['items'][$borrowedToolId])) {
+                        $returnData['items'][$borrowedToolId] = [
+                            'quantity' => (int)$qty,
                             'condition' => Validator::sanitize($conditions[$index] ?? 'Good'),
                             'notes' => Validator::sanitize($itemNotes[$index] ?? '')
                         ];
@@ -375,7 +380,16 @@ class BorrowedToolBatchController {
                 }
             }
 
-            if (empty($returnData['items'])) {
+            // Check if at least one item has quantity > 0
+            $hasReturns = false;
+            foreach ($returnData['items'] as $itemData) {
+                if ($itemData['quantity'] > 0) {
+                    $hasReturns = true;
+                    break;
+                }
+            }
+
+            if (!$hasReturns) {
                 BorrowedToolsResponseHelper::sendError('Please specify at least one item to return', 400, 'borrowed-tools');
                 return;
             }
@@ -388,14 +402,18 @@ class BorrowedToolBatchController {
             $result = $returnService->processBatchReturn($batchId, $userId, $returnData);
 
             if ($result['success']) {
-                BorrowedToolsResponseHelper::sendSuccess($result['message'], $result, 'borrowed-tools');
+                $message = 'Batch returned successfully';
+                if ($result['incidents_created'] > 0) {
+                    $message .= '. ' . $result['incidents_created'] . ' incident(s) created for damaged/lost items';
+                }
+                BorrowedToolsResponseHelper::sendSuccess($message, $result, 'borrowed-tools');
             } else {
-                BorrowedToolsResponseHelper::sendError($result['message'], 400, 'borrowed-tools');
+                BorrowedToolsResponseHelper::sendError('Failed to return batch', 400, 'borrowed-tools');
             }
 
         } catch (Exception $e) {
             error_log("Batch return error: " . $e->getMessage());
-            BorrowedToolsResponseHelper::sendError('Batch return failed', 500, 'borrowed-tools');
+            BorrowedToolsResponseHelper::sendError($e->getMessage(), 500, 'borrowed-tools');
         }
     }
 

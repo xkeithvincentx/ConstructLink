@@ -42,7 +42,7 @@ class BorrowedToolPrintController {
             // Check view permission (anyone who can view can print)
             $this->permissionGuard->requirePermission('view');
 
-            $batchId = $_GET['batch_id'] ?? 0;
+            $batchId = $_GET['batch_id'] ?? $_GET['id'] ?? 0;
             if (!$batchId) {
                 BorrowedToolsResponseHelper::renderError(404);
                 return;
