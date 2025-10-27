@@ -22,6 +22,38 @@ return [
     'critical_tool_threshold' => 50000,
 
     /**
+     * Role Names Configuration
+     *
+     * Centralizes role name strings to eliminate hardcoded values throughout the application.
+     * ISSUE #11: Hardcoded Role Names (31 occurrences)
+     *
+     * Usage:
+     *   - Instead of: if ($role === 'System Admin')
+     *   - Use: if ($role === config('business_rules.roles.super_admin'))
+     */
+    'roles' => [
+        // Super administrator with all permissions
+        'super_admin' => 'System Admin',
+
+        // Maker roles (can create requests and release basic tools)
+        'maker' => [
+            'Warehouseman',
+            'Site Inventory Clerk',
+        ],
+
+        // Verifier roles (can verify critical tool requests)
+        'verifier' => [
+            'Project Manager',
+        ],
+
+        // Authorizer roles (can approve critical tool requests)
+        'authorizer' => [
+            'Asset Director',
+            'Finance Director',
+        ],
+    ],
+
+    /**
      * MVA Workflow Configuration
      *
      * Defines the Manager-Verify-Approval workflow behavior for different tool types.
