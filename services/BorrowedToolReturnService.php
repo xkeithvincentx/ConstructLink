@@ -58,19 +58,36 @@ class BorrowedToolReturnService {
             }
         }
 
-        // Update batch status to returned
-        $this->batchModel->update($batchId, [
-            'status' => BorrowedToolStatus::RETURNED,
-            'returned_at' => date('Y-m-d H:i:s'),
-            'returned_by' => $userId,
-            'return_notes' => $returnData['notes'] ?? ''
-        ]);
+        // Check if all items in batch are now returned
+        $allReturned = $this->checkAllItemsReturned($batchId);
+
+        // Update batch status - only mark as RETURNED if all items are back
+        $updateData = [];
+
+        if ($allReturned) {
+            $updateData['status'] = BorrowedToolStatus::RETURNED;
+            $updateData['returned_at'] = date('Y-m-d H:i:s');
+            $updateData['returned_by'] = $userId;
+        }
+
+        // Always update return notes if provided
+        if (!empty($returnData['notes'])) {
+            $updateData['return_notes'] = $returnData['notes'];
+        }
+
+        if (!empty($updateData)) {
+            $this->batchModel->update($batchId, $updateData);
+        }
 
         return [
             'success' => true,
             'batch_id' => $batchId,
             'incidents_created' => count($incidents),
-            'incident_ids' => $incidents
+            'incident_ids' => $incidents,
+            'all_returned' => $allReturned,
+            'message' => $allReturned
+                ? 'All items returned successfully'
+                : 'Partial return processed successfully'
         ];
     }
 
@@ -83,29 +100,50 @@ class BorrowedToolReturnService {
      * @return array Result with incident_id if created
      */
     public function processSingleItemReturn($itemId, $userId, $itemReturn) {
-        $condition = $itemReturn['condition'] ?? 'good';
+        $condition = $itemReturn['condition'] ?? 'Good';
         $notes = $itemReturn['notes'] ?? '';
         $quantity = $itemReturn['quantity'] ?? 1;
 
-        // Update item return information
-        $this->borrowedToolModel->update($itemId, [
-            'returned_at' => date('Y-m-d H:i:s'),
-            'returned_by' => $userId,
-            'return_condition' => $condition,
-            'return_notes' => $notes,
-            'returned_quantity' => $quantity
-        ]);
+        // Get current item to check quantities
+        $item = $this->borrowedToolModel->find($itemId);
+        if (!$item) {
+            throw new Exception("Item #{$itemId} not found");
+        }
 
-        // Create incident if condition is not good
+        $quantityBorrowed = $item['quantity'] ?? 1;
+        $quantityPreviouslyReturned = $item['quantity_returned'] ?? 0;
+        $totalReturned = $quantityPreviouslyReturned + $quantity;
+
+        // Determine if item is fully returned
+        $isFullyReturned = ($totalReturned >= $quantityBorrowed);
+
+        // Update item return information
+        $updateData = [
+            'quantity_returned' => $totalReturned,
+            'condition_returned' => $condition,
+            'return_notes' => $notes,
+            'returned_by' => $userId
+        ];
+
+        // Only set returned_at and status if fully returned
+        if ($isFullyReturned) {
+            $updateData['returned_at'] = date('Y-m-d H:i:s');
+            $updateData['status'] = BorrowedToolStatus::RETURNED;
+        }
+
+        $this->borrowedToolModel->update($itemId, $updateData);
+
+        // Create incident if condition is not Good
         $incidentId = null;
-        if ($condition !== 'good') {
+        if (strtolower($condition) !== 'good') {
             $incidentId = $this->createIncidentIfNeeded($itemId, $userId, $condition, $notes);
         }
 
         return [
             'success' => true,
             'item_id' => $itemId,
-            'incident_id' => $incidentId
+            'incident_id' => $incidentId,
+            'fully_returned' => $isFullyReturned
         ];
     }
 
@@ -208,6 +246,31 @@ class BorrowedToolReturnService {
             'valid' => empty($errors),
             'errors' => $errors
         ];
+    }
+
+    /**
+     * Check if all items in a batch have been returned
+     *
+     * @param int $batchId Batch ID
+     * @return bool True if all items returned
+     */
+    private function checkAllItemsReturned($batchId) {
+        $batch = $this->batchModel->getBatchWithItems($batchId);
+
+        if (!$batch || empty($batch['items'])) {
+            return false;
+        }
+
+        // Check each item's status
+        foreach ($batch['items'] as $item) {
+            // If any item is not returned, batch is still in use
+            if ($item['status'] !== BorrowedToolStatus::RETURNED) {
+                return false;
+            }
+        }
+
+        // All items are returned
+        return true;
     }
 
     /**

@@ -398,7 +398,7 @@ class BorrowedToolBatchController {
             $result = $returnService->processBatchReturn($batchId, $userId, $returnData);
 
             if ($result['success']) {
-                $message = 'Batch returned successfully';
+                $message = $result['message'] ?? 'Return processed successfully';
                 if ($result['incidents_created'] > 0) {
                     $message .= '. ' . $result['incidents_created'] . ' incident(s) created for damaged/lost items';
                 }
