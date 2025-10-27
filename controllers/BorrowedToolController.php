@@ -4,6 +4,9 @@
  * Handles borrowed tool management operations with centralized RBAC and MVA workflow
  */
 
+// Load helper classes for status constants
+require_once APP_ROOT . '/helpers/BorrowedToolStatus.php';
+
 class BorrowedToolController {
     private $auth;
     private $borrowedToolModel;
@@ -33,7 +36,7 @@ class BorrowedToolController {
         $userRole = $currentUser['role_name'] ?? '';
 
         // System Admin has all permissions
-        if ($userRole === 'System Admin') return true;
+        if ($userRole === config('business_rules.roles.super_admin')) return true;
 
         // Check if tool is critical (requires full MVA workflow)
         $isCritical = false;
@@ -133,8 +136,86 @@ class BorrowedToolController {
     }
 
     /**
+     * Detect if client prefers JSON response based on Accept header or AJAX request
+     *
+     * @return bool True if JSON response is preferred
+     */
+    private function prefersJson() {
+        // Check if AJAX request
+        if ($this->isAjaxRequest()) {
+            return true;
+        }
+
+        // Check Accept header
+        $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
+        if (strpos($acceptHeader, 'application/json') !== false) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Send standardized error response based on Accept header
+     *
+     * Automatically detects whether to send JSON, redirect with flash message,
+     * or render error page based on request type and Accept header.
+     *
+     * @param string $message Error message
+     * @param int $code HTTP status code (default: 400)
+     * @param string $route Redirect route for non-JSON responses (default: borrowed-tools)
+     * @return void
+     */
+    private function sendError($message, $code = 400, $route = 'borrowed-tools') {
+        if ($this->prefersJson()) {
+            // JSON response for AJAX requests or clients requesting JSON
+            http_response_code($code);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $message]);
+            exit;
+        }
+
+        // For serious errors (403, 404, 500), render error page
+        if (in_array($code, [403, 404, 500])) {
+            $this->renderError($code, $message);
+            return;
+        }
+
+        // For validation/business logic errors, redirect with flash message
+        $_SESSION['error'] = $message;
+        header('Location: ?route=' . $route);
+        exit;
+    }
+
+    /**
+     * Send standardized success response based on Accept header
+     *
+     * Automatically detects whether to send JSON or redirect with flash message
+     * based on request type and Accept header.
+     *
+     * @param string $message Success message
+     * @param array $data Additional data to include in JSON response
+     * @param string $route Redirect route for non-JSON responses (default: borrowed-tools)
+     * @return void
+     */
+    private function sendSuccess($message, $data = [], $route = 'borrowed-tools') {
+        if ($this->prefersJson()) {
+            // JSON response for AJAX requests or clients requesting JSON
+            header('Content-Type: application/json');
+            echo json_encode(array_merge(['success' => true, 'message' => $message], $data));
+            exit;
+        }
+
+        // Redirect with flash message for regular requests
+        $_SESSION['success'] = $message;
+        header('Location: ?route=' . $route);
+        exit;
+    }
+
+    /**
      * Send JSON error response and exit
      *
+     * @deprecated Use sendError() instead for automatic format detection
      * @param string $message Error message
      * @param int $code HTTP status code (default: 400)
      * @return void
@@ -729,13 +810,16 @@ class BorrowedToolController {
      * @return void Outputs JSON response
      */
     public function markOverdue() {
+        // CSRF Protection: Validate request before processing
+        CSRFProtection::validateRequest();
+
         // Centralized RBAC: Only users with mark_overdue permission can access
         if (!$this->hasBorrowedToolPermission('mark_overdue')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
-        
+
         $borrowId = $_POST['borrow_id'] ?? 0;
         
         if (!$borrowId) {
@@ -757,6 +841,13 @@ class BorrowedToolController {
      * Get borrowed tool statistics (AJAX)
      */
     public function getStats() {
+        // Centralized RBAC: Only users with view_statistics permission can access
+        if (!$this->hasBorrowedToolPermission('view_statistics')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
         // Ensure user has project assignment (MVA oversight roles are exempt)
         $this->requireProjectAssignment();
         
@@ -1259,7 +1350,7 @@ class BorrowedToolController {
                 LEFT JOIN projects p ON a.project_id = p.id
                 -- Check for active borrowed tools (not returned)
                 LEFT JOIN borrowed_tools bt ON a.id = bt.asset_id
-                    AND bt.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Borrowed', 'Overdue')
+                    AND bt.status IN (?, ?, ?, ?, ?)
                 -- Check for active withdrawals
                 LEFT JOIN withdrawals w ON a.id = w.asset_id
                     AND w.status IN ('pending', 'released')
@@ -1271,7 +1362,14 @@ class BorrowedToolController {
                   AND c.is_consumable = 0  -- Exclude consumable items
             ";
 
-            $params = [];
+            // Initialize params with borrowed tool status constants
+            $params = [
+                BorrowedToolStatus::PENDING_VERIFICATION,
+                BorrowedToolStatus::PENDING_APPROVAL,
+                BorrowedToolStatus::APPROVED,
+                BorrowedToolStatus::BORROWED,
+                BorrowedToolStatus::OVERDUE
+            ];
 
             // Filter by user's current project if assigned
             if ($currentProjectId) {
@@ -1546,12 +1644,19 @@ class BorrowedToolController {
             error_log("Batch creation error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             http_response_code(500);
-            echo json_encode([
+
+            // Only expose detailed errors in development mode
+            $response = [
                 'success' => false,
-                'message' => 'Failed to create batch: ' . $e->getMessage(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'message' => 'Failed to create batch'
+            ];
+
+            if (defined('ENV_DEBUG') && ENV_DEBUG === true) {
+                $response['error'] = $e->getMessage();
+                $response['trace'] = $e->getTraceAsString();
+            }
+
+            echo json_encode($response);
         }
     }
 
@@ -1971,8 +2076,8 @@ class BorrowedToolController {
                                     returned_by = ?,
                                     return_date = NOW(),
                                     status = CASE
-                                        WHEN (quantity_returned + ?) >= quantity THEN 'Returned'
-                                        ELSE 'Borrowed'
+                                        WHEN (quantity_returned + ?) >= quantity THEN ?
+                                        ELSE ?
                                     END,
                                     updated_at = NOW()
                                 WHERE id = ?
@@ -1985,6 +2090,8 @@ class BorrowedToolController {
                                 $itemNotes,
                                 $returnedBy,
                                 $quantityReturned,
+                                BorrowedToolStatus::RETURNED,
+                                BorrowedToolStatus::BORROWED,
                                 $itemId
                             ]);
 
@@ -2033,7 +2140,18 @@ class BorrowedToolController {
 
                             if ($this->isAjaxRequest()) {
                                 header('Content-Type: application/json');
-                                echo json_encode(['success' => false, 'message' => 'Failed to return item: ' . $e->getMessage()]);
+
+                                // Only expose detailed errors in development mode
+                                $response = [
+                                    'success' => false,
+                                    'message' => 'Failed to return item'
+                                ];
+
+                                if (defined('ENV_DEBUG') && ENV_DEBUG === true) {
+                                    $response['error'] = $e->getMessage();
+                                }
+
+                                echo json_encode($response);
                                 return;
                             }
                             $errors[] = 'Failed to return item';
@@ -2078,10 +2196,18 @@ class BorrowedToolController {
 
             if ($this->isAjaxRequest()) {
                 header('Content-Type: application/json');
-                echo json_encode([
+
+                // Only expose detailed errors in development mode
+                $response = [
                     'success' => false,
-                    'message' => 'Failed to process return: ' . $e->getMessage()
-                ]);
+                    'message' => 'Failed to process return'
+                ];
+
+                if (defined('ENV_DEBUG') && ENV_DEBUG === true) {
+                    $response['error'] = $e->getMessage();
+                }
+
+                echo json_encode($response);
                 return;
             }
 
@@ -2152,7 +2278,18 @@ class BorrowedToolController {
 
         } catch (Exception $e) {
             error_log("Batch extend error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to extend batch: ' . $e->getMessage()]);
+
+            // Only expose detailed errors in development mode
+            $response = [
+                'success' => false,
+                'message' => 'Failed to extend batch'
+            ];
+
+            if (defined('ENV_DEBUG') && ENV_DEBUG === true) {
+                $response['error'] = $e->getMessage();
+            }
+
+            echo json_encode($response);
         }
     }
 
