@@ -77,12 +77,6 @@ $csrfToken = CSRFProtection::generateToken();
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
     <!-- Desktop: Action Buttons -->
     <div class="d-none d-md-flex gap-2">
-        <a href="?route=borrowed-tools/print-blank-form"
-           class="btn btn-outline-secondary btn-sm"
-           target="_blank"
-           aria-label="Print blank form">
-            <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Form
-        </a>
         <?php if (hasPermission('borrowed-tools/create')): ?>
             <a href="?route=borrowed-tools/create-batch"
                class="btn btn-success btn-sm"
@@ -90,6 +84,12 @@ $csrfToken = CSRFProtection::generateToken();
                 <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>New Request
             </a>
         <?php endif; ?>
+        <a href="?route=borrowed-tools/print-blank-form"
+           class="btn btn-outline-secondary btn-sm"
+           target="_blank"
+           aria-label="Print blank form">
+            <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Form
+        </a>
         <button type="button"
                 class="btn btn-outline-secondary btn-sm"
                 id="refreshBtn"
