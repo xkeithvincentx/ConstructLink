@@ -79,6 +79,10 @@
     border-left: 4px solid var(--info-color, #0dcaf0);
 }
 
+.card-accent-neutral {
+    border-left: 4px solid var(--neutral-color, #6B7280);
+}
+
 /* ==========================================================================
    Progress Bar Variants
    ========================================================================== */
@@ -126,12 +130,22 @@
    ========================================================================== */
 
 .icon-muted {
-    opacity: 0.4;
+    opacity: 0.3;
 }
 
 .icon-emphasized {
     font-size: 1.5rem;
     font-weight: bold;
+}
+
+/* Spin animation for refresh buttons */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* ==========================================================================
@@ -197,6 +211,19 @@
     margin-bottom: 2rem;
 }
 
+/* Visual Section Separator for improved readability */
+.dashboard-section-separator {
+    border: 0;
+    border-bottom: 2px solid var(--border-color, #dee2e6);
+    margin: 2.5rem 0;
+    opacity: 0.4;
+}
+
+.dashboard-section-separator.strong {
+    border-bottom-width: 3px;
+    opacity: 0.6;
+}
+
 /* ==========================================================================
    Responsive Adjustments
    ========================================================================== */
@@ -212,10 +239,17 @@
         font-size: 2rem !important;
     }
 
-    /* Improve button readability on mobile */
+    /* Improve button readability and touch targets on mobile (WCAG 2.5.5) */
     .btn-sm {
+        min-height: 44px;
+        padding: 0.625rem 1rem;
         font-size: 0.875rem;
-        padding: 0.5rem 1rem;
+    }
+
+    /* Ensure list group items have adequate touch targets */
+    .list-group-item-action {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
     }
 }
 

@@ -36,7 +36,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         <div class="card mb-4 card-accent-primary">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-warehouse-title">
-                    <i class="bi bi-box-seam me-2 text-primary" aria-hidden="true"></i>Pending Warehouse Actions
+                    Pending Warehouse Actions
                 </h5>
             </div>
             <div class="card-body">
@@ -97,7 +97,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         <div class="card mb-4 border-danger">
             <div class="card-header bg-danger text-white">
                 <h5 class="mb-0" id="qr-management-title">
-                    <i class="bi bi-qr-code me-2" aria-hidden="true"></i>QR Tag Management
+                    QR Tag Management
                     <span class="badge bg-white text-danger ms-2" role="status" aria-label="<?= $qrTotalPending ?> assets need QR tag processing">
                         <?= number_format($qrTotalPending) ?>
                     </span>
@@ -164,11 +164,14 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         </div>
         <?php endif; ?>
 
+        <!-- Visual Separator for improved section distinction -->
+        <hr class="dashboard-section-separator" aria-hidden="true">
+
         <!-- Inventory Status -->
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0" id="inventory-status-title">
-                    <i class="bi bi-archive me-2" aria-hidden="true"></i>Inventory Status
+                    Inventory Status
                 </h5>
             </div>
             <div class="card-body">
@@ -314,7 +317,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         <!-- Quick Actions -->
         <?php
         $title = 'Warehouse Operations';
-        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $titleIcon = null; // Removed decorative icon
 
         // Define all possible quick actions with permission requirements
         $allActions = [
@@ -367,11 +370,14 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
         ?>
 
+        <!-- Visual Separator (sidebar) -->
+        <hr class="dashboard-section-separator" aria-hidden="true">
+
         <!-- Delivery Schedule -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0" id="schedule-title">
-                    <i class="bi bi-calendar-event me-2" aria-hidden="true"></i>Today's Schedule
+                    Today's Schedule
                 </h5>
             </div>
             <div class="card-body">
@@ -437,7 +443,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
             ]
         ];
         $title = 'Daily Summary';
-        $titleIcon = 'bi-graph-up';
+        $titleIcon = null; // Removed decorative icon
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
     </div>

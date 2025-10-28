@@ -37,7 +37,7 @@ if (!isset($title) || !isset($actions) || !is_array($actions) || empty($actions)
 }
 
 // Set defaults
-$titleIcon = $titleIcon ?? 'bi-lightning-fill';
+$titleIcon = $titleIcon ?? null;
 $accentColor = $accentColor ?? null;
 
 // Validate accent color
@@ -53,7 +53,7 @@ $uniqueId = 'quick-actions-' . md5($title);
 <div class="card mb-4<?= $accentColor ? ' card-accent-' . htmlspecialchars($accentColor) : '' ?>">
     <div class="card-header">
         <h5 class="mb-0" id="<?= $uniqueId ?>-title">
-            <i class="<?= htmlspecialchars($titleIcon) ?> me-2" aria-hidden="true"></i><?= htmlspecialchars($title) ?>
+            <?php if ($titleIcon): ?><i class="<?= htmlspecialchars($titleIcon) ?> me-2" aria-hidden="true"></i><?php endif; ?><?= htmlspecialchars($title) ?>
         </h5>
     </div>
     <div class="card-body">

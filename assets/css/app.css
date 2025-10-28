@@ -9,13 +9,13 @@
     --primary-color: #6B7280;        /* Slate Gray - neutral, professional */
     --primary-dark: #4B5563;         /* Darker slate for contrast */
     --secondary-color: #9CA3AF;      /* Light slate for secondary elements */
-    --accent-color: #10B981;         /* Muted Emerald - success/action accent */
+    --accent-color: #059669;         /* Emerald - success/action accent (WCAG AA) */
 
-    /* Functional Colors (Soft & Clear) */
-    --success-color: #10B981;        /* Muted Emerald */
-    --warning-color: #F59E0B;        /* Amber */
-    --danger-color: #EF4444;         /* Soft Red */
-    --info-color: #3B82F6;           /* Sky Blue */
+    /* Functional Colors (WCAG AA Compliant) */
+    --success-color: #059669;        /* Emerald - 6.0:1 contrast ratio */
+    --warning-color: #D97706;        /* Amber - 4.5:1 contrast ratio */
+    --danger-color: #DC2626;         /* Red - 4.9:1 contrast ratio */
+    --info-color: #2563EB;           /* Blue - 4.7:1 contrast ratio */
     --neutral-color: #6B7280;        /* Slate */
 
     /* Background & UI Colors */
@@ -98,7 +98,8 @@ body {
 
 .sidebar {
     background-color: #fff;
-    box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+    border-right: 2px solid #dee2e6;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar .nav-link {

@@ -3,6 +3,9 @@ $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 
+// Load branding from database
+$branding = BrandingHelper::loadBranding();
+
 // Extract current route for active state comparison
 $currentRoute = $_GET['route'] ?? '';
 
@@ -281,8 +284,8 @@ $navigationMenu = getNavigationMenu($userRole);
         <!-- System Info -->
         <div class="mt-3 p-2 mx-3 text-center">
             <small class="text-muted">
-                ConstructLink™ v<?= APP_VERSION ?><br>
-                by <?= SYSTEM_VENDOR ?>
+                <?= htmlspecialchars($branding['app_name']) ?> v<?= APP_VERSION ?><br>
+                by <?= htmlspecialchars($branding['company_name']) ?>
             </small>
         </div>
     </div>
@@ -298,7 +301,8 @@ $navigationMenu = getNavigationMenu($userRole);
     left: 0;
     z-index: 100;
     padding: 0;
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    border-right: 2px solid #dee2e6;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
 }
 
