@@ -1,110 +1,184 @@
+<?php
+/**
+ * Asset Director Dashboard
+ *
+ * Role-specific dashboard for Asset Director with pending asset actions,
+ * asset health monitoring, and incident management.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$assetData = $dashboardData['role_specific']['asset_director'] ?? [];
+?>
+
 <!-- Asset Director Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Asset Actions -->
-        <div class="card mb-4" style="border-left: 4px solid var(--warning-color);">
+        <div class="card mb-4 card-accent-warning">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-exclamation-triangle me-2 text-warning"></i>Pending Asset Actions
+                <h5 class="mb-0" id="pending-actions-title">
+                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-warning" aria-hidden="true"></i>Pending Asset Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <?php 
-                    $assetData = $dashboardData['role_specific']['asset_director'] ?? [];
+                <div class="row" role="group" aria-labelledby="pending-actions-title">
+                    <?php
+                    // Define pending action items using WorkflowStatus constants
                     $pendingItems = [
-                        ['label' => 'Procurement Verification', 'count' => $assetData['pending_procurement_verification'] ?? 0, 'route' => 'procurement-orders?status=Pending', 'icon' => 'bi-box-seam', 'color' => 'primary'],
-                        ['label' => 'Equipment Approvals', 'count' => $dashboardData['borrowed_tools']['pending_approval'] ?? 0, 'route' => 'borrowed-tools?status=Pending+Approval', 'icon' => 'bi-clipboard-check', 'color' => 'info'],
-                        ['label' => 'Delivery Discrepancies', 'count' => $assetData['pending_discrepancies'] ?? 0, 'route' => 'delivery-tracking?status=Discrepancy+Reported', 'icon' => 'bi-truck', 'color' => 'danger'],
-                        ['label' => 'Incident Resolution', 'count' => $assetData['pending_incident_resolution'] ?? 0, 'route' => 'incidents?status=Pending+Authorization', 'icon' => 'bi-shield-exclamation', 'color' => 'warning'],
-                        ['label' => 'Maintenance Authorization', 'count' => $assetData['pending_maintenance_authorization'] ?? 0, 'route' => 'maintenance?status=scheduled', 'icon' => 'bi-tools', 'color' => 'success']
+                        [
+                            'label' => 'Procurement Verification',
+                            'count' => $assetData['pending_procurement_verification'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_PENDING),
+                            'icon' => IconMapper::MODULE_PROCUREMENT,
+                            'color' => 'primary'
+                        ],
+                        [
+                            'label' => 'Equipment Approvals',
+                            'count' => $dashboardData['borrowed_tools']['pending_approval'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_APPROVAL),
+                            'icon' => 'bi-clipboard-check',
+                            'color' => 'info'
+                        ],
+                        [
+                            'label' => 'Delivery Discrepancies',
+                            'count' => $assetData['pending_discrepancies'] ?? 0,
+                            'route' => 'delivery-tracking?' . http_build_query(['status' => 'Discrepancy Reported']),
+                            'icon' => IconMapper::MODULE_TRANSFERS,
+                            'color' => 'danger'
+                        ],
+                        [
+                            'label' => 'Incident Resolution',
+                            'count' => $assetData['pending_incident_resolution'] ?? 0,
+                            'route' => 'incidents?' . http_build_query(['status' => WorkflowStatus::INCIDENT_PENDING_AUTHORIZATION]),
+                            'icon' => IconMapper::MODULE_INCIDENTS,
+                            'color' => 'warning'
+                        ],
+                        [
+                            'label' => 'Maintenance Authorization',
+                            'count' => $assetData['pending_maintenance_authorization'] ?? 0,
+                            'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED]),
+                            'icon' => IconMapper::MODULE_MAINTENANCE,
+                            'color' => 'success'
+                        ]
                     ];
-                    
-                    foreach ($pendingItems as $item):
+
+                    // Set action button text
+                    $actionText = 'Review Now';
+
+                    // Render each pending action card using component
+                    foreach ($pendingItems as $item) {
+                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
+                    }
                     ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
-                                    <span class="fw-semibold"><?= $item['label'] ?></span>
-                                </div>
-                                <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
-                            </div>
-                            <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
-                                <i class="bi bi-eye me-1"></i>Review Now
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Asset Health Overview -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-heart-pulse me-2"></i>Asset Health Overview
+                <h5 class="mb-0" id="asset-health-title">
+                    <i class="bi bi-heart-pulse me-2" aria-hidden="true"></i>Asset Health Overview
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" role="group" aria-labelledby="asset-health-title">
                     <div class="col-md-6">
-                        <h6 class="text-muted">Asset Status Distribution</h6>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>Available</span>
-                                <span class="text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-success" style="width: <?= ($dashboardData['available_assets'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                        <h6 class="text-muted" id="asset-status-title">Asset Status Distribution</h6>
+                        <div class="mb-2" role="region" aria-labelledby="asset-status-title">
+                            <?php
+                            // Available Assets Progress Bar
+                            $label = 'Available';
+                            $current = $dashboardData['available_assets'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'success'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>In Use</span>
-                                <span class="text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-warning" style="width: <?= ($dashboardData['in_use_assets'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                            <?php
+                            // In Use Assets Progress Bar
+                            $label = 'In Use';
+                            $current = $dashboardData['in_use_assets'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'warning'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>Under Maintenance</span>
-                                <span class="text-info"><?= number_format($assetData['assets_under_maintenance'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-info" style="width: <?= ($assetData['assets_under_maintenance'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                            <?php
+                            // Under Maintenance Progress Bar
+                            $label = 'Under Maintenance';
+                            $current = $assetData['assets_under_maintenance'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'info'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>Retired/Disposed</span>
-                                <span class="text-secondary"><?= number_format(($assetData['retired_assets'] ?? 0) + ($assetData['disposed_assets'] ?? 0)) ?></span>
-                            </div>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-secondary" style="width: <?= (($assetData['retired_assets'] ?? 0) + ($assetData['disposed_assets'] ?? 0)) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                            <?php
+                            // Retired/Disposed Progress Bar
+                            $label = 'Retired/Disposed';
+                            $current = ($assetData['retired_assets'] ?? 0) + ($assetData['disposed_assets'] ?? 0);
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'secondary'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted">Key Metrics</h6>
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <h6 class="text-muted" id="key-metrics-title">Key Metrics</h6>
+                        <div class="list-group list-group-flush" role="list" aria-labelledby="key-metrics-title">
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center" role="listitem">
                                 <span>Asset Utilization Rate</span>
-                                <span class="badge bg-<?= ($assetData['utilization_rate'] ?? 0) > 80 ? 'success' : 'warning' ?> rounded-pill">
+                                <span class="badge bg-<?= DashboardThresholds::getProgressColor($assetData['utilization_rate'] ?? 0, DashboardThresholds::getThresholds('utilization')) ?> rounded-pill" role="status">
                                     <?= $assetData['utilization_rate'] ?? 0 ?>%
                                 </span>
                             </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center" role="listitem">
                                 <span>Categories in Use</span>
-                                <span class="badge bg-primary rounded-pill"><?= $assetData['categories_in_use'] ?? 0 ?></span>
+                                <span class="badge bg-primary rounded-pill" role="status"><?= $assetData['categories_in_use'] ?? 0 ?></span>
                             </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center" role="listitem">
                                 <span>Total Asset Value</span>
                                 <strong><?= formatCurrency($dashboardData['total_asset_value'] ?? 0) ?></strong>
                             </div>
@@ -114,79 +188,96 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>Asset Management
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="?route=borrowed-tools?status=Pending+Approval" class="btn btn-info btn-sm">
-                        <i class="bi bi-clipboard-check"></i> Approve Equipment
-                    </a>
-                    <a href="?route=assets/create" class="btn btn-success btn-sm">
-                        <i class="bi bi-plus-circle"></i> Add New Asset
-                    </a>
-                    <a href="?route=assets/scanner" class="btn btn-info btn-sm">
-                        <i class="bi bi-qr-code-scan"></i> QR Scanner
-                    </a>
-                    <a href="?route=maintenance/create" class="btn btn-warning btn-sm">
-                        <i class="bi bi-tools"></i> Schedule Maintenance
-                    </a>
-                    <a href="?route=categories" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-tags"></i> Manage Categories
-                    </a>
-                </div>
-            </div>
-        </div>
-        
+        <?php
+        $title = 'Asset Management';
+        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $actions = [
+            [
+                'label' => 'Approve Equipment',
+                'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_APPROVAL),
+                'icon' => 'bi-clipboard-check',
+                'color' => 'info'
+            ],
+            [
+                'label' => 'Add New Asset',
+                'route' => 'assets/create',
+                'icon' => IconMapper::ACTION_CREATE,
+                'color' => 'success'
+            ],
+            [
+                'label' => 'QR Scanner',
+                'route' => 'assets/scanner',
+                'icon' => 'bi-qr-code-scan',
+                'color' => 'info'
+            ],
+            [
+                'label' => 'Schedule Maintenance',
+                'route' => 'maintenance/create',
+                'icon' => IconMapper::MODULE_MAINTENANCE,
+                'color' => 'warning'
+            ],
+            [
+                'label' => 'Manage Categories',
+                'route' => 'categories',
+                'icon' => 'bi-tags',
+                'color' => 'outline-primary'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+        ?>
+
         <!-- Return Transit Monitoring -->
-        <div class="card mb-4" style="border-left: 4px solid var(--info-color);">
+        <div class="card mb-4 card-accent-info">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-truck me-2 text-info"></i>Return Transits
+                <h5 class="mb-0" id="return-transit-title">
+                    <i class="bi bi-truck me-2 text-info" aria-hidden="true"></i>Return Transits
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row text-center">
+                <div class="row text-center" role="region" aria-labelledby="return-transit-title">
                     <div class="col-12 mb-2">
-                        <i class="bi bi-arrow-return-left text-warning fs-2"></i>
-                        <h5 class="mb-0"><?= number_format($assetData['returns_in_transit'] ?? 0) ?></h5>
+                        <i class="bi bi-arrow-return-left text-warning fs-2" aria-hidden="true"></i>
+                        <h5 class="mb-0" aria-live="polite"><?= number_format($assetData['returns_in_transit'] ?? 0) ?></h5>
                         <small class="text-muted">Assets in Return Transit</small>
                     </div>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-6">
                         <div class="text-center">
-                            <span class="badge bg-danger rounded-pill"><?= $assetData['overdue_return_transits'] ?? 0 ?></span>
+                            <span class="badge bg-danger rounded-pill" role="status" aria-label="<?= $assetData['overdue_return_transits'] ?? 0 ?> overdue returns">
+                                <?= $assetData['overdue_return_transits'] ?? 0 ?>
+                            </span>
                             <br><small class="text-muted">Overdue</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center">
-                            <span class="badge bg-warning rounded-pill"><?= $assetData['pending_return_receipts'] ?? 0 ?></span>
+                            <span class="badge bg-warning rounded-pill" role="status" aria-label="<?= $assetData['pending_return_receipts'] ?? 0 ?> returns to receive">
+                                <?= $assetData['pending_return_receipts'] ?? 0 ?>
+                            </span>
                             <br><small class="text-muted">To Receive</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <?php if (($assetData['overdue_return_transits'] ?? 0) > 0): ?>
-                <div class="alert alert-danger p-2 mt-3 mb-2">
+                <div class="alert alert-danger p-2 mt-3 mb-2" role="alert">
                     <small>
-                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                         <strong><?= $assetData['overdue_return_transits'] ?> return(s)</strong> stuck in transit!
                     </small>
                 </div>
                 <?php endif; ?>
-                
+
                 <div class="d-grid">
-                    <a href="?route=transfers&tab=returns" class="btn btn-outline-info btn-sm">
-                        <i class="bi bi-eye"></i> Monitor Returns
+                    <a href="?route=<?= urlencode('transfers&tab=returns') ?>"
+                       class="btn btn-outline-info btn-sm"
+                       aria-label="Monitor return transits">
+                        <i class="bi bi-eye" aria-hidden="true"></i> Monitor Returns
                     </a>
                 </div>
             </div>
@@ -195,36 +286,52 @@
         <!-- Recent Incidents -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-shield-exclamation me-2"></i>Recent Incidents
+                <h5 class="mb-0" id="recent-incidents-title">
+                    <i class="<?= IconMapper::MODULE_INCIDENTS ?> me-2" aria-hidden="true"></i>Recent Incidents
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <?php if ($dashboardData['lost_assets'] ?? 0 > 0): ?>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-geo-alt text-danger"></i> Lost Assets</span>
-                        <span class="badge bg-danger"><?= $dashboardData['lost_assets'] ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($dashboardData['damaged_assets'] ?? 0 > 0): ?>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-hammer text-warning"></i> Damaged Assets</span>
-                        <span class="badge bg-warning"><?= $dashboardData['damaged_assets'] ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($dashboardData['stolen_assets'] ?? 0 > 0): ?>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-shield-x text-danger"></i> Stolen Assets</span>
-                        <span class="badge bg-danger"><?= $dashboardData['stolen_assets'] ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (($dashboardData['lost_assets'] ?? 0) + ($dashboardData['damaged_assets'] ?? 0) + ($dashboardData['stolen_assets'] ?? 0) == 0): ?>
-                    <p class="text-muted text-center mb-0">No recent incidents</p>
-                    <?php endif; ?>
-                </div>
+                <?php
+                // Use list_group component for incidents
+                $items = [];
+
+                if (($dashboardData['lost_assets'] ?? 0) > 0) {
+                    $items[] = [
+                        'label' => 'Lost Assets',
+                        'value' => $dashboardData['lost_assets'],
+                        'color' => 'danger',
+                        'icon' => 'bi-geo-alt'
+                    ];
+                }
+
+                if (($dashboardData['damaged_assets'] ?? 0) > 0) {
+                    $items[] = [
+                        'label' => 'Damaged Assets',
+                        'value' => $dashboardData['damaged_assets'],
+                        'color' => 'warning',
+                        'icon' => 'bi-hammer'
+                    ];
+                }
+
+                if (($dashboardData['stolen_assets'] ?? 0) > 0) {
+                    $items[] = [
+                        'label' => 'Stolen Assets',
+                        'value' => $dashboardData['stolen_assets'],
+                        'color' => 'danger',
+                        'icon' => 'bi-shield-x'
+                    ];
+                }
+
+                if (empty($items)) {
+                    echo '<p class="text-muted text-center mb-0" role="status">No recent incidents</p>';
+                } else {
+                    include APP_ROOT . '/views/dashboard/components/list_group.php';
+                }
+                ?>
                 <div class="mt-3 d-grid">
-                    <a href="?route=incidents" class="btn btn-outline-danger btn-sm">
+                    <a href="?route=incidents"
+                       class="btn btn-outline-danger btn-sm"
+                       aria-label="View all incidents">
                         View All Incidents
                     </a>
                 </div>

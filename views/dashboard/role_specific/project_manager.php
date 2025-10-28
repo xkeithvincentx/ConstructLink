@@ -1,215 +1,309 @@
+<?php
+/**
+ * Project Manager Dashboard
+ *
+ * Role-specific dashboard for Project Manager with request reviews,
+ * project resource management, and equipment verification.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$projectData = $dashboardData['role_specific']['project_manager'] ?? [];
+?>
+
 <!-- Project Manager Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Project Actions -->
-        <div class="card mb-4" style="border-left: 4px solid var(--info-color);">
+        <div class="card mb-4 card-accent-info">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clipboard-check me-2 text-info"></i>Pending Project Actions
+                <h5 class="mb-0" id="pending-project-title">
+                    <i class="bi bi-clipboard-check me-2 text-info" aria-hidden="true"></i>Pending Project Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <?php 
-                    $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
+                <div class="row" role="group" aria-labelledby="pending-project-title">
+                    <?php
+                    // Define pending action items using WorkflowStatus constants
                     $pendingItems = [
-                        ['label' => 'Request Reviews', 'count' => $projectData['pending_request_reviews'] ?? 0, 'route' => 'requests?status=Submitted', 'icon' => 'bi-file-earmark-text', 'color' => 'primary'],
-                        ['label' => 'Equipment Verifications', 'count' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0, 'route' => 'borrowed-tools?status=Pending+Verification', 'icon' => 'bi-tools', 'color' => 'warning'],
-                        ['label' => 'Withdrawal Approvals', 'count' => $projectData['pending_withdrawal_approvals'] ?? 0, 'route' => 'withdrawals?status=Pending+Approval', 'icon' => 'bi-box-arrow-right', 'color' => 'success'],
-                        ['label' => 'Transfer Approvals', 'count' => $projectData['pending_transfer_approvals'] ?? 0, 'route' => 'transfers?status=Pending+Verification', 'icon' => 'bi-arrow-left-right', 'color' => 'warning'],
-                        ['label' => 'Receipt Confirmations', 'count' => $projectData['pending_receipt_confirmations'] ?? 0, 'route' => 'procurement-orders?status=Delivered', 'icon' => 'bi-check-circle', 'color' => 'info']
+                        [
+                            'label' => 'Request Reviews',
+                            'count' => $projectData['pending_request_reviews'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_SUBMITTED),
+                            'icon' => IconMapper::MODULE_REQUESTS,
+                            'color' => 'primary'
+                        ],
+                        [
+                            'label' => 'Equipment Verifications',
+                            'count' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
+                            'icon' => IconMapper::MODULE_BORROWED_TOOLS,
+                            'color' => 'warning'
+                        ],
+                        [
+                            'label' => 'Withdrawal Approvals',
+                            'count' => $projectData['pending_withdrawal_approvals'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_APPROVAL),
+                            'icon' => 'bi-box-arrow-right',
+                            'color' => 'success'
+                        ],
+                        [
+                            'label' => 'Transfer Approvals',
+                            'count' => $projectData['pending_transfer_approvals'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_VERIFICATION),
+                            'icon' => IconMapper::MODULE_TRANSFERS,
+                            'color' => 'warning'
+                        ],
+                        [
+                            'label' => 'Receipt Confirmations',
+                            'count' => $projectData['pending_receipt_confirmations'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
+                            'icon' => 'bi-check-circle',
+                            'color' => 'info'
+                        ]
                     ];
-                    
-                    foreach ($pendingItems as $item):
+
+                    // Set custom button text
+                    $actionText = 'Review Now';
+
+                    // Render each pending action card using component
+                    foreach ($pendingItems as $item) {
+                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
+                    }
                     ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
-                                    <span class="fw-semibold"><?= $item['label'] ?></span>
-                                </div>
-                                <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
-                            </div>
-                            <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
-                                <i class="bi bi-eye me-1"></i>Review Now
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Project Resource Overview -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-pie-chart me-2"></i>Project Resource Overview
+                <h5 class="mb-0" id="resource-overview-title">
+                    <i class="bi bi-pie-chart me-2" aria-hidden="true"></i>Project Resource Overview
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-muted">Current Project Assets</h6>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Available Assets</span>
-                                <span class="badge bg-success"><?= number_format($projectData['available_project_assets'] ?? 0) ?></span>
+                        <h6 class="text-muted mb-3" id="project-assets-label">Current Project Assets</h6>
+
+                        <div role="region" aria-labelledby="project-assets-label">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Available Assets</span>
+                                    <span class="badge bg-success" role="status">
+                                        <?= number_format($projectData['available_project_assets'] ?? 0) ?>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>In Use Assets</span>
-                                <span class="badge bg-warning"><?= number_format($projectData['in_use_project_assets'] ?? 0) ?></span>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>In Use Assets</span>
+                                    <span class="badge bg-warning" role="status">
+                                        <?= number_format($projectData['in_use_project_assets'] ?? 0) ?>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Total Asset Value</span>
-                                <strong><?= formatCurrency($projectData['project_asset_value'] ?? 0) ?></strong>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Total Asset Value</span>
+                                    <strong><?= formatCurrency($projectData['project_asset_value'] ?? 0) ?></strong>
+                                </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="col-md-6">
-                        <h6 class="text-muted">Project Management</h6>
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Managed Projects</span>
-                                <span class="badge bg-primary"><?= $projectData['managed_projects'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Assigned Projects</span>
-                                <span class="badge bg-info"><?= $projectData['assigned_projects'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Pending Investigations</span>
-                                <span class="badge bg-warning"><?= $projectData['pending_incident_investigations'] ?? 0 ?></span>
-                            </div>
-                        </div>
+                        <?php
+                        // Project management metrics using list_group component
+                        $items = [
+                            [
+                                'label' => 'Managed Projects',
+                                'value' => $projectData['managed_projects'] ?? 0,
+                                'color' => 'primary'
+                            ],
+                            [
+                                'label' => 'Assigned Projects',
+                                'value' => $projectData['assigned_projects'] ?? 0,
+                                'color' => 'info'
+                            ],
+                            [
+                                'label' => 'Pending Investigations',
+                                'value' => $projectData['pending_incident_investigations'] ?? 0,
+                                'color' => 'warning'
+                            ]
+                        ];
+                        $title = 'Project Management';
+                        include APP_ROOT . '/views/dashboard/components/list_group.php';
+                        ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>Project Management
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="?route=requests?status=Submitted" class="btn btn-primary btn-sm">
-                        <i class="bi bi-clipboard-check"></i> Review Requests
-                    </a>
-                    <a href="?route=borrowed-tools?status=Pending+Verification" class="btn btn-warning btn-sm">
-                        <i class="bi bi-tools"></i> Verify Equipment
-                    </a>
-                    <a href="?route=withdrawals?status=Pending+Approval" class="btn btn-success btn-sm">
-                        <i class="bi bi-check2-square"></i> Approve Withdrawals
-                    </a>
-                    <a href="?route=transfers?status=Pending+Verification" class="btn btn-warning btn-sm">
-                        <i class="bi bi-arrow-left-right"></i> Verify Transfers
-                    </a>
-                    <a href="?route=incidents?status=Pending+Verification" class="btn btn-danger btn-sm">
-                        <i class="bi bi-shield-exclamation"></i> Investigate Incidents
-                    </a>
-                </div>
-            </div>
-        </div>
-        
+        <?php
+        $title = 'Project Management';
+        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $actions = [
+            [
+                'label' => 'Review Requests',
+                'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_SUBMITTED),
+                'icon' => 'bi-clipboard-check',
+                'color' => 'primary'
+            ],
+            [
+                'label' => 'Verify Equipment',
+                'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
+                'icon' => IconMapper::MODULE_BORROWED_TOOLS,
+                'color' => 'warning'
+            ],
+            [
+                'label' => 'Approve Withdrawals',
+                'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_APPROVAL),
+                'icon' => 'bi-check2-square',
+                'color' => 'success'
+            ],
+            [
+                'label' => 'Verify Transfers',
+                'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_VERIFICATION),
+                'icon' => IconMapper::MODULE_TRANSFERS,
+                'color' => 'warning'
+            ],
+            [
+                'label' => 'Investigate Incidents',
+                'route' => WorkflowStatus::buildRoute('incidents', WorkflowStatus::INCIDENT_PENDING_VERIFICATION),
+                'icon' => 'bi-shield-exclamation',
+                'color' => 'danger'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+        ?>
+
         <!-- Project Summary -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-building me-2"></i>Project Summary
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-building text-primary fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['managed_projects'] ?? 0) ?></h6>
-                        <small class="text-muted">Managed</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-person-check text-success fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['assigned_projects'] ?? 0) ?></h6>
-                        <small class="text-muted">Assigned</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-box text-info fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['available_project_assets'] ?? 0) ?></h6>
-                        <small class="text-muted">Available</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-gear text-warning fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['in_use_project_assets'] ?? 0) ?></h6>
-                        <small class="text-muted">In Use</small>
-                    </div>
-                </div>
-                <div class="d-grid">
-                    <a href="?route=projects" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-eye"></i> View All Projects
-                    </a>
-                </div>
-            </div>
+        <?php
+        $stats = [
+            [
+                'icon' => IconMapper::MODULE_PROJECTS,
+                'count' => $projectData['managed_projects'] ?? 0,
+                'label' => 'Managed',
+                'color' => 'primary'
+            ],
+            [
+                'icon' => 'bi-person-check',
+                'count' => $projectData['assigned_projects'] ?? 0,
+                'label' => 'Assigned',
+                'color' => 'success'
+            ],
+            [
+                'icon' => IconMapper::MODULE_ASSETS,
+                'count' => $projectData['available_project_assets'] ?? 0,
+                'label' => 'Available',
+                'color' => 'info'
+            ],
+            [
+                'icon' => 'bi-gear',
+                'count' => $projectData['in_use_project_assets'] ?? 0,
+                'label' => 'In Use',
+                'color' => 'warning'
+            ]
+        ];
+        $title = 'Project Summary';
+        $titleIcon = IconMapper::MODULE_PROJECTS;
+        include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+        ?>
+
+        <!-- View All Projects Button -->
+        <div class="d-grid mb-4">
+            <a href="?route=projects" class="btn btn-outline-primary btn-sm" aria-label="View all projects">
+                <i class="<?= IconMapper::ACTION_VIEW ?> me-1" aria-hidden="true"></i>View All Projects
+            </a>
         </div>
-        
+
         <!-- Return Transit Monitoring -->
-        <div class="card mb-4">
+        <div class="card mb-4 card-accent-warning">
             <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0 text-warning">
-                    <i class="bi bi-truck me-2"></i>Return Transit Monitor
+                <h5 class="mb-0 text-warning" id="return-transit-title">
+                    <i class="<?= IconMapper::WORKFLOW_IN_TRANSIT ?> me-2" aria-hidden="true"></i>Return Transit Monitor
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row text-center">
+                <?php
+                $returnStats = [
+                    [
+                        'icon' => 'bi-arrow-return-left',
+                        'count' => $projectData['returns_in_transit'] ?? 0,
+                        'label' => 'In Transit',
+                        'color' => 'info'
+                    ],
+                    [
+                        'icon' => IconMapper::STATUS_WARNING,
+                        'count' => $projectData['overdue_return_transits'] ?? 0,
+                        'label' => 'Overdue',
+                        'color' => 'danger'
+                    ],
+                    [
+                        'icon' => 'bi-clock-history',
+                        'count' => $projectData['pending_return_receipts'] ?? 0,
+                        'label' => 'To Receive',
+                        'color' => 'warning'
+                    ],
+                    [
+                        'icon' => 'bi-calendar-x',
+                        'count' => $projectData['overdue_returns'] ?? 0,
+                        'label' => 'Overdue Returns',
+                        'color' => 'secondary'
+                    ]
+                ];
+                ?>
+
+                <div class="row text-center" role="group" aria-labelledby="return-transit-title">
+                    <?php foreach ($returnStats as $stat): ?>
                     <div class="col-6 mb-3">
-                        <i class="bi bi-arrow-return-left text-info fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['returns_in_transit'] ?? 0) ?></h6>
-                        <small class="text-muted">In Transit</small>
+                        <i class="<?= htmlspecialchars($stat['icon']) ?> text-<?= htmlspecialchars($stat['color']) ?> fs-3 d-block mb-2" aria-hidden="true"></i>
+                        <h6 class="mb-0" aria-live="polite"><?= number_format($stat['count']) ?></h6>
+                        <small class="text-muted"><?= htmlspecialchars($stat['label']) ?></small>
                     </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-exclamation-triangle text-danger fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['overdue_return_transits'] ?? 0) ?></h6>
-                        <small class="text-muted">Overdue</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-clock-history text-warning fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['pending_return_receipts'] ?? 0) ?></h6>
-                        <small class="text-muted">To Receive</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-calendar-x text-secondary fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($projectData['overdue_returns'] ?? 0) ?></h6>
-                        <small class="text-muted">Overdue Returns</small>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
-                
+
                 <?php if (($projectData['overdue_return_transits'] ?? 0) > 0 || ($projectData['pending_return_receipts'] ?? 0) > 0): ?>
-                <div class="alert alert-warning p-2 mb-3">
+                <div class="alert alert-warning p-2 mb-3" role="alert">
                     <small>
-                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                         <strong>Action Required:</strong> You have returns that need attention.
                     </small>
                 </div>
                 <?php endif; ?>
-                
+
                 <div class="d-grid gap-2">
                     <?php if (($projectData['pending_return_receipts'] ?? 0) > 0): ?>
-                    <a href="?route=transfers&return_status=in_return_transit" class="btn btn-warning btn-sm">
-                        <i class="bi bi-box-arrow-in-down"></i> Receive Returns (<?= $projectData['pending_return_receipts'] ?? 0 ?>)
+                    <a href="?route=transfers&return_status=in_return_transit" class="btn btn-warning btn-sm" aria-label="Receive <?= $projectData['pending_return_receipts'] ?? 0 ?> pending returns">
+                        <i class="bi bi-box-arrow-in-down me-1" aria-hidden="true"></i>Receive Returns (<?= $projectData['pending_return_receipts'] ?? 0 ?>)
                     </a>
                     <?php endif; ?>
-                    <a href="?route=transfers&tab=returns" class="btn btn-outline-info btn-sm">
-                        <i class="bi bi-eye"></i> Monitor All Returns
+                    <a href="?route=transfers&tab=returns" class="btn btn-outline-info btn-sm" aria-label="Monitor all returns">
+                        <i class="<?= IconMapper::ACTION_VIEW ?> me-1" aria-hidden="true"></i>Monitor All Returns
                     </a>
                 </div>
             </div>
@@ -218,49 +312,53 @@
         <!-- Today's Tasks -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-calendar-check me-2"></i>Today's Tasks
+                <h5 class="mb-0" id="today-tasks-title">
+                    <i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Today's Tasks
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-file-earmark-text text-primary"></i> Requests to Review</span>
-                            <span class="badge bg-primary"><?= $projectData['pending_request_reviews'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-tools text-warning"></i> Equipment to Verify</span>
-                            <span class="badge bg-warning"><?= $dashboardData['borrowed_tools']['pending_verification'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-box-arrow-right text-success"></i> Withdrawals to Approve</span>
-                            <span class="badge bg-success"><?= $projectData['pending_withdrawal_approvals'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-arrow-left-right text-warning"></i> Transfers to Verify</span>
-                            <span class="badge bg-warning"><?= $projectData['pending_transfer_approvals'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-truck text-info"></i> Return Transits</span>
-                            <span class="badge bg-info"><?= $projectData['returns_in_transit'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-shield-exclamation text-danger"></i> Incidents to Investigate</span>
-                            <span class="badge bg-danger"><?= $projectData['pending_incident_investigations'] ?? 0 ?></span>
-                        </div>
-                    </div>
-                </div>
+                <?php
+                // Today's tasks using list_group component with icons
+                $items = [
+                    [
+                        'label' => 'Requests to Review',
+                        'value' => $projectData['pending_request_reviews'] ?? 0,
+                        'color' => 'primary',
+                        'icon' => 'bi-file-earmark-text'
+                    ],
+                    [
+                        'label' => 'Equipment to Verify',
+                        'value' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => IconMapper::MODULE_BORROWED_TOOLS
+                    ],
+                    [
+                        'label' => 'Withdrawals to Approve',
+                        'value' => $projectData['pending_withdrawal_approvals'] ?? 0,
+                        'color' => 'success',
+                        'icon' => 'bi-box-arrow-right'
+                    ],
+                    [
+                        'label' => 'Transfers to Verify',
+                        'value' => $projectData['pending_transfer_approvals'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => IconMapper::MODULE_TRANSFERS
+                    ],
+                    [
+                        'label' => 'Return Transits',
+                        'value' => $projectData['returns_in_transit'] ?? 0,
+                        'color' => 'info',
+                        'icon' => IconMapper::WORKFLOW_IN_TRANSIT
+                    ],
+                    [
+                        'label' => 'Incidents to Investigate',
+                        'value' => $projectData['pending_incident_investigations'] ?? 0,
+                        'color' => 'danger',
+                        'icon' => 'bi-shield-exclamation'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
             </div>
         </div>
     </div>

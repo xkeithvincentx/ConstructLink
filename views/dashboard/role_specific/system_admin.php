@@ -1,180 +1,271 @@
-<!-- System Admin Dashboard -->
+<?php
+/**
+ * System Administrator Dashboard
+ *
+ * Role-specific dashboard for System Administrator with system overview,
+ * health monitoring, and administrative operations.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$adminData = $dashboardData['role_specific']['admin'] ?? [];
+?>
+
+<!-- System Administrator Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- System Overview -->
-        <div class="card mb-4" style="border-left: 4px solid var(--primary-color);">
+        <div class="card mb-4 card-accent-primary">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-speedometer2 me-2 text-primary"></i>System Overview
+                <h5 class="mb-0" id="system-overview-title">
+                    <i class="bi bi-speedometer2 me-2 text-primary" aria-hidden="true"></i>System Overview
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" role="group" aria-labelledby="system-overview-title">
+                    <?php
+                    // Define system overview stats
+                    $stats = [
+                        [
+                            'icon' => 'bi-people',
+                            'count' => $adminData['total_users'] ?? 0,
+                            'label' => 'Total Users',
+                            'color' => 'muted',
+                            'subtext' => '<i class="bi bi-check-circle" aria-hidden="true"></i> ' . number_format($adminData['active_users'] ?? 0) . ' active',
+                            'subtextColor' => 'success'
+                        ],
+                        [
+                            'icon' => 'bi-activity',
+                            'count' => $adminData['active_sessions'] ?? 0,
+                            'label' => 'Active Sessions',
+                            'color' => 'success',
+                            'subtext' => 'Current online users',
+                            'subtextColor' => 'muted'
+                        ],
+                        [
+                            'icon' => IconMapper::MODULE_ASSETS,
+                            'count' => $dashboardData['total_assets'] ?? 0,
+                            'label' => 'Total Assets',
+                            'color' => 'info',
+                            'subtext' => 'System-wide',
+                            'subtextColor' => 'muted'
+                        ],
+                        [
+                            'icon' => IconMapper::MODULE_PROJECTS,
+                            'count' => $dashboardData['active_projects'] ?? 0,
+                            'label' => 'Active Projects',
+                            'color' => 'warning',
+                            'subtext' => 'Currently running',
+                            'subtextColor' => 'muted'
+                        ]
+                    ];
+
+                    foreach ($stats as $stat):
+                    ?>
                     <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
-                            <i class="bi bi-people text-muted fs-1" style="opacity: 0.4;"></i>
-                            <h4 class="mt-2 mb-1"><?= number_format($dashboardData['role_specific']['admin']['total_users'] ?? 0) ?></h4>
-                            <p class="text-muted mb-1 small">Total Users</p>
-                            <small class="text-success">
-                                <i class="bi bi-check-circle"></i> <?= number_format($dashboardData['role_specific']['admin']['active_users'] ?? 0) ?> active
+                        <div class="stat-card-item text-center" role="figure">
+                            <i class="<?= htmlspecialchars($stat['icon']) ?> text-<?= htmlspecialchars($stat['color']) ?> fs-1 d-block mb-2" aria-hidden="true"></i>
+                            <h4 class="mt-2 mb-1" aria-live="polite">
+                                <?= number_format($stat['count']) ?>
+                            </h4>
+                            <p class="text-muted mb-1 small"><?= htmlspecialchars($stat['label']) ?></p>
+                            <small class="text-<?= htmlspecialchars($stat['subtextColor']) ?>">
+                                <?= $stat['subtext'] ?>
                             </small>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
-                            <i class="bi bi-activity text-success fs-1" style="opacity: 0.4;"></i>
-                            <h4 class="mt-2 mb-1 text-success"><?= number_format($dashboardData['role_specific']['admin']['active_sessions'] ?? 0) ?></h4>
-                            <p class="text-muted mb-1 small">Active Sessions</p>
-                            <small class="text-muted">Current online users</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
-                            <i class="bi bi-database text-info fs-1" style="opacity: 0.4;"></i>
-                            <h4 class="mt-2 mb-1 text-info"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h4>
-                            <p class="text-muted mb-1 small">Total Assets</p>
-                            <small class="text-muted">System-wide</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="text-center p-3 rounded" style="background-color: var(--bg-light);">
-                            <i class="bi bi-building text-warning fs-1" style="opacity: 0.4;"></i>
-                            <h4 class="mt-2 mb-1 text-warning"><?= number_format($dashboardData['active_projects'] ?? 0) ?></h4>
-                            <p class="text-muted mb-1 small">Active Projects</p>
-                            <small class="text-muted">Currently running</small>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
-        <!-- System Health -->
+
+        <!-- System Health & Metrics -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-shield-check me-2"></i>System Health & Metrics
+                <h5 class="mb-0" id="system-health-title">
+                    <i class="bi bi-shield-check me-2" aria-hidden="true"></i>System Health & Metrics
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" role="group" aria-labelledby="system-health-title">
                     <div class="col-md-6">
-                        <h6 class="text-muted">Asset Management</h6>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>Available Assets</span>
-                                <span class="text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success" style="width: <?= ($dashboardData['available_assets'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                        <h6 class="text-muted" id="asset-management-title">Asset Management</h6>
+                        <div class="mb-2" role="region" aria-labelledby="asset-management-title">
+                            <?php
+                            // Available Assets Progress Bar
+                            $label = 'Available Assets';
+                            $current = $dashboardData['available_assets'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'success'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>In Use Assets</span>
-                                <span class="text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-warning" style="width: <?= ($dashboardData['in_use_assets'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                            <?php
+                            // In Use Assets Progress Bar
+                            $label = 'In Use Assets';
+                            $current = $dashboardData['in_use_assets'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'warning'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between">
-                                <span>Under Maintenance</span>
-                                <span class="text-info"><?= number_format($dashboardData['maintenance_assets'] ?? 0) ?></span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-info" style="width: <?= ($dashboardData['maintenance_assets'] ?? 0) / max(($dashboardData['total_assets'] ?? 1), 1) * 100 ?>%"></div>
-                            </div>
+                            <?php
+                            // Under Maintenance Progress Bar
+                            $label = 'Under Maintenance';
+                            $current = $dashboardData['maintenance_assets'] ?? 0;
+                            $total = max(($dashboardData['total_assets'] ?? 1), 1);
+                            $config = [
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-sm',
+                                'color' => 'info'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted">Workflow Status</h6>
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Pending Withdrawals</span>
-                                <span class="badge bg-<?= ($dashboardData['pending_withdrawals'] ?? 0) > 0 ? 'warning' : 'success' ?>">
-                                    <?= $dashboardData['pending_withdrawals'] ?? 0 ?>
-                                </span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Overdue Items</span>
-                                <span class="badge bg-<?= ($dashboardData['overdue_withdrawals'] ?? 0) > 0 ? 'danger' : 'success' ?>">
-                                    <?= $dashboardData['overdue_withdrawals'] ?? 0 ?>
-                                </span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Total Incidents</span>
-                                <span class="badge bg-<?= ($dashboardData['total_incidents'] ?? 0) > 0 ? 'warning' : 'success' ?>">
-                                    <?= $dashboardData['total_incidents'] ?? 0 ?>
-                                </span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Scheduled Maintenance</span>
-                                <span class="badge bg-info"><?= $dashboardData['scheduled_maintenance'] ?? 0 ?></span>
-                            </div>
-                        </div>
+                        <h6 class="text-muted" id="workflow-status-title">Workflow Status</h6>
+                        <?php
+                        // Use list_group component for workflow status
+                        $items = [
+                            [
+                                'label' => 'Pending Withdrawals',
+                                'value' => $dashboardData['pending_withdrawals'] ?? 0,
+                                'color' => ($dashboardData['pending_withdrawals'] ?? 0) > 0 ? 'warning' : 'success'
+                            ],
+                            [
+                                'label' => 'Overdue Items',
+                                'value' => $dashboardData['overdue_withdrawals'] ?? 0,
+                                'color' => ($dashboardData['overdue_withdrawals'] ?? 0) > 0 ? 'danger' : 'success'
+                            ],
+                            [
+                                'label' => 'Total Incidents',
+                                'value' => $dashboardData['total_incidents'] ?? 0,
+                                'color' => ($dashboardData['total_incidents'] ?? 0) > 0 ? 'warning' : 'success'
+                            ],
+                            [
+                                'label' => 'Scheduled Maintenance',
+                                'value' => $dashboardData['scheduled_maintenance'] ?? 0,
+                                'color' => 'info'
+                            ]
+                        ];
+                        include APP_ROOT . '/views/dashboard/components/list_group.php';
+                        ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>System Administration
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="?route=users" class="btn btn-primary btn-sm">
-                        <i class="bi bi-people"></i> Manage Users
-                    </a>
-                    <a href="?route=admin/settings" class="btn btn-secondary btn-sm">
-                        <i class="bi bi-gear"></i> System Settings
-                    </a>
-                    <a href="?route=admin/logs" class="btn btn-warning btn-sm">
-                        <i class="bi bi-activity"></i> View Logs
-                    </a>
-                    <a href="?route=reports" class="btn btn-info btn-sm">
-                        <i class="bi bi-graph-up"></i> Generate Reports
-                    </a>
-                </div>
-            </div>
-        </div>
-        
+        <?php
+        $title = 'System Administration';
+        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $actions = [
+            [
+                'label' => 'Manage Users',
+                'route' => 'users',
+                'icon' => 'bi-people',
+                'color' => 'primary'
+            ],
+            [
+                'label' => 'System Settings',
+                'route' => 'admin/settings',
+                'icon' => 'bi-gear',
+                'color' => 'secondary'
+            ],
+            [
+                'label' => 'View Logs',
+                'route' => 'admin/logs',
+                'icon' => 'bi-activity',
+                'color' => 'warning'
+            ],
+            [
+                'label' => 'Generate Reports',
+                'route' => 'reports',
+                'icon' => 'bi-graph-up',
+                'color' => 'info'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+        ?>
+
         <!-- System Status -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-server me-2"></i>System Status
+                <h5 class="mb-0" id="system-status-title">
+                    <i class="bi bi-server me-2" aria-hidden="true"></i>System Status
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-database text-success"></i> Database</span>
-                        <span class="badge bg-success">Online</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-shield-check text-success"></i> Authentication</span>
-                        <span class="badge bg-success">Active</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-cloud-check text-success"></i> API Services</span>
-                        <span class="badge bg-success">Running</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-qr-code-scan text-success"></i> QR Scanner</span>
-                        <span class="badge bg-success">Ready</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-envelope text-warning"></i> Email Service</span>
-                        <span class="badge bg-warning">Limited</span>
-                    </div>
-                </div>
+                <?php
+                // Use list_group component for system status
+                $items = [
+                    [
+                        'label' => 'Database',
+                        'value' => 'Online',
+                        'color' => 'success',
+                        'icon' => 'bi-database'
+                    ],
+                    [
+                        'label' => 'Authentication',
+                        'value' => 'Active',
+                        'color' => 'success',
+                        'icon' => 'bi-shield-check'
+                    ],
+                    [
+                        'label' => 'API Services',
+                        'value' => 'Running',
+                        'color' => 'success',
+                        'icon' => 'bi-cloud-check'
+                    ],
+                    [
+                        'label' => 'QR Scanner',
+                        'value' => 'Ready',
+                        'color' => 'success',
+                        'icon' => 'bi-qr-code-scan'
+                    ],
+                    [
+                        'label' => 'Email Service',
+                        'value' => 'Limited',
+                        'color' => 'warning',
+                        'icon' => 'bi-envelope'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
                 <hr>
                 <div class="d-flex justify-content-between align-items-center">
                     <span><strong>System Version</strong></span>
@@ -182,43 +273,45 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Recent Admin Actions -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history me-2"></i>Recent Admin Actions
+                <h5 class="mb-0" id="recent-actions-title">
+                    <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Recent Admin Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Users Created This Week</span>
-                            <span class="badge bg-primary">0</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Settings Modified</span>
-                            <span class="badge bg-warning">0</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Reports Generated</span>
-                            <span class="badge bg-info">0</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">System Maintenance</span>
-                            <span class="badge bg-success">0</span>
-                        </div>
-                    </div>
-                </div>
+                <?php
+                // Use list_group component for recent admin actions
+                $items = [
+                    [
+                        'label' => 'Users Created This Week',
+                        'value' => 0,
+                        'color' => 'primary'
+                    ],
+                    [
+                        'label' => 'Settings Modified',
+                        'value' => 0,
+                        'color' => 'warning'
+                    ],
+                    [
+                        'label' => 'Reports Generated',
+                        'value' => 0,
+                        'color' => 'info'
+                    ],
+                    [
+                        'label' => 'System Maintenance',
+                        'value' => 0,
+                        'color' => 'success'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
                 <div class="mt-3 d-grid">
-                    <a href="?route=admin/logs" class="btn btn-outline-secondary btn-sm">
+                    <a href="?route=<?= urlencode('admin/logs') ?>"
+                       class="btn btn-outline-secondary btn-sm"
+                       aria-label="View full admin activity log">
                         View Full Log
                     </a>
                 </div>

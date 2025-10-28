@@ -1,166 +1,242 @@
+<?php
+/**
+ * Site Inventory Clerk Dashboard
+ *
+ * Role-specific dashboard for Site Inventory Clerk with pending site actions,
+ * inventory status monitoring, and project equipment tracking.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
+?>
+
 <!-- Site Inventory Clerk Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Site Actions -->
-        <div class="card mb-4" style="border-left: 4px solid var(--warning-color);">
+        <div class="card mb-4 card-accent-warning">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clipboard-data me-2 text-warning"></i>Pending Site Actions
+                <h5 class="mb-0" id="pending-actions-title">
+                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-warning" aria-hidden="true"></i>Pending Site Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" role="group" aria-labelledby="pending-actions-title">
                     <?php
-                    $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
+                    // Define pending action items using WorkflowStatus constants
                     $pendingItems = [
-                        ['label' => 'Draft Requests', 'count' => $siteData['draft_requests'] ?? 0, 'route' => 'requests?status=Draft', 'icon' => 'bi-file-earmark-text', 'color' => 'primary'],
-                        ['label' => 'Deliveries to Verify', 'count' => $siteData['deliveries_to_verify'] ?? 0, 'route' => 'procurement-orders?status=Delivered', 'icon' => 'bi-clipboard-check', 'color' => 'success'],
-                        ['label' => 'Transfers to Receive', 'count' => $siteData['transfers_to_receive'] ?? 0, 'route' => 'transfers?status=Approved', 'icon' => 'bi-arrow-down', 'color' => 'info'],
-                        ['label' => 'Withdrawals to Verify', 'count' => $siteData['withdrawals_to_verify'] ?? 0, 'route' => 'withdrawals?status=Pending+Verification', 'icon' => 'bi-check-circle', 'color' => 'warning']
+                        [
+                            'label' => 'Draft Requests',
+                            'count' => $siteData['draft_requests'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_DRAFT),
+                            'icon' => IconMapper::MODULE_REQUESTS,
+                            'color' => 'primary'
+                        ],
+                        [
+                            'label' => 'Deliveries to Verify',
+                            'count' => $siteData['deliveries_to_verify'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
+                            'icon' => 'bi-clipboard-check',
+                            'color' => 'success'
+                        ],
+                        [
+                            'label' => 'Transfers to Receive',
+                            'count' => $siteData['transfers_to_receive'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_APPROVED),
+                            'icon' => IconMapper::MODULE_TRANSFERS,
+                            'color' => 'info'
+                        ],
+                        [
+                            'label' => 'Withdrawals to Verify',
+                            'count' => $siteData['withdrawals_to_verify'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_VERIFICATION),
+                            'icon' => 'bi-check-circle',
+                            'color' => 'warning'
+                        ]
                     ];
 
-                    foreach ($pendingItems as $item):
+                    // Set action button text
+                    $actionText = 'Process Now';
+
+                    // Render each pending action card using component
+                    foreach ($pendingItems as $item) {
+                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
+                    }
                     ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
-                                    <span class="fw-semibold"><?= $item['label'] ?></span>
-                                </div>
-                                <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
-                            </div>
-                            <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
-                                <i class="bi bi-eye me-1"></i>Process Now
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Site Inventory Status -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-grid-3x3-gap me-2"></i>Site Inventory Status
+                <h5 class="mb-0" id="inventory-status-title">
+                    <i class="bi bi-grid-3x3-gap me-2" aria-hidden="true"></i>Site Inventory Status
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row" role="group" aria-labelledby="inventory-status-title">
                     <div class="col-md-6">
-                        <h6 class="text-muted">Current Site Assets</h6>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Available on Site</span>
-                                <span class="badge bg-success"><?= number_format($siteData['available_on_site'] ?? 0) ?></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>In Use on Site</span>
-                                <span class="badge bg-warning"><?= number_format($siteData['in_use_on_site'] ?? 0) ?></span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Low Stock Alerts</span>
-                                <span class="badge bg-<?= ($siteData['low_stock_alerts'] ?? 0) > 0 ? 'danger' : 'success' ?>">
-                                    <?= number_format($siteData['low_stock_alerts'] ?? 0) ?>
-                                </span>
-                            </div>
-                        </div>
+                        <h6 class="text-muted" id="site-assets-title">Current Site Assets</h6>
+                        <?php
+                        // Use list_group component for site asset counts
+                        $items = [
+                            [
+                                'label' => 'Available on Site',
+                                'value' => number_format($siteData['available_on_site'] ?? 0),
+                                'color' => 'success'
+                            ],
+                            [
+                                'label' => 'In Use on Site',
+                                'value' => number_format($siteData['in_use_on_site'] ?? 0),
+                                'color' => 'warning'
+                            ],
+                            [
+                                'label' => 'Low Stock Alerts',
+                                'value' => number_format($siteData['low_stock_alerts'] ?? 0),
+                                'color' => ($siteData['low_stock_alerts'] ?? 0) > 0 ? 'danger' : 'success'
+                            ]
+                        ];
+                        include APP_ROOT . '/views/dashboard/components/list_group.php';
+                        ?>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted">Today's Activity</h6>
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Tools Borrowed</span>
-                                <span class="badge bg-primary"><?= $siteData['tools_borrowed_today'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Tools Returned</span>
-                                <span class="badge bg-info"><?= $siteData['tools_returned_today'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Requests Created</span>
-                                <span class="badge bg-success"><?= $siteData['requests_created_today'] ?? 0 ?></span>
-                            </div>
-                        </div>
+                        <h6 class="text-muted" id="today-activity-title">Today's Activity</h6>
+                        <?php
+                        // Use list_group component for today's activity
+                        $items = [
+                            [
+                                'label' => 'Tools Borrowed',
+                                'value' => $siteData['tools_borrowed_today'] ?? 0,
+                                'color' => 'primary'
+                            ],
+                            [
+                                'label' => 'Tools Returned',
+                                'value' => $siteData['tools_returned_today'] ?? 0,
+                                'color' => 'info'
+                            ],
+                            [
+                                'label' => 'Requests Created',
+                                'value' => $siteData['requests_created_today'] ?? 0,
+                                'color' => 'success'
+                            ]
+                        ];
+                        include APP_ROOT . '/views/dashboard/components/list_group.php';
+                        ?>
                     </div>
                 </div>
-                
+
                 <?php if (($siteData['low_stock_alerts'] ?? 0) > 0): ?>
-                <div class="alert alert-warning mt-3">
-                    <i class="bi bi-exclamation-triangle"></i> 
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                     <strong>Low Stock Alert:</strong> <?= $siteData['low_stock_alerts'] ?> items are running low. Consider creating requests.
                 </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>Site Operations
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="?route=requests/create" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Create Request
-                    </a>
-                    <a href="?route=incidents/create" class="btn btn-danger btn-sm">
-                        <i class="bi bi-exclamation-circle"></i> Report Incident
-                    </a>
-                    <a href="?route=transfers/create" class="btn btn-info btn-sm">
-                        <i class="bi bi-arrow-repeat"></i> Initiate Transfer
-                    </a>
-                    <a href="?route=maintenance/create" class="btn btn-warning btn-sm">
-                        <i class="bi bi-tools"></i> Schedule Maintenance
-                    </a>
-                </div>
-            </div>
-        </div>
+        <?php
+        $title = 'Site Operations';
+        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $actions = [
+            [
+                'label' => 'Create Request',
+                'route' => 'requests/create',
+                'icon' => IconMapper::ACTION_CREATE,
+                'color' => 'primary'
+            ],
+            [
+                'label' => 'Report Incident',
+                'route' => 'incidents/create',
+                'icon' => 'bi-exclamation-circle',
+                'color' => 'danger'
+            ],
+            [
+                'label' => 'Initiate Transfer',
+                'route' => 'transfers/create',
+                'icon' => 'bi-arrow-repeat',
+                'color' => 'info'
+            ],
+            [
+                'label' => 'Schedule Maintenance',
+                'route' => 'maintenance/create',
+                'icon' => IconMapper::MODULE_MAINTENANCE,
+                'color' => 'warning'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+        ?>
 
         <!-- Project Equipment -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-tools me-2"></i>Project Equipment
+                <h5 class="mb-0" id="project-equipment-title">
+                    <i class="bi bi-tools me-2" aria-hidden="true"></i>Project Equipment
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-box-arrow-right text-primary"></i> Currently Borrowed</span>
-                        <span class="badge bg-primary"><?= $dashboardData['borrowed_tools']['project_borrowed'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-exclamation-triangle text-danger"></i> Overdue Returns</span>
-                        <span class="badge bg-danger"><?= $dashboardData['borrowed_tools']['project_overdue'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-calendar-event text-warning"></i> Due This Week</span>
-                        <span class="badge bg-warning"><?= $dashboardData['borrowed_tools']['project_due_soon'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-box-seam text-success"></i> Available</span>
-                        <span class="badge bg-success"><?= $dashboardData['borrowed_tools']['project_available'] ?? 0 ?></span>
-                    </div>
-                </div>
+                <?php
+                // Use list_group component for project equipment
+                $items = [
+                    [
+                        'label' => 'Currently Borrowed',
+                        'value' => $dashboardData['borrowed_tools']['project_borrowed'] ?? 0,
+                        'color' => 'primary',
+                        'icon' => 'bi-box-arrow-right'
+                    ],
+                    [
+                        'label' => 'Overdue Returns',
+                        'value' => $dashboardData['borrowed_tools']['project_overdue'] ?? 0,
+                        'color' => 'danger',
+                        'icon' => 'bi-exclamation-triangle'
+                    ],
+                    [
+                        'label' => 'Due This Week',
+                        'value' => $dashboardData['borrowed_tools']['project_due_soon'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => 'bi-calendar-event'
+                    ],
+                    [
+                        'label' => 'Available',
+                        'value' => $dashboardData['borrowed_tools']['project_available'] ?? 0,
+                        'color' => 'success',
+                        'icon' => 'bi-box-seam'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
                 <div class="mt-3 d-grid gap-2">
-                    <a href="?route=borrowed-tools" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-eye"></i> View All Equipment
+                    <a href="?route=borrowed-tools"
+                       class="btn btn-outline-primary btn-sm"
+                       aria-label="View all equipment">
+                        <i class="bi bi-eye" aria-hidden="true"></i> View All Equipment
                     </a>
-                    <a href="?route=borrowed-tools/create-batch" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Borrow Equipment
+                    <a href="?route=<?= urlencode('borrowed-tools/create-batch') ?>"
+                       class="btn btn-primary btn-sm"
+                       aria-label="Borrow equipment">
+                        <i class="<?= IconMapper::ACTION_CREATE ?>" aria-hidden="true"></i> Borrow Equipment
                     </a>
                 </div>
             </div>
@@ -169,68 +245,82 @@
         <!-- Incident Management -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-shield-exclamation me-2"></i>Incident Management
+                <h5 class="mb-0" id="incident-management-title">
+                    <i class="<?= IconMapper::MODULE_INCIDENTS ?> me-2" aria-hidden="true"></i>Incident Management
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-exclamation-triangle text-warning"></i> Open Incidents</span>
-                        <span class="badge bg-warning"><?= $siteData['open_incidents'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-clock text-info"></i> Recent (7 days)</span>
-                        <span class="badge bg-info"><?= $siteData['recent_incidents'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-geo-alt text-danger"></i> Lost Items</span>
-                        <span class="badge bg-danger"><?= $siteData['lost_items'] ?? 0 ?></span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-hammer text-warning"></i> Damaged Items</span>
-                        <span class="badge bg-warning"><?= $siteData['damaged_items'] ?? 0 ?></span>
-                    </div>
-                </div>
+                <?php
+                // Use list_group component for incident management
+                $items = [
+                    [
+                        'label' => 'Open Incidents',
+                        'value' => $siteData['open_incidents'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => 'bi-exclamation-triangle'
+                    ],
+                    [
+                        'label' => 'Recent (7 days)',
+                        'value' => $siteData['recent_incidents'] ?? 0,
+                        'color' => 'info',
+                        'icon' => 'bi-clock'
+                    ],
+                    [
+                        'label' => 'Lost Items',
+                        'value' => $siteData['lost_items'] ?? 0,
+                        'color' => 'danger',
+                        'icon' => 'bi-geo-alt'
+                    ],
+                    [
+                        'label' => 'Damaged Items',
+                        'value' => $siteData['damaged_items'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => 'bi-hammer'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
                 <div class="mt-3 d-grid">
-                    <a href="?route=incidents" class="btn btn-outline-danger btn-sm">
+                    <a href="?route=incidents"
+                       class="btn btn-outline-danger btn-sm"
+                       aria-label="View all incidents">
                         View All Incidents
                     </a>
                 </div>
             </div>
         </div>
-        
-        <!-- Quick Stats -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-speedometer2 me-2"></i>Daily Summary
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-tools text-primary fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($siteData['tools_borrowed_today'] ?? 0) ?></h6>
-                        <small class="text-muted">Tools Out</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-arrow-counterclockwise text-success fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($siteData['tools_returned_today'] ?? 0) ?></h6>
-                        <small class="text-muted">Tools In</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-file-earmark-plus text-info fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($siteData['requests_created_today'] ?? 0) ?></h6>
-                        <small class="text-muted">Requests Made</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-clipboard-check text-warning fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($siteData['deliveries_to_verify'] ?? 0) ?></h6>
-                        <small class="text-muted">To Verify</small>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+        <!-- Daily Summary -->
+        <?php
+        $stats = [
+            [
+                'icon' => 'bi-tools',
+                'count' => $siteData['tools_borrowed_today'] ?? 0,
+                'label' => 'Tools Out',
+                'color' => 'primary'
+            ],
+            [
+                'icon' => 'bi-arrow-counterclockwise',
+                'count' => $siteData['tools_returned_today'] ?? 0,
+                'label' => 'Tools In',
+                'color' => 'success'
+            ],
+            [
+                'icon' => 'bi-file-earmark-plus',
+                'count' => $siteData['requests_created_today'] ?? 0,
+                'label' => 'Requests Made',
+                'color' => 'info'
+            ],
+            [
+                'icon' => 'bi-clipboard-check',
+                'count' => $siteData['deliveries_to_verify'] ?? 0,
+                'label' => 'To Verify',
+                'color' => 'warning'
+            ]
+        ];
+        $title = 'Daily Summary';
+        $titleIcon = 'bi-speedometer2';
+        include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+        ?>
     </div>
 </div>

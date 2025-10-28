@@ -1,203 +1,284 @@
+<?php
+/**
+ * Procurement Officer Dashboard
+ *
+ * Role-specific dashboard for Procurement Officer with purchase order management,
+ * vendor tracking, and delivery performance monitoring.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$procurementData = $dashboardData['role_specific']['procurement'] ?? [];
+?>
+
 <!-- Procurement Officer Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Procurement Actions -->
-        <div class="card mb-4" style="border-left: 4px solid var(--success-color);">
+        <div class="card mb-4 card-accent-success">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-cart-check me-2 text-success"></i>Pending Procurement Actions
+                <h5 class="mb-0" id="pending-procurement-title">
+                    <i class="<?= IconMapper::MODULE_PROCUREMENT ?> me-2 text-success" aria-hidden="true"></i>Pending Procurement Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <?php 
-                    $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
+                <div class="row" role="group" aria-labelledby="pending-procurement-title">
+                    <?php
+                    // Define pending action items using WorkflowStatus constants
                     $pendingItems = [
-                        ['label' => 'Approved Requests (Pending PO)', 'count' => $procurementData['approved_requests_pending_po'] ?? 0, 'route' => 'requests?status=Approved', 'icon' => 'bi-clipboard-check', 'color' => 'primary'],
-                        ['label' => 'Draft Orders', 'count' => $procurementData['draft_orders'] ?? 0, 'route' => 'procurement-orders?status=Draft', 'icon' => 'bi-file-earmark-text', 'color' => 'warning'],
-                        ['label' => 'Pending Delivery', 'count' => $procurementData['pending_delivery'] ?? 0, 'route' => 'procurement-orders?delivery_status=Pending', 'icon' => 'bi-truck', 'color' => 'info'],
-                        ['label' => 'Recent POs (30 days)', 'count' => $procurementData['recent_po_count'] ?? 0, 'route' => 'procurement-orders?recent=30', 'icon' => 'bi-calendar-check', 'color' => 'secondary']
+                        [
+                            'label' => 'Approved Requests (Pending PO)',
+                            'count' => $procurementData['approved_requests_pending_po'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_APPROVED),
+                            'icon' => 'bi-clipboard-check',
+                            'color' => 'primary'
+                        ],
+                        [
+                            'label' => 'Draft Orders',
+                            'count' => $procurementData['draft_orders'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DRAFT),
+                            'icon' => 'bi-file-earmark-text',
+                            'color' => 'warning'
+                        ],
+                        [
+                            'label' => 'Pending Delivery',
+                            'count' => $procurementData['pending_delivery'] ?? 0,
+                            'route' => 'procurement-orders?' . http_build_query(['delivery_status' => WorkflowStatus::DELIVERY_PENDING]),
+                            'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
+                            'color' => 'info'
+                        ],
+                        [
+                            'label' => 'Recent POs (30 days)',
+                            'count' => $procurementData['recent_po_count'] ?? 0,
+                            'route' => 'procurement-orders?recent=30',
+                            'icon' => 'bi-calendar-check',
+                            'color' => 'secondary'
+                        ]
                     ];
-                    
-                    foreach ($pendingItems as $item):
+
+                    // Set custom button text for procurement
+                    $actionText = 'Process Now';
+
+                    // Render each pending action card using component
+                    foreach ($pendingItems as $item) {
+                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
+                    }
                     ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
-                                    <span class="fw-semibold"><?= $item['label'] ?></span>
-                                </div>
-                                <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
-                            </div>
-                            <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
-                                <i class="bi bi-eye me-1"></i>Process Now
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Delivery Performance -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-speedometer2 me-2"></i>Delivery Performance
+                <h5 class="mb-0" id="delivery-performance-title">
+                    <i class="<?= IconMapper::MODULE_DASHBOARD ?> me-2" aria-hidden="true"></i>Delivery Performance
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-muted">Delivery Metrics</h6>
-                        <?php 
+                        <h6 class="text-muted mb-3" id="delivery-metrics-label">Delivery Metrics</h6>
+
+                        <?php
+                        // Calculate delivery performance with proper defaults
                         $onTimeDeliveries = $procurementData['on_time_deliveries'] ?? 0;
-                        $totalDeliveries = $procurementData['total_deliveries'] ?? 1;
-                        $onTimePercentage = $totalDeliveries > 0 ? round(($onTimeDeliveries / $totalDeliveries) * 100, 1) : 0;
+                        $totalDeliveries = max($procurementData['total_deliveries'] ?? 1, 1);
+                        $onTimePercentage = round(($onTimeDeliveries / $totalDeliveries) * 100, 1);
+
+                        // Use DashboardThresholds for color determination
+                        $deliveryColor = DashboardThresholds::getDeliveryPerformanceColor($onTimePercentage);
                         ?>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
+
+                        <div class="mb-3" role="region" aria-labelledby="delivery-metrics-label">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span>On-Time Deliveries</span>
-                                <span class="badge bg-<?= $onTimePercentage >= 90 ? 'success' : ($onTimePercentage >= 80 ? 'warning' : 'danger') ?>">
+                                <span class="badge bg-<?= $deliveryColor ?>" role="status" aria-label="<?= $onTimePercentage ?>% on-time delivery rate">
                                     <?= $onTimePercentage ?>%
                                 </span>
                             </div>
-                            <div class="progress mt-2" style="height: 20px;">
-                                <div class="progress-bar bg-<?= $onTimePercentage >= 90 ? 'success' : ($onTimePercentage >= 80 ? 'warning' : 'danger') ?>" 
-                                     role="progressbar" style="width: <?= $onTimePercentage ?>%">
-                                    <?= $onTimeDeliveries ?> / <?= $totalDeliveries ?>
-                                </div>
-                            </div>
+
+                            <?php
+                            // Use progress bar component
+                            $label = 'On-Time Deliveries';
+                            $current = $onTimeDeliveries;
+                            $total = $totalDeliveries;
+                            $config = [
+                                'color' => $deliveryColor,
+                                'showPercentage' => false,
+                                'showCount' => true,
+                                'height' => 'progress-lg'
+                            ];
+                            include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                            ?>
                         </div>
+
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span>Average Delivery Variance</span>
                                 <span class="text-muted">
-                                    <?= ($procurementData['avg_delivery_variance'] ?? 0) > 0 ? '+' : '' ?><?= $procurementData['avg_delivery_variance'] ?? 0 ?> days
+                                    <?= ($procurementData['avg_delivery_variance'] ?? 0) > 0 ? '+' : '' ?><?= number_format($procurementData['avg_delivery_variance'] ?? 0) ?> days
                                 </span>
                             </div>
                         </div>
                     </div>
+
                     <div class="col-md-6">
-                        <h6 class="text-muted">Vendor Management</h6>
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Active Vendors</span>
-                                <span class="badge bg-primary"><?= $procurementData['active_vendors'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Preferred Vendors</span>
-                                <span class="badge bg-success"><?= $procurementData['preferred_vendors'] ?? 0 ?></span>
-                            </div>
-                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                                <span>Active Makers</span>
-                                <span class="badge bg-info"><?= $procurementData['active_makers'] ?? 0 ?></span>
-                            </div>
-                        </div>
+                        <?php
+                        // Vendor management list using component
+                        $items = [
+                            [
+                                'label' => 'Active Vendors',
+                                'value' => $procurementData['active_vendors'] ?? 0,
+                                'color' => 'primary'
+                            ],
+                            [
+                                'label' => 'Preferred Vendors',
+                                'value' => $procurementData['preferred_vendors'] ?? 0,
+                                'color' => 'success',
+                                'icon' => 'bi-star-fill'
+                            ],
+                            [
+                                'label' => 'Active Makers',
+                                'value' => $procurementData['active_makers'] ?? 0,
+                                'color' => 'info',
+                                'icon' => 'bi-factory'
+                            ]
+                        ];
+                        $title = 'Vendor Management';
+                        include APP_ROOT . '/views/dashboard/components/list_group.php';
+                        ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>Procurement Operations
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="?route=procurement-orders/create" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Create Purchase Order
-                    </a>
-                    <a href="?route=requests?status=Approved" class="btn btn-success btn-sm">
-                        <i class="bi bi-clipboard-check"></i> Process Approved Requests
-                    </a>
-                    <a href="?route=vendors" class="btn btn-warning btn-sm">
-                        <i class="bi bi-building"></i> Manage Vendors
-                    </a>
-                    <a href="?route=procurement-orders?delivery=tracking" class="btn btn-info btn-sm">
-                        <i class="bi bi-truck"></i> Track Deliveries
-                    </a>
-                </div>
-            </div>
-        </div>
-        
+        <?php
+        $title = 'Procurement Operations';
+        $titleIcon = IconMapper::QUICK_ACTIONS;
+        $actions = [
+            [
+                'label' => 'Create Purchase Order',
+                'route' => 'procurement-orders/create',
+                'icon' => IconMapper::ACTION_CREATE,
+                'color' => 'primary'
+            ],
+            [
+                'label' => 'Process Approved Requests',
+                'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_APPROVED),
+                'icon' => 'bi-clipboard-check',
+                'color' => 'success'
+            ],
+            [
+                'label' => 'Manage Vendors',
+                'route' => 'vendors',
+                'icon' => 'bi-building',
+                'color' => 'warning'
+            ],
+            [
+                'label' => 'Track Deliveries',
+                'route' => 'procurement-orders?delivery=tracking',
+                'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
+                'color' => 'info'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+        ?>
+
         <!-- Vendor Quick Stats -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-building me-2"></i>Vendor Overview
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-building text-primary fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($procurementData['active_vendors'] ?? 0) ?></h6>
-                        <small class="text-muted">Active Vendors</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-star-fill text-warning fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($procurementData['preferred_vendors'] ?? 0) ?></h6>
-                        <small class="text-muted">Preferred</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-factory text-info fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($procurementData['active_makers'] ?? 0) ?></h6>
-                        <small class="text-muted">Makers</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-cart-check text-success fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($procurementData['recent_po_count'] ?? 0) ?></h6>
-                        <small class="text-muted">Recent POs</small>
-                    </div>
-                </div>
-                <div class="d-grid">
-                    <a href="?route=vendors/create" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Add Vendor
-                    </a>
-                </div>
-            </div>
+        <?php
+        $stats = [
+            [
+                'icon' => 'bi-building',
+                'count' => $procurementData['active_vendors'] ?? 0,
+                'label' => 'Active Vendors',
+                'color' => 'primary'
+            ],
+            [
+                'icon' => 'bi-star-fill',
+                'count' => $procurementData['preferred_vendors'] ?? 0,
+                'label' => 'Preferred',
+                'color' => 'warning'
+            ],
+            [
+                'icon' => 'bi-factory',
+                'count' => $procurementData['active_makers'] ?? 0,
+                'label' => 'Makers',
+                'color' => 'info'
+            ],
+            [
+                'icon' => IconMapper::MODULE_PROCUREMENT,
+                'count' => $procurementData['recent_po_count'] ?? 0,
+                'label' => 'Recent POs',
+                'color' => 'success'
+            ]
+        ];
+        $title = 'Vendor Overview';
+        $titleIcon = 'bi-building';
+        include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+        ?>
+
+        <!-- Add Vendor Button -->
+        <div class="d-grid mb-4">
+            <a href="?route=vendors/create" class="btn btn-outline-primary btn-sm" aria-label="Add new vendor">
+                <i class="<?= IconMapper::ACTION_CREATE ?> me-1" aria-hidden="true"></i>Add Vendor
+            </a>
         </div>
-        
+
         <!-- Recent Activity -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history me-2"></i>Recent Activity
+                <h5 class="mb-0" id="recent-activity-title">
+                    <i class="<?= IconMapper::RECENT_ACTIVITY ?> me-2" aria-hidden="true"></i>Recent Activity
                 </h5>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">POs Created This Week</span>
-                            <span class="badge bg-primary">0</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Deliveries Scheduled</span>
-                            <span class="badge bg-warning">0</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Vendors Added</span>
-                            <span class="badge bg-success">0</span>
-                        </div>
-                    </div>
-                </div>
+                <?php
+                // Recent activity metrics using list_group component
+                $items = [
+                    [
+                        'label' => 'POs Created This Week',
+                        'value' => $procurementData['pos_this_week'] ?? 0,
+                        'color' => 'primary'
+                    ],
+                    [
+                        'label' => 'Deliveries Scheduled',
+                        'value' => $procurementData['scheduled_deliveries'] ?? 0,
+                        'color' => 'warning'
+                    ],
+                    [
+                        'label' => 'Vendors Added',
+                        'value' => $procurementData['vendors_added'] ?? 0,
+                        'color' => 'success'
+                    ]
+                ];
+                include APP_ROOT . '/views/dashboard/components/list_group.php';
+                ?>
+
                 <div class="mt-3 d-grid">
-                    <a href="?route=procurement-orders" class="btn btn-outline-secondary btn-sm">
-                        View All Orders
+                    <a href="?route=procurement-orders" class="btn btn-outline-secondary btn-sm" aria-label="View all procurement orders">
+                        <i class="<?= IconMapper::ACTION_VIEW ?> me-1" aria-hidden="true"></i>View All Orders
                     </a>
                 </div>
             </div>
