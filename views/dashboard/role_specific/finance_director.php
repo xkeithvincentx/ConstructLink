@@ -1,80 +1,127 @@
+<?php
+/**
+ * Finance Director Dashboard
+ *
+ * Role-specific dashboard for Finance Director with high-value approvals,
+ * budget monitoring, and financial metrics.
+ *
+ * Refactored to use reusable components and eliminate code duplication.
+ * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * @package ConstructLink
+ * @subpackage Dashboard - Role Specific
+ * @version 2.0 - Refactored
+ * @since 2025-10-28
+ */
+
+// Ensure required constants are available
+if (!class_exists('WorkflowStatus')) {
+    require_once APP_ROOT . '/includes/constants/WorkflowStatus.php';
+}
+if (!class_exists('DashboardThresholds')) {
+    require_once APP_ROOT . '/includes/constants/DashboardThresholds.php';
+}
+if (!class_exists('IconMapper')) {
+    require_once APP_ROOT . '/includes/constants/IconMapper.php';
+}
+
+// Extract role-specific data
+$financeData = $dashboardData['role_specific']['finance'] ?? [];
+?>
+
 <!-- Finance Director Dashboard -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Financial Approvals -->
-        <div class="card mb-4" style="border-left: 4px solid var(--danger-color);">
+        <div class="card mb-4 card-accent-danger">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-hourglass-split me-2 text-danger"></i>Pending Financial Approvals
+                <h5 class="mb-0" id="pending-approvals-title">
+                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-danger" aria-hidden="true"></i>Pending Financial Approvals
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <?php 
-                    $financeData = $dashboardData['role_specific']['finance'] ?? [];
+                <div class="row" role="group" aria-labelledby="pending-approvals-title">
+                    <?php
+                    // Define pending action items using WorkflowStatus constants
                     $pendingItems = [
-                        ['label' => 'High Value Requests', 'count' => $financeData['pending_high_value_requests'] ?? 0, 'route' => 'requests?status=Reviewed&high_value=1', 'icon' => 'bi-file-earmark-text', 'color' => 'primary'],
-                        ['label' => 'High Value Procurement', 'count' => $financeData['pending_high_value_procurement'] ?? 0, 'route' => 'procurement-orders?status=Reviewed&high_value=1', 'icon' => 'bi-cart-check', 'color' => 'warning'],
-                        ['label' => 'Transfer Approvals', 'count' => $financeData['pending_transfers'] ?? 0, 'route' => 'transfers?status=Pending+Approval', 'icon' => 'bi-arrow-left-right', 'color' => 'info'],
-                        ['label' => 'Maintenance Approvals', 'count' => $financeData['pending_maintenance_approval'] ?? 0, 'route' => 'maintenance?status=scheduled&high_value=1', 'icon' => 'bi-tools', 'color' => 'secondary']
+                        [
+                            'label' => 'High Value Requests',
+                            'count' => $financeData['pending_high_value_requests'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_REVIEWED, ['high_value' => 1]),
+                            'icon' => IconMapper::MODULE_REQUESTS,
+                            'color' => 'primary'
+                        ],
+                        [
+                            'label' => 'High Value Procurement',
+                            'count' => $financeData['pending_high_value_procurement'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_REVIEWED, ['high_value' => 1]),
+                            'icon' => IconMapper::MODULE_PROCUREMENT,
+                            'color' => 'warning'
+                        ],
+                        [
+                            'label' => 'Transfer Approvals',
+                            'count' => $financeData['pending_transfers'] ?? 0,
+                            'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_APPROVAL),
+                            'icon' => IconMapper::MODULE_TRANSFERS,
+                            'color' => 'info'
+                        ],
+                        [
+                            'label' => 'Maintenance Approvals',
+                            'count' => $financeData['pending_maintenance_approval'] ?? 0,
+                            'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED, 'high_value' => 1]),
+                            'icon' => IconMapper::MODULE_MAINTENANCE,
+                            'color' => 'secondary'
+                        ]
                     ];
-                    
-                    foreach ($pendingItems as $item):
+
+                    // Render each pending action card using component
+                    foreach ($pendingItems as $item) {
+                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
+                    }
                     ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="pending-action-item p-3 rounded" style="background-color: var(--bg-light); border-left: 3px solid var(--<?= $item['color'] ?>-color);">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="<?= $item['icon'] ?> text-<?= $item['color'] ?> me-2 fs-5"></i>
-                                    <span class="fw-semibold"><?= $item['label'] ?></span>
-                                </div>
-                                <span class="badge bg-<?= $item['color'] ?> rounded-pill"><?= $item['count'] ?></span>
-                            </div>
-                            <?php if ($item['count'] > 0): ?>
-                            <a href="?route=<?= $item['route'] ?>" class="btn btn-sm btn-<?= $item['color'] ?> mt-1">
-                                <i class="bi bi-eye me-1"></i>Review Now
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-        
+
         <!-- Budget Utilization -->
         <?php if (!empty($dashboardData['budget_utilization'])): ?>
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up-arrow me-2"></i>Project Budget Utilization
+                <h5 class="mb-0" id="budget-utilization-title">
+                    <i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Project Budget Utilization
                 </h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-sm" aria-labelledby="budget-utilization-title">
                         <thead>
                             <tr>
-                                <th>Project</th>
-                                <th class="text-end">Budget</th>
-                                <th class="text-end">Utilized</th>
-                                <th class="text-center">%</th>
+                                <th scope="col">Project</th>
+                                <th scope="col" class="text-end">Budget</th>
+                                <th scope="col" class="text-end">Utilized</th>
+                                <th scope="col" class="text-center">Progress</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($dashboardData['budget_utilization'] as $project): 
-                                $percentage = $project['budget'] > 0 ? round(($project['utilized'] / $project['budget']) * 100, 1) : 0;
-                                $progressClass = $percentage > 90 ? 'danger' : ($percentage > 75 ? 'warning' : 'success');
-                            ?>
+                            <?php foreach ($dashboardData['budget_utilization'] as $index => $project): ?>
                             <tr>
                                 <td><?= htmlspecialchars($project['project_name']) ?></td>
                                 <td class="text-end"><?= formatCurrency($project['budget']) ?></td>
                                 <td class="text-end"><?= formatCurrency($project['utilized']) ?></td>
                                 <td>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-<?= $progressClass ?>" role="progressbar" 
-                                             style="width: <?= $percentage ?>%"><?= $percentage ?>%</div>
-                                    </div>
+                                    <?php
+                                    // Use progress_bar component with DashboardThresholds
+                                    $label = htmlspecialchars($project['project_name']) . ' Budget';
+                                    $current = $project['utilized'];
+                                    $total = $project['budget'];
+                                    $config = [
+                                        'thresholds' => DashboardThresholds::getThresholds('budget'),
+                                        'showPercentage' => true,
+                                        'showCount' => false,
+                                        'height' => 'progress-lg'
+                                    ];
+                                    include APP_ROOT . '/views/dashboard/components/progress_bar.php';
+                                    ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -85,77 +132,123 @@
         </div>
         <?php endif; ?>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Financial Summary -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-cash-stack me-2"></i>Financial Summary
+                <h5 class="mb-0" id="financial-summary-title">
+                    <i class="<?= IconMapper::FINANCE_CASH ?> me-2" aria-hidden="true"></i>Financial Summary
                 </h5>
             </div>
             <div class="card-body">
+                <?php
+                // Define financial metrics for list_group component
+                $financialMetrics = [
+                    [
+                        'label' => 'Total Asset Value',
+                        'value' => formatCurrency($financeData['total_asset_value'] ?? 0),
+                        'color' => 'primary'
+                    ],
+                    [
+                        'label' => 'Average Asset Value',
+                        'value' => formatCurrency($financeData['avg_asset_value'] ?? 0),
+                        'color' => 'info'
+                    ],
+                    [
+                        'label' => 'High Value Assets',
+                        'value' => $financeData['high_value_assets'] ?? 0,
+                        'color' => 'warning',
+                        'icon' => IconMapper::FINANCE_HIGH_VALUE
+                    ]
+                ];
+
+                // Render first 2 items as simple display
+                ?>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Total Asset Value</span>
-                        <strong><?= formatCurrency($financeData['total_asset_value'] ?? 0) ?></strong>
+                        <span class="text-muted"><?= $financialMetrics[0]['label'] ?></span>
+                        <strong><?= $financialMetrics[0]['value'] ?></strong>
                     </div>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Average Asset Value</span>
-                        <strong><?= formatCurrency($financeData['avg_asset_value'] ?? 0) ?></strong>
+                        <span class="text-muted"><?= $financialMetrics[1]['label'] ?></span>
+                        <strong><?= $financialMetrics[1]['value'] ?></strong>
                     </div>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">High Value Assets</span>
-                        <span class="badge bg-warning"><?= $financeData['high_value_assets'] ?? 0 ?></span>
+                        <span class="text-muted"><?= $financialMetrics[2]['label'] ?></span>
+                        <span class="badge bg-<?= $financialMetrics[2]['color'] ?>" role="status">
+                            <?= number_format($financialMetrics[2]['value']) ?>
+                        </span>
                     </div>
                 </div>
+
                 <hr>
-                <div class="d-grid gap-2">
-                    <a href="?route=reports/financial" class="btn btn-primary btn-sm">
-                        <i class="bi bi-file-earmark-bar-graph"></i> Financial Reports
+
+                <?php
+                // Quick actions using component
+                $title = 'Financial Operations';
+                $titleIcon = IconMapper::QUICK_ACTIONS;
+                $actions = [
+                    [
+                        'label' => 'Financial Reports',
+                        'route' => 'reports/financial',
+                        'icon' => 'bi-file-earmark-bar-graph',
+                        'color' => 'primary'
+                    ],
+                    [
+                        'label' => 'View High Value Assets',
+                        'route' => 'assets?high_value=1',
+                        'icon' => IconMapper::ACTION_VIEW,
+                        'color' => 'outline-warning'
+                    ]
+                ];
+                ?>
+                <nav class="d-grid gap-2" aria-label="Financial operations">
+                    <?php foreach ($actions as $action): ?>
+                    <a href="?route=<?= urlencode($action['route']) ?>"
+                       class="btn btn-<?= htmlspecialchars($action['color']) ?> btn-sm"
+                       aria-label="<?= htmlspecialchars($action['label']) ?>">
+                        <i class="<?= htmlspecialchars($action['icon']) ?> me-1" aria-hidden="true"></i>
+                        <?= htmlspecialchars($action['label']) ?>
                     </a>
-                    <a href="?route=assets?high_value=1" class="btn btn-outline-warning btn-sm">
-                        <i class="bi bi-eye"></i> View High Value Assets
-                    </a>
-                </div>
+                    <?php endforeach; ?>
+                </nav>
             </div>
         </div>
-        
+
         <!-- Quick Stats -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-speedometer2 me-2"></i>Quick Stats
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-box text-primary fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h6>
-                        <small class="text-muted">Total Assets</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-building text-success fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($dashboardData['active_projects'] ?? 0) ?></h6>
-                        <small class="text-muted">Active Projects</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-tools text-warning fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($dashboardData['maintenance_assets'] ?? 0) ?></h6>
-                        <small class="text-muted">Maintenance</small>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <i class="bi bi-exclamation-triangle text-danger fs-3"></i>
-                        <h6 class="mb-0"><?= number_format($dashboardData['total_incidents'] ?? 0) ?></h6>
-                        <small class="text-muted">Incidents</small>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php
+        $stats = [
+            [
+                'icon' => IconMapper::MODULE_ASSETS,
+                'count' => $dashboardData['total_assets'] ?? 0,
+                'label' => 'Total Assets',
+                'color' => 'primary'
+            ],
+            [
+                'icon' => IconMapper::MODULE_PROJECTS,
+                'count' => $dashboardData['active_projects'] ?? 0,
+                'label' => 'Active Projects',
+                'color' => 'success'
+            ],
+            [
+                'icon' => IconMapper::MODULE_MAINTENANCE,
+                'count' => $dashboardData['maintenance_assets'] ?? 0,
+                'label' => 'Maintenance',
+                'color' => 'warning'
+            ],
+            [
+                'icon' => IconMapper::MODULE_INCIDENTS,
+                'count' => $dashboardData['total_incidents'] ?? 0,
+                'label' => 'Incidents',
+                'color' => 'danger'
+            ]
+        ];
+        include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+        ?>
     </div>
 </div>

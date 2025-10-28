@@ -1,0 +1,321 @@
+/**
+ * Dashboard Module Stylesheet
+ *
+ * Centralized styles for role-specific dashboards.
+ * Eliminates 40+ inline style violations by extracting to CSS classes.
+ *
+ * @package ConstructLink
+ * @subpackage Assets - CSS
+ * @version 2.0
+ * @since 2025-10-28
+ */
+
+/* ==========================================================================
+   Pending Action Item Component
+   ========================================================================== */
+
+.pending-action-item {
+    background-color: var(--bg-light, #f8f9fa);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pending-action-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Pending Action Item - Color Variants */
+.pending-action-item-primary {
+    border-left: 3px solid var(--primary-color, #0d6efd);
+}
+
+.pending-action-item-secondary {
+    border-left: 3px solid var(--secondary-color, #6c757d);
+}
+
+.pending-action-item-success {
+    border-left: 3px solid var(--success-color, #198754);
+}
+
+.pending-action-item-danger {
+    border-left: 3px solid var(--danger-color, #dc3545);
+}
+
+.pending-action-item-warning {
+    border-left: 3px solid var(--warning-color, #ffc107);
+}
+
+.pending-action-item-info {
+    border-left: 3px solid var(--info-color, #0dcaf0);
+}
+
+/* ==========================================================================
+   Card Accent Borders
+   ========================================================================== */
+
+.card-accent-primary {
+    border-left: 4px solid var(--primary-color, #0d6efd);
+}
+
+.card-accent-secondary {
+    border-left: 4px solid var(--secondary-color, #6c757d);
+}
+
+.card-accent-success {
+    border-left: 4px solid var(--success-color, #198754);
+}
+
+.card-accent-danger {
+    border-left: 4px solid var(--danger-color, #dc3545);
+}
+
+.card-accent-warning {
+    border-left: 4px solid var(--warning-color, #ffc107);
+}
+
+.card-accent-info {
+    border-left: 4px solid var(--info-color, #0dcaf0);
+}
+
+/* ==========================================================================
+   Progress Bar Variants
+   ========================================================================== */
+
+.progress-sm {
+    height: 8px;
+}
+
+.progress-md {
+    height: 10px;
+}
+
+.progress-lg {
+    height: 20px;
+}
+
+/* Progress bar transitions */
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* ==========================================================================
+   Stat Card Component
+   ========================================================================== */
+
+.stat-card-item {
+    padding: 0.75rem 0;
+    transition: transform 0.2s ease;
+}
+
+.stat-card-item:hover {
+    transform: scale(1.05);
+}
+
+.stat-card-item i {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.stat-card-item:hover i {
+    transform: rotate(360deg);
+}
+
+/* ==========================================================================
+   Icon Utilities
+   ========================================================================== */
+
+.icon-muted {
+    opacity: 0.4;
+}
+
+.icon-emphasized {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   Focus Indicators (WCAG 2.1 AA Compliance)
+   ========================================================================== */
+
+.card-header a:focus,
+.btn:focus,
+.list-group-item:focus,
+.list-group-item-action:focus {
+    outline: 3px solid var(--bs-focus-ring-color, #0d6efd);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Ensure focus indicators are visible on all backgrounds */
+.bg-primary a:focus,
+.bg-dark a:focus {
+    outline-color: #fff;
+}
+
+/* ==========================================================================
+   List Group Enhancements
+   ========================================================================== */
+
+.list-group-flush .list-group-item {
+    transition: background-color 0.2s ease;
+}
+
+.list-group-flush .list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.list-group-item-action:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Badge Enhancements
+   ========================================================================== */
+
+.badge {
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}
+
+/* ==========================================================================
+   Dashboard Layout Utilities
+   ========================================================================== */
+
+.dashboard-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color, #dee2e6);
+}
+
+.dashboard-section {
+    margin-bottom: 2rem;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    /* Stack pending action items on mobile */
+    .pending-action-item {
+        margin-bottom: 1rem;
+    }
+
+    /* Reduce stat card icon size on mobile */
+    .stat-card-item i {
+        font-size: 2rem !important;
+    }
+
+    /* Improve button readability on mobile */
+    .btn-sm {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Further reduce padding on small screens */
+    .pending-action-item {
+        padding: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+    .pending-action-item,
+    .card {
+        page-break-inside: avoid;
+    }
+
+    .btn,
+    .badge {
+        border: 1px solid #000;
+    }
+
+    /* Ensure colors are visible in print */
+    .text-primary,
+    .text-success,
+    .text-warning,
+    .text-danger,
+    .text-info {
+        color: #000 !important;
+        font-weight: bold;
+    }
+}
+
+/* ==========================================================================
+   Accessibility Enhancements
+   ========================================================================== */
+
+/* Visually hidden but accessible to screen readers */
+.visually-hidden-focusable:not(:focus):not(:focus-within) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .pending-action-item {
+        border: 2px solid currentColor;
+    }
+
+    .card-accent-primary,
+    .card-accent-secondary,
+    .card-accent-success,
+    .card-accent-danger,
+    .card-accent-warning,
+    .card-accent-info {
+        border-left-width: 6px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .pending-action-item,
+    .stat-card-item,
+    .stat-card-item i,
+    .badge,
+    .progress-bar,
+    .list-group-item {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ==========================================================================
+   Dark Mode Support (Future Enhancement)
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+    .pending-action-item {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .list-group-flush .list-group-item:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .list-group-item-action:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}
