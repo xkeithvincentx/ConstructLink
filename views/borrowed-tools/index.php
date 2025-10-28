@@ -83,7 +83,7 @@ $csrfToken = CSRFProtection::generateToken();
            aria-label="Print blank form">
             <i class="bi bi-printer me-1" aria-hidden="true"></i>Print Form
         </a>
-        <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
+        <?php if (hasPermission('borrowed_tools.create')): ?>
             <a href="?route=borrowed-tools/create-batch"
                class="btn btn-success btn-sm"
                aria-label="Create new borrow request">
@@ -101,7 +101,7 @@ $csrfToken = CSRFProtection::generateToken();
 
 <!-- Mobile: Action Buttons -->
 <div class="d-md-none d-grid gap-2 mb-4">
-    <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Site Inventory Clerk', 'Project Manager'])): ?>
+    <?php if (hasPermission('borrowed_tools.create')): ?>
         <a href="?route=borrowed-tools/create-batch" class="btn btn-success">
             <i class="bi bi-plus-circle me-1"></i>New Borrow Request
         </a>

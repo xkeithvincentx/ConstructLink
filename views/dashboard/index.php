@@ -25,6 +25,28 @@ ob_start();
 </div>
 
 <!-- Role-Specific Quick Actions -->
+<?php
+/**
+ * Quick Actions Display Logic
+ *
+ * Only show generic quick actions for roles WITHOUT dedicated role-specific dashboards.
+ * Roles with role-specific dashboards (warehouseman.php, etc.) have their own
+ * contextual quick actions in the sidebar to avoid duplication and maintain
+ * WCAG 3.2.4 Consistent Identification compliance.
+ */
+$rolesWithSpecificDashboards = [
+    'Warehouseman',
+    'Finance Director',
+    'Asset Director',
+    'Procurement Officer',
+    'Project Manager',
+    'Site Inventory Clerk',
+    'System Admin'
+];
+
+// Only show generic quick actions if role doesn't have a specific dashboard
+if (!in_array($userRole, $rolesWithSpecificDashboards)):
+?>
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
@@ -33,97 +55,21 @@ ob_start();
                     <i class="bi bi-lightning-charge me-2"></i>Quick Actions
                 </h6>
                 <div class="btn-group flex-wrap" role="group">
-                    <?php
-                    // Define role-specific quick actions
-                    $quickActions = [];
-                    
-                    switch ($userRole) {
-                        case 'System Admin':
-                            $quickActions = [
-                                ['icon' => 'bi-people', 'text' => 'Manage Users', 'route' => 'users', 'color' => 'primary'],
-                                ['icon' => 'bi-gear', 'text' => 'System Settings', 'route' => 'admin/settings', 'color' => 'secondary'],
-                                ['icon' => 'bi-graph-up', 'text' => 'Reports', 'route' => 'reports', 'color' => 'info'],
-                                ['icon' => 'bi-activity', 'text' => 'View Logs', 'route' => 'admin/logs', 'color' => 'warning'],
-                            ];
-                            break;
-                            
-                        case 'Finance Director':
-                            $quickActions = [
-                                ['icon' => 'bi-check-circle', 'text' => 'Pending Approvals', 'route' => 'requests?status=Reviewed', 'color' => 'primary'],
-                                ['icon' => 'bi-cash-stack', 'text' => 'High Value Items', 'route' => 'assets?high_value=1', 'color' => 'success'],
-                                ['icon' => 'bi-graph-up', 'text' => 'Financial Reports', 'route' => 'reports', 'color' => 'info'],
-                                ['icon' => 'bi-calculator', 'text' => 'Budget Overview', 'route' => 'projects', 'color' => 'warning'],
-                            ];
-                            break;
-                            
-                        case 'Asset Director':
-                            $quickActions = [
-                                ['icon' => 'bi-box-seam', 'text' => 'Verify Inventory', 'route' => 'procurement-orders?status=Pending', 'color' => 'primary'],
-                                ['icon' => 'bi-exclamation-triangle', 'text' => 'Resolve Incidents', 'route' => 'incidents?status=Pending+Authorization', 'color' => 'danger'],
-                                ['icon' => 'bi-tools', 'text' => 'Maintenance', 'route' => 'maintenance', 'color' => 'warning'],
-                                ['icon' => 'bi-qr-code-scan', 'text' => 'QR Scanner', 'route' => 'assets/scanner', 'color' => 'info'],
-                            ];
-                            break;
-                            
-                        case 'Procurement Officer':
-                            $quickActions = [
-                                ['icon' => 'bi-cart-plus', 'text' => 'Create PO', 'route' => 'procurement-orders/create', 'color' => 'primary'],
-                                ['icon' => 'bi-clipboard-check', 'text' => 'Approved Requests', 'route' => 'requests?status=Approved', 'color' => 'success'],
-                                ['icon' => 'bi-truck', 'text' => 'Delivery Tracking', 'route' => 'procurement-orders?delivery=pending', 'color' => 'info'],
-                                ['icon' => 'bi-building', 'text' => 'Manage Vendors', 'route' => 'vendors', 'color' => 'secondary'],
-                            ];
-                            break;
-                            
-                        case 'Warehouseman':
-                            $quickActions = [
-                                ['icon' => 'bi-box-arrow-in-down', 'text' => 'Receive Delivery', 'route' => 'procurement-orders/for-receipt', 'color' => 'primary'],
-                                ['icon' => 'bi-box-arrow-right', 'text' => 'Release Items', 'route' => 'withdrawals?status=Approved', 'color' => 'warning'],
-                                ['icon' => 'bi-tools', 'text' => 'Tool Borrowing', 'route' => 'borrowed-tools/create', 'color' => 'info'],
-                                ['icon' => 'bi-clipboard-data', 'text' => 'Stock Levels', 'route' => 'assets', 'color' => 'secondary'],
-                            ];
-                            break;
-                            
-                        case 'Project Manager':
-                            $quickActions = [
-                                ['icon' => 'bi-clipboard-check', 'text' => 'Review Requests', 'route' => 'requests?status=Submitted', 'color' => 'primary'],
-                                ['icon' => 'bi-check2-square', 'text' => 'Approve Withdrawals', 'route' => 'withdrawals?status=Pending+Approval', 'color' => 'success'],
-                                ['icon' => 'bi-arrow-left-right', 'text' => 'Verify Transfers', 'route' => 'transfers?status=Pending+Verification', 'color' => 'info'],
-                                ['icon' => 'bi-box', 'text' => 'Project Inventory', 'route' => 'assets', 'color' => 'secondary'],
-                            ];
-                            break;
-                            
-                        case 'Site Inventory Clerk':
-                            $quickActions = [
-                                ['icon' => 'bi-plus-circle', 'text' => 'Create Request', 'route' => 'requests/create', 'color' => 'primary'],
-                                ['icon' => 'bi-exclamation-circle', 'text' => 'Report Incident', 'route' => 'incidents/create', 'color' => 'danger'],
-                                ['icon' => 'bi-arrow-repeat', 'text' => 'Initiate Transfer', 'route' => 'transfers/create', 'color' => 'info'],
-                                ['icon' => 'bi-clipboard-check', 'text' => 'Verify Delivery', 'route' => 'procurement-orders/for-receipt', 'color' => 'success'],
-                            ];
-                            break;
-                    }
-                    
-                    // Add common actions
-                    $quickActions[] = ['icon' => 'bi-arrow-clockwise', 'text' => 'Refresh', 'onclick' => 'refreshDashboard()', 'color' => 'secondary'];
-                    
-                    foreach ($quickActions as $action):
-                        if (isset($action['onclick'])):
-                    ?>
-                        <button type="button" class="btn btn-outline-<?= $action['color'] ?> btn-sm" onclick="<?= $action['onclick'] ?>">
-                            <i class="<?= $action['icon'] ?>"></i> <?= $action['text'] ?>
-                        </button>
-                    <?php else: ?>
-                        <a href="?route=<?= $action['route'] ?>" class="btn btn-outline-<?= $action['color'] ?> btn-sm">
-                            <i class="<?= $action['icon'] ?>"></i> <?= $action['text'] ?>
-                        </a>
-                    <?php 
-                        endif;
-                    endforeach; 
-                    ?>
+                    <a href="?route=assets" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box"></i> View Assets
+                    </a>
+                    <a href="?route=requests/create" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Request
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Main Statistics Cards (Common for all roles) -->
 <div class="row mb-4">

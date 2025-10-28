@@ -179,32 +179,55 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         <?php
         $title = 'Warehouse Operations';
         $titleIcon = IconMapper::QUICK_ACTIONS;
-        $actions = [
+
+        // Define all possible quick actions with permission requirements
+        $allActions = [
             [
                 'label' => 'Process Deliveries',
                 'route' => 'procurement-orders/for-receipt',
                 'icon' => 'bi-box-arrow-in-down',
-                'color' => 'primary'
+                'color' => 'primary',
+                'permission' => null // No specific permission defined yet
             ],
             [
                 'label' => 'Release Items',
                 'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
                 'icon' => 'bi-box-arrow-right',
-                'color' => 'warning'
+                'color' => 'warning',
+                'permission' => null // No specific permission defined yet
             ],
             [
-                'label' => 'Issue Tools',
-                'route' => 'borrowed-tools/create',
+                'label' => 'New Request',
+                'route' => 'borrowed-tools/create-batch',
                 'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                'color' => 'info'
+                'color' => 'success',
+                'permission' => 'borrowed_tools.create'
             ],
             [
                 'label' => 'View Inventory',
                 'route' => 'assets?status=available',
                 'icon' => 'bi-list-ul',
-                'color' => 'outline-secondary'
+                'color' => 'outline-secondary',
+                'permission' => 'assets.view'
             ]
         ];
+
+        // Filter actions based on permissions (DRY principle - using centralized hasPermission())
+        $actions = array_filter($allActions, function($action) {
+            // If no permission required, always show
+            if ($action['permission'] === null) {
+                return true;
+            }
+            // Check permission using centralized function
+            return hasPermission($action['permission']);
+        });
+
+        // Remove permission key before passing to component (component doesn't need it)
+        $actions = array_map(function($action) {
+            unset($action['permission']);
+            return $action;
+        }, $actions);
+
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
         ?>
 
@@ -242,7 +265,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                 ?>
 
                 <div class="mt-3 d-grid">
-                    <a href="?route=procurement-orders?delivery=today" class="btn btn-outline-primary btn-sm" aria-label="View full delivery schedule">
+                    <a href="?route=procurement-orders&delivery=today" class="btn btn-outline-primary btn-sm" aria-label="View full delivery schedule">
                         <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>View Full Schedule
                     </a>
                 </div>
