@@ -471,15 +471,18 @@ export const sendOverdueReminder = () => showNotification('Overdue reminder func
 // Export: Quick filter
 export const quickFilter = filterValue => {
   try {
-    const form = document.getElementById('filter-form');
+    // Try desktop form first, then mobile form
+    const form = document.getElementById('filter-form') || document.getElementById('filter-form-mobile');
     if (!form) return;
 
-    const field = filterValue === 'overdue'
-      ? form.querySelector('[name="priority"]')
-      : form.querySelector('[name="status"]');
+    // Determine which field to update based on filter type
+    const fieldName = filterValue === 'overdue' ? 'priority' : 'status';
+    const field = form.querySelector(`[name="${fieldName}"]`);
 
-    if (field) field.value = filterValue === 'overdue' ? filterValue : filterValue;
-    form.submit();
+    if (field) {
+      field.value = filterValue;
+      form.submit();
+    }
   } catch (error) {
     // Silent fail - filter not applied
   }

@@ -723,8 +723,21 @@
                                 </td>
                             </tr>
 
-                            <!-- Hidden Item Data Row (for modals - return, extend) -->
-                            <tr class="batch-items-row collapsed" data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>">
+                            <!--
+                                Hidden Item Data Row (for JavaScript modal operations)
+
+                                This row is completely hidden from users and serves as a data cache for modals:
+                                - Batch Return Modal: Reads item details to populate return form
+                                - Batch Extend Modal: Reads item details for extension selection
+                                - Batch Release Modal: Clones table into modal for handover confirmation
+
+                                The row is hidden via CSS (.batch-items-row { display: none; })
+                                and should NEVER be visible in the UI.
+                            -->
+                            <tr class="batch-items-row collapsed"
+                                data-batch-id="<?= !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'] ?>"
+                                aria-hidden="true"
+                                role="presentation">
                                     <td colspan="100%" class="p-0">
                                         <div class="batch-items-container">
                                             <table class="batch-items-table">

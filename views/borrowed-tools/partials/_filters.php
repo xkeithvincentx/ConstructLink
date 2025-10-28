@@ -7,11 +7,120 @@
  * improved accessibility with ARIA labels
  */
 
-// Calculate active filter count
+// Ensure required variables exist (defensive check)
+$projects = $projects ?? [];
+
+/**
+ * ============================================================================
+ * INPUT VALIDATION HELPERS
+ * ============================================================================
+ *
+ * Defense-in-depth validation for all filter parameters.
+ * Prevents SQL injection, XSS, and invalid parameter attacks.
+ *
+ * Filter Flow:
+ * 1. User input ($_GET) → Validation functions → $validatedFilters array
+ * 2. Controller reads $_GET → Model applies filters
+ * 3. Validated values prevent invalid queries while allowing all valid filters
+ *
+ * Status System Architecture:
+ * - borrowed_tool_batches.status: Pending Verification, Pending Approval,
+ *   Approved, Released, Partially Returned, Returned, Canceled
+ * - borrowed_tools.status: Borrowed, Returned, Canceled
+ * - Computed status: Query combines batch + individual statuses
+ * - Special filter: Overdue (Borrowed items past due date)
+ * ============================================================================
+ */
+
+/**
+ * Validate status parameter against allowed values
+ *
+ * Includes all workflow statuses plus special filter values:
+ * - Workflow statuses: Pending Verification, Pending Approval, Approved, Released, Borrowed, Partially Returned, Returned, Canceled
+ * - Special filters: Overdue (handled as Borrowed + past due in model)
+ *
+ * @param string $status The status value to validate
+ * @return string Validated status or empty string
+ */
+function validateStatus(string $status): string {
+    $allowedStatuses = [
+        // Standard workflow statuses
+        'Pending Verification',
+        'Pending Approval',
+        'Approved',
+        'Released',
+        'Borrowed',              // Added: Primary active status from database
+        'Partially Returned',
+        'Returned',
+        'Canceled',
+        // Special filter values
+        'Overdue'                // Added: Special filter handled in model as Borrowed + past due
+    ];
+    return in_array($status, $allowedStatuses, true) ? $status : '';
+}
+
+/**
+ * Validate priority parameter against allowed values
+ *
+ * Priority filters apply special time-based or workflow-based conditions:
+ * - 'overdue': Items with status='Borrowed' AND expected_return < TODAY
+ * - 'due_soon': Items with status='Borrowed' AND expected_return within 3 days
+ * - 'pending_action': Items with status IN ('Pending Verification', 'Pending Approval')
+ *
+ * These are handled in BorrowedToolModel::getBorrowedToolsWithFilters()
+ *
+ * @param string $priority The priority value to validate
+ * @return string Validated priority or empty string
+ */
+function validatePriority(string $priority): string {
+    $allowedPriorities = ['overdue', 'due_soon', 'pending_action'];
+    return in_array($priority, $allowedPriorities, true) ? $priority : '';
+}
+
+/**
+ * Validate date parameter format (Y-m-d)
+ *
+ * @param string $date The date value to validate
+ * @return string Validated date or empty string
+ */
+function validateDate(string $date): string {
+    if (empty($date)) {
+        return '';
+    }
+    $dateObj = DateTime::createFromFormat('Y-m-d', $date);
+    return ($dateObj && $dateObj->format('Y-m-d') === $date) ? $date : '';
+}
+
+/**
+ * Sanitize search input with length limit
+ *
+ * @param string $search The search query to sanitize
+ * @param int $maxLength Maximum allowed length
+ * @return string Sanitized search query
+ */
+function sanitizeSearchInput(string $search, int $maxLength = 100): string {
+    // Remove any potential XSS attempts (additional layer beyond htmlspecialchars)
+    $search = strip_tags($search);
+    // Limit length
+    return mb_substr(trim($search), 0, $maxLength);
+}
+
+// Validate and sanitize all $_GET parameters
+$validatedFilters = [
+    'status' => validateStatus($_GET['status'] ?? ''),
+    'priority' => validatePriority($_GET['priority'] ?? ''),
+    'project' => filter_var($_GET['project'] ?? '', FILTER_VALIDATE_INT) ?: '',
+    'date_from' => validateDate($_GET['date_from'] ?? ''),
+    'date_to' => validateDate($_GET['date_to'] ?? ''),
+    'search' => sanitizeSearchInput($_GET['search'] ?? '')
+];
+
+// Calculate active filter count using validated parameters
 $activeFilters = 0;
-$filterParams = ['status', 'priority', 'project', 'date_from', 'date_to', 'search'];
-foreach ($filterParams as $param) {
-    if (!empty($_GET[$param])) $activeFilters++;
+foreach ($validatedFilters as $value) {
+    if (!empty($value)) {
+        $activeFilters++;
+    }
 }
 
 /**
@@ -25,6 +134,7 @@ function renderStatusOptions(Auth $auth, string $currentStatus = ''): string {
         ['value' => 'Pending Approval', 'label' => 'Pending Approval', 'roles' => ['System Admin', 'Asset Director', 'Finance Director']],
         ['value' => 'Approved', 'label' => 'Approved', 'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk']],
         ['value' => 'Released', 'label' => 'Released', 'roles' => []],
+        ['value' => 'Borrowed', 'label' => 'Currently Out', 'roles' => []],
         ['value' => 'Partially Returned', 'label' => 'Partially Returned', 'roles' => []],
         ['value' => 'Returned', 'label' => 'Returned', 'roles' => []],
         ['value' => 'Canceled', 'label' => 'Canceled', 'roles' => ['System Admin', 'Asset Director', 'Project Manager']],
@@ -72,12 +182,17 @@ function renderPriorityOptions(string $currentPriority = ''): string {
 
 /**
  * Render project options
+ *
+ * @param array $projects Array of project data
+ * @param string|int $currentProject Currently selected project ID
+ * @return string HTML options string
  */
 function renderProjectOptions(array $projects, $currentProject = ''): string {
     $options = ['<option value="">All Projects</option>'];
 
     foreach ($projects as $project) {
-        $selected = $currentProject == $project['id'] ? 'selected' : '';
+        // Use strict comparison with type casting to prevent type juggling
+        $selected = (string)$currentProject === (string)$project['id'] ? 'selected' : '';
         $options[] = sprintf(
             '<option value="%s" %s>%s - %s</option>',
             htmlspecialchars($project['id']),
@@ -115,7 +230,7 @@ function renderQuickActions(Auth $auth): string {
 <!-- Mobile: Offcanvas, Desktop: Card -->
 <div class="mb-4">
     <!-- Mobile Filter Button (Sticky) -->
-    <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3" style="z-index: 1020;">
+    <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3 filters-mobile-sticky">
         <button class="btn btn-primary w-100"
                 type="button"
                 data-bs-toggle="offcanvas"
@@ -132,11 +247,10 @@ function renderQuickActions(Auth $auth): string {
     </div>
 
     <!-- Mobile: Offcanvas Filter Panel -->
-    <div class="offcanvas offcanvas-bottom d-md-none"
+    <div class="offcanvas offcanvas-bottom d-md-none filters-offcanvas"
          tabindex="-1"
          id="filterOffcanvas"
-         aria-labelledby="filterOffcanvasLabel"
-         style="height: 85vh;">
+         aria-labelledby="filterOffcanvasLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="filterOffcanvasLabel">
                 <i class="bi bi-funnel me-2" aria-hidden="true"></i>Filter Borrowed Tools
@@ -144,12 +258,12 @@ function renderQuickActions(Auth $auth): string {
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close filters panel"></button>
         </div>
         <div class="offcanvas-body">
-            <form method="GET" action="?route=borrowed-tools" role="search">
+            <form method="GET" action="?route=borrowed-tools" id="filter-form-mobile" role="search">
                 <!-- Status Filter -->
                 <div class="mb-3">
                     <label for="status-mobile" class="form-label">Status</label>
                     <select class="form-select" id="status-mobile" name="status">
-                        <?= renderStatusOptions($auth, $_GET['status'] ?? '') ?>
+                        <?= renderStatusOptions($auth, $validatedFilters['status']) ?>
                     </select>
                 </div>
 
@@ -158,9 +272,12 @@ function renderQuickActions(Auth $auth): string {
                     <div class="mb-3">
                         <label for="priority-mobile" class="form-label">Priority</label>
                         <select class="form-select" id="priority-mobile" name="priority">
-                            <?= renderPriorityOptions($_GET['priority'] ?? '') ?>
+                            <?= renderPriorityOptions($validatedFilters['priority']) ?>
                         </select>
                     </div>
+                <?php else: ?>
+                    <!-- Hidden priority field for quick filter buttons (users without management roles) -->
+                    <input type="hidden" name="priority" value="<?= htmlspecialchars($validatedFilters['priority']) ?>">
                 <?php endif; ?>
 
                 <!-- Project Filter - For Project Managers and Site Staff -->
@@ -168,7 +285,7 @@ function renderQuickActions(Auth $auth): string {
                     <div class="mb-3">
                         <label for="project-mobile" class="form-label">Project</label>
                         <select class="form-select" id="project-mobile" name="project">
-                            <?= renderProjectOptions($projects, $_GET['project'] ?? '') ?>
+                            <?= renderProjectOptions($projects, $validatedFilters['project']) ?>
                         </select>
                     </div>
                 <?php endif; ?>
@@ -181,7 +298,7 @@ function renderQuickActions(Auth $auth): string {
                            id="date_from-mobile"
                            name="date_from"
                            aria-describedby="date_from_help"
-                           value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['date_from']) ?>">
                     <small id="date_from_help" class="form-text text-muted">Start of date range</small>
                 </div>
                 <div class="mb-3">
@@ -191,7 +308,7 @@ function renderQuickActions(Auth $auth): string {
                            id="date_to-mobile"
                            name="date_to"
                            aria-describedby="date_to_help"
-                           value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['date_to']) ?>">
                     <small id="date_to_help" class="form-text text-muted">End of date range</small>
                 </div>
 
@@ -204,7 +321,7 @@ function renderQuickActions(Auth $auth): string {
                            name="search"
                            placeholder="Reference, equipment name, borrower..."
                            aria-describedby="search_help"
-                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['search']) ?>">
                     <small id="search_help" class="form-text text-muted">Search by reference, equipment, or borrower name</small>
                 </div>
 
@@ -238,6 +355,11 @@ function renderQuickActions(Auth $auth): string {
             <form method="GET" id="filter-form" class="row g-3" role="search">
                 <input type="hidden" name="route" value="borrowed-tools">
 
+                <!-- Hidden priority field for quick filter buttons (always present for JavaScript) -->
+                <?php if (!$auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
+                    <input type="hidden" name="priority" value="<?= htmlspecialchars($validatedFilters['priority']) ?>">
+                <?php endif; ?>
+
                 <!-- Search Field -->
                 <div class="col-lg-4 col-md-6">
                     <label for="search" class="form-label">Search</label>
@@ -247,7 +369,7 @@ function renderQuickActions(Auth $auth): string {
                            name="search"
                            placeholder="Reference, equipment name, borrower..."
                            aria-describedby="search_desktop_help"
-                           value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['search']) ?>">
                     <small id="search_desktop_help" class="form-text text-muted visually-hidden">Search by reference, equipment, or borrower name</small>
                 </div>
 
@@ -255,16 +377,26 @@ function renderQuickActions(Auth $auth): string {
                 <div class="col-lg-2 col-md-4">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select form-select-sm" id="status" name="status">
-                        <?= renderStatusOptions($auth, $_GET['status'] ?? '') ?>
+                        <?= renderStatusOptions($auth, $validatedFilters['status']) ?>
                     </select>
                 </div>
+
+                <!-- Priority Filter - For Management Roles -->
+                <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
+                    <div class="col-lg-2 col-md-4">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select form-select-sm" id="priority" name="priority">
+                            <?= renderPriorityOptions($validatedFilters['priority']) ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Project Filter - For Project Managers and Site Staff -->
                 <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk']) && !empty($projects)): ?>
                     <div class="col-lg-2 col-md-6">
                         <label for="project" class="form-label">Project</label>
                         <select class="form-select form-select-sm" id="project" name="project">
-                            <?= renderProjectOptions($projects, $_GET['project'] ?? '') ?>
+                            <?= renderProjectOptions($projects, $validatedFilters['project']) ?>
                         </select>
                     </div>
                 <?php endif; ?>
@@ -276,7 +408,7 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control form-control-sm"
                            id="date_from"
                            name="date_from"
-                           value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['date_from']) ?>">
                 </div>
                 <div class="col-lg-2 col-md-3">
                     <label for="date_to" class="form-label">Date To</label>
@@ -284,7 +416,7 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control form-control-sm"
                            id="date_to"
                            name="date_to"
-                           value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
+                           value="<?= htmlspecialchars($validatedFilters['date_to']) ?>">
                 </div>
 
                 <!-- Action Buttons -->

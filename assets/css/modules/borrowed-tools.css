@@ -78,7 +78,13 @@ th.sortable i {
    2. BATCH ITEMS & ROWS
    ============================================ */
 
-/* Fix hidden batch items row spacing */
+/* Hide batch items data container rows - used only for JavaScript modal population */
+tr.batch-items-row {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Fix hidden batch items row spacing when inline style applied */
 tr.batch-items-row[style*="display: none"] {
     display: none !important;
     height: 0 !important;

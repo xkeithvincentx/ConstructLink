@@ -413,9 +413,15 @@ class BorrowedToolModel extends BaseModel {
         // Apply filters
         if (!empty($filters['status'])) {
             if ($filters['status'] === 'overdue' || $filters['status'] === 'Overdue') {
-                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return < CURDATE()";
+                // Check both single items and batches for overdue status
+                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return < CURDATE())
+                                 OR (btb.status = 'Released' AND btb.expected_return < CURDATE()))";
             } else {
-                $conditions[] = "bt.status = ?";
+                // Match status against both tables using COALESCE logic (matches SELECT clause)
+                // This ensures WHERE filtering matches the displayed status values
+                $conditions[] = "((btb.status IS NOT NULL AND btb.status = ?)
+                                 OR (btb.status IS NULL AND bt.status = ?))";
+                $params[] = $filters['status'];
                 $params[] = $filters['status'];
             }
         }
@@ -424,11 +430,16 @@ class BorrowedToolModel extends BaseModel {
         // Priority filter
         if (!empty($filters['priority'])) {
             if ($filters['priority'] === 'overdue') {
-                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return < CURDATE()";
+                // Check both single items and batches for overdue items
+                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return < CURDATE())
+                                 OR (btb.status = 'Released' AND btb.expected_return < CURDATE()))";
             } elseif ($filters['priority'] === 'due_soon') {
-                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)";
+                // Check both single items and batches for items due within 3 days
+                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY))
+                                 OR (btb.status = 'Released' AND btb.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)))";
             } elseif ($filters['priority'] === 'pending_action') {
-                $conditions[] = "bt.status IN ('Pending Verification', 'Pending Approval')";
+                // Check both tables for pending statuses using COALESCE logic
+                $conditions[] = "(COALESCE(btb.status, bt.status) IN ('Pending Verification', 'Pending Approval'))";
             }
         }
 
