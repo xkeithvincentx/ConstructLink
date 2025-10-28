@@ -91,9 +91,16 @@ $uniqueId = 'stat-cards-' . md5($title);
                 ?>
 
                 <div class="<?= $columnClass ?> mb-3">
-                    <div class="stat-card-item" role="figure" aria-labelledby="<?= $statId ?>-label">
-                        <i class="<?= htmlspecialchars($icon) ?> text-<?= htmlspecialchars($color) ?> fs-3 d-block mb-2" aria-hidden="true"></i>
-                        <h6 class="mb-0 fw-bold" aria-live="polite">
+                    <div class="stat-card-item"
+                         role="figure"
+                         aria-labelledby="<?= $statId ?>-label"
+                         aria-describedby="<?= $statId ?>-value">
+                        <i class="<?= htmlspecialchars($icon) ?> text-<?= htmlspecialchars($color) ?> fs-3 d-block mb-2"
+                           aria-hidden="true"></i>
+                        <h6 class="mb-0 fw-bold"
+                            id="<?= $statId ?>-value"
+                            aria-live="polite"
+                            aria-atomic="true">
                             <?= $formattedCount ?>
                         </h6>
                         <small class="text-muted d-block mt-1" id="<?= $statId ?>-label">

@@ -599,6 +599,16 @@ class DashboardModel extends BaseModel {
     
     /**
      * Get warehouse-specific statistics
+     *
+     * FIXED: Added missing daily summary metrics (received_today, released_today, tools_issued_today, tools_returned_today)
+     * ADDED: QR tag management statistics (printing, application, verification)
+     * ADDED: Asset location management statistics
+     * ADDED: In-transit asset tracking
+     * ADDED: Asset condition monitoring
+     * IMPROVED: Category-specific low stock thresholds with fallback
+     *
+     * @param int|null $userId User ID to get project-specific stats
+     * @return array Warehouse statistics array
      */
     private function getWarehouseStats($userId = null) {
         try {
@@ -610,106 +620,214 @@ class DashboardModel extends BaseModel {
                 $stmt->execute([$userId]);
                 $currentProjectId = $stmt->fetchColumn();
             }
-            
+
             // Withdrawal statistics (project-specific)
             $withdrawalSql = "
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN status = 'Approved' THEN 1 END) as pending_releases,
                     COUNT(CASE WHEN status = 'Released' AND expected_return < CURDATE() THEN 1 END) as overdue_returns,
-                    COUNT(CASE WHEN status = 'Released' THEN 1 END) as active_withdrawals
+                    COUNT(CASE WHEN status = 'Released' THEN 1 END) as active_withdrawals,
+                    COUNT(CASE WHEN status = 'Released' AND DATE(release_date) = CURDATE() THEN 1 END) as released_today
                 FROM withdrawals
             ";
-            
+
             $params = [];
             if ($currentProjectId) {
                 $withdrawalSql .= " WHERE project_id = ?";
                 $params[] = $currentProjectId;
             }
-            
+
             $stmt = $this->db->prepare($withdrawalSql);
             $stmt->execute($params);
             $withdrawalStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Borrowed tools statistics (project-specific)
             $toolsSql = "
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN bt.status = 'Borrowed' THEN 1 END) as borrowed_tools,
                     COUNT(CASE WHEN bt.status = 'Overdue' THEN 1 END) as overdue_tools,
-                    COUNT(CASE WHEN bt.status = 'Pending Verification' THEN 1 END) as pending_tool_requests
+                    COUNT(CASE WHEN bt.status = 'Pending Verification' THEN 1 END) as pending_tool_requests,
+                    COUNT(CASE WHEN bt.status IN ('Borrowed', 'Approved')
+                        AND DATE(bt.borrowed_date) = CURDATE() THEN 1 END) as tools_issued_today,
+                    COUNT(CASE WHEN bt.status = 'Returned'
+                        AND DATE(bt.actual_return) = CURDATE() THEN 1 END) as tools_returned_today
                 FROM borrowed_tools bt
                 JOIN assets a ON bt.asset_id = a.id
             ";
-            
+
             $toolParams = [];
             if ($currentProjectId) {
                 $toolsSql .= " WHERE a.project_id = ?";
                 $toolParams[] = $currentProjectId;
             }
-            
+
             $stmt = $this->db->prepare($toolsSql);
             $stmt->execute($toolParams);
             $toolsStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Delivery receipt statistics (project-specific)
             $deliverySql = "
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN po.delivery_status = 'Scheduled' THEN 1 END) as scheduled_deliveries,
                     COUNT(CASE WHEN po.delivery_status = 'In Transit' THEN 1 END) as in_transit_deliveries,
-                    COUNT(CASE WHEN po.delivery_status = 'Delivered' AND po.received_by IS NULL THEN 1 END) as awaiting_receipt
+                    COUNT(CASE WHEN po.delivery_status = 'Delivered' AND po.received_by IS NULL THEN 1 END) as awaiting_receipt,
+                    COUNT(CASE WHEN po.delivery_status = 'Received'
+                        AND DATE(po.received_at) = CURDATE() THEN 1 END) as received_today
                 FROM procurement_orders po
-                WHERE po.delivery_status IN ('Scheduled', 'In Transit', 'Delivered')
+                WHERE po.delivery_status IN ('Scheduled', 'In Transit', 'Delivered', 'Received')
             ";
-            
+
             $deliveryParams = [];
             if ($currentProjectId) {
                 $deliverySql .= " AND po.project_id = ?";
                 $deliveryParams[] = $currentProjectId;
             }
-            
+
             $stmt = $this->db->prepare($deliverySql);
             $stmt->execute($deliveryParams);
             $deliveryStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Stock levels (project-specific)
+
+            // Stock levels with improved threshold logic (project-specific)
             $stockSql = "
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN 1 END) as consumable_stock,
                     COUNT(CASE WHEN a.status = 'available' AND c.is_consumable = 0 THEN 1 END) as tool_stock,
-                    COUNT(CASE WHEN a.quantity < 10 AND c.is_consumable = 1 THEN 1 END) as low_stock_items
+                    COUNT(CASE WHEN c.is_consumable = 1
+                        AND a.available_quantity <= COALESCE(c.low_stock_threshold, 3) THEN 1 END) as low_stock_items,
+                    COUNT(CASE WHEN c.is_consumable = 1
+                        AND a.available_quantity <= COALESCE(c.critical_stock_threshold, 1) THEN 1 END) as critical_stock_items,
+                    COUNT(CASE WHEN c.is_consumable = 1
+                        AND a.available_quantity = 0 THEN 1 END) as out_of_stock_items
                 FROM assets a
                 LEFT JOIN categories c ON a.category_id = c.id
                 WHERE a.status = 'available'
             ";
-            
+
             $stockParams = [];
             if ($currentProjectId) {
                 $stockSql .= " AND a.project_id = ?";
                 $stockParams[] = $currentProjectId;
             }
-            
+
             $stmt = $this->db->prepare($stockSql);
             $stmt->execute($stockParams);
             $stockStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
+            // QR Tag Management Statistics (project-specific)
+            $qrTagSql = "
+                SELECT
+                    COUNT(CASE WHEN qr_tag_printed IS NULL OR qr_tag_printed < 1 THEN 1 END) as qr_needs_printing,
+                    COUNT(CASE WHEN qr_tag_applied IS NULL THEN 1 END) as qr_needs_application,
+                    COUNT(CASE WHEN qr_tag_verified IS NULL THEN 1 END) as qr_needs_verification,
+                    COUNT(CASE WHEN qr_tag_printed IS NOT NULL
+                        AND qr_tag_applied IS NOT NULL
+                        AND qr_tag_verified IS NOT NULL THEN 1 END) as qr_fully_tagged,
+                    COUNT(CASE WHEN DATE(qr_tag_printed) = CURDATE() THEN 1 END) as qr_printed_today,
+                    COUNT(CASE WHEN DATE(qr_tag_applied) = CURDATE() THEN 1 END) as qr_applied_today,
+                    COUNT(CASE WHEN DATE(qr_tag_verified) = CURDATE() THEN 1 END) as qr_verified_today
+                FROM assets
+                WHERE status NOT IN ('retired', 'disposed')
+            ";
+
+            $qrParams = [];
+            if ($currentProjectId) {
+                $qrTagSql .= " AND project_id = ?";
+                $qrParams[] = $currentProjectId;
+            }
+
+            $stmt = $this->db->prepare($qrTagSql);
+            $stmt->execute($qrParams);
+            $qrTagStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Asset Location Management (project-specific)
+            $locationSql = "
+                SELECT
+                    COUNT(CASE WHEN location IS NULL OR location = '' THEN 1 END) as missing_location,
+                    COUNT(CASE WHEN location IS NOT NULL
+                        AND updated_at < DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 END) as location_needs_verification,
+                    COUNT(DISTINCT location) as total_locations
+                FROM assets
+                WHERE status IN ('available', 'in_use', 'borrowed')
+            ";
+
+            $locationParams = [];
+            if ($currentProjectId) {
+                $locationSql .= " AND project_id = ?";
+                $locationParams[] = $currentProjectId;
+            }
+
+            $stmt = $this->db->prepare($locationSql);
+            $stmt->execute($locationParams);
+            $locationStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // In-Transit and Condition Monitoring (project-specific)
+            $assetStatusSql = "
+                SELECT
+                    COUNT(CASE WHEN status = 'in_transit' THEN 1 END) as assets_in_transit,
+                    COUNT(CASE WHEN current_condition = 'Fair' THEN 1 END) as fair_condition,
+                    COUNT(CASE WHEN current_condition IN ('Poor', 'Damaged') THEN 1 END) as poor_damaged_condition,
+                    COUNT(CASE WHEN status = 'under_maintenance' THEN 1 END) as under_maintenance
+                FROM assets
+                WHERE status NOT IN ('retired', 'disposed')
+            ";
+
+            $assetStatusParams = [];
+            if ($currentProjectId) {
+                $assetStatusSql .= " AND project_id = ?";
+                $assetStatusParams[] = $currentProjectId;
+            }
+
+            $stmt = $this->db->prepare($assetStatusSql);
+            $stmt->execute($assetStatusParams);
+            $assetStatusStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
             return [
-                'warehouse' => array_merge($withdrawalStats, $toolsStats, $deliveryStats, $stockStats)
+                'warehouse' => array_merge(
+                    $withdrawalStats,
+                    $toolsStats,
+                    $deliveryStats,
+                    $stockStats,
+                    $qrTagStats,
+                    $locationStats,
+                    $assetStatusStats
+                )
             ];
-            
+
         } catch (Exception $e) {
             error_log("Warehouse stats error: " . $e->getMessage());
             return ['warehouse' => [
-                'pending_releases' => 0, 
+                'pending_releases' => 0,
                 'overdue_returns' => 0,
                 'active_withdrawals' => 0,
-                'borrowed_tools' => 0, 
+                'released_today' => 0,
+                'borrowed_tools' => 0,
                 'overdue_tools' => 0,
                 'pending_tool_requests' => 0,
+                'tools_issued_today' => 0,
+                'tools_returned_today' => 0,
                 'scheduled_deliveries' => 0,
                 'in_transit_deliveries' => 0,
                 'awaiting_receipt' => 0,
+                'received_today' => 0,
                 'consumable_stock' => 0,
                 'tool_stock' => 0,
-                'low_stock_items' => 0
+                'low_stock_items' => 0,
+                'critical_stock_items' => 0,
+                'out_of_stock_items' => 0,
+                'qr_needs_printing' => 0,
+                'qr_needs_application' => 0,
+                'qr_needs_verification' => 0,
+                'qr_fully_tagged' => 0,
+                'qr_printed_today' => 0,
+                'qr_applied_today' => 0,
+                'qr_verified_today' => 0,
+                'missing_location' => 0,
+                'location_needs_verification' => 0,
+                'total_locations' => 0,
+                'assets_in_transit' => 0,
+                'fair_condition' => 0,
+                'poor_damaged_condition' => 0,
+                'under_maintenance' => 0
             ]];
         }
     }

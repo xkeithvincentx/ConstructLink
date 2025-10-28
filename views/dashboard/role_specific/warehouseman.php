@@ -63,7 +63,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             'count' => $warehouseData['pending_releases'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
                             'icon' => 'bi-box-arrow-right',
-                            'color' => 'success'
+                            'color' => 'warning'  // Changed from 'success' - pending actions should not use green
                         ],
                         [
                             'label' => 'Tool Requests',
@@ -86,6 +86,84 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
             </div>
         </div>
 
+        <!-- QR Tag Management -->
+        <?php
+        $qrNeedsPrinting = $warehouseData['qr_needs_printing'] ?? 0;
+        $qrNeedsApplication = $warehouseData['qr_needs_application'] ?? 0;
+        $qrNeedsVerification = $warehouseData['qr_needs_verification'] ?? 0;
+        $qrTotalPending = $qrNeedsPrinting + $qrNeedsApplication + $qrNeedsVerification;
+        ?>
+        <?php if ($qrTotalPending > 0): ?>
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0" id="qr-management-title">
+                    <i class="bi bi-qr-code me-2" aria-hidden="true"></i>QR Tag Management
+                    <span class="badge bg-white text-danger ms-2" role="status" aria-label="<?= $qrTotalPending ?> assets need QR tag processing">
+                        <?= number_format($qrTotalPending) ?>
+                    </span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                    <strong>Critical:</strong> <?= number_format($qrTotalPending) ?> assets require QR tag processing for proper tracking and management.
+                </div>
+
+                <div role="region" aria-labelledby="qr-management-title">
+                    <?php if ($qrNeedsPrinting > 0): ?>
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div>
+                            <i class="bi bi-printer text-danger me-2" aria-hidden="true"></i>
+                            <strong>Need Printing</strong>
+                            <small class="d-block text-muted ms-4">Assets without printed QR tags</small>
+                        </div>
+                        <span class="badge bg-danger fs-6" role="status">
+                            <?= number_format($qrNeedsPrinting) ?>
+                        </span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($qrNeedsApplication > 0): ?>
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div>
+                            <i class="bi bi-tag text-warning me-2" aria-hidden="true"></i>
+                            <strong>Need Application</strong>
+                            <small class="d-block text-muted ms-4">Tags printed but not applied to assets</small>
+                        </div>
+                        <span class="badge bg-warning fs-6" role="status">
+                            <?= number_format($qrNeedsApplication) ?>
+                        </span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($qrNeedsVerification > 0): ?>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <i class="bi bi-check-circle text-info me-2" aria-hidden="true"></i>
+                            <strong>Need Verification</strong>
+                            <small class="d-block text-muted ms-4">Tags applied but not verified</small>
+                        </div>
+                        <span class="badge bg-info fs-6" role="status">
+                            <?= number_format($qrNeedsVerification) ?>
+                        </span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="d-grid gap-2 mt-3">
+                    <a href="?route=assets/tag-management" class="btn btn-danger" aria-label="Manage QR tags for <?= $qrTotalPending ?> assets">
+                        <i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>Manage QR Tags
+                    </a>
+                    <?php if ($qrNeedsPrinting > 0): ?>
+                    <a href="?route=assets/print-tags" class="btn btn-outline-danger btn-sm" aria-label="Print <?= $qrNeedsPrinting ?> QR tags">
+                        <i class="bi bi-printer me-2" aria-hidden="true"></i>Print Tags (<?= number_format($qrNeedsPrinting) ?>)
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Inventory Status -->
         <div class="card">
             <div class="card-header">
@@ -99,13 +177,18 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                         <h6 class="text-muted mb-3" id="stock-levels-label">Current Stock Levels</h6>
 
                         <?php
-                        // Stock levels using list items
+                        // Stock levels using improved threshold logic
                         $lowStockCount = $warehouseData['low_stock_items'] ?? 0;
+                        $criticalStockCount = $warehouseData['critical_stock_items'] ?? 0;
+                        $outOfStockCount = $warehouseData['out_of_stock_items'] ?? 0;
+                        $inTransitCount = $warehouseData['assets_in_transit'] ?? 0;
                         ?>
                         <div role="region" aria-labelledby="stock-levels-label">
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span>Consumable Stock</span>
+                                    <span>
+                                        <i class="bi bi-box text-info me-1" aria-hidden="true"></i>Consumables
+                                    </span>
                                     <span class="badge bg-info" role="status">
                                         <?= number_format($warehouseData['consumable_stock'] ?? 0) ?>
                                     </span>
@@ -113,25 +196,78 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             </div>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span>Tool Stock</span>
+                                    <span>
+                                        <i class="bi bi-tools text-primary me-1" aria-hidden="true"></i>Tools
+                                    </span>
                                     <span class="badge bg-primary" role="status">
                                         <?= number_format($warehouseData['tool_stock'] ?? 0) ?>
                                     </span>
                                 </div>
                             </div>
+
+                            <?php if ($outOfStockCount > 0): ?>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span>Low Stock Alerts</span>
-                                    <span class="badge bg-<?= $lowStockCount > 0 ? 'danger' : 'success' ?>" role="status">
+                                    <span>
+                                        <i class="bi bi-exclamation-circle-fill text-danger me-1" aria-hidden="true"></i><strong>Out of Stock</strong>
+                                    </span>
+                                    <span class="badge bg-danger" role="status">
+                                        <?= number_format($outOfStockCount) ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($criticalStockCount > 0): ?>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-exclamation-triangle-fill text-danger me-1" aria-hidden="true"></i><strong>Critical Stock</strong>
+                                        <small class="d-block text-muted ms-3">≤1 unit</small>
+                                    </span>
+                                    <span class="badge bg-danger" role="status">
+                                        <?= number_format($criticalStockCount) ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($lowStockCount > 0): ?>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-exclamation-triangle text-warning me-1" aria-hidden="true"></i>Low Stock
+                                        <small class="d-block text-muted ms-3">≤3 units</small>
+                                    </span>
+                                    <span class="badge bg-warning" role="status">
                                         <?= number_format($lowStockCount) ?>
                                     </span>
                                 </div>
                             </div>
+                            <?php endif; ?>
 
-                            <?php if ($lowStockCount > 0): ?>
+                            <?php if ($inTransitCount > 0): ?>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-truck text-info me-1" aria-hidden="true"></i>In Transit
+                                    </span>
+                                    <span class="badge bg-info" role="status">
+                                        <?= number_format($inTransitCount) ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($criticalStockCount > 0 || $outOfStockCount > 0): ?>
+                            <div class="alert alert-danger small" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+                                <strong>Action Required:</strong> Reorder critical/out-of-stock items immediately.
+                            </div>
+                            <?php elseif ($lowStockCount > 0): ?>
                             <div class="alert alert-warning small" role="alert">
                                 <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
-                                Some items are running low. Check inventory levels.
+                                Some items running low. Plan reorder soon.
                             </div>
                             <?php endif; ?>
                         </div>
