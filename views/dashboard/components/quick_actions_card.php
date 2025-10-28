@@ -1,32 +1,42 @@
 <?php
 /**
- * Quick Actions Card Component
+ * Quick Actions Card Component - Neutral Design System V2.0
  *
  * Displays a card with a grid of action buttons for common operations.
+ * Follows "Calm Data, Loud Exceptions" philosophy - neutral by default, color for emphasis.
  * Follows WCAG 2.1 AA accessibility standards with proper ARIA attributes.
  *
  * @param string $title Card title
- * @param string $titleIcon Bootstrap icon class for card header
+ * @param string $titleIcon Bootstrap icon class for card header (default: null - cleaner design)
  * @param array $actions Required array of action items, each with keys:
  *   - 'label' (string): Button label text
  *   - 'route' (string): URL route for the action
  *   - 'icon' (string): Bootstrap icon class (e.g., 'bi-plus-circle')
- *   - 'color' (string): Bootstrap button color (primary, secondary, success, danger, warning, info, outline-*)
+ *   - 'color' (string): Optional button color (default: 'outline-secondary' for neutral design)
+ *                       Use 'primary' for main action, 'danger' for critical, 'success' for positive
  *   - 'external' (bool): Optional, set true for external links (adds target="_blank" rel="noopener")
- * @param string $accentColor Optional card accent color (default: none)
  *
- * @example
- * $title = 'Financial Operations';
- * $titleIcon = 'bi-lightning-fill';
+ * @example Basic usage (neutral)
+ * ```php
+ * $title = 'Warehouse Operations';
  * $actions = [
- *     ['label' => 'Financial Reports', 'route' => 'reports/financial', 'icon' => 'bi-file-earmark-bar-graph', 'color' => 'primary'],
- *     ['label' => 'View High Value Assets', 'route' => 'assets?high_value=1', 'icon' => 'bi-eye', 'color' => 'outline-warning']
+ *     ['label' => 'Process Deliveries', 'route' => 'procurement-orders/for-receipt', 'icon' => 'bi-box-arrow-in-down'],
+ *     ['label' => 'View Inventory', 'route' => 'assets?status=available', 'icon' => 'bi-list-ul']
  * ];
  * include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
+ * ```
+ *
+ * @example With primary action
+ * ```php
+ * $actions = [
+ *     ['label' => 'New Request', 'route' => 'borrowed-tools/create', 'icon' => 'bi-plus-circle', 'color' => 'primary'],
+ *     ['label' => 'View All', 'route' => 'borrowed-tools', 'icon' => 'bi-list-ul']
+ * ];
+ * ```
  *
  * @package ConstructLink
  * @subpackage Dashboard Components
- * @version 2.0
+ * @version 2.1 - Neutral Design
  * @since 2025-10-28
  */
 
@@ -38,19 +48,12 @@ if (!isset($title) || !isset($actions) || !is_array($actions) || empty($actions)
 
 // Set defaults
 $titleIcon = $titleIcon ?? null;
-$accentColor = $accentColor ?? null;
-
-// Validate accent color
-$validAccentColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
-if ($accentColor && !in_array($accentColor, $validAccentColors)) {
-    $accentColor = null;
-}
 
 // Generate unique ID for ARIA labeling
 $uniqueId = 'quick-actions-' . md5($title);
 ?>
 
-<div class="card mb-4<?= $accentColor ? ' card-accent-' . htmlspecialchars($accentColor) : '' ?>">
+<div class="card card-neutral mb-4">
     <div class="card-header">
         <h5 class="mb-0" id="<?= $uniqueId ?>-title">
             <?php if ($titleIcon): ?><i class="<?= htmlspecialchars($titleIcon) ?> me-2" aria-hidden="true"></i><?php endif; ?><?= htmlspecialchars($title) ?>
@@ -64,7 +67,7 @@ $uniqueId = 'quick-actions-' . md5($title);
                 $label = $action['label'] ?? 'Action';
                 $route = $action['route'] ?? '#';
                 $icon = $action['icon'] ?? 'bi-arrow-right-circle';
-                $color = $action['color'] ?? 'primary';
+                $color = $action['color'] ?? 'outline-secondary'; // Default to neutral
                 $external = $action['external'] ?? false;
 
                 // Build href

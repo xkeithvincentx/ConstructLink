@@ -19,17 +19,8 @@ require_once APP_ROOT . '/helpers/AssetHelper.php';
 AssetHelper::loadModuleCSS('dashboard');
 ?>
 
-<!-- Welcome Message -->
-<div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-    <i class="bi bi-person-circle me-3 fs-4"></i>
-    <div>
-        <h5 class="alert-heading mb-1">Welcome back, <?= htmlspecialchars($user['full_name']) ?>!</h5>
-        <p class="mb-0">Role: <strong><?= htmlspecialchars($userRole) ?></strong> | 
-            <?php if ($user['department']): ?>Department: <strong><?= htmlspecialchars($user['department']) ?></strong> | <?php endif; ?>
-            Last login: <?= date('M j, Y g:i A', strtotime($user['last_login'] ?? 'now')) ?>
-        </p>
-    </div>
-</div>
+<!-- Compact Welcome Banner (Neutral Design V2.0) -->
+<?php include APP_ROOT . '/views/dashboard/components/welcome_banner.php'; ?>
 
 <!-- Role-Specific Quick Actions -->
 <?php
@@ -78,186 +69,101 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
 </div>
 <?php endif; ?>
 
-<!-- Main Statistics Cards (Common for all roles) -->
-<div class="row mb-4">
-    <!-- Total Inventory -->
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 card-accent-neutral">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <p class="text-muted mb-1 small">Total Inventory</p>
-                        <h3 class="mb-0"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h3>
-                    </div>
-                    <div class="text-muted icon-muted">
-                        <i class="bi bi-box fs-1"></i>
-                    </div>
-                </div>
-                <small class="text-muted">
-                    <i class="bi bi-cash-stack me-1"></i>
-                    Value: <?= formatCurrency($dashboardData['total_asset_value'] ?? 0) ?>
-                </small>
-            </div>
-        </div>
-    </div>
+<!-- Main Statistics Cards (Neutral Design V2.0) -->
+<?php
+/**
+ * Build stats array for neutral design system
+ * Use critical flag ONLY for items requiring immediate attention
+ */
 
-    <!-- Available Stock -->
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 card-accent-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <p class="text-muted mb-1 small">Available</p>
-                        <h3 class="mb-0 text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></h3>
-                    </div>
-                    <div class="text-success icon-muted">
-                        <i class="bi bi-check-circle fs-1"></i>
-                    </div>
-                </div>
-                <small class="text-muted">
-                    <?php
-                    $total = $dashboardData['total_assets'] ?? 1;
-                    $available = $dashboardData['available_assets'] ?? 0;
-                    $percentage = $total > 0 ? round(($available / $total) * 100, 1) : 0;
-                    ?>
-                    <i class="bi bi-graph-up me-1"></i>
-                    <?= $percentage ?>% of total
-                </small>
-            </div>
-        </div>
-    </div>
+// Determine if fourth stat is critical based on role
+$fourthStatCritical = false;
+$fourthStatValue = 0;
+$fourthStatLabel = 'Pending Requests';
+$fourthStatIcon = 'bi-clock';
 
-    <!-- In Use Assets -->
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 card-accent-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <p class="text-muted mb-1 small">In Use</p>
-                        <h3 class="mb-0 text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></h3>
-                    </div>
-                    <div class="text-warning icon-muted">
-                        <i class="bi bi-gear fs-1"></i>
-                    </div>
-                </div>
-                <small class="text-muted">
-                    <?php
-                    $inUse = $dashboardData['in_use_assets'] ?? 0;
-                    $percentage = $total > 0 ? round(($inUse / $total) * 100, 1) : 0;
-                    ?>
-                    <i class="bi bi-graph-up me-1"></i>
-                    <?= $percentage ?>% of total
-                </small>
-            </div>
-        </div>
-    </div>
+switch ($userRole) {
+    case 'Finance Director':
+        $fourthStatValue = ($dashboardData['role_specific']['finance']['pending_high_value_requests'] ?? 0) +
+                          ($dashboardData['role_specific']['finance']['pending_high_value_procurement'] ?? 0) +
+                          ($dashboardData['role_specific']['finance']['pending_transfers'] ?? 0);
+        $fourthStatLabel = 'Pending Approvals';
+        $fourthStatIcon = 'bi-hourglass-split';
+        $fourthStatCritical = $fourthStatValue > 0; // Critical if any pending
+        break;
 
-    <!-- Role-specific fourth card -->
-    <?php 
-    $fourthCard = [];
-    switch ($userRole) {
-        case 'Finance Director':
-            $pendingApprovals = ($dashboardData['role_specific']['finance']['pending_high_value_requests'] ?? 0) +
-                               ($dashboardData['role_specific']['finance']['pending_high_value_procurement'] ?? 0) +
-                               ($dashboardData['role_specific']['finance']['pending_transfers'] ?? 0);
-            $fourthCard = [
-                'border' => 'danger',
-                'icon' => 'bi-hourglass-split',
-                'color' => 'danger',
-                'value' => $pendingApprovals,
-                'title' => 'Pending Approvals',
-                'subtitle' => 'Requires your attention'
-            ];
-            break;
-            
-        case 'Asset Director':
-            $fourthCard = [
-                'border' => 'info',
-                'icon' => 'bi-percent',
-                'color' => 'info',
-                'value' => $dashboardData['role_specific']['asset_director']['utilization_rate'] ?? 0 . '%',
-                'title' => 'Asset Utilization',
-                'subtitle' => 'Current usage rate'
-            ];
-            break;
-            
-        case 'Procurement Officer':
-            $fourthCard = [
-                'border' => 'info',
-                'icon' => 'bi-clipboard-check',
-                'color' => 'info',
-                'value' => $dashboardData['role_specific']['procurement']['approved_requests_pending_po'] ?? 0,
-                'title' => 'Pending POs',
-                'subtitle' => 'Approved requests'
-            ];
-            break;
-            
-        case 'Warehouseman':
-            $fourthCard = [
-                'border' => 'danger',
-                'icon' => 'bi-exclamation-triangle',
-                'color' => 'danger',
-                'value' => $dashboardData['role_specific']['warehouse']['low_stock_items'] ?? 0,
-                'title' => 'Low Stock Alerts',
-                'subtitle' => 'Items < 10 units'
-            ];
-            break;
-            
-        case 'Project Manager':
-            $fourthCard = [
-                'border' => 'primary',
-                'icon' => 'bi-building',
-                'color' => 'primary',
-                'value' => $dashboardData['role_specific']['project_manager']['managed_projects'] ?? 0,
-                'title' => 'Active Projects',
-                'subtitle' => 'Under management'
-            ];
-            break;
-            
-        case 'Site Inventory Clerk':
-            $fourthCard = [
-                'border' => 'warning',
-                'icon' => 'bi-arrow-repeat',
-                'color' => 'warning',
-                'value' => $dashboardData['role_specific']['site_clerk']['tools_borrowed_today'] ?? 0,
-                'title' => 'Tools Out Today',
-                'subtitle' => 'Borrowed items'
-            ];
-            break;
-            
-        default:
-            $fourthCard = [
-                'border' => 'info',
-                'icon' => 'bi-clock',
-                'color' => 'info',
-                'value' => $dashboardData['pending_withdrawals'] ?? 0,
-                'title' => 'Pending Requests',
-                'subtitle' => ($dashboardData['overdue_withdrawals'] ?? 0) > 0 ? 
-                    '<span class="text-danger">' . $dashboardData['overdue_withdrawals'] . ' overdue</span>' : 
-                    'No overdue items'
-            ];
-    }
-    ?>
-    
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100 card-accent-<?= $fourthCard['color'] ?>">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <p class="text-muted mb-1 small"><?= $fourthCard['title'] ?></p>
-                        <h3 class="mb-0 text-<?= $fourthCard['color'] ?>"><?= is_numeric($fourthCard['value']) ? number_format($fourthCard['value']) : $fourthCard['value'] ?></h3>
-                    </div>
-                    <div class="text-<?= $fourthCard['color'] ?> icon-muted">
-                        <i class="<?= $fourthCard['icon'] ?> fs-1"></i>
-                    </div>
-                </div>
-                <small class="text-muted">
-                    <?= $fourthCard['subtitle'] ?>
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
+    case 'Warehouseman':
+        $fourthStatValue = $dashboardData['role_specific']['warehouse']['low_stock_items'] ?? 0;
+        $fourthStatLabel = 'Low Stock Alerts';
+        $fourthStatIcon = 'bi-exclamation-triangle';
+        $fourthStatCritical = $fourthStatValue > 0; // Critical if low stock
+        break;
+
+    case 'Asset Director':
+        $fourthStatValue = ($dashboardData['role_specific']['asset_director']['utilization_rate'] ?? 0) . '%';
+        $fourthStatLabel = 'Asset Utilization';
+        $fourthStatIcon = 'bi-percent';
+        break;
+
+    case 'Procurement Officer':
+        $fourthStatValue = $dashboardData['role_specific']['procurement']['approved_requests_pending_po'] ?? 0;
+        $fourthStatLabel = 'Pending POs';
+        $fourthStatIcon = 'bi-clipboard-check';
+        break;
+
+    case 'Project Manager':
+        $fourthStatValue = $dashboardData['role_specific']['project_manager']['managed_projects'] ?? 0;
+        $fourthStatLabel = 'Active Projects';
+        $fourthStatIcon = 'bi-building';
+        break;
+
+    case 'Site Inventory Clerk':
+        $fourthStatValue = $dashboardData['role_specific']['site_clerk']['tools_borrowed_today'] ?? 0;
+        $fourthStatLabel = 'Tools Out Today';
+        $fourthStatIcon = 'bi-arrow-repeat';
+        break;
+
+    default:
+        $fourthStatValue = $dashboardData['pending_withdrawals'] ?? 0;
+        $overdue = $dashboardData['overdue_withdrawals'] ?? 0;
+        $fourthStatLabel = 'Pending Requests';
+        $fourthStatIcon = 'bi-clock';
+        $fourthStatCritical = $overdue > 0; // Critical if overdue
+}
+
+// Build stats array - ALL NEUTRAL except critical items
+$stats = [
+    [
+        'icon' => 'bi-box',
+        'count' => $dashboardData['total_assets'] ?? 0,
+        'label' => 'Total Assets',
+        'critical' => false // Always neutral
+    ],
+    [
+        'icon' => 'bi-check-circle',
+        'count' => $dashboardData['available_assets'] ?? 0,
+        'label' => 'Available',
+        'critical' => false // Always neutral
+    ],
+    [
+        'icon' => 'bi-gear',
+        'count' => $dashboardData['in_use_assets'] ?? 0,
+        'label' => 'In Use',
+        'critical' => false // Always neutral
+    ],
+    [
+        'icon' => $fourthStatIcon,
+        'count' => $fourthStatValue,
+        'label' => $fourthStatLabel,
+        'critical' => $fourthStatCritical // Critical ONLY if requires attention
+    ]
+];
+
+// Use stat_cards component (DRY principle)
+$columns = 4;
+$useCard = false; // No wrapper card - cleaner layout
+include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+?>
 
 <!-- Role-Specific Dashboard Sections -->
 <?php

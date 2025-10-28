@@ -33,10 +33,10 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- System Overview -->
-        <div class="card mb-4 card-accent-primary">
+        <div class="card mb-4 card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="system-overview-title">
-                    <i class="bi bi-speedometer2 me-2 text-primary" aria-hidden="true"></i>System Overview
+                    <i class="bi bi-speedometer2 me-2 text-muted" aria-hidden="true"></i>System Overview
                 </h5>
             </div>
             <div class="card-body">
@@ -48,15 +48,15 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                             'icon' => 'bi-people',
                             'count' => $adminData['total_users'] ?? 0,
                             'label' => 'Total Users',
-                            'color' => 'muted',
+                            'critical' => false,
                             'subtext' => '<i class="bi bi-check-circle" aria-hidden="true"></i> ' . number_format($adminData['active_users'] ?? 0) . ' active',
-                            'subtextColor' => 'success'
+                            'subtextColor' => 'muted'
                         ],
                         [
                             'icon' => 'bi-activity',
                             'count' => $adminData['active_sessions'] ?? 0,
                             'label' => 'Active Sessions',
-                            'color' => 'success',
+                            'critical' => false,
                             'subtext' => 'Current online users',
                             'subtextColor' => 'muted'
                         ],
@@ -64,7 +64,7 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                             'icon' => IconMapper::MODULE_ASSETS,
                             'count' => $dashboardData['total_assets'] ?? 0,
                             'label' => 'Total Assets',
-                            'color' => 'info',
+                            'critical' => false,
                             'subtext' => 'System-wide',
                             'subtextColor' => 'muted'
                         ],
@@ -72,7 +72,7 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                             'icon' => IconMapper::MODULE_PROJECTS,
                             'count' => $dashboardData['active_projects'] ?? 0,
                             'label' => 'Active Projects',
-                            'color' => 'warning',
+                            'critical' => false,
                             'subtext' => 'Currently running',
                             'subtextColor' => 'muted'
                         ]
@@ -82,7 +82,7 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                     ?>
                     <div class="col-md-3 mb-3">
                         <div class="stat-card-item text-center" role="figure">
-                            <i class="<?= htmlspecialchars($stat['icon']) ?> text-<?= htmlspecialchars($stat['color']) ?> fs-1 d-block mb-2" aria-hidden="true"></i>
+                            <i class="<?= htmlspecialchars($stat['icon']) ?> text-muted fs-1 d-block mb-2" aria-hidden="true"></i>
                             <h4 class="mt-2 mb-1" aria-live="polite">
                                 <?= number_format($stat['count']) ?>
                             </h4>
@@ -162,22 +162,22 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                             [
                                 'label' => 'Pending Withdrawals',
                                 'value' => $dashboardData['pending_withdrawals'] ?? 0,
-                                'color' => ($dashboardData['pending_withdrawals'] ?? 0) > 0 ? 'warning' : 'success'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Overdue Items',
                                 'value' => $dashboardData['overdue_withdrawals'] ?? 0,
-                                'color' => ($dashboardData['overdue_withdrawals'] ?? 0) > 0 ? 'danger' : 'success'
+                                'critical' => ($dashboardData['overdue_withdrawals'] ?? 0) > 0
                             ],
                             [
                                 'label' => 'Total Incidents',
                                 'value' => $dashboardData['total_incidents'] ?? 0,
-                                'color' => ($dashboardData['total_incidents'] ?? 0) > 0 ? 'warning' : 'success'
+                                'critical' => ($dashboardData['total_incidents'] ?? 0) > 0
                             ],
                             [
                                 'label' => 'Scheduled Maintenance',
                                 'value' => $dashboardData['scheduled_maintenance'] ?? 0,
-                                'color' => 'info'
+                                'critical' => false
                             ]
                         ];
                         include APP_ROOT . '/views/dashboard/components/list_group.php';
@@ -192,31 +192,30 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
         <!-- Quick Actions -->
         <?php
         $title = 'System Administration';
-        $titleIcon = IconMapper::QUICK_ACTIONS;
         $actions = [
             [
                 'label' => 'Manage Users',
                 'route' => 'users',
                 'icon' => 'bi-people',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'label' => 'System Settings',
                 'route' => 'admin/settings',
                 'icon' => 'bi-gear',
-                'color' => 'secondary'
+                'critical' => false
             ],
             [
                 'label' => 'View Logs',
                 'route' => 'admin/logs',
                 'icon' => 'bi-activity',
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'label' => 'Generate Reports',
                 'route' => 'reports',
                 'icon' => 'bi-graph-up',
-                'color' => 'info'
+                'critical' => false
             ]
         ];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
@@ -236,31 +235,31 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                     [
                         'label' => 'Database',
                         'value' => 'Online',
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-database'
                     ],
                     [
                         'label' => 'Authentication',
                         'value' => 'Active',
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-shield-check'
                     ],
                     [
                         'label' => 'API Services',
                         'value' => 'Running',
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-cloud-check'
                     ],
                     [
                         'label' => 'QR Scanner',
                         'value' => 'Ready',
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-qr-code-scan'
                     ],
                     [
                         'label' => 'Email Service',
                         'value' => 'Limited',
-                        'color' => 'warning',
+                        'critical' => false,
                         'icon' => 'bi-envelope'
                     ]
                 ];
@@ -288,22 +287,22 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                     [
                         'label' => 'Users Created This Week',
                         'value' => 0,
-                        'color' => 'primary'
+                        'critical' => false
                     ],
                     [
                         'label' => 'Settings Modified',
                         'value' => 0,
-                        'color' => 'warning'
+                        'critical' => false
                     ],
                     [
                         'label' => 'Reports Generated',
                         'value' => 0,
-                        'color' => 'info'
+                        'critical' => false
                     ],
                     [
                         'label' => 'System Maintenance',
                         'value' => 0,
-                        'color' => 'success'
+                        'critical' => false
                     ]
                 ];
                 include APP_ROOT . '/views/dashboard/components/list_group.php';

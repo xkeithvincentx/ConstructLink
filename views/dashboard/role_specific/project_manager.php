@@ -33,10 +33,10 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Project Actions -->
-        <div class="card mb-4 card-accent-info">
+        <div class="card mb-4 card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-project-title">
-                    <i class="bi bi-clipboard-check me-2 text-info" aria-hidden="true"></i>Pending Project Actions
+                    <i class="bi bi-clipboard-check me-2 text-muted" aria-hidden="true"></i>Pending Project Actions
                 </h5>
             </div>
             <div class="card-body">
@@ -49,35 +49,35 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                             'count' => $projectData['pending_request_reviews'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_SUBMITTED),
                             'icon' => IconMapper::MODULE_REQUESTS,
-                            'color' => 'primary'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Equipment Verifications',
                             'count' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
                             'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                            'color' => 'warning'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Withdrawal Approvals',
                             'count' => $projectData['pending_withdrawal_approvals'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_APPROVAL),
                             'icon' => 'bi-box-arrow-right',
-                            'color' => 'success'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Transfer Approvals',
                             'count' => $projectData['pending_transfer_approvals'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_VERIFICATION),
                             'icon' => IconMapper::MODULE_TRANSFERS,
-                            'color' => 'warning'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Receipt Confirmations',
                             'count' => $projectData['pending_receipt_confirmations'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
                             'icon' => 'bi-check-circle',
-                            'color' => 'info'
+                            'critical' => false
                         ]
                     ];
 
@@ -109,7 +109,7 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>Available Assets</span>
-                                    <span class="badge bg-success" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($projectData['available_project_assets'] ?? 0) ?>
                                     </span>
                                 </div>
@@ -117,7 +117,7 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>In Use Assets</span>
-                                    <span class="badge bg-warning" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($projectData['in_use_project_assets'] ?? 0) ?>
                                     </span>
                                 </div>
@@ -138,17 +138,17 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                             [
                                 'label' => 'Managed Projects',
                                 'value' => $projectData['managed_projects'] ?? 0,
-                                'color' => 'primary'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Assigned Projects',
                                 'value' => $projectData['assigned_projects'] ?? 0,
-                                'color' => 'info'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Pending Investigations',
                                 'value' => $projectData['pending_incident_investigations'] ?? 0,
-                                'color' => 'warning'
+                                'critical' => false
                             ]
                         ];
                         $title = 'Project Management';
@@ -164,37 +164,36 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
         <!-- Quick Actions -->
         <?php
         $title = 'Project Management';
-        $titleIcon = IconMapper::QUICK_ACTIONS;
         $actions = [
             [
                 'label' => 'Review Requests',
                 'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_SUBMITTED),
                 'icon' => 'bi-clipboard-check',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'label' => 'Verify Equipment',
                 'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
                 'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'label' => 'Approve Withdrawals',
                 'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_APPROVAL),
                 'icon' => 'bi-check2-square',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'label' => 'Verify Transfers',
                 'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_VERIFICATION),
                 'icon' => IconMapper::MODULE_TRANSFERS,
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'label' => 'Investigate Incidents',
                 'route' => WorkflowStatus::buildRoute('incidents', WorkflowStatus::INCIDENT_PENDING_VERIFICATION),
                 'icon' => 'bi-shield-exclamation',
-                'color' => 'danger'
+                'critical' => true
             ]
         ];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
@@ -207,43 +206,42 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                 'icon' => IconMapper::MODULE_PROJECTS,
                 'count' => $projectData['managed_projects'] ?? 0,
                 'label' => 'Managed',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-person-check',
                 'count' => $projectData['assigned_projects'] ?? 0,
                 'label' => 'Assigned',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_ASSETS,
                 'count' => $projectData['available_project_assets'] ?? 0,
                 'label' => 'Available',
-                'color' => 'info'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-gear',
                 'count' => $projectData['in_use_project_assets'] ?? 0,
                 'label' => 'In Use',
-                'color' => 'warning'
+                'critical' => false
             ]
         ];
         $title = 'Project Summary';
-        $titleIcon = IconMapper::MODULE_PROJECTS;
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
 
         <!-- View All Projects Button -->
         <div class="d-grid mb-4">
-            <a href="?route=projects" class="btn btn-outline-primary btn-sm" aria-label="View all projects">
+            <a href="?route=projects" class="btn btn-outline-secondary btn-sm" aria-label="View all projects">
                 <i class="<?= IconMapper::ACTION_VIEW ?> me-1" aria-hidden="true"></i>View All Projects
             </a>
         </div>
 
         <!-- Return Transit Monitoring -->
-        <div class="card mb-4 card-accent-warning">
-            <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0 text-warning" id="return-transit-title">
+        <div class="card mb-4 card-neutral">
+            <div class="card-header">
+                <h5 class="mb-0 text-muted" id="return-transit-title">
                     <i class="<?= IconMapper::WORKFLOW_IN_TRANSIT ?> me-2" aria-hidden="true"></i>Return Transit Monitor
                 </h5>
             </div>
@@ -254,25 +252,25 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                         'icon' => 'bi-arrow-return-left',
                         'count' => $projectData['returns_in_transit'] ?? 0,
                         'label' => 'In Transit',
-                        'color' => 'info'
+                        'critical' => false
                     ],
                     [
                         'icon' => IconMapper::STATUS_WARNING,
                         'count' => $projectData['overdue_return_transits'] ?? 0,
                         'label' => 'Overdue',
-                        'color' => 'danger'
+                        'critical' => true
                     ],
                     [
                         'icon' => 'bi-clock-history',
                         'count' => $projectData['pending_return_receipts'] ?? 0,
                         'label' => 'To Receive',
-                        'color' => 'warning'
+                        'critical' => false
                     ],
                     [
                         'icon' => 'bi-calendar-x',
                         'count' => $projectData['overdue_returns'] ?? 0,
                         'label' => 'Overdue Returns',
-                        'color' => 'secondary'
+                        'critical' => true
                     ]
                 ];
                 ?>
@@ -280,7 +278,7 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                 <div class="row text-center" role="group" aria-labelledby="return-transit-title">
                     <?php foreach ($returnStats as $stat): ?>
                     <div class="col-6 mb-3">
-                        <i class="<?= htmlspecialchars($stat['icon']) ?> text-<?= htmlspecialchars($stat['color']) ?> fs-3 d-block mb-2" aria-hidden="true"></i>
+                        <i class="<?= htmlspecialchars($stat['icon']) ?> text-muted fs-3 d-block mb-2" aria-hidden="true"></i>
                         <h6 class="mb-0" aria-live="polite"><?= number_format($stat['count']) ?></h6>
                         <small class="text-muted"><?= htmlspecialchars($stat['label']) ?></small>
                     </div>
@@ -298,11 +296,11 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
 
                 <div class="d-grid gap-2">
                     <?php if (($projectData['pending_return_receipts'] ?? 0) > 0): ?>
-                    <a href="?route=transfers&return_status=in_return_transit" class="btn btn-warning btn-sm" aria-label="Receive <?= $projectData['pending_return_receipts'] ?? 0 ?> pending returns">
+                    <a href="?route=transfers&return_status=in_return_transit" class="btn btn-outline-secondary btn-sm" aria-label="Receive <?= $projectData['pending_return_receipts'] ?? 0 ?> pending returns">
                         <i class="bi bi-box-arrow-in-down me-1" aria-hidden="true"></i>Receive Returns (<?= $projectData['pending_return_receipts'] ?? 0 ?>)
                     </a>
                     <?php endif; ?>
-                    <a href="?route=transfers&tab=returns" class="btn btn-outline-info btn-sm" aria-label="Monitor all returns">
+                    <a href="?route=transfers&tab=returns" class="btn btn-outline-secondary btn-sm" aria-label="Monitor all returns">
                         <i class="<?= IconMapper::ACTION_VIEW ?> me-1" aria-hidden="true"></i>Monitor All Returns
                     </a>
                 </div>
@@ -323,37 +321,37 @@ $projectData = $dashboardData['role_specific']['project_manager'] ?? [];
                     [
                         'label' => 'Requests to Review',
                         'value' => $projectData['pending_request_reviews'] ?? 0,
-                        'color' => 'primary',
+                        'critical' => false,
                         'icon' => 'bi-file-earmark-text'
                     ],
                     [
                         'label' => 'Equipment to Verify',
                         'value' => $dashboardData['borrowed_tools']['pending_verification'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => false,
                         'icon' => IconMapper::MODULE_BORROWED_TOOLS
                     ],
                     [
                         'label' => 'Withdrawals to Approve',
                         'value' => $projectData['pending_withdrawal_approvals'] ?? 0,
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-box-arrow-right'
                     ],
                     [
                         'label' => 'Transfers to Verify',
                         'value' => $projectData['pending_transfer_approvals'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => false,
                         'icon' => IconMapper::MODULE_TRANSFERS
                     ],
                     [
                         'label' => 'Return Transits',
                         'value' => $projectData['returns_in_transit'] ?? 0,
-                        'color' => 'info',
+                        'critical' => false,
                         'icon' => IconMapper::WORKFLOW_IN_TRANSIT
                     ],
                     [
                         'label' => 'Incidents to Investigate',
                         'value' => $projectData['pending_incident_investigations'] ?? 0,
-                        'color' => 'danger',
+                        'critical' => true,
                         'icon' => 'bi-shield-exclamation'
                     ]
                 ];

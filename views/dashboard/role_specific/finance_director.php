@@ -29,48 +29,49 @@ if (!class_exists('IconMapper')) {
 $financeData = $dashboardData['role_specific']['finance'] ?? [];
 ?>
 
-<!-- Finance Director Dashboard -->
+<!-- Finance Director Dashboard - Neutral Design V2.0 -->
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Financial Approvals -->
-        <div class="card mb-4 card-accent-danger">
+        <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-approvals-title">
-                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-danger" aria-hidden="true"></i>Pending Financial Approvals
+                    Pending Financial Approvals
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row" role="group" aria-labelledby="pending-approvals-title">
                     <?php
-                    // Define pending action items using WorkflowStatus constants
+                    // Define pending action items - Neutral design (all neutral, not colored)
+                    // High-value approvals are routine for Finance Director, not critical
                     $pendingItems = [
                         [
                             'label' => 'High Value Requests',
                             'count' => $financeData['pending_high_value_requests'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_REVIEWED, ['high_value' => 1]),
                             'icon' => IconMapper::MODULE_REQUESTS,
-                            'color' => 'primary'
+                            'critical' => false
                         ],
                         [
                             'label' => 'High Value Procurement',
                             'count' => $financeData['pending_high_value_procurement'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_REVIEWED, ['high_value' => 1]),
                             'icon' => IconMapper::MODULE_PROCUREMENT,
-                            'color' => 'warning'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Transfer Approvals',
                             'count' => $financeData['pending_transfers'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_APPROVAL),
                             'icon' => IconMapper::MODULE_TRANSFERS,
-                            'color' => 'info'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Maintenance Approvals',
                             'count' => $financeData['pending_maintenance_approval'] ?? 0,
                             'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED, 'high_value' => 1]),
                             'icon' => IconMapper::MODULE_MAINTENANCE,
-                            'color' => 'secondary'
+                            'critical' => false
                         ]
                     ];
 
@@ -85,10 +86,10 @@ $financeData = $dashboardData['role_specific']['finance'] ?? [];
 
         <!-- Budget Utilization -->
         <?php if (!empty($dashboardData['budget_utilization'])): ?>
-        <div class="card">
+        <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="budget-utilization-title">
-                    <i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>Project Budget Utilization
+                    Project Budget Utilization
                 </h5>
             </div>
             <div class="card-body">
@@ -135,35 +136,33 @@ $financeData = $dashboardData['role_specific']['finance'] ?? [];
 
     <div class="col-lg-4">
         <!-- Financial Summary -->
-        <div class="card mb-4">
+        <div class="card card-neutral">
             <div class="card-header">
-                <h5 class="mb-0" id="financial-summary-title">
-                    <i class="<?= IconMapper::FINANCE_CASH ?> me-2" aria-hidden="true"></i>Financial Summary
-                </h5>
+                <h5 class="mb-0" id="financial-summary-title">Financial Summary</h5>
             </div>
             <div class="card-body">
                 <?php
-                // Define financial metrics for list_group component
+                // Define financial metrics - Neutral design
                 $financialMetrics = [
                     [
                         'label' => 'Total Asset Value',
                         'value' => formatCurrency($financeData['total_asset_value'] ?? 0),
-                        'color' => 'primary'
+                        'critical' => false
                     ],
                     [
                         'label' => 'Average Asset Value',
                         'value' => formatCurrency($financeData['avg_asset_value'] ?? 0),
-                        'color' => 'info'
+                        'critical' => false
                     ],
                     [
                         'label' => 'High Value Assets',
                         'value' => $financeData['high_value_assets'] ?? 0,
-                        'color' => 'warning',
-                        'icon' => IconMapper::FINANCE_HIGH_VALUE
+                        'icon' => IconMapper::FINANCE_HIGH_VALUE,
+                        'critical' => false
                     ]
                 ];
 
-                // Render first 2 items as simple display
+                // Render as simple display (neutral design)
                 ?>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
@@ -179,8 +178,13 @@ $financeData = $dashboardData['role_specific']['finance'] ?? [];
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted"><?= $financialMetrics[2]['label'] ?></span>
-                        <span class="badge bg-<?= $financialMetrics[2]['color'] ?>" role="status">
+                        <span class="text-muted">
+                            <?php if (!empty($financialMetrics[2]['icon'])): ?>
+                                <i class="<?= htmlspecialchars($financialMetrics[2]['icon']) ?> me-1 text-muted" aria-hidden="true"></i>
+                            <?php endif; ?>
+                            <?= $financialMetrics[2]['label'] ?>
+                        </span>
+                        <span class="badge badge-neutral" role="status">
                             <?= number_format($financialMetrics[2]['value']) ?>
                         </span>
                     </div>
@@ -189,28 +193,26 @@ $financeData = $dashboardData['role_specific']['finance'] ?? [];
                 <hr>
 
                 <?php
-                // Quick actions using component
+                // Quick actions - Neutral design
                 $title = 'Financial Operations';
-                $titleIcon = IconMapper::QUICK_ACTIONS;
+                $titleIcon = null;
                 $actions = [
                     [
                         'label' => 'Financial Reports',
                         'route' => 'reports/financial',
-                        'icon' => 'bi-file-earmark-bar-graph',
-                        'color' => 'primary'
+                        'icon' => 'bi-file-earmark-bar-graph'
                     ],
                     [
                         'label' => 'View High Value Assets',
                         'route' => 'assets?high_value=1',
-                        'icon' => IconMapper::ACTION_VIEW,
-                        'color' => 'outline-warning'
+                        'icon' => IconMapper::ACTION_VIEW
                     ]
                 ];
                 ?>
                 <nav class="d-grid gap-2" aria-label="Financial operations">
                     <?php foreach ($actions as $action): ?>
                     <a href="?route=<?= urlencode($action['route']) ?>"
-                       class="btn btn-<?= htmlspecialchars($action['color']) ?> btn-sm"
+                       class="btn btn-outline-secondary btn-sm"
                        aria-label="<?= htmlspecialchars($action['label']) ?>">
                         <i class="<?= htmlspecialchars($action['icon']) ?> me-1" aria-hidden="true"></i>
                         <?= htmlspecialchars($action['label']) ?>
@@ -222,32 +224,36 @@ $financeData = $dashboardData['role_specific']['finance'] ?? [];
 
         <!-- Quick Stats -->
         <?php
+        // Stats - Neutral design (all routine metrics)
+        $incidentCount = $dashboardData['total_incidents'] ?? 0;
         $stats = [
             [
                 'icon' => IconMapper::MODULE_ASSETS,
                 'count' => $dashboardData['total_assets'] ?? 0,
                 'label' => 'Total Assets',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_PROJECTS,
                 'count' => $dashboardData['active_projects'] ?? 0,
                 'label' => 'Active Projects',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_MAINTENANCE,
                 'count' => $dashboardData['maintenance_assets'] ?? 0,
                 'label' => 'Maintenance',
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_INCIDENTS,
-                'count' => $dashboardData['total_incidents'] ?? 0,
+                'count' => $incidentCount,
                 'label' => 'Incidents',
-                'color' => 'danger'
+                'critical' => $incidentCount > 5 // Critical if more than 5 incidents
             ]
         ];
+        $title = 'Overview';
+        $columns = 2;
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
     </div>

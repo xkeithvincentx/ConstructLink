@@ -33,10 +33,10 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Procurement Actions -->
-        <div class="card mb-4 card-accent-success">
+        <div class="card mb-4 card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-procurement-title">
-                    <i class="<?= IconMapper::MODULE_PROCUREMENT ?> me-2 text-success" aria-hidden="true"></i>Pending Procurement Actions
+                    <i class="<?= IconMapper::MODULE_PROCUREMENT ?> me-2 text-muted" aria-hidden="true"></i>Pending Procurement Actions
                 </h5>
             </div>
             <div class="card-body">
@@ -49,28 +49,28 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
                             'count' => $procurementData['approved_requests_pending_po'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_APPROVED),
                             'icon' => 'bi-clipboard-check',
-                            'color' => 'primary'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Draft Orders',
                             'count' => $procurementData['draft_orders'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DRAFT),
                             'icon' => 'bi-file-earmark-text',
-                            'color' => 'warning'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Pending Delivery',
                             'count' => $procurementData['pending_delivery'] ?? 0,
                             'route' => 'procurement-orders?' . http_build_query(['delivery_status' => WorkflowStatus::DELIVERY_PENDING]),
                             'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
-                            'color' => 'info'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Recent POs (30 days)',
                             'count' => $procurementData['recent_po_count'] ?? 0,
                             'route' => 'procurement-orders?recent=30',
                             'icon' => 'bi-calendar-check',
-                            'color' => 'secondary'
+                            'critical' => false
                         ]
                     ];
 
@@ -148,18 +148,18 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
                             [
                                 'label' => 'Active Vendors',
                                 'value' => $procurementData['active_vendors'] ?? 0,
-                                'color' => 'primary'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Preferred Vendors',
                                 'value' => $procurementData['preferred_vendors'] ?? 0,
-                                'color' => 'success',
+                                'critical' => false,
                                 'icon' => 'bi-star-fill'
                             ],
                             [
                                 'label' => 'Active Makers',
                                 'value' => $procurementData['active_makers'] ?? 0,
-                                'color' => 'info',
+                                'critical' => false,
                                 'icon' => 'bi-factory'
                             ]
                         ];
@@ -176,31 +176,30 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
         <!-- Quick Actions -->
         <?php
         $title = 'Procurement Operations';
-        $titleIcon = IconMapper::QUICK_ACTIONS;
         $actions = [
             [
                 'label' => 'Create Purchase Order',
                 'route' => 'procurement-orders/create',
                 'icon' => IconMapper::ACTION_CREATE,
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'label' => 'Process Approved Requests',
                 'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_APPROVED),
                 'icon' => 'bi-clipboard-check',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'label' => 'Manage Vendors',
                 'route' => 'vendors',
                 'icon' => 'bi-building',
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'label' => 'Track Deliveries',
                 'route' => 'procurement-orders?delivery=tracking',
                 'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
-                'color' => 'info'
+                'critical' => false
             ]
         ];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
@@ -213,35 +212,34 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
                 'icon' => 'bi-building',
                 'count' => $procurementData['active_vendors'] ?? 0,
                 'label' => 'Active Vendors',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-star-fill',
                 'count' => $procurementData['preferred_vendors'] ?? 0,
                 'label' => 'Preferred',
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-factory',
                 'count' => $procurementData['active_makers'] ?? 0,
                 'label' => 'Makers',
-                'color' => 'info'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_PROCUREMENT,
                 'count' => $procurementData['recent_po_count'] ?? 0,
                 'label' => 'Recent POs',
-                'color' => 'success'
+                'critical' => false
             ]
         ];
         $title = 'Vendor Overview';
-        $titleIcon = 'bi-building';
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
 
         <!-- Add Vendor Button -->
         <div class="d-grid mb-4">
-            <a href="?route=vendors/create" class="btn btn-outline-primary btn-sm" aria-label="Add new vendor">
+            <a href="?route=vendors/create" class="btn btn-outline-secondary btn-sm" aria-label="Add new vendor">
                 <i class="<?= IconMapper::ACTION_CREATE ?> me-1" aria-hidden="true"></i>Add Vendor
             </a>
         </div>
@@ -260,17 +258,17 @@ $procurementData = $dashboardData['role_specific']['procurement'] ?? [];
                     [
                         'label' => 'POs Created This Week',
                         'value' => $procurementData['pos_this_week'] ?? 0,
-                        'color' => 'primary'
+                        'critical' => false
                     ],
                     [
                         'label' => 'Deliveries Scheduled',
                         'value' => $procurementData['scheduled_deliveries'] ?? 0,
-                        'color' => 'warning'
+                        'critical' => false
                     ],
                     [
                         'label' => 'Vendors Added',
                         'value' => $procurementData['vendors_added'] ?? 0,
-                        'color' => 'success'
+                        'critical' => false
                     ]
                 ];
                 include APP_ROOT . '/views/dashboard/components/list_group.php';

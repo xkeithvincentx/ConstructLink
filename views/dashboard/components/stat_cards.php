@@ -1,31 +1,42 @@
 <?php
 /**
- * Stat Cards Component
+ * Stat Cards Component - Neutral Design System V2.0
  *
  * Displays a grid of statistical metrics with icons in a responsive card layout.
+ * Follows "Calm Data, Loud Exceptions" philosophy - neutral by default, color only for critical items.
  * Follows WCAG 2.1 AA accessibility standards with proper ARIA attributes.
  *
  * @param array $stats Required array of stat items, each with keys:
  *   - 'icon' (string): Bootstrap icon class (e.g., 'bi-box')
  *   - 'count' (int|float): Numeric value to display
  *   - 'label' (string): Descriptive label for the stat
- *   - 'color' (string): Bootstrap color context (primary, success, warning, danger, info, secondary)
+ *   - 'critical' (bool): Optional - if true, displays in red for urgent attention (default: false)
  * @param string $title Optional card title (default: 'Quick Stats')
- * @param string $titleIcon Optional icon for card header (default: 'bi-speedometer2')
- * @param int $columns Optional number of columns (2, 3, or 4; default: 2)
+ * @param string $titleIcon Optional icon for card header (default: null - removed for cleaner design)
+ * @param int $columns Optional number of columns (2, 3, or 4; default: 3)
+ * @param bool $useCard Optional - wrap stats in a card (default: true)
  *
- * @example
+ * @example Basic usage (neutral design)
+ * ```php
  * $stats = [
- *     ['icon' => 'bi-box', 'count' => 150, 'label' => 'Total Assets', 'color' => 'primary'],
- *     ['icon' => 'bi-building', 'count' => 12, 'label' => 'Active Projects', 'color' => 'success'],
- *     ['icon' => 'bi-tools', 'count' => 8, 'label' => 'Maintenance', 'color' => 'warning'],
- *     ['icon' => 'bi-exclamation-triangle', 'count' => 3, 'label' => 'Incidents', 'color' => 'danger']
+ *     ['icon' => 'bi-box', 'count' => 150, 'label' => 'Total Assets'],
+ *     ['icon' => 'bi-check-circle', 'count' => 42, 'label' => 'Available'],
+ *     ['icon' => 'bi-exclamation-triangle', 'count' => 3, 'label' => 'Overdue', 'critical' => true]
  * ];
+ * $columns = 3;
  * include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+ * ```
+ *
+ * @example Without card wrapper (for custom layouts)
+ * ```php
+ * $stats = [...];
+ * $useCard = false;
+ * include APP_ROOT . '/views/dashboard/components/stat_cards.php';
+ * ```
  *
  * @package ConstructLink
  * @subpackage Dashboard Components
- * @version 2.0
+ * @version 2.1 - Neutral Design
  * @since 2025-10-28
  */
 
@@ -37,12 +48,13 @@ if (!isset($stats) || !is_array($stats) || empty($stats)) {
 
 // Set defaults
 $title = $title ?? 'Quick Stats';
-$titleIcon = $titleIcon ?? null;
-$columns = $columns ?? 2;
+$titleIcon = $titleIcon ?? null; // Null by default - cleaner design
+$columns = $columns ?? 3; // Changed default from 2 to 3 for better layout
+$useCard = $useCard ?? true;
 
 // Validate columns
 if (!in_array($columns, [2, 3, 4])) {
-    $columns = 2;
+    $columns = 3;
 }
 
 // Calculate column class based on number of columns
@@ -54,30 +66,34 @@ $columnClasses = [
 $columnClass = $columnClasses[$columns];
 
 // Generate unique ID for ARIA labeling
-$uniqueId = 'stat-cards-' . md5($title);
+$uniqueId = 'stat-cards-' . md5($title . time());
 ?>
 
-<div class="card mb-4">
+<?php if ($useCard): ?>
+<div class="card card-neutral">
+    <?php if ($title): ?>
     <div class="card-header">
         <h5 class="mb-0" id="<?= $uniqueId ?>-title">
-            <?php if ($titleIcon): ?><i class="<?= htmlspecialchars($titleIcon) ?> me-2" aria-hidden="true"></i><?php endif; ?><?= htmlspecialchars($title) ?>
+            <?php if ($titleIcon): ?>
+                <i class="<?= htmlspecialchars($titleIcon) ?> me-2" aria-hidden="true"></i>
+            <?php endif; ?>
+            <?= htmlspecialchars($title) ?>
         </h5>
     </div>
+    <?php endif; ?>
     <div class="card-body">
-        <div class="row text-center" role="group" aria-labelledby="<?= $uniqueId ?>-title">
+<?php else: ?>
+    <div class="stat-cards-wrapper">
+<?php endif; ?>
+
+        <div class="row g-3" role="group" aria-labelledby="<?= $uniqueId ?>-title">
             <?php foreach ($stats as $index => $stat): ?>
                 <?php
                 // Extract and validate stat data
                 $icon = $stat['icon'] ?? 'bi-question-circle';
                 $count = $stat['count'] ?? 0;
                 $label = $stat['label'] ?? 'Metric';
-                $color = $stat['color'] ?? 'primary';
-
-                // Validate color context
-                $validColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'dark', 'light'];
-                if (!in_array($color, $validColors)) {
-                    $color = 'primary';
-                }
+                $critical = $stat['critical'] ?? false; // NEW: critical flag for neutral design
 
                 // Format count (handle large numbers)
                 if (is_numeric($count)) {
@@ -88,27 +104,36 @@ $uniqueId = 'stat-cards-' . md5($title);
 
                 // Generate unique ID for this stat
                 $statId = $uniqueId . '-stat-' . $index;
+
+                // Determine CSS class based on critical flag
+                $cardClass = $critical ? 'card-stat critical' : 'card-stat';
                 ?>
 
-                <div class="<?= $columnClass ?> mb-3">
-                    <div class="stat-card-item"
+                <div class="<?= $columnClass ?>">
+                    <div class="<?= $cardClass ?>"
                          role="figure"
                          aria-labelledby="<?= $statId ?>-label"
                          aria-describedby="<?= $statId ?>-value">
-                        <i class="<?= htmlspecialchars($icon) ?> text-<?= htmlspecialchars($color) ?> fs-3 d-block mb-2"
-                           aria-hidden="true"></i>
-                        <h6 class="mb-0 fw-bold"
+                        <div class="stat-icon">
+                            <i class="<?= htmlspecialchars($icon) ?>" aria-hidden="true"></i>
+                        </div>
+                        <h2 class="stat-number"
                             id="<?= $statId ?>-value"
                             aria-live="polite"
                             aria-atomic="true">
                             <?= $formattedCount ?>
-                        </h6>
-                        <small class="text-muted d-block mt-1" id="<?= $statId ?>-label">
+                        </h2>
+                        <p class="stat-label" id="<?= $statId ?>-label">
                             <?= htmlspecialchars($label) ?>
-                        </small>
+                        </p>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
+
+<?php if ($useCard): ?>
     </div>
 </div>
+<?php else: ?>
+    </div>
+<?php endif; ?>

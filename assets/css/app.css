@@ -483,3 +483,512 @@ body {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ==========================================================================
+   NEUTRAL DESIGN SYSTEM - V2.0
+   Philosophy: "Calm Data, Loud Exceptions"
+   - 90% neutral gray tones
+   - 10% strategic color accents (critical/success only)
+   - DRY principles with reusable component classes
+   ========================================================================== */
+
+/* Extended Color Palette - Neutral First */
+:root {
+    /* Neutral Backgrounds (90% usage) */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F9FAFB;
+    --bg-tertiary: #F3F4F6;
+
+    /* Neutral Borders */
+    --border-light: #E5E7EB;
+    --border-medium: #D1D5DB;
+    --border-dark: #9CA3AF;
+
+    /* Neutral Text */
+    --text-secondary: #6B7280;
+    --text-tertiary: #9CA3AF;
+
+    /* Critical/Alert (10% usage - only for urgent items) */
+    --alert-critical: #DC2626;
+    --alert-critical-bg: #FEE2E2;
+    --alert-critical-border: #FCA5A5;
+
+    /* Success (10% usage - confirmations only) */
+    --status-success: #059669;
+    --status-success-bg: #D1FAE5;
+    --status-success-border: #6EE7B7;
+
+    /* Neutral Status (90% usage - default for most items) */
+    --status-neutral: #6B7280;
+    --status-neutral-bg: #F3F4F6;
+    --status-neutral-border: #D1D5DB;
+
+    /* Shadows - Subtle Depth */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 12px -2px rgba(0, 0, 0, 0.12);
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-base: 200ms ease;
+    --transition-slow: 300ms ease;
+}
+
+/* ==========================================================================
+   CARD COMPONENTS - Neutral Design
+   ========================================================================== */
+
+/* Neutral Card (default for most cards) */
+.card-neutral {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base);
+    margin-bottom: 3rem !important; /* 48px spacing between cards - FORCE spacing */
+}
+
+.card-neutral:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-neutral .card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border-light);
+    padding: 1.25rem 1.5rem;
+}
+
+.card-neutral .card-body {
+    padding: 1.5rem;
+}
+
+/* Critical Card (use ONLY for urgent alerts) */
+.card-critical {
+    background: var(--alert-critical-bg);
+    border: 2px solid var(--alert-critical-border);
+    border-left-width: 4px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-critical .card-header {
+    background: var(--alert-critical);
+    color: white;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+/* ==========================================================================
+   BADGE COMPONENTS - Neutral First
+   ========================================================================== */
+
+/* Neutral Badge (use for 90% of badges) */
+.badge-neutral {
+    background: var(--status-neutral-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--status-neutral-border);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Critical Badge (overdue, errors, urgent) */
+.badge-critical {
+    background: var(--alert-critical-bg);
+    color: var(--alert-critical);
+    border: 1px solid var(--alert-critical-border);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Success Badge (confirmations, completed) */
+.badge-success-neutral {
+    background: var(--status-success-bg);
+    color: var(--status-success);
+    border: 1px solid var(--status-success-border);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* ==========================================================================
+   STAT CARD COMPONENTS - Simplified Design
+   ========================================================================== */
+
+/* Neutral Stat Card */
+.card-stat {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+    opacity: 0.3;
+    transition: opacity var(--transition-base);
+}
+
+.card-stat:hover .stat-icon {
+    opacity: 0.5;
+}
+
+.stat-number {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Critical Stat Card (use ONLY for overdue/urgent metrics) */
+.card-stat.critical .stat-number {
+    color: var(--alert-critical);
+}
+
+.card-stat.critical .stat-icon {
+    color: var(--alert-critical);
+    opacity: 0.6;
+}
+
+.card-stat.critical {
+    border-color: var(--alert-critical-border);
+    background: var(--alert-critical-bg);
+}
+
+/* Stat Cards Wrapper (when not using card layout) */
+.stat-cards-wrapper {
+    margin-bottom: 3rem; /* 48px spacing after stat cards section */
+}
+
+/* ==========================================================================
+   DASHBOARD SECTION SPACING
+   ========================================================================== */
+
+/* Add breathing room between major dashboard sections */
+.dashboard-section {
+    margin-bottom: 2.5rem; /* 40px between major sections */
+}
+
+.dashboard-section-separator {
+    margin: 2rem 0; /* 32px top/bottom spacing for separators */
+    border-color: var(--border-light);
+}
+
+/* Force spacing in dashboard columns */
+.row.mb-4 > .col-lg-8 > .card:not(:last-child),
+.row.mb-4 > .col-lg-4 > .card:not(:last-child) {
+    margin-bottom: 3rem !important; /* 48px between cards in same column */
+}
+
+.row.mb-4 > .col-lg-8 > *:not(:last-child),
+.row.mb-4 > .col-lg-4 > *:not(:last-child) {
+    margin-bottom: 2.5rem !important; /* 40px between all elements */
+}
+
+/* ==========================================================================
+   ACTION ITEM COMPONENTS - Pending Actions
+   ========================================================================== */
+
+/* Neutral Action Item */
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+.action-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.action-item .action-label {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.9375rem;
+}
+
+.action-item .action-arrow {
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+    transition: transform var(--transition-base);
+}
+
+.action-item:hover .action-arrow {
+    transform: translateX(4px);
+}
+
+/* Critical Action Item (use ONLY for overdue/urgent) */
+.action-item-critical {
+    background: var(--alert-critical-bg);
+    border-color: var(--alert-critical-border);
+    border-left-width: 3px;
+}
+
+.action-item-critical:hover {
+    background: #FEE2E2;
+    border-left-width: 4px;
+}
+
+/* ==========================================================================
+   COMPACT WELCOME BANNER
+   ========================================================================== */
+
+.welcome-banner {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    transition: opacity var(--transition-base);
+}
+
+.welcome-banner.dismissed {
+    display: none;
+}
+
+.welcome-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.welcome-content .user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.welcome-content .user-role {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.btn-dismiss {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    padding: 0.25rem;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.btn-dismiss:hover {
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   UTILITY CLASSES - Neutral Design
+   ========================================================================== */
+
+/* Text Colors */
+.text-neutral {
+    color: var(--status-neutral) !important;
+}
+
+.text-critical {
+    color: var(--alert-critical) !important;
+}
+
+/* Background Colors */
+.bg-neutral {
+    background-color: var(--status-neutral-bg) !important;
+}
+
+.bg-critical {
+    background-color: var(--alert-critical-bg) !important;
+}
+
+/* Border Colors */
+.border-neutral {
+    border-color: var(--status-neutral-border) !important;
+}
+
+.border-critical {
+    border-color: var(--alert-critical-border) !important;
+}
+
+/* Spacing Utilities (consistent with design system) */
+.gap-sm {
+    gap: 0.5rem;
+}
+
+.gap-md {
+    gap: 1rem;
+}
+
+.gap-lg {
+    gap: 1.5rem;
+}
+
+/* ==========================================================================
+   BUTTON OVERRIDES - Neutral Design
+   ========================================================================== */
+
+/* Primary Button - Green for create/add actions */
+.btn-primary {
+    background: var(--status-success);
+    border-color: var(--status-success);
+    color: white;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: #047857;
+    border-color: #047857;
+}
+
+/* Secondary Button - Neutral gray */
+.btn-secondary,
+.btn-outline-secondary {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-medium);
+    font-weight: 500;
+}
+
+.btn-secondary:hover,
+.btn-outline-secondary:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-dark);
+    color: var(--text-primary);
+}
+
+/* Success Button - Use sparingly */
+.btn-success {
+    background: var(--status-success);
+    border-color: var(--status-success);
+    font-weight: 500;
+}
+
+.btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+}
+
+/* Danger Button - Critical actions */
+.btn-danger {
+    background: var(--alert-critical);
+    border-color: var(--alert-critical);
+    font-weight: 500;
+}
+
+.btn-danger:hover {
+    background: #B91C1C;
+    border-color: #B91C1C;
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    /* Compact welcome banner on mobile */
+    .welcome-banner {
+        padding: 0.625rem 0.875rem;
+    }
+
+    .welcome-content {
+        font-size: 0.875rem;
+    }
+
+    /* Stat cards - stack better on mobile */
+    .card-stat {
+        padding: 1.25rem 1rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    /* Action items - more padding on mobile */
+    .action-item {
+        padding: 0.875rem;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ========================================================================== */
+
+/* Focus indicators for neutral design */
+.card-neutral:focus-within {
+    outline: 3px solid var(--status-success);
+    outline-offset: 2px;
+}
+
+.action-item:focus {
+    outline: 3px solid var(--status-success);
+    outline-offset: 2px;
+}
+
+.badge-neutral:focus,
+.badge-critical:focus,
+.badge-success-neutral:focus {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card-neutral {
+        border-width: 2px;
+    }
+
+    .badge-neutral,
+    .badge-critical,
+    .badge-success-neutral {
+        border-width: 2px;
+    }
+
+    .action-item {
+        border-width: 2px;
+    }
+}

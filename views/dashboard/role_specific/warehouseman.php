@@ -33,7 +33,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Warehouse Actions -->
-        <div class="card mb-4 card-accent-primary">
+        <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-warehouse-title">
                     Pending Warehouse Actions
@@ -43,34 +43,35 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                 <div class="row" role="group" aria-labelledby="pending-warehouse-title">
                     <?php
                     // Define pending action items using WorkflowStatus constants
+                    // All neutral by default - warehouse operations are routine, not critical
                     $pendingItems = [
                         [
                             'label' => 'Scheduled Deliveries',
                             'count' => $warehouseData['scheduled_deliveries'] ?? 0,
                             'route' => 'procurement-orders?' . http_build_query(['delivery_status' => WorkflowStatus::DELIVERY_SCHEDULED]),
                             'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
-                            'color' => 'primary'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Awaiting Receipt',
                             'count' => $warehouseData['awaiting_receipt'] ?? 0,
                             'route' => 'procurement-orders/for-receipt',
                             'icon' => 'bi-box-arrow-in-down',
-                            'color' => 'warning'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Pending Releases',
                             'count' => $warehouseData['pending_releases'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
                             'icon' => 'bi-box-arrow-right',
-                            'color' => 'warning'  // Changed from 'success' - pending actions should not use green
+                            'critical' => false
                         ],
                         [
                             'label' => 'Tool Requests',
                             'count' => $warehouseData['pending_tool_requests'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
                             'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                            'color' => 'info'
+                            'critical' => false
                         ]
                     ];
 
@@ -86,7 +87,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
             </div>
         </div>
 
-        <!-- QR Tag Management -->
+        <!-- QR Tag Management - Neutral Design (Critical section, uses red appropriately) -->
         <?php
         $qrNeedsPrinting = $warehouseData['qr_needs_printing'] ?? 0;
         $qrNeedsApplication = $warehouseData['qr_needs_application'] ?? 0;
@@ -94,14 +95,14 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         $qrTotalPending = $qrNeedsPrinting + $qrNeedsApplication + $qrNeedsVerification;
         ?>
         <?php if ($qrTotalPending > 0): ?>
-        <div class="card mb-4 border-danger">
-            <div class="card-header bg-danger text-white">
+        <div class="card card-neutral">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0" id="qr-management-title">
                     QR Tag Management
-                    <span class="badge bg-white text-danger ms-2" role="status" aria-label="<?= $qrTotalPending ?> assets need QR tag processing">
-                        <?= number_format($qrTotalPending) ?>
-                    </span>
                 </h5>
+                <span class="badge badge-critical" role="status" aria-label="<?= $qrTotalPending ?> assets need QR tag processing">
+                    <?= number_format($qrTotalPending) ?> Critical
+                </span>
             </div>
             <div class="card-body">
                 <div class="alert alert-danger mb-3" role="alert">
@@ -117,7 +118,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             <strong>Need Printing</strong>
                             <small class="d-block text-muted ms-4">Assets without printed QR tags</small>
                         </div>
-                        <span class="badge bg-danger fs-6" role="status">
+                        <span class="badge badge-critical" role="status">
                             <?= number_format($qrNeedsPrinting) ?>
                         </span>
                     </div>
@@ -126,11 +127,11 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                     <?php if ($qrNeedsApplication > 0): ?>
                     <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
                         <div>
-                            <i class="bi bi-tag text-warning me-2" aria-hidden="true"></i>
+                            <i class="bi bi-tag text-muted me-2" aria-hidden="true"></i>
                             <strong>Need Application</strong>
                             <small class="d-block text-muted ms-4">Tags printed but not applied to assets</small>
                         </div>
-                        <span class="badge bg-warning fs-6" role="status">
+                        <span class="badge badge-neutral" role="status">
                             <?= number_format($qrNeedsApplication) ?>
                         </span>
                     </div>
@@ -139,11 +140,11 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                     <?php if ($qrNeedsVerification > 0): ?>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <i class="bi bi-check-circle text-info me-2" aria-hidden="true"></i>
+                            <i class="bi bi-check-circle text-muted me-2" aria-hidden="true"></i>
                             <strong>Need Verification</strong>
                             <small class="d-block text-muted ms-4">Tags applied but not verified</small>
                         </div>
-                        <span class="badge bg-info fs-6" role="status">
+                        <span class="badge badge-neutral" role="status">
                             <?= number_format($qrNeedsVerification) ?>
                         </span>
                     </div>
@@ -155,8 +156,8 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                         <i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>Manage QR Tags
                     </a>
                     <?php if ($qrNeedsPrinting > 0): ?>
-                    <a href="?route=assets/print-tags" class="btn btn-outline-danger btn-sm" aria-label="Print <?= $qrNeedsPrinting ?> QR tags">
-                        <i class="bi bi-printer me-2" aria-hidden="true"></i>Print Tags (<?= number_format($qrNeedsPrinting) ?>)
+                    <a href="?route=assets/print-tags" class="btn btn-outline-secondary btn-sm" aria-label="Print <?= $qrNeedsPrinting ?> QR tags">
+                        <i class="bi bi-printer me-1" aria-hidden="true"></i>Print <?= number_format($qrNeedsPrinting) ?> Tags
                     </a>
                     <?php endif; ?>
                 </div>
@@ -165,10 +166,10 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         <?php endif; ?>
 
         <!-- Visual Separator for improved section distinction -->
-        <hr class="dashboard-section-separator" aria-hidden="true">
+        <hr class="dashboard-section-separator my-4" aria-hidden="true">
 
         <!-- Inventory Status -->
-        <div class="card">
+        <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="inventory-status-title">
                     Inventory Status
@@ -190,9 +191,9 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>
-                                        <i class="bi bi-box text-info me-1" aria-hidden="true"></i>Consumables
+                                        <i class="bi bi-box text-muted me-1" aria-hidden="true"></i>Consumables
                                     </span>
-                                    <span class="badge bg-info" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($warehouseData['consumable_stock'] ?? 0) ?>
                                     </span>
                                 </div>
@@ -200,9 +201,9 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>
-                                        <i class="bi bi-tools text-primary me-1" aria-hidden="true"></i>Tools
+                                        <i class="bi bi-tools text-muted me-1" aria-hidden="true"></i>Tools
                                     </span>
-                                    <span class="badge bg-primary" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($warehouseData['tool_stock'] ?? 0) ?>
                                     </span>
                                 </div>
@@ -214,7 +215,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                                     <span>
                                         <i class="bi bi-exclamation-circle-fill text-danger me-1" aria-hidden="true"></i><strong>Out of Stock</strong>
                                     </span>
-                                    <span class="badge bg-danger" role="status">
+                                    <span class="badge badge-critical" role="status">
                                         <?= number_format($outOfStockCount) ?>
                                     </span>
                                 </div>
@@ -228,7 +229,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                                         <i class="bi bi-exclamation-triangle-fill text-danger me-1" aria-hidden="true"></i><strong>Critical Stock</strong>
                                         <small class="d-block text-muted ms-3">≤1 unit</small>
                                     </span>
-                                    <span class="badge bg-danger" role="status">
+                                    <span class="badge badge-critical" role="status">
                                         <?= number_format($criticalStockCount) ?>
                                     </span>
                                 </div>
@@ -242,7 +243,7 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                                         <i class="bi bi-exclamation-triangle text-warning me-1" aria-hidden="true"></i>Low Stock
                                         <small class="d-block text-muted ms-3">≤3 units</small>
                                     </span>
-                                    <span class="badge bg-warning" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($lowStockCount) ?>
                                     </span>
                                 </div>
@@ -253,9 +254,9 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>
-                                        <i class="bi bi-truck text-info me-1" aria-hidden="true"></i>In Transit
+                                        <i class="bi bi-truck text-muted me-1" aria-hidden="true"></i>In Transit
                                     </span>
-                                    <span class="badge bg-info" role="status">
+                                    <span class="badge badge-neutral" role="status">
                                         <?= number_format($inTransitCount) ?>
                                     </span>
                                 </div>
@@ -278,23 +279,24 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
 
                     <div class="col-md-6">
                         <?php
-                        // Tool management metrics
+                        // Tool management metrics - neutral design
                         $overdueTools = $warehouseData['overdue_tools'] ?? 0;
                         $items = [
                             [
                                 'label' => 'Currently Borrowed',
                                 'value' => $warehouseData['borrowed_tools'] ?? 0,
-                                'color' => 'warning'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Overdue Returns',
                                 'value' => $overdueTools,
-                                'color' => $overdueTools > 0 ? 'danger' : 'success'
+                                'critical' => $overdueTools > 0, // Red if overdue
+                                'success' => $overdueTools === 0 // Green if no overdue
                             ],
                             [
                                 'label' => 'Active Withdrawals',
                                 'value' => $warehouseData['active_withdrawals'] ?? 0,
-                                'color' => 'info'
+                                'critical' => false
                             ]
                         ];
                         $title = 'Tool Management';
@@ -320,33 +322,30 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         $titleIcon = null; // Removed decorative icon
 
         // Define all possible quick actions with permission requirements
+        // Neutral design - all actions use default neutral style (outline-secondary)
         $allActions = [
             [
                 'label' => 'Process Deliveries',
                 'route' => 'procurement-orders/for-receipt',
                 'icon' => 'bi-box-arrow-in-down',
-                'color' => 'primary',
                 'permission' => null // No specific permission defined yet
             ],
             [
                 'label' => 'Release Items',
                 'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
                 'icon' => 'bi-box-arrow-right',
-                'color' => 'warning',
                 'permission' => null // No specific permission defined yet
             ],
             [
                 'label' => 'New Request',
                 'route' => 'borrowed-tools/create-batch',
                 'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                'color' => 'success',
                 'permission' => 'borrowed_tools.create'
             ],
             [
                 'label' => 'View Inventory',
                 'route' => 'assets?status=available',
                 'icon' => 'bi-list-ul',
-                'color' => 'outline-secondary',
                 'permission' => 'assets.view'
             ]
         ];
@@ -370,11 +369,8 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
         ?>
 
-        <!-- Visual Separator (sidebar) -->
-        <hr class="dashboard-section-separator" aria-hidden="true">
-
         <!-- Delivery Schedule -->
-        <div class="card mb-4">
+        <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="schedule-title">
                     Today's Schedule
@@ -382,24 +378,24 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
             </div>
             <div class="card-body">
                 <?php
-                // Today's schedule using list_group component
+                // Today's schedule using list_group component - neutral design
                 $items = [
                     [
                         'label' => 'Deliveries Expected',
                         'value' => $warehouseData['scheduled_deliveries'] ?? 0,
-                        'color' => 'primary',
+                        'critical' => false,
                         'icon' => IconMapper::WORKFLOW_IN_TRANSIT
                     ],
                     [
                         'label' => 'In Transit',
                         'value' => $warehouseData['in_transit_deliveries'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => false,
                         'icon' => 'bi-box-arrow-in-down'
                     ],
                     [
                         'label' => 'Releases Due',
                         'value' => $warehouseData['pending_releases'] ?? 0,
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-box-arrow-right'
                     ]
                 ];
@@ -416,34 +412,36 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
 
         <!-- Quick Stats -->
         <?php
+        // Daily Summary - neutral design (all routine operations)
         $stats = [
             [
                 'icon' => 'bi-box-arrow-in-down',
                 'count' => $warehouseData['received_today'] ?? 0,
                 'label' => 'Received Today',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-box-arrow-right',
                 'count' => $warehouseData['released_today'] ?? 0,
                 'label' => 'Released Today',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'icon' => IconMapper::MODULE_BORROWED_TOOLS,
                 'count' => $warehouseData['tools_issued_today'] ?? 0,
                 'label' => 'Tools Issued',
-                'color' => 'warning'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-arrow-counterclockwise',
                 'count' => $warehouseData['tools_returned_today'] ?? 0,
                 'label' => 'Tools Returned',
-                'color' => 'info'
+                'critical' => false
             ]
         ];
         $title = 'Daily Summary';
         $titleIcon = null; // Removed decorative icon
+        $columns = 2; // 2 columns for sidebar layout
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
     </div>

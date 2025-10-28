@@ -33,10 +33,10 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Site Actions -->
-        <div class="card mb-4 card-accent-warning">
+        <div class="card mb-4 card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-actions-title">
-                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-warning" aria-hidden="true"></i>Pending Site Actions
+                    <i class="<?= IconMapper::PENDING_ACTIONS ?> me-2 text-muted" aria-hidden="true"></i>Pending Site Actions
                 </h5>
             </div>
             <div class="card-body">
@@ -49,28 +49,28 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                             'count' => $siteData['draft_requests'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_DRAFT),
                             'icon' => IconMapper::MODULE_REQUESTS,
-                            'color' => 'primary'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Deliveries to Verify',
                             'count' => $siteData['deliveries_to_verify'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
                             'icon' => 'bi-clipboard-check',
-                            'color' => 'success'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Transfers to Receive',
                             'count' => $siteData['transfers_to_receive'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_APPROVED),
                             'icon' => IconMapper::MODULE_TRANSFERS,
-                            'color' => 'info'
+                            'critical' => false
                         ],
                         [
                             'label' => 'Withdrawals to Verify',
                             'count' => $siteData['withdrawals_to_verify'] ?? 0,
                             'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_VERIFICATION),
                             'icon' => 'bi-check-circle',
-                            'color' => 'warning'
+                            'critical' => false
                         ]
                     ];
 
@@ -103,17 +103,17 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                             [
                                 'label' => 'Available on Site',
                                 'value' => number_format($siteData['available_on_site'] ?? 0),
-                                'color' => 'success'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'In Use on Site',
                                 'value' => number_format($siteData['in_use_on_site'] ?? 0),
-                                'color' => 'warning'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Low Stock Alerts',
                                 'value' => number_format($siteData['low_stock_alerts'] ?? 0),
-                                'color' => ($siteData['low_stock_alerts'] ?? 0) > 0 ? 'danger' : 'success'
+                                'critical' => ($siteData['low_stock_alerts'] ?? 0) > 0
                             ]
                         ];
                         include APP_ROOT . '/views/dashboard/components/list_group.php';
@@ -127,17 +127,17 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                             [
                                 'label' => 'Tools Borrowed',
                                 'value' => $siteData['tools_borrowed_today'] ?? 0,
-                                'color' => 'primary'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Tools Returned',
                                 'value' => $siteData['tools_returned_today'] ?? 0,
-                                'color' => 'info'
+                                'critical' => false
                             ],
                             [
                                 'label' => 'Requests Created',
                                 'value' => $siteData['requests_created_today'] ?? 0,
-                                'color' => 'success'
+                                'critical' => false
                             ]
                         ];
                         include APP_ROOT . '/views/dashboard/components/list_group.php';
@@ -159,31 +159,30 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
         <!-- Quick Actions -->
         <?php
         $title = 'Site Operations';
-        $titleIcon = IconMapper::QUICK_ACTIONS;
         $actions = [
             [
                 'label' => 'Create Request',
                 'route' => 'requests/create',
                 'icon' => IconMapper::ACTION_CREATE,
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'label' => 'Report Incident',
                 'route' => 'incidents/create',
                 'icon' => 'bi-exclamation-circle',
-                'color' => 'danger'
+                'critical' => true
             ],
             [
                 'label' => 'Initiate Transfer',
                 'route' => 'transfers/create',
                 'icon' => 'bi-arrow-repeat',
-                'color' => 'info'
+                'critical' => false
             ],
             [
                 'label' => 'Schedule Maintenance',
                 'route' => 'maintenance/create',
                 'icon' => IconMapper::MODULE_MAINTENANCE,
-                'color' => 'warning'
+                'critical' => false
             ]
         ];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
@@ -203,25 +202,25 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                     [
                         'label' => 'Currently Borrowed',
                         'value' => $dashboardData['borrowed_tools']['project_borrowed'] ?? 0,
-                        'color' => 'primary',
+                        'critical' => false,
                         'icon' => 'bi-box-arrow-right'
                     ],
                     [
                         'label' => 'Overdue Returns',
                         'value' => $dashboardData['borrowed_tools']['project_overdue'] ?? 0,
-                        'color' => 'danger',
+                        'critical' => true,
                         'icon' => 'bi-exclamation-triangle'
                     ],
                     [
                         'label' => 'Due This Week',
                         'value' => $dashboardData['borrowed_tools']['project_due_soon'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => false,
                         'icon' => 'bi-calendar-event'
                     ],
                     [
                         'label' => 'Available',
                         'value' => $dashboardData['borrowed_tools']['project_available'] ?? 0,
-                        'color' => 'success',
+                        'critical' => false,
                         'icon' => 'bi-box-seam'
                     ]
                 ];
@@ -229,12 +228,12 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                 ?>
                 <div class="mt-3 d-grid gap-2">
                     <a href="?route=borrowed-tools"
-                       class="btn btn-outline-primary btn-sm"
+                       class="btn btn-outline-secondary btn-sm"
                        aria-label="View all equipment">
                         <i class="bi bi-eye" aria-hidden="true"></i> View All Equipment
                     </a>
                     <a href="?route=<?= urlencode('borrowed-tools/create-batch') ?>"
-                       class="btn btn-primary btn-sm"
+                       class="btn btn-outline-secondary btn-sm"
                        aria-label="Borrow equipment">
                         <i class="<?= IconMapper::ACTION_CREATE ?>" aria-hidden="true"></i> Borrow Equipment
                     </a>
@@ -256,25 +255,25 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                     [
                         'label' => 'Open Incidents',
                         'value' => $siteData['open_incidents'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => ($siteData['open_incidents'] ?? 0) > 0,
                         'icon' => 'bi-exclamation-triangle'
                     ],
                     [
                         'label' => 'Recent (7 days)',
                         'value' => $siteData['recent_incidents'] ?? 0,
-                        'color' => 'info',
+                        'critical' => false,
                         'icon' => 'bi-clock'
                     ],
                     [
                         'label' => 'Lost Items',
                         'value' => $siteData['lost_items'] ?? 0,
-                        'color' => 'danger',
+                        'critical' => true,
                         'icon' => 'bi-geo-alt'
                     ],
                     [
                         'label' => 'Damaged Items',
                         'value' => $siteData['damaged_items'] ?? 0,
-                        'color' => 'warning',
+                        'critical' => ($siteData['damaged_items'] ?? 0) > 0,
                         'icon' => 'bi-hammer'
                     ]
                 ];
@@ -282,7 +281,7 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                 ?>
                 <div class="mt-3 d-grid">
                     <a href="?route=incidents"
-                       class="btn btn-outline-danger btn-sm"
+                       class="btn btn-outline-secondary btn-sm"
                        aria-label="View all incidents">
                         View All Incidents
                     </a>
@@ -297,29 +296,28 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                 'icon' => 'bi-tools',
                 'count' => $siteData['tools_borrowed_today'] ?? 0,
                 'label' => 'Tools Out',
-                'color' => 'primary'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-arrow-counterclockwise',
                 'count' => $siteData['tools_returned_today'] ?? 0,
                 'label' => 'Tools In',
-                'color' => 'success'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-file-earmark-plus',
                 'count' => $siteData['requests_created_today'] ?? 0,
                 'label' => 'Requests Made',
-                'color' => 'info'
+                'critical' => false
             ],
             [
                 'icon' => 'bi-clipboard-check',
                 'count' => $siteData['deliveries_to_verify'] ?? 0,
                 'label' => 'To Verify',
-                'color' => 'warning'
+                'critical' => false
             ]
         ];
         $title = 'Daily Summary';
-        $titleIcon = 'bi-speedometer2';
         include APP_ROOT . '/views/dashboard/components/stat_cards.php';
         ?>
     </div>

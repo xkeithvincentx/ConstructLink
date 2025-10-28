@@ -1,31 +1,42 @@
 <?php
 /**
- * List Group Component
+ * List Group Component - Neutral Design System V2.0
  *
  * Displays a flush list group with label/value pairs and optional badges.
+ * Follows "Calm Data, Loud Exceptions" philosophy - neutral by default, red for critical items.
  * Follows WCAG 2.1 AA accessibility standards with proper ARIA attributes.
  *
  * @param array $items Required array of list items, each with keys:
  *   - 'label' (string): Item label/description
  *   - 'value' (int|string): Item value (displayed as badge or text)
- *   - 'color' (string): Optional badge color (primary, success, warning, etc.)
+ *   - 'critical' (bool): Optional - if true, displays in red for urgent attention (default: false)
+ *   - 'success' (bool): Optional - if true, displays in green for positive confirmation (default: false)
  *   - 'icon' (string): Optional icon class to display before label
  *   - 'route' (string): Optional route to make item clickable
  * @param string $title Optional section title displayed above list
  * @param string $emptyMessage Optional message when list is empty
  *
- * @example
+ * @example Basic usage (neutral)
+ * ```php
  * $items = [
- *     ['label' => 'Active Vendors', 'value' => 25, 'color' => 'primary'],
- *     ['label' => 'Preferred Vendors', 'value' => 12, 'color' => 'success', 'icon' => 'bi-star-fill'],
- *     ['label' => 'Total Orders', 'value' => 150, 'color' => 'info']
+ *     ['label' => 'Active Vendors', 'value' => 25],
+ *     ['label' => 'Preferred Vendors', 'value' => 12, 'icon' => 'bi-star-fill'],
+ *     ['label' => 'Total Orders', 'value' => 150]
  * ];
  * $title = 'Vendor Management';
  * include APP_ROOT . '/views/dashboard/components/list_group.php';
+ * ```
+ *
+ * @example Critical item
+ * ```php
+ * $items = [
+ *     ['label' => 'Overdue Returns', 'value' => 3, 'critical' => true, 'icon' => 'bi-exclamation-triangle']
+ * ];
+ * ```
  *
  * @package ConstructLink
  * @subpackage Dashboard Components
- * @version 2.0
+ * @version 2.1 - Neutral Design
  * @since 2025-10-28
  */
 
@@ -64,14 +75,21 @@ $uniqueId = 'list-group-' . md5($title ?? 'list' . count($items));
         // Extract and validate item data
         $label = $item['label'] ?? 'Item';
         $value = $item['value'] ?? 0;
-        $color = $item['color'] ?? 'secondary';
+        $critical = $item['critical'] ?? false;
+        $success = $item['success'] ?? false;
         $icon = $item['icon'] ?? null;
         $route = $item['route'] ?? null;
 
-        // Validate color context
-        $validColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'dark', 'light'];
-        if (!in_array($color, $validColors)) {
-            $color = 'secondary';
+        // Determine badge class based on critical/success flags
+        if ($critical) {
+            $badgeClass = 'badge-critical';
+            $iconClass = 'text-danger';
+        } elseif ($success) {
+            $badgeClass = 'badge-success-neutral';
+            $iconClass = 'text-success';
+        } else {
+            $badgeClass = 'badge-neutral';
+            $iconClass = 'text-muted';
         }
 
         // Format value
@@ -98,12 +116,12 @@ $uniqueId = 'list-group-' . md5($title ?? 'list' . count($items));
 
             <span>
                 <?php if ($icon): ?>
-                <i class="<?= htmlspecialchars($icon) ?> me-2 text-<?= htmlspecialchars($color) ?>" aria-hidden="true"></i>
+                <i class="<?= htmlspecialchars($icon) ?> me-2 <?= $iconClass ?>" aria-hidden="true"></i>
                 <?php endif; ?>
                 <?= htmlspecialchars($label) ?>
             </span>
 
-            <span class="badge bg-<?= htmlspecialchars($color) ?>" role="status">
+            <span class="badge <?= $badgeClass ?>" role="status">
                 <?= $formattedValue ?>
             </span>
         </<?= $itemTag ?>>
