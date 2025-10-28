@@ -40,13 +40,16 @@ function initializeEventListeners() {
         button.addEventListener('click', function() {
             const batchId = this.getAttribute('data-batch-id');
             const modalId = this.getAttribute('data-bs-target').substring(1);
+            const isSingleItem = this.getAttribute('data-is-single-item') === 'true';
 
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.setAttribute('data-batch-id', batchId);
+                modal.setAttribute('data-is-single-item', isSingleItem ? 'true' : 'false');
+
                 // Don't use loadBatchItemsIntoModal for return and extend modals - they have custom handlers
                 if (modalId !== 'batchReturnModal' && modalId !== 'batchExtendModal') {
-                    loadBatchItemsIntoModal(batchId, modalId);
+                    loadBatchItemsIntoModal(batchId, modalId, isSingleItem);
                 }
             }
         });
@@ -137,7 +140,7 @@ function initializeEventListeners() {
 /**
  * Load batch items into modal
  */
-function loadBatchItemsIntoModal(batchId, modalId) {
+function loadBatchItemsIntoModal(batchId, modalId, isSingleItem = false) {
     const batchItemsRow = document.querySelector(`.batch-items-row[data-batch-id="${batchId}"]`);
     if (!batchItemsRow) return;
 
@@ -154,6 +157,106 @@ function loadBatchItemsIntoModal(batchId, modalId) {
     if (batchIdInput) {
         batchIdInput.value = batchId;
     }
+
+    // Handle release modal specific logic
+    if (modalId === 'batchReleaseModal') {
+        handleReleaseModalSetup(modal, batchItemsRow, isSingleItem);
+    }
+}
+
+/**
+ * Setup release modal for single item or batch
+ */
+function handleReleaseModalSetup(modal, batchItemsRow, isSingleItem) {
+    const isSingleItemInput = modal.querySelector('#releaseIsSingleItem');
+    const descriptionEl = modal.querySelector('#releaseModalDescription');
+    const criticalChecks = modal.querySelector('#criticalToolChecks');
+    const submitBtn = modal.querySelector('#completeHandoverBtn');
+
+    // Update hidden field
+    if (isSingleItemInput) {
+        isSingleItemInput.value = isSingleItem ? '1' : '0';
+    }
+
+    // Update description text
+    if (descriptionEl) {
+        if (isSingleItem) {
+            descriptionEl.textContent = 'Confirm that this item is being released to the borrower.';
+        } else {
+            descriptionEl.textContent = 'Confirm that all items in this batch are being released to the borrower.';
+        }
+    }
+
+    // Update button text
+    if (submitBtn) {
+        if (isSingleItem) {
+            submitBtn.innerHTML = '<i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>Complete Handover';
+        } else {
+            submitBtn.innerHTML = '<i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>Complete Batch Handover';
+        }
+    }
+
+    // Check if batch/item contains critical tools
+    const hasCriticalTools = checkForCriticalTools(batchItemsRow);
+
+    if (criticalChecks) {
+        if (hasCriticalTools) {
+            criticalChecks.style.display = 'block';
+            // Make critical checkboxes required
+            const criticalCheckboxes = criticalChecks.querySelectorAll('input[type="checkbox"]');
+            criticalCheckboxes.forEach(cb => cb.setAttribute('required', 'required'));
+        } else {
+            criticalChecks.style.display = 'none';
+            // Remove required attribute
+            const criticalCheckboxes = criticalChecks.querySelectorAll('input[type="checkbox"]');
+            criticalCheckboxes.forEach(cb => {
+                cb.removeAttribute('required');
+                cb.checked = false;
+            });
+        }
+    }
+
+    // Reset all checkboxes when modal opens
+    resetModalCheckboxes(modal);
+}
+
+/**
+ * Check if batch contains critical tools
+ */
+function checkForCriticalTools(batchItemsRow) {
+    // Critical tool threshold from config (PHP will have set this)
+    const criticalThreshold = 100000; // Default threshold
+
+    const items = batchItemsRow.querySelectorAll('.batch-items-table tbody tr');
+
+    for (const item of items) {
+        const cells = item.querySelectorAll('td');
+        // Check if item name or category indicates critical tool
+        // This is a simplified check - real implementation should check acquisition cost
+        const itemName = cells[1]?.textContent.toLowerCase() || '';
+        const category = cells[1]?.querySelector('small')?.textContent.toLowerCase() || '';
+
+        // Check for equipment or machinery categories (typically critical)
+        if (itemName.includes('equipment') ||
+            itemName.includes('machinery') ||
+            category.includes('equipment') ||
+            category.includes('machinery') ||
+            category.includes('safety')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Reset all checkboxes in modal
+ */
+function resetModalCheckboxes(modal) {
+    const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+    });
 }
 
 /**

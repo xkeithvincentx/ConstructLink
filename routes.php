@@ -484,12 +484,6 @@ $routes = [
         'auth' => true,
         'roles' => getRolesFor('borrowed-tools/approve')
     ],
-    'borrowed-tools/borrow' => [
-        'controller' => 'BorrowedToolController',
-        'action' => 'borrow',
-        'auth' => true,
-        'roles' => getRolesFor('borrowed-tools/borrow')
-    ],
     'borrowed-tools/extend' => [
         'controller' => 'BorrowedToolController',
         'action' => 'extend',
@@ -538,7 +532,7 @@ $routes = [
         'controller' => 'BorrowedToolBatchController',
         'action' => 'releaseBatch',
         'auth' => true,
-        'roles' => getRolesFor('borrowed-tools/borrow')
+        'roles' => getRolesFor('borrowed-tools/batch/release')
     ],
     'borrowed-tools/batch/return' => [
         'controller' => 'BorrowedToolBatchController',

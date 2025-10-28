@@ -369,7 +369,170 @@ tr.batch-items-row[style*="display: none"] td {
 }
 
 /* ============================================
-   14. PRINT STYLES
+   14. BATCH SELECTION STYLES
+   ============================================ */
+
+/* Mobile batch checkbox positioning */
+.batch-checkbox-container {
+    z-index: 10;
+}
+
+.batch-checkbox-container .form-check-input {
+    width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
+    border: 2px solid #0d6efd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.batch-checkbox-container .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Mobile card selection styling */
+.card.border-primary {
+    border-width: 2px !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.card.shadow-sm {
+    box-shadow: 0 0.125rem 0.5rem rgba(13, 110, 253, 0.3) !important;
+}
+
+/* Mobile batch action bar */
+#mobileBatchActionBar {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Desktop batch select header */
+.batch-select-header {
+    background-color: #f8f9fa;
+    vertical-align: middle;
+}
+
+/* Desktop batch select cell */
+.batch-select-cell {
+    background-color: #f8f9fa;
+}
+
+.batch-select-cell .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+/* Desktop batch action bar */
+#desktopBatchActionBar {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Table row selection highlighting */
+tr.table-active {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    border-left: 3px solid #0d6efd !important;
+}
+
+/* Batch toggle button states */
+#mobileBatchToggle,
+#desktopBatchToggle {
+    transition: all 0.2s ease-in-out;
+}
+
+#mobileBatchToggle:hover,
+#desktopBatchToggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Touch-friendly sizing for mobile checkboxes */
+@media (max-width: 767.98px) {
+    .batch-checkbox-container .form-check-input {
+        min-width: 44px;
+        min-height: 44px;
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* Keyboard focus indicators for accessibility */
+.batch-select-checkbox:focus,
+#desktopSelectAll:focus,
+#mobileSelectAll:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Batch action button states */
+#mobileBatchReturn:not(:disabled),
+#mobileBatchExtend:not(:disabled),
+#mobileBatchExport:not(:disabled),
+#desktopBatchReturn:not(:disabled),
+#desktopBatchExtend:not(:disabled),
+#desktopBatchExport:not(:disabled) {
+    transition: all 0.15s ease-in-out;
+}
+
+#mobileBatchReturn:not(:disabled):hover,
+#desktopBatchReturn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
+}
+
+#mobileBatchExtend:not(:disabled):hover,
+#desktopBatchExtend:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+}
+
+#mobileBatchExport:not(:disabled):hover,
+#desktopBatchExport:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+}
+
+/* Disabled state styling */
+#mobileBatchReturn:disabled,
+#mobileBatchExtend:disabled,
+#mobileBatchExport:disabled,
+#desktopBatchReturn:disabled,
+#desktopBatchExtend:disabled,
+#desktopBatchExport:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Indeterminate checkbox styling */
+#desktopSelectAll:indeterminate {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M4 8h8'/%3e%3c/svg%3e");
+}
+
+/* ============================================
+   15. PRINT STYLES
    ============================================ */
 
 @media print {
@@ -384,5 +547,16 @@ tr.batch-items-row[style*="display: none"] td {
 
     .table-responsive {
         overflow: visible !important;
+    }
+
+    /* Hide batch selection UI when printing */
+    .batch-checkbox-container,
+    .batch-select-header,
+    .batch-select-cell,
+    #mobileBatchActionBar,
+    #desktopBatchActionBar,
+    #mobileBatchToggle,
+    #desktopBatchToggle {
+        display: none !important;
     }
 }

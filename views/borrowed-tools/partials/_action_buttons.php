@@ -47,12 +47,12 @@ $batchId = $batch['id'];
         </a>
     <?php endif; ?>
 
-    <!-- Release to Borrower (Approved) -->
+    <!-- Hand Over to Borrower (Approved) -->
     <?php if ($status === BorrowedToolsViewHelper::STATUS_APPROVED && hasRole(['Warehouseman', 'System Admin'])): ?>
         <a href="?route=borrowed-tools/batch/release&id=<?= $batchId ?>"
            class="btn btn-success"
-           aria-label="Release equipment to borrower">
-            <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Release to Borrower
+           aria-label="Hand over equipment to borrower">
+            <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Hand Over to Borrower
         </a>
     <?php endif; ?>
 

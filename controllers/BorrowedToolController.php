@@ -394,24 +394,6 @@ class BorrowedToolController {
     }
 
     /**
-     * Mark tool as borrowed/released (after approval)
-     */
-    public function borrow() {
-        $this->handleMVAWorkflowAction([
-            'action' => 'borrow',
-            'permission' => 'borrow',
-            'modelMethod' => 'borrowTool',
-            'notesField' => 'borrow_notes',
-            'pageTitle' => 'Borrow Tool - ConstructLink™',
-            'pageHeader' => 'Borrow Tool: ',
-            'breadcrumbTitle' => 'Borrow',
-            'viewFile' => '/views/borrowed-tools/borrow.php',
-            'successRoute' => 'borrowed-tools/view&id=',
-            'successMessage' => 'Tool borrowed successfully'
-        ]);
-    }
-
-    /**
      * Cancel single borrowed tool request
      */
     public function cancel() {

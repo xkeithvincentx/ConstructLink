@@ -293,31 +293,105 @@ $formAction = 'index.php?route=borrowed-tools/batch/approve';
 include APP_ROOT . '/views/components/modal.php';
 ?>
 
-<!-- Batch Release Modal -->
+<!-- Batch Release Modal with Handover Checklist -->
 <?php
 ob_start();
 ?>
 <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
 <input type="hidden" name="batch_id" value="">
+<input type="hidden" name="is_single_item" value="0" id="releaseIsSingleItem">
 
 <div class="alert alert-info" role="alert">
     <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
-    Confirm that all items in this batch are being released to the borrower.
+    <span id="releaseModalDescription">Confirm that all items in this batch are being released to the borrower.</span>
 </div>
 
 <div class="batch-modal-items mb-3">
     <!-- Items will be loaded here via JavaScript -->
 </div>
 
+<!-- Physical Handover Checklist -->
+<div class="card bg-light mb-3">
+    <div class="card-header">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-clipboard-check me-2" aria-hidden="true"></i>Physical Handover Checklist
+        </h6>
+    </div>
+    <div class="card-body">
+        <?php
+        // Build handover checklist items
+        $handoverChecklistItems = [
+            ['id' => 'check_id_verified', 'label' => 'Borrower identity verified and matches request', 'required' => true, 'name' => 'check_id_verified'],
+            ['id' => 'check_tool_condition', 'label' => 'Tool condition inspected and documented', 'required' => true, 'name' => 'check_tool_condition'],
+            ['id' => 'check_safety_briefing', 'label' => 'Safety briefing provided for tool operation', 'required' => true, 'name' => 'check_safety_briefing'],
+            ['id' => 'check_return_date', 'label' => 'Return date and conditions clearly communicated', 'required' => true, 'name' => 'check_return_date']
+        ];
+
+        $checklistConfig = [
+            'title' => 'Required Checks:',
+            'items' => $handoverChecklistItems,
+            'showTitle' => true
+        ];
+        include APP_ROOT . '/views/components/checklist_form.php';
+        ?>
+
+        <!-- Critical Tool Extra Checks (hidden by default, shown via JS for critical tools) -->
+        <div id="criticalToolChecks" style="display: none;">
+            <hr class="my-3">
+            <label class="form-label fw-bold text-success">
+                <i class="bi bi-shield-check me-2" aria-hidden="true"></i>Critical Tool Requirements:
+            </label>
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="check_special_instructions"
+                       name="check_special_instructions">
+                <label class="form-check-label" for="check_special_instructions">
+                    <strong>Special handling instructions for critical tool provided</strong>
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="check_emergency_contact"
+                       name="check_emergency_contact">
+                <label class="form-check-label" for="check_emergency_contact">
+                    <strong>Emergency contact information provided</strong>
+                </label>
+            </div>
+        </div>
+
+        <!-- Final Acknowledgment -->
+        <hr class="my-3">
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="check_borrower_acknowledged"
+                   name="check_borrower_acknowledged"
+                   required>
+            <label class="form-check-label" for="check_borrower_acknowledged">
+                <strong>Borrower acknowledged receipt and responsibility</strong>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Release Notes -->
 <div class="mb-3">
-    <label for="release_notes" class="form-label">Release Notes</label>
+    <label for="release_notes" class="form-label">Handover Notes</label>
     <textarea class="form-control"
               id="release_notes"
               name="release_notes"
               rows="3"
-              placeholder="Optional notes about the release"
+              placeholder="Document the condition of tools and any special instructions given to the borrower"
               aria-describedby="release_notes_help"></textarea>
-    <small id="release_notes_help" class="form-text text-muted">Add any relevant notes about the release</small>
+    <small id="release_notes_help" class="form-text text-muted">Add any relevant notes about the handover process</small>
+</div>
+
+<!-- Warning Message -->
+<div class="alert alert-warning mb-0" role="alert">
+    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+    <strong>Confirmation:</strong> By completing this handover, you confirm that the equipment has been physically handed over to the borrower and all required procedures have been followed.
 </div>
 <?php
 $modalBody = ob_get_clean();
@@ -325,19 +399,19 @@ $modalBody = ob_get_clean();
 ob_start();
 ?>
 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-<button type="submit" class="btn btn-info">
-    <i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>Release Batch
+<button type="submit" class="btn btn-info" id="completeHandoverBtn">
+    <i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>Complete Handover
 </button>
 <?php
 $modalActions = ob_get_clean();
 
 $id = 'batchReleaseModal';
-$title = 'Release Batch';
+$title = 'Equipment Handover';
 $icon = 'box-arrow-up';
 $headerClass = 'bg-info text-white';
 $body = $modalBody;
 $actions = $modalActions;
-$size = 'lg';
+$size = 'xl';
 $formAction = 'index.php?route=borrowed-tools/batch/release';
 
 include APP_ROOT . '/views/components/modal.php';

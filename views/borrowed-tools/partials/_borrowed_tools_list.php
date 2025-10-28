@@ -189,7 +189,7 @@
                                             'batch_id' => $batchId,
                                             'class' => 'btn-info',
                                             'icon' => 'box-arrow-up',
-                                            'text' => 'Release Batch'
+                                            'text' => 'Hand Over Batch'
                                         ];
                                     elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                         $primaryAction = [
@@ -201,6 +201,19 @@
                                             'text' => $tool['status'] === 'Partially Returned' ? 'Return Remaining' : ($isOverdue ? 'Return Overdue' : 'Return Batch')
                                         ];
                                     endif;
+                                } else {
+                                    // Single item - also use modal for handover
+                                    if ($tool['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman'])):
+                                        $primaryAction = [
+                                            'modal' => true,
+                                            'modal_id' => 'batchReleaseModal',
+                                            'batch_id' => !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'],
+                                            'class' => 'btn-info',
+                                            'icon' => 'box-arrow-up',
+                                            'text' => 'Hand Over Tool',
+                                            'is_single_item' => true
+                                        ];
+                                    endif;
                                 }
                                 ?>
 
@@ -210,7 +223,8 @@
                                                 class="btn <?= $primaryAction['class'] ?> batch-action-btn"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#<?= $primaryAction['modal_id'] ?>"
-                                                data-batch-id="<?= $primaryAction['batch_id'] ?>">
+                                                data-batch-id="<?= $primaryAction['batch_id'] ?>"
+                                                <?= !empty($primaryAction['is_single_item']) ? 'data-is-single-item="true"' : '' ?>>
                                             <i class="bi bi-<?= $primaryAction['icon'] ?> me-1"></i><?= $primaryAction['text'] ?>
                                         </button>
                                     <?php endif; ?>
@@ -511,8 +525,8 @@
                                                     'batch_id' => $batchId,
                                                     'class' => 'btn-info',
                                                     'icon' => 'box-arrow-up',
-                                                    'text' => 'Release Batch',
-                                                    'title' => 'Release all items in this batch'
+                                                    'text' => 'Hand Over Batch',
+                                                    'title' => 'Hand over all items in this batch'
                                                 ];
                                             elseif (in_array($tool['status'], ['Borrowed', 'Partially Returned', 'Released']) && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                                 $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
@@ -568,11 +582,14 @@
                                                 ];
                                             elseif ($tool['status'] === 'Approved' && $auth->hasRole(['System Admin', 'Warehouseman'])):
                                                 $primaryAction = [
-                                                    'url' => "?route=borrowed-tools/borrow&id={$tool['id']}",
+                                                    'modal' => true,
+                                                    'modal_id' => 'batchReleaseModal',
+                                                    'batch_id' => !empty($tool['batch_id']) ? $tool['batch_id'] : $tool['id'],
                                                     'class' => 'btn-info',
                                                     'icon' => 'box-arrow-up',
-                                                    'text' => 'Issue Tool',
-                                                    'title' => 'Mark tool as issued to borrower'
+                                                    'text' => 'Hand Over Tool',
+                                                    'title' => 'Complete equipment handover to borrower',
+                                                    'is_single_item' => true
                                                 ];
                                             elseif ($tool['status'] === 'Borrowed' && $auth->hasRole(['System Admin', 'Warehouseman', 'Site Inventory Clerk'])):
                                                 $isBorrowedOverdue = strtotime($tool['expected_return']) < time();
@@ -627,12 +644,13 @@
                                                 <!-- Primary Action -->
                                                 <?php if ($primaryAction): ?>
                                                     <?php if (isset($primaryAction['modal']) && $primaryAction['modal']): ?>
-                                                        <!-- Batch action - opens modal -->
+                                                        <!-- Modal-based action (batch or single item) -->
                                                         <button type="button"
                                                                 class="btn btn-sm <?= $primaryAction['class'] ?> batch-action-btn"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#<?= $primaryAction['modal_id'] ?>"
                                                                 data-batch-id="<?= $primaryAction['batch_id'] ?>"
+                                                                <?= !empty($primaryAction['is_single_item']) ? 'data-is-single-item="true"' : '' ?>
                                                                 title="<?= $primaryAction['title'] ?>">
                                                             <i class="bi bi-<?= $primaryAction['icon'] ?>"></i>
                                                         </button>
