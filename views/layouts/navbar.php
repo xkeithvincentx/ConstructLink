@@ -1,6 +1,9 @@
 <?php
 $user = Auth::getInstance()->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
+
+// Load branding from database
+$branding = BrandingHelper::loadBranding();
 ?>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
@@ -8,7 +11,7 @@ $userRole = $user['role_name'] ?? 'Guest';
         <!-- Brand -->
         <a class="navbar-brand d-flex align-items-center" href="?route=dashboard">
             <i class="bi bi-building me-2"></i>
-            <span class="fw-bold">ConstructLink™</span>
+            <span class="fw-bold"><?= htmlspecialchars($branding['app_name']) ?></span>
         </a>
         
         <!-- Mobile toggle -->

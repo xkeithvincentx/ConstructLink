@@ -1,6 +1,9 @@
 <?php
+// Load branding helper
+require_once APP_ROOT . '/helpers/BrandingHelper.php';
+
 // Set page variables for the layout
-$pageTitle = 'Dashboard - ConstructLink™';
+$pageTitle = BrandingHelper::getPageTitle('Dashboard');
 $pageHeader = 'Dashboard';
 
 // Get user data
@@ -10,6 +13,10 @@ $userId = $dashboardData['user_id'] ?? null;
 
 // Start content capture
 ob_start();
+
+// Load dashboard module CSS
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+AssetHelper::loadModuleCSS('dashboard');
 ?>
 
 <!-- Welcome Message -->
@@ -61,7 +68,7 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
                     <a href="?route=requests/create" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-plus-circle"></i> Create Request
                     </a>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshDashboard()">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="Dashboard.refreshDashboard()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -75,14 +82,14 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
 <div class="row mb-4">
     <!-- Total Inventory -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
+        <div class="card h-100 card-accent-neutral">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <p class="text-muted mb-1 small">Total Inventory</p>
                         <h3 class="mb-0"><?= number_format($dashboardData['total_assets'] ?? 0) ?></h3>
                     </div>
-                    <div class="text-muted" style="opacity: 0.3;">
+                    <div class="text-muted icon-muted">
                         <i class="bi bi-box fs-1"></i>
                     </div>
                 </div>
@@ -96,14 +103,14 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
 
     <!-- Available Stock -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
+        <div class="card h-100 card-accent-success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <p class="text-muted mb-1 small">Available</p>
                         <h3 class="mb-0 text-success"><?= number_format($dashboardData['available_assets'] ?? 0) ?></h3>
                     </div>
-                    <div class="text-success" style="opacity: 0.3;">
+                    <div class="text-success icon-muted">
                         <i class="bi bi-check-circle fs-1"></i>
                     </div>
                 </div>
@@ -122,14 +129,14 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
 
     <!-- In Use Assets -->
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
+        <div class="card h-100 card-accent-warning">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <p class="text-muted mb-1 small">In Use</p>
                         <h3 class="mb-0 text-warning"><?= number_format($dashboardData['in_use_assets'] ?? 0) ?></h3>
                     </div>
-                    <div class="text-warning" style="opacity: 0.3;">
+                    <div class="text-warning icon-muted">
                         <i class="bi bi-gear fs-1"></i>
                     </div>
                 </div>
@@ -233,14 +240,14 @@ if (!in_array($userRole, $rolesWithSpecificDashboards)):
     ?>
     
     <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100" style="border-left: 4px solid var(--<?= $fourthCard['color'] ?>-color);">
+        <div class="card h-100 card-accent-<?= $fourthCard['color'] ?>">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <p class="text-muted mb-1 small"><?= $fourthCard['title'] ?></p>
                         <h3 class="mb-0 text-<?= $fourthCard['color'] ?>"><?= is_numeric($fourthCard['value']) ? number_format($fourthCard['value']) : $fourthCard['value'] ?></h3>
                     </div>
-                    <div class="text-<?= $fourthCard['color'] ?>" style="opacity: 0.3;">
+                    <div class="text-<?= $fourthCard['color'] ?> icon-muted">
                         <i class="<?= $fourthCard['icon'] ?> fs-1"></i>
                     </div>
                 </div>
@@ -272,7 +279,7 @@ if (file_exists($roleViewFile)) {
                 <h5 class="mb-0">
                     <i class="bi bi-activity me-2"></i>Recent Activities
                 </h5>
-                <button class="btn btn-outline-secondary btn-sm" onclick="refreshActivities()">
+                <button class="btn btn-outline-secondary btn-sm" onclick="Dashboard.refreshActivities()">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -312,103 +319,8 @@ if (file_exists($roleViewFile)) {
     </div>
 </div>
 
-<!-- JavaScript for Dashboard Functionality -->
-<script>
-// Dashboard refresh functionality
-function refreshDashboard() {
-    const refreshBtn = document.querySelector('[onclick="refreshDashboard()"]');
-    const originalText = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Refreshing...';
-    refreshBtn.disabled = true;
-    
-    // Simulate refresh (in real implementation, you'd call the API)
-    setTimeout(() => {
-        location.reload();
-    }, 1000);
-}
-
-// Refresh activities
-function refreshActivities() {
-    const refreshBtn = document.querySelector('[onclick="refreshActivities()"]');
-    const originalText = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
-    refreshBtn.disabled = true;
-    
-    fetch('?route=dashboard/getStats')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update activities section
-                console.log('Activities refreshed');
-                // In a real implementation, update the DOM with new activities
-            }
-        })
-        .catch(error => {
-            console.error('Failed to refresh activities:', error);
-        })
-        .finally(() => {
-            refreshBtn.innerHTML = originalText;
-            refreshBtn.disabled = false;
-        });
-}
-
-// Auto-refresh dashboard stats every 5 minutes
-setInterval(() => {
-    fetch('?route=dashboard/getStats')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update stats cards silently
-                updateStatsCards(data.data);
-            }
-        })
-        .catch(error => {
-            console.error('Auto-refresh failed:', error);
-        });
-}, 300000); // 5 minutes
-
-// Update stats cards
-function updateStatsCards(data) {
-    // Update asset counts
-    if (data.assets) {
-        const totalElement = document.querySelector('.text-primary h3');
-        if (totalElement) totalElement.textContent = new Intl.NumberFormat().format(data.assets.total_assets || 0);
-        
-        const availableElement = document.querySelector('.text-success h3');
-        if (availableElement) availableElement.textContent = new Intl.NumberFormat().format(data.assets.available_assets || 0);
-        
-        const inUseElement = document.querySelector('.text-warning h3');
-        if (inUseElement) inUseElement.textContent = new Intl.NumberFormat().format(data.assets.in_use_assets || 0);
-    }
-}
-
-// Add spinning animation for refresh buttons
-const style = document.createElement('style');
-style.textContent = `
-    .spin {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    .pending-action-item {
-        transition: background-color 0.2s;
-    }
-    .pending-action-item:hover {
-        background-color: rgba(0,0,0,0.05);
-    }
-`;
-document.head.appendChild(style);
-
-// Initialize tooltips
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-});
-</script>
+<!-- Load Dashboard Module JavaScript -->
+<script src="/assets/js/modules/dashboard.js"></script>
 
 <?php
 // Capture content and assign to variable

@@ -1,9 +1,16 @@
+<?php
+// Load branding helper if not already loaded
+if (!class_exists('BrandingHelper')) {
+    require_once APP_ROOT . '/helpers/BrandingHelper.php';
+}
+$branding = BrandingHelper::loadBranding();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle ?? 'ConstructLink™') ?></title>
+    <title><?= htmlspecialchars($pageTitle ?? $branding['app_name']) ?></title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -59,8 +66,8 @@
     </style>
 
     <!-- Meta tags -->
-    <meta name="description" content="ConstructLink™ - Asset and Inventory Management System for V CUTAMORA CONSTRUCTION INC.">
-    <meta name="author" content="<?= SYSTEM_VENDOR ?>">
+    <meta name="description" content="<?= htmlspecialchars($branding['app_name']) ?> - Asset and Inventory Management System for <?= htmlspecialchars($branding['company_name']) ?>">
+    <meta name="author" content="<?= htmlspecialchars($branding['company_name']) ?>">
     <meta name="robots" content="noindex, nofollow">
     
     <!-- Favicon -->
@@ -128,10 +135,10 @@
                     <footer class="main-footer mt-5 py-3 border-top bg-light">
                         <div class="row">
                             <div class="col-md-6">
-                                <span class="text-muted small">© 2024 ConstructLink™ by <?= SYSTEM_VENDOR ?></span>
+                                <span class="text-muted small">© <?= date('Y') ?> <?= htmlspecialchars($branding['company_name']) ?>. All rights reserved.</span>
                             </div>
                             <div class="col-md-6 text-end">
-                                <span class="text-muted small">Version <?= APP_VERSION ?> | <?= COMPANY_NAME ?></span>
+                                <span class="text-muted small">Version <?= APP_VERSION ?> | <?= htmlspecialchars($branding['company_name']) ?></span>
                             </div>
                         </div>
                     </footer>
@@ -154,7 +161,7 @@
             <!-- Guest Footer -->
             <footer class="guest-footer mt-auto py-3 border-top bg-light">
                 <div class="text-center">
-                    <span class="text-muted small">© 2024 ConstructLink™ by <?= SYSTEM_VENDOR ?> | <?= COMPANY_NAME ?></span>
+                    <span class="text-muted small">© <?= date('Y') ?> <?= htmlspecialchars($branding['company_name']) ?>. All rights reserved. Powered by <?= htmlspecialchars($branding['app_name']) ?></span>
                 </div>
             </footer>
         </div>

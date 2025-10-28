@@ -50,7 +50,10 @@ class DashboardController {
                 $dashboardData = $this->getBasicDashboardData();
             }
             
-            $pageTitle = 'Dashboard - ConstructLink™';
+            // Load branding helper
+            require_once APP_ROOT . '/helpers/BrandingHelper.php';
+
+            $pageTitle = BrandingHelper::getPageTitle('Dashboard');
             $pageHeader = 'Dashboard';
             $breadcrumbs = [
                 ['title' => 'Dashboard', 'url' => '?route=dashboard']
