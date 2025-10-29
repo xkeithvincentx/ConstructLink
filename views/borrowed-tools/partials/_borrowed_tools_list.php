@@ -119,6 +119,16 @@
                                 </div>
                             <?php endif; ?>
 
+                            <!-- Borrowed Date (when tool was handed over) -->
+                            <?php if (!empty($tool['borrowed_date'])): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block mb-1">Borrowed Date</small>
+                                    <div class="fw-medium">
+                                        <?= date('M j, Y', strtotime($tool['borrowed_date'])) ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
                             <!-- Return Schedule -->
                             <div class="mb-2">
                                 <small class="text-muted d-block mb-1">
@@ -271,9 +281,16 @@
                             <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                                 <th>Purpose</th>
                             <?php endif; ?>
-                            <th class="sortable" data-sort="date">
-                                Date
-                                <?php if (isset($currentSort) && $currentSort === 'date'): ?>
+                            <th>Borrowed Date</th>
+                            <th class="sortable" data-sort="expected_return">
+                                Expected Return
+                                <?php if (isset($currentSort) && $currentSort === 'expected_return'): ?>
+                                    <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
+                                <?php endif; ?>
+                            </th>
+                            <th class="sortable" data-sort="actual_return">
+                                Actual Return
+                                <?php if (isset($currentSort) && $currentSort === 'actual_return'): ?>
                                     <i class="bi bi-arrow-<?= $currentOrder === 'asc' ? 'up' : 'down' ?>"></i>
                                 <?php endif; ?>
                             </th>
@@ -374,7 +391,19 @@
                                     </td>
                                 <?php endif; ?>
 
-                                <!-- Date (Expected Return / Due Status) -->
+                                <!-- Borrowed Date (when tool was handed over) -->
+                                <td>
+                                    <?php if (!empty($tool['borrowed_date'])): ?>
+                                        <div class="fw-medium">
+                                            <?= date('M j, Y', strtotime($tool['borrowed_date'])) ?>
+                                        </div>
+                                        <small class="text-muted"><?= date('l', strtotime($tool['borrowed_date'])) ?></small>
+                                    <?php else: ?>
+                                        <small class="text-muted fst-italic">Not handed over yet</small>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Expected Return (Due Date) -->
                                 <td>
                                     <?php
                                     $expectedReturn = $tool['expected_return'];
@@ -390,14 +419,8 @@
                                         $isDueSoon = false;
                                         $hasTimeRemaining = false;
                                     }
-
-                                    // For returned items, check if they were returned late
-                                    $returnedLate = false;
-                                    if ($tool['status'] === 'Returned' && !empty($tool['return_date'])) {
-                                        $returnedLate = strtotime($tool['return_date']) > strtotime($expectedReturn);
-                                    }
                                     ?>
-                                    <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : ($returnedLate ? 'text-danger' : 'text-dark')) ?>">
+                                    <div class="fw-medium <?= $isOverdue ? 'text-danger' : ($isDueSoon ? 'text-warning' : 'text-dark') ?>">
                                         <?= date('M j, Y', strtotime($expectedReturn)) ?>
                                     </div>
                                     <small class="text-muted"><?= date('l', strtotime($expectedReturn)) ?></small>
@@ -419,15 +442,40 @@
                                         <br><small class="text-success">
                                             <?= $daysRemaining ?> <?= $daysRemaining == 1 ? 'day' : 'days' ?> remaining
                                         </small>
-                                    <?php elseif ($returnedLate): ?>
-                                        <?php $daysLate = abs(floor((strtotime($tool['return_date']) - strtotime($expectedReturn)) / 86400)); ?>
-                                        <br><small class="text-danger">
-                                            Returned <?= $daysLate ?> <?= $daysLate == 1 ? 'day' : 'days' ?> late
-                                        </small>
-                                    <?php elseif ($tool['status'] === 'Returned'): ?>
-                                        <br><small class="text-success">
-                                            Returned on time
-                                        </small>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Actual Return (Returned Date) -->
+                                <td>
+                                    <?php
+                                    // Check for actual return date - try both field names
+                                    $actualReturn = $tool['actual_return'] ?? $tool['return_date'] ?? null;
+                                    ?>
+                                    <?php if ($tool['status'] === 'Returned' && !empty($actualReturn)): ?>
+                                        <div class="fw-medium">
+                                            <?= date('M j, Y', strtotime($actualReturn)) ?>
+                                        </div>
+                                        <small class="text-muted"><?= date('l', strtotime($actualReturn)) ?></small>
+
+                                        <?php
+                                        // Calculate early/late status
+                                        $expectedTime = strtotime($expectedReturn);
+                                        $actualTime = strtotime($actualReturn);
+                                        $daysDiff = floor(($actualTime - $expectedTime) / 86400);
+                                        ?>
+                                        <?php if ($daysDiff < 0): ?>
+                                            <br><span class="badge bg-success">
+                                                <?= abs($daysDiff) ?> <?= abs($daysDiff) == 1 ? 'day' : 'days' ?> early
+                                            </span>
+                                        <?php elseif ($daysDiff > 0): ?>
+                                            <br><span class="badge bg-warning text-dark">
+                                                <?= $daysDiff ?> <?= $daysDiff == 1 ? 'day' : 'days' ?> late
+                                            </span>
+                                        <?php else: ?>
+                                            <br><span class="badge bg-info">On time</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">—</span>
                                     <?php endif; ?>
                                 </td>
 
