@@ -19,6 +19,28 @@ if (!hasPermission('borrowed-tools/create')) {
 require_once APP_ROOT . '/core/EquipmentCategoryHelper.php';
 $groupedEquipment = EquipmentCategoryHelper::getGroupedEquipment($user['current_project_id']);
 $commonBorrowers = EquipmentCategoryHelper::getCommonBorrowers($user['current_project_id'], 10);
+
+// Check if equipment loading failed or no equipment available
+if (empty($groupedEquipment)) {
+    echo '<div class="alert alert-warning">';
+    echo '<i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>';
+    echo 'No equipment available for borrowing in your project. Please contact your administrator.';
+    echo '</div>';
+    $content = ob_get_clean();
+    $pageTitle = 'Borrow Multiple Tools - ConstructLink™';
+    $pageHeader = 'Multi-Item Tool Borrowing';
+    $breadcrumbs = [
+        ['title' => 'Dashboard', 'url' => '?route=dashboard'],
+        ['title' => 'Borrowed Tools', 'url' => '?route=borrowed-tools'],
+        ['title' => 'Borrow Multiple Tools', 'url' => '?route=borrowed-tools/create-batch']
+    ];
+    include APP_ROOT . '/views/layouts/main.php';
+    return;
+}
+
+// Load critical tool threshold from config
+$criticalThreshold = config('business_rules.critical_tool_threshold', 50000);
+$formattedThreshold = '₱' . number_format($criticalThreshold, 0);
 ?>
 
 <!-- Load borrowed tools forms CSS -->
@@ -29,27 +51,27 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
 
 <!-- MVA Workflow Info -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card border-success shadow-sm">
-            <div class="card-body bg-success bg-opacity-10">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <div class="card border-success shadow-sm h-100">
+            <div class="card-body bg-success bg-opacity-10 d-flex flex-column">
                 <h6 class="text-success mb-2">
-                    <i class="bi bi-lightning-charge me-1"></i>
-                    <strong>Basic Tools Workflow</strong> (≤₱50,000)
+                    <i class="bi bi-lightning-charge me-1" aria-hidden="true"></i>
+                    <strong>Basic Tools Workflow</strong> (≤<?= htmlspecialchars($formattedThreshold) ?>)
                 </h6>
                 <p class="mb-2"><span class="badge bg-primary">Streamlined Process</span> - Instant approval</p>
-                <small class="text-muted">Warehouseman: Create → Auto-Verify → Auto-Approve → Released</small>
+                <small class="text-muted mt-auto">Warehouseman: Create → Auto-Verify → Auto-Approve → Released</small>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card border-warning shadow-sm">
-            <div class="card-body bg-warning bg-opacity-10">
+        <div class="card border-warning shadow-sm h-100">
+            <div class="card-body bg-warning bg-opacity-10 d-flex flex-column">
                 <h6 class="text-warning mb-2">
-                    <i class="bi bi-shield-check me-1"></i>
-                    <strong>Critical Tools Workflow</strong> (>₱50,000)
+                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
+                    <strong>Critical Tools Workflow</strong> (><?= htmlspecialchars($formattedThreshold) ?>)
                 </h6>
                 <p class="mb-2"><span class="badge bg-warning text-dark">Full MVA Process</span></p>
-                <small class="text-muted">
+                <small class="text-muted mt-auto">
                     <span class="badge bg-primary">Maker</span> (Warehouseman) →
                     <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
                     <span class="badge bg-success">Authorizer</span> (Asset Director/Finance Director)
@@ -62,23 +84,23 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
 <!-- Messages -->
 <?php if (!empty($messages)): ?>
     <?php foreach ($messages as $message): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($message) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success alert-dismissible fade show" role="status" aria-live="polite">
+            <i class="bi bi-check-circle me-2" aria-hidden="true"></i><?= htmlspecialchars($message) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endforeach; ?>
 <?php endif; ?>
 
 <?php if (!empty($errors)): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" aria-live="assertive">
+        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
         <strong>Please fix the following errors:</strong>
         <ul class="mb-0 mt-2">
             <?php foreach ($errors as $error): ?>
                 <li><?= htmlspecialchars($error) ?></li>
             <?php endforeach; ?>
         </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
@@ -88,21 +110,22 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-tools me-2"></i>Select Tools & Equipment
+                    <i class="bi bi-tools me-2" aria-hidden="true"></i>Select Tools & Equipment
                 </h5>
             </div>
             <div class="card-body">
                 <!-- Search Bar -->
                 <div class="mb-3">
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
                         <input type="text"
                                class="form-control"
                                placeholder="Search tools by name or reference..."
                                x-model="searchQuery"
-                               @input="filterEquipment()">
-                        <button class="btn btn-outline-secondary" @click="clearSearch()">
-                            <i class="bi bi-x-lg"></i>
+                               @input="filterEquipment()"
+                               aria-label="Search tools by name or reference">
+                        <button class="btn btn-outline-secondary" @click="clearSearch()" aria-label="Clear search" title="Clear search">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
@@ -127,12 +150,18 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                 </div>
 
                 <!-- Equipment Grid -->
-                <div class="row g-3" style="max-height: 600px; overflow-y: auto;">
+                <div class="row g-3 equipment-grid-container" role="region" aria-label="Equipment selection grid" aria-live="polite" tabindex="0">
                     <template x-for="item in filteredItems" :key="item.id">
                         <div class="col-md-6 col-12">
                             <div class="card equipment-card h-100"
                                  :class="isInCart(item.id) ? 'selected' : ''"
-                                 @click="toggleItem(item)">
+                                 @click="toggleItem(item)"
+                                 @keydown.enter="toggleItem(item)"
+                                 @keydown.space.prevent="toggleItem(item)"
+                                 tabindex="0"
+                                 role="button"
+                                 :aria-pressed="isInCart(item.id) ? 'true' : 'false'"
+                                 :aria-label="'Add ' + item.name + ' to cart'">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
@@ -156,7 +185,7 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                                                               'bg-warning text-dark': item.current_condition === 'Fair',
                                                               'bg-danger': item.current_condition === 'Poor'
                                                           }">
-                                                        <i class="bi bi-tools me-1"></i>
+                                                        <i class="bi bi-tools me-1" aria-hidden="true"></i>
                                                         <span x-text="item.current_condition"></span>
                                                     </span>
                                                 </p>
@@ -165,17 +194,17 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                                         <div class="text-end">
                                             <template x-if="item.acquisition_cost > CRITICAL_TOOL_THRESHOLD">
                                                 <span class="badge bg-warning text-dark mb-2">
-                                                    <i class="bi bi-shield-check"></i> Critical
+                                                    <i class="bi bi-shield-check" aria-hidden="true"></i> Critical
                                                 </span>
                                             </template>
                                             <template x-if="item.acquisition_cost <= CRITICAL_TOOL_THRESHOLD">
                                                 <span class="badge bg-success mb-2">
-                                                    <i class="bi bi-lightning"></i> Basic
+                                                    <i class="bi bi-lightning" aria-hidden="true"></i> Basic
                                                 </span>
                                             </template>
                                             <template x-if="isInCart(item.id)">
                                                 <div>
-                                                    <i class="bi bi-check-circle-fill text-primary fs-4"></i>
+                                                    <i class="bi bi-check-circle-fill text-primary fs-4" aria-hidden="true"></i>
                                                 </div>
                                             </template>
                                         </div>
@@ -189,7 +218,7 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                     <template x-if="filteredItems.length === 0">
                         <div class="col-12">
                             <div class="alert alert-info text-center">
-                                <i class="bi bi-info-circle me-2"></i>
+                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                                 No equipment found. Try a different category or search term.
                             </div>
                         </div>
@@ -204,27 +233,26 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
             type="button"
             data-bs-toggle="offcanvas"
             data-bs-target="#cartOffcanvas"
-            aria-label="View Cart">
-        <i class="bi bi-cart3 fs-5"></i>
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+            :aria-label="cart.length > 0 ? 'View cart. ' + cart.length + ' item' + (cart.length === 1 ? '' : 's') + ' selected' : 'View cart. No items selected'">
+        <i class="bi bi-cart3 fs-5" aria-hidden="true"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge-count"
               x-show="cart.length > 0"
-              x-text="cart.length"
-              style="font-size: 0.7rem;"></span>
+              x-text="cart.length"></span>
     </button>
 
     <!-- Mobile: Cart Offcanvas (Bottom) -->
-    <div class="offcanvas offcanvas-bottom d-lg-none" tabindex="-1" id="cartOffcanvas" style="height: 70vh;">
+    <div class="offcanvas offcanvas-bottom cart-offcanvas-mobile d-lg-none" tabindex="-1" id="cartOffcanvas">
         <div class="offcanvas-header bg-success text-white">
             <h5 class="offcanvas-title">
-                <i class="bi bi-cart3 me-2"></i>Selected Items
+                <i class="bi bi-cart3 me-2" aria-hidden="true"></i>Selected Items
                 <span class="badge bg-light text-dark ms-2" x-text="cart.length"></span>
             </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close cart"></button>
         </div>
-        <div class="offcanvas-body" style="overflow-y: auto;">
+        <div class="offcanvas-body cart-offcanvas-body">
             <template x-if="cart.length === 0">
                 <div class="text-center text-muted py-5">
-                    <i class="bi bi-cart-x fs-1"></i>
+                    <i class="bi bi-cart-x fs-1" aria-hidden="true"></i>
                     <p class="mt-2">No items selected</p>
                     <p class="small">Click on equipment cards to add them</p>
                 </div>
@@ -244,25 +272,40 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                                     </div>
                                     <button type="button"
                                             class="btn btn-sm btn-danger"
-                                            @click="removeFromCart(item.id)">
-                                        <i class="bi bi-x-lg"></i>
+                                            @click="removeFromCart(item.id)"
+                                            :aria-label="'Remove ' + item.name + ' from cart'"
+                                            :title="'Remove ' + item.name + ' from cart'">
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </div>
                                 <!-- Only show quantity for non-serialized items -->
                                 <div class="mt-2" x-show="!item.serial_number">
-                                    <label class="form-label small mb-1">Quantity:</label>
+                                    <label class="form-label small mb-1">
+                                        Quantity:
+                                        <i class="bi bi-info-circle text-muted"
+                                           aria-hidden="true"
+                                           title="This item can be borrowed in multiple quantities"></i>
+                                    </label>
                                     <input type="number"
-                                           class="form-control form-control-sm"
-                                           style="width: 100px;"
+                                           class="form-control form-control-sm quantity-input-mobile"
                                            min="1"
-                                           max="99"
+                                           :max="item.available_quantity || 1"
                                            x-model.number="item.quantity"
-                                           @input="updateQuantity(item.id, $event.target.value)">
+                                           @input="updateQuantity(item.id, $event.target.value)"
+                                           :disabled="item.available_quantity === 1"
+                                           :aria-label="'Quantity for ' + item.name">
+                                    <div class="form-text text-xs" x-show="item.available_quantity === 1">
+                                        Only 1 unit available
+                                    </div>
+                                    <div class="form-text text-xs" x-show="item.available_quantity > 1">
+                                        Up to <span x-text="item.available_quantity"></span> units available
+                                    </div>
                                 </div>
                                 <!-- Show note for serialized items -->
                                 <div class="mt-2" x-show="item.serial_number">
                                     <small class="text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>Unique item (Serial: <span x-text="item.serial_number"></span>)
+                                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                                        <strong>Unique item</strong> (Serial: <span x-text="item.serial_number"></span>) - Quantity locked to 1
                                     </small>
                                 </div>
                             </div>
@@ -290,8 +333,10 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
             <button type="button"
                     class="btn btn-outline-danger btn-sm w-100 mb-2"
                     @click="clearCart()"
-                    :disabled="cart.length === 0">
-                <i class="bi bi-trash me-1"></i>Clear All
+                    :disabled="cart.length === 0"
+                    aria-label="Remove all items from cart"
+                    title="Remove all items from cart">
+                <i class="bi bi-trash me-1" aria-hidden="true"></i>Clear All
             </button>
             <button type="button"
                     class="btn btn-primary w-100"
@@ -299,24 +344,24 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                     data-bs-target="#borrowerModal"
                     data-bs-dismiss="offcanvas"
                     :disabled="cart.length === 0">
-                <i class="bi bi-arrow-right me-1"></i>Continue to Borrower Info
+                <i class="bi bi-arrow-right me-1" aria-hidden="true"></i>Continue to Borrower Info
             </button>
         </div>
     </div>
 
     <!-- Desktop: Right Panel Shopping Cart -->
     <div class="col-lg-4 d-none d-lg-block">
-        <div class="card shadow-sm sticky-top" style="top: 20px;">
+        <div class="card shadow-sm sticky-cart">
             <div class="card-header bg-success text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-cart3 me-2"></i>Selected Items
+                    <i class="bi bi-cart3 me-2" aria-hidden="true"></i>Selected Items
                     <span class="badge bg-light text-dark ms-2" x-text="cart.length"></span>
                 </h5>
             </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+            <div class="card-body cart-body-scroll" role="region" aria-label="Shopping cart items" tabindex="0">
                 <template x-if="cart.length === 0">
                     <div class="text-center text-muted py-5">
-                        <i class="bi bi-cart-x fs-1"></i>
+                        <i class="bi bi-cart-x fs-1" aria-hidden="true"></i>
                         <p class="mt-2">No items selected</p>
                         <p class="small">Click on equipment cards to add them</p>
                     </div>
@@ -330,30 +375,46 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <h6 class="mb-1 small" x-text="item.name"></h6>
-                                            <p class="text-muted mb-1" style="font-size: 0.75rem;">
+                                            <p class="text-muted mb-1 text-xs">
                                                 <span x-text="item.ref"></span>
                                             </p>
                                         </div>
                                         <button type="button"
                                                 class="btn btn-sm btn-danger"
-                                                @click="removeFromCart(item.id)">
-                                            <i class="bi bi-x-lg"></i>
+                                                @click="removeFromCart(item.id)"
+                                                :aria-label="'Remove ' + item.name + ' from cart'"
+                                                :title="'Remove ' + item.name + ' from cart'">
+                                            <i class="bi bi-x-lg" aria-hidden="true"></i>
                                         </button>
                                     </div>
                                     <!-- Only show quantity for non-serialized items -->
                                     <div class="mt-2" x-show="!item.serial_number">
-                                        <label class="form-label small mb-1">Quantity:</label>
+                                        <label class="form-label small mb-1">
+                                            Quantity:
+                                            <i class="bi bi-info-circle text-muted"
+                                               aria-hidden="true"
+                                               title="This item can be borrowed in multiple quantities"></i>
+                                        </label>
                                         <input type="number"
                                                class="form-control form-control-sm quantity-input"
                                                min="1"
-                                               max="99"
+                                               :max="item.available_quantity || 1"
                                                x-model.number="item.quantity"
-                                               @input="updateQuantity(item.id, $event.target.value)">
+                                               @input="updateQuantity(item.id, $event.target.value)"
+                                               :disabled="item.available_quantity === 1"
+                                               :aria-label="'Quantity for ' + item.name">
+                                        <div class="form-text text-xs" x-show="item.available_quantity === 1">
+                                            Only 1 unit available
+                                        </div>
+                                        <div class="form-text text-xs" x-show="item.available_quantity > 1">
+                                            Up to <span x-text="item.available_quantity"></span> units available
+                                        </div>
                                     </div>
                                     <!-- Show note for serialized items -->
                                     <div class="mt-2" x-show="item.serial_number">
                                         <small class="text-muted">
-                                            <i class="bi bi-info-circle me-1"></i>Unique item (Serial: <span x-text="item.serial_number"></span>)
+                                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                                            <strong>Unique item</strong> (Serial: <span x-text="item.serial_number"></span>) - Quantity locked to 1
                                         </small>
                                     </div>
                                 </div>
@@ -371,19 +432,21 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                 <button type="button"
                         class="btn btn-outline-danger btn-sm w-100 mb-2"
                         @click="clearCart()"
-                        :disabled="cart.length === 0">
-                    <i class="bi bi-trash me-1"></i>Clear All
+                        :disabled="cart.length === 0"
+                        aria-label="Remove all items from cart"
+                        title="Remove all items from cart">
+                    <i class="bi bi-trash me-1" aria-hidden="true"></i>Clear All
                 </button>
                 <button type="button"
                         class="btn btn-primary w-100"
                         @click="proceedToBorrowerInfo()"
                         :disabled="cart.length === 0">
-                    <i class="bi bi-arrow-right me-1"></i>Continue to Borrower Info
+                    <i class="bi bi-arrow-right me-1" aria-hidden="true"></i>Continue to Borrower Info
                 </button>
 
                 <!-- Availability Warning -->
-                <div class="alert alert-warning alert-sm mt-2 mb-0 py-2 px-2" style="font-size: 0.75rem;">
-                    <i class="bi bi-info-circle me-1"></i>
+                <div class="alert alert-warning alert-sm mt-2 mb-0 py-2 px-2 text-xs">
+                    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                     <small><strong>Note:</strong> Equipment availability is validated when you create the batch. Items may become unavailable if another user borrows them first.</small>
                 </div>
             </div>
@@ -397,9 +460,9 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
             <form @submit.prevent="submitBatch()">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-person-fill me-2"></i>Borrower Information
+                        <i class="bi bi-person-fill me-2" aria-hidden="true"></i>Borrower Information
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Borrower Name Fields with Autocomplete -->
@@ -434,27 +497,30 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
 
                     <!-- Borrower Suggestions Dropdown -->
                     <div class="mb-3 position-relative">
-                        <div class="card position-absolute w-100"
-                             style="z-index: 1000; max-height: 300px; overflow-y: auto; top: -10px;"
+                        <div class="card borrower-suggestions-dropdown"
                              x-show="showBorrowerSuggestions && filteredBorrowers.length > 0"
                              x-transition>
                             <div class="card-header bg-light py-2">
                                 <small class="text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
+                                    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                     Select from previous borrowers or continue typing
                                 </small>
                             </div>
-                            <div class="list-group list-group-flush">
-                                <template x-for="borrower in filteredBorrowers" :key="borrower.borrower_name">
+                            <div class="list-group list-group-flush" role="listbox">
+                                <template x-for="(borrower, index) in filteredBorrowers" :key="borrower.borrower_name">
                                     <div class="list-group-item list-group-item-action borrower-suggestion"
                                          @click="selectBorrower(borrower)"
+                                         @keydown.enter="selectBorrower(borrower)"
+                                         role="option"
+                                         tabindex="0"
+                                         :aria-label="'Select borrower: ' + borrower.borrower_name"
                                          :class="borrower.active_borrows > 0 ? 'border-start border-warning border-3' : ''">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 <strong x-text="borrower.borrower_name"></strong>
                                                 <template x-if="borrower.borrower_contact">
                                                     <br><small class="text-muted">
-                                                        <i class="bi bi-telephone me-1"></i>
+                                                        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
                                                         <span x-text="borrower.borrower_contact"></span>
                                                     </small>
                                                 </template>
@@ -463,7 +529,7 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                                                 <small class="badge bg-secondary" x-text="borrower.borrow_count + ' times'"></small>
                                                 <template x-if="borrower.active_borrows > 0">
                                                     <br><small class="badge bg-warning text-dark mt-1">
-                                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                                        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                                                         <span x-text="borrower.active_items_count + ' items out'"></span>
                                                     </small>
                                                 </template>
@@ -511,7 +577,7 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
 
                     <!-- Summary -->
                     <div class="alert alert-info">
-                        <h6><i class="bi bi-info-circle me-2"></i>Batch Summary</h6>
+                        <h6><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Batch Summary</h6>
                         <p class="mb-1"><strong>Total Items:</strong> <span x-text="cart.length"></span></p>
                         <p class="mb-1"><strong>Total Quantity:</strong> <span x-text="totalQuantity"></span></p>
                         <p class="mb-0">
@@ -522,11 +588,16 @@ AssetHelper::loadModuleCSS('borrowed-tools-forms');
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-arrow-left me-1"></i>Back
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back
                     </button>
                     <button type="submit" class="btn btn-success" :disabled="submitting">
-                        <i class="bi bi-check-circle me-1"></i>
-                        <span x-text="submitting ? 'Creating Batch...' : 'Create Batch'"></span>
+                        <span x-show="!submitting">
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Create Batch
+                        </span>
+                        <span x-show="submitting">
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            Creating Batch...
+                        </span>
                     </button>
                 </div>
             </form>
@@ -559,7 +630,8 @@ window.batchBorrowingApp = function() {
 $content = ob_get_clean();
 
 // Include the layout with the captured content
-$pageTitle = 'Borrow Multiple Tools - ConstructLink™';
+require_once APP_ROOT . '/helpers/BrandingHelper.php';
+$pageTitle = BrandingHelper::getPageTitle('Borrow Multiple Tools');
 $pageHeader = 'Multi-Item Tool Borrowing';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],

@@ -56,6 +56,13 @@
     width: 70px;
 }
 
+.quantity-input:disabled,
+.quantity-input-mobile:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
 /* Borrower autocomplete suggestions */
 .borrower-suggestion {
     cursor: pointer;
@@ -66,4 +73,83 @@
 
 .borrower-suggestion:hover {
     background-color: #f8f9fa;
+}
+
+/* Equipment grid scrolling */
+.equipment-grid-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Badge sizing */
+.cart-badge-count {
+    font-size: 0.7rem;
+}
+
+/* Mobile offcanvas sizing */
+.cart-offcanvas-mobile {
+    height: 70vh;
+}
+
+.cart-offcanvas-body {
+    overflow-y: auto;
+}
+
+/* Quantity input sizing */
+.quantity-input-mobile {
+    width: 100px;
+}
+
+/* Sticky cart positioning */
+.sticky-cart {
+    position: sticky;
+    top: 20px;
+}
+
+.cart-body-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Small text variations */
+.text-xs {
+    font-size: 0.75rem;
+}
+
+/* Borrower suggestions dropdown */
+.borrower-suggestions-dropdown {
+    position: absolute;
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    top: -10px;
+    width: 100%;
+}
+
+/* Focus indicators for keyboard navigation */
+.equipment-card:focus {
+    outline: 3px solid #0d6efd;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+}
+
+.borrower-suggestion:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+    background-color: #e7f1ff;
+}
+
+.category-tab:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Ensure focus is visible for keyboard navigation */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
 }
