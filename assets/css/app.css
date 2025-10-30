@@ -724,7 +724,8 @@ body {
 /* Neutral Action Item */
 .action-item {
     display: flex;
-    align-items: center;
+    flex-direction: column; /* Stack content vertically for equal heights */
+    align-items: stretch; /* Stretch children to fill width */
     gap: 0.75rem;
     padding: 1rem;
     background: var(--bg-secondary);
@@ -734,6 +735,21 @@ body {
     color: var(--text-primary);
     transition: all var(--transition-base);
     position: relative;
+    height: 100%; /* Fill parent height for equal card heights */
+    min-height: 120px; /* Minimum height for consistency */
+}
+
+/* Ensure content area grows to push button to bottom */
+.action-item > div:first-child {
+    flex: 1 1 auto; /* Grow to fill available space */
+    width: 100%;
+}
+
+/* Keep button/status at bottom */
+.action-item > a,
+.action-item > small {
+    margin-top: auto; /* Push to bottom */
+    align-self: flex-start; /* Align to start (left) */
 }
 
 .action-item:hover {
@@ -964,9 +980,11 @@ body {
     outline-offset: 2px;
 }
 
-.action-item:focus {
+.action-item:focus,
+.action-item:focus-visible {
     outline: 3px solid var(--status-success);
-    outline-offset: 2px;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px rgba(5, 150, 105, 0.2); /* Glow effect for visibility */
 }
 
 .badge-neutral:focus,
@@ -990,5 +1008,13 @@ body {
 
     .action-item {
         border-width: 2px;
+    }
+
+    /* Enhanced focus indicators for high contrast */
+    .action-item:focus,
+    .action-item:focus-visible {
+        outline: 4px solid #000;
+        outline-offset: 4px;
+        box-shadow: none; /* Remove glow in high contrast */
     }
 }

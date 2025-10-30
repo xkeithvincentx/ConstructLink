@@ -68,8 +68,8 @@ $btnClass = $critical ? 'btn-danger' : 'btn-outline-secondary';
 $uniqueId = 'pending-action-' . md5($label . $route);
 ?>
 
-<div class="<?= htmlspecialchars($columnClass) ?> mb-3">
-    <div class="action-item <?= $itemClass ?>"
+<div class="<?= htmlspecialchars($columnClass) ?> mb-4 mb-md-3 d-flex">
+    <div class="action-item <?= $itemClass ?> flex-fill"
          role="group"
          aria-labelledby="<?= $uniqueId ?>-label">
 
