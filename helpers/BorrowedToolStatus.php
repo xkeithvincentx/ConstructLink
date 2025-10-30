@@ -233,4 +233,124 @@ class BorrowedToolStatus {
                 return 'Unknown status';
         }
     }
+
+    /**
+     * Get short display name for status (for labels and dropdowns)
+     *
+     * @param string $status Status value
+     * @return string Short display name
+     */
+    public static function getDisplayName($status) {
+        switch ($status) {
+            case self::PENDING_VERIFICATION:
+                return 'Pending Verification';
+
+            case self::PENDING_APPROVAL:
+                return 'Pending Approval';
+
+            case self::APPROVED:
+                return 'Approved';
+
+            case self::RELEASED:
+                return 'Released';
+
+            case self::BORROWED:
+                return 'Borrowed';
+
+            case self::PARTIALLY_RETURNED:
+                return 'Partially Returned';
+
+            case self::RETURNED:
+                return 'Returned';
+
+            case self::CANCELED:
+                return 'Canceled';
+
+            case self::OVERDUE:
+                return 'Overdue';
+
+            default:
+                return 'Unknown';
+        }
+    }
+
+    /**
+     * Get status icon for UI display
+     *
+     * @param string $status Status value
+     * @return string Bootstrap icon class
+     */
+    public static function getStatusIcon($status) {
+        switch ($status) {
+            case self::PENDING_VERIFICATION:
+                return 'bi-hourglass-split';
+
+            case self::PENDING_APPROVAL:
+                return 'bi-clock-history';
+
+            case self::APPROVED:
+                return 'bi-check-circle';
+
+            case self::RELEASED:
+            case self::BORROWED:
+                return 'bi-box-arrow-right';
+
+            case self::PARTIALLY_RETURNED:
+                return 'bi-arrow-left-right';
+
+            case self::RETURNED:
+                return 'bi-check-circle-fill';
+
+            case self::CANCELED:
+                return 'bi-x-circle';
+
+            case self::OVERDUE:
+                return 'bi-exclamation-triangle-fill';
+
+            default:
+                return 'bi-question-circle';
+        }
+    }
+
+    /**
+     * Get all statuses formatted for dropdown
+     *
+     * @return array Associative array of value => display name
+     */
+    public static function getStatusesForDropdown() {
+        $statuses = self::getAllStatuses();
+        $dropdown = [];
+        foreach ($statuses as $status) {
+            $dropdown[$status] = self::getDisplayName($status);
+        }
+        return $dropdown;
+    }
+
+    /**
+     * Get active borrowing statuses formatted for dropdown
+     *
+     * @return array Associative array of value => display name
+     */
+    public static function getActiveBorrowingStatusesForDropdown() {
+        $statuses = self::getActiveBorrowingStatuses();
+        $dropdown = [];
+        foreach ($statuses as $status) {
+            $dropdown[$status] = self::getDisplayName($status);
+        }
+        return $dropdown;
+    }
+
+    /**
+     * Get MVA workflow statuses formatted for dropdown
+     *
+     * @return array Associative array of value => display name
+     */
+    public static function getMVAStatusesForDropdown() {
+        $statuses = self::getMVAStatuses();
+        $dropdown = [];
+        foreach ($statuses as $status) {
+            $dropdown[$status] = self::getDisplayName($status);
+        }
+        return $dropdown;
+    }
 }
