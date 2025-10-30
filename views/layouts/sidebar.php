@@ -14,13 +14,27 @@ function isRouteActive($currentRoute, $targetRoute) {
     if (empty($currentRoute)) {
         return false;
     }
-    
+
     // Remove '?route=' prefix if present in target route
     $cleanTargetRoute = str_replace('?route=', '', $targetRoute);
-    
-    // Only exact matches should be active to prevent multiple active states
-    // This ensures that when on 'assets/create', only 'assets/create' is active, not 'assets'
-    return $currentRoute === $cleanTargetRoute;
+
+    // PRIMARY: Exact match (highest priority)
+    // This handles routes that match exactly, e.g., 'dashboard' === 'dashboard'
+    if ($currentRoute === $cleanTargetRoute) {
+        return true;
+    }
+
+    // SECONDARY: Hierarchical parent matching
+    // If current route starts with the target route followed by a slash,
+    // then the target is a parent and should be highlighted
+    // Example: current = 'borrowed-tools/create-batch', target = 'borrowed-tools' → MATCH
+    // Example: current = 'borrowed-tools', target = 'borrowed' → NO MATCH (prevents partial word matches)
+    if (strpos($currentRoute, $cleanTargetRoute . '/') === 0) {
+        return true;
+    }
+
+    // No match found
+    return false;
 }
 
 // Get navigation menu based on user role
