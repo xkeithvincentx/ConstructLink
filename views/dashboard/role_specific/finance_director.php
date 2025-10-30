@@ -1,17 +1,20 @@
 <?php
 /**
- * Finance Director Dashboard
+ * Finance Director Dashboard - REDESIGNED for Executive Decision-Making
  *
- * Role-specific dashboard for Finance Director with high-value approvals,
- * budget monitoring, and financial metrics.
+ * Role-specific dashboard for Finance Director with granular inventory visibility,
+ * high-value approvals, budget monitoring, and financial metrics.
  *
- * Refactored to use reusable components and eliminate code duplication.
- * Implements WCAG 2.1 AA accessibility standards.
+ * REDESIGN GOALS:
+ * - Answer "Do we have enough drills?" not just "Do we have enough power tools?"
+ * - Eliminate low-value cards (Quick Stats) and replace with actionable insights
+ * - Prioritize by urgency (critical equipment shortages first)
+ * - Support procurement vs. transfer decisions with project distribution data
  *
  * @package ConstructLink
  * @subpackage Dashboard - Role Specific
- * @version 2.0 - Refactored
- * @since 2025-10-28
+ * @version 3.0 - Executive Redesign
+ * @since 2025-10-30
  */
 
 // Ensure required constants are available
@@ -27,88 +30,151 @@ if (!class_exists('IconMapper')) {
 
 // Extract role-specific data
 $financeData = $dashboardData['role_specific']['finance'] ?? [];
+$inventoryByEquipmentType = $financeData['inventory_by_equipment_type'] ?? [];
 ?>
 
-<!-- Finance Director Dashboard - ONE GLANCE Design V4.0 (UX-Optimized) -->
+<!-- Finance Director Dashboard - Executive Redesign V3.0 -->
 
-<!-- CRITICAL SHORTAGE ALERT (First Priority - Immediate Visibility) -->
-<?php
-if (!empty($financeData['inventory_by_project_site'])) {
-    $projects = $financeData['inventory_by_project_site'];
-    include APP_ROOT . '/views/dashboard/role_specific/partials/_critical_shortage_summary.php';
-}
-?>
-
-<!-- COMPLETE INVENTORY TABLE (One Glance View - All Equipment Types Visible) -->
-<?php
-if (!empty($financeData['inventory_by_project_site'])) {
-    $projects = $financeData['inventory_by_project_site'];
-    include APP_ROOT . '/views/dashboard/role_specific/partials/_inventory_table_view.php';
-}
-?>
-
-<!-- Optional: Collapsible Project Cards (For Detailed View) -->
-<?php if (!empty($financeData['inventory_by_project_site'])): ?>
+<!-- REDESIGNED: Granular Inventory Overview by Equipment Type -->
+<?php if (!empty($inventoryByEquipmentType)): ?>
 <div class="row mb-4">
     <div class="col-12">
         <div class="card card-neutral">
-            <div class="card-header">
-                <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#project-cards-view"
-                        aria-expanded="false"
-                        aria-controls="project-cards-view">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h5 class="mb-0">
-                                <i class="bi bi-chevron-down me-2" aria-hidden="true"></i>
-                                <i class="<?= IconMapper::MODULE_ASSETS ?> me-2" aria-hidden="true"></i>
-                                Project-by-Project Details (Optional)
-                            </h5>
-                            <p class="text-muted mb-0 small mt-1">
-                                Click to expand for grouped view by project
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                            <span class="badge bg-secondary">
-                                <?= count($financeData['inventory_by_project_site']) ?> Active Projects
-                            </span>
-                        </div>
-                    </div>
-                </button>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" id="inventory-equipment-types-title">
+                    <i class="<?= IconMapper::MODULE_ASSETS ?> me-2" aria-hidden="true"></i>
+                    Inventory by Equipment Type
+                </h5>
+                <small class="text-muted">Granular view for procurement decisions</small>
             </div>
-            <div class="collapse" id="project-cards-view">
-                <div class="card-body">
-                    <!-- Key Decision Question -->
-                    <div class="alert alert-info d-flex align-items-start mb-3" role="status">
-                        <i class="bi bi-info-circle-fill me-2 mt-1" aria-hidden="true"></i>
-                        <div>
-                            <strong>Decision Support:</strong>
-                            When a Project Manager requests equipment, check if other projects have surplus inventory before purchasing new assets.
-                            <strong>Critical shortages</strong> (red border) indicate urgent procurement needs.
-                        </div>
-                    </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                    Drill down to equipment type level (e.g., Drills, Saws, Grinders) to identify specific shortages.
+                    Expand categories to see detailed breakdowns and project distribution.
+                </p>
 
-                    <!-- Project Inventory Cards -->
-                    <div role="group" aria-labelledby="inventory-by-project-title">
-                        <?php foreach ($financeData['inventory_by_project_site'] as $project): ?>
-                            <?php include APP_ROOT . '/views/dashboard/role_specific/partials/_project_inventory_card.php'; ?>
-                        <?php endforeach; ?>
-                    </div>
+                <div class="row g-3" role="group" aria-labelledby="inventory-equipment-types-title">
+                    <?php foreach ($inventoryByEquipmentType as $category): ?>
+                        <?php
+                        $categoryId = $category['category_id'];
+                        $categoryName = htmlspecialchars($category['category_name']);
+                        $equipmentTypes = $category['equipment_types'] ?? [];
+                        $totalCount = (int)$category['total_count'];
+                        $availableCount = (int)$category['available_count'];
+                        $inUseCount = (int)$category['in_use_count'];
+                        $maintenanceCount = (int)$category['maintenance_count'];
+
+                        $uniqueId = 'category-equipment-types-' . $categoryId;
+                        $typesCount = count($equipmentTypes);
+                        ?>
+
+                        <div class="col-12 col-xl-6">
+                            <div class="card inventory-category-card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0 fw-bold" id="<?= $uniqueId ?>-label">
+                                        <?= $categoryName ?>
+                                    </h6>
+                                </div>
+
+                                <div class="card-body">
+                                    <!-- Category Summary Metrics -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-3">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <div class="fs-5 fw-bold text-success">
+                                                    <?= $availableCount ?>
+                                                </div>
+                                                <small class="text-muted">Available</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <div class="fs-5 fw-bold text-primary">
+                                                    <?= $inUseCount ?>
+                                                </div>
+                                                <small class="text-muted">In Use</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <div class="fs-5 fw-bold text-warning">
+                                                    <?= $maintenanceCount ?>
+                                                </div>
+                                                <small class="text-muted">Maint.</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <div class="fs-5 fw-bold">
+                                                    <?= $totalCount ?>
+                                                </div>
+                                                <small class="text-muted">Total</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Expand/Collapse Button for Equipment Types -->
+                                    <div class="d-grid mb-3">
+                                        <button class="btn btn-outline-secondary btn-sm collapsed"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#<?= $uniqueId ?>"
+                                                aria-expanded="false"
+                                                aria-controls="<?= $uniqueId ?>">
+                                            <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>
+                                            <strong>Show Project Distribution by Equipment Type (<?= $typesCount ?>)</strong>
+                                        </button>
+                                    </div>
+
+                                    <!-- Collapsible Equipment Types Section -->
+                                    <div class="collapse" id="<?= $uniqueId ?>">
+                                        <div class="border-top pt-3">
+                                            <h6 class="text-muted mb-3">
+                                                <i class="bi bi-tools me-1" aria-hidden="true"></i>
+                                                Equipment Type Breakdown
+                                            </h6>
+
+                                            <?php if (!empty($equipmentTypes)): ?>
+                                                <?php foreach ($equipmentTypes as $equipmentType): ?>
+                                                    <?php
+                                                    // Include equipment type card component
+                                                    include APP_ROOT . '/views/dashboard/role_specific/partials/_equipment_type_card.php';
+                                                    ?>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <div class="alert alert-info mb-0" role="status">
+                                                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                                                    No equipment types found for this category.
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
+
+                <?php if (empty($inventoryByEquipmentType)): ?>
+                    <div class="alert alert-info mb-0" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No inventory data available. Assets will appear here once they are added to the system and linked to equipment types.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 <?php endif; ?>
 
+<!-- Pending Financial Approvals (KEPT - High Value) -->
 <div class="row mb-4">
     <div class="col-lg-8">
-        <!-- Pending Financial Approvals -->
         <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="pending-approvals-title">
+                    <i class="bi bi-file-earmark-check me-2" aria-hidden="true"></i>
                     Pending Financial Approvals
                 </h5>
             </div>
@@ -157,11 +223,12 @@ if (!empty($financeData['inventory_by_project_site'])) {
             </div>
         </div>
 
-        <!-- Budget Utilization -->
+        <!-- Budget Utilization (CONDITIONAL - Kept for now, verify with stakeholder) -->
         <?php if (!empty($dashboardData['budget_utilization'])): ?>
         <div class="card card-neutral">
             <div class="card-header">
                 <h5 class="mb-0" id="budget-utilization-title">
+                    <i class="bi bi-pie-chart me-2" aria-hidden="true"></i>
                     Project Budget Utilization
                 </h5>
             </div>
@@ -208,10 +275,13 @@ if (!empty($financeData['inventory_by_project_site'])) {
     </div>
 
     <div class="col-lg-4">
-        <!-- Financial Summary -->
+        <!-- Financial Summary (ENHANCED with trends placeholder) -->
         <div class="card card-neutral">
             <div class="card-header">
-                <h5 class="mb-0" id="financial-summary-title">Financial Summary</h5>
+                <h5 class="mb-0" id="financial-summary-title">
+                    <i class="bi bi-cash-stack me-2" aria-hidden="true"></i>
+                    Financial Summary
+                </h5>
             </div>
             <div class="card-body">
                 <?php
@@ -295,39 +365,7 @@ if (!empty($financeData['inventory_by_project_site'])) {
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <?php
-        // Stats - Neutral design (all routine metrics)
-        $incidentCount = $dashboardData['total_incidents'] ?? 0;
-        $stats = [
-            [
-                'icon' => IconMapper::MODULE_ASSETS,
-                'count' => $dashboardData['total_assets'] ?? 0,
-                'label' => 'Total Assets',
-                'critical' => false
-            ],
-            [
-                'icon' => IconMapper::MODULE_PROJECTS,
-                'count' => $dashboardData['active_projects'] ?? 0,
-                'label' => 'Active Projects',
-                'critical' => false
-            ],
-            [
-                'icon' => IconMapper::MODULE_MAINTENANCE,
-                'count' => $dashboardData['maintenance_assets'] ?? 0,
-                'label' => 'Maintenance',
-                'critical' => false
-            ],
-            [
-                'icon' => IconMapper::MODULE_INCIDENTS,
-                'count' => $incidentCount,
-                'label' => 'Incidents',
-                'critical' => $incidentCount > 5 // Critical if more than 5 incidents
-            ]
-        ];
-        $title = 'Overview';
-        $columns = 2;
-        include APP_ROOT . '/views/dashboard/components/stat_cards.php';
-        ?>
+        <!-- ELIMINATED: Quick Stats Card (Low Value for Finance Director) -->
+        <!-- Replaced with expanded inventory visibility above -->
     </div>
 </div>

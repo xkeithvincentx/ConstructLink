@@ -530,25 +530,6 @@ class DashboardModel extends BaseModel {
                     ];
                 }
 
-                // Calculate equipment type availability percentage
-                $availabilityPercentage = $row['total_count'] > 0
-                    ? round(($row['available_count'] / $row['total_count']) * 100, 1)
-                    : 0;
-
-                // Determine urgency per equipment type
-                $urgency = 'normal';
-                $urgencyLabel = 'Adequate Stock';
-                if ($row['available_count'] == 0) {
-                    $urgency = 'critical';
-                    $urgencyLabel = 'Out of Stock';
-                } elseif ($row['is_consumable'] == 1 && $row['available_quantity_consumables'] <= $row['low_stock_threshold']) {
-                    $urgency = 'warning';
-                    $urgencyLabel = 'Low Stock';
-                } elseif ($row['available_count'] <= 2) {
-                    $urgency = 'warning';
-                    $urgencyLabel = 'Limited Availability';
-                }
-
                 // Get project distribution for this equipment type
                 $projectSql = "
                     SELECT
@@ -556,6 +537,7 @@ class DashboardModel extends BaseModel {
                         p.name as project_name,
                         COUNT(DISTINCT a.id) as asset_count,
                         SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                        SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
                         SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity
                     FROM projects p
                     INNER JOIN assets a ON p.id = a.project_id
@@ -581,9 +563,6 @@ class DashboardModel extends BaseModel {
                     'in_use_count' => $row['in_use_count'],
                     'maintenance_count' => $row['maintenance_count'],
                     'total_value' => $row['total_value'],
-                    'availability_percentage' => $availabilityPercentage,
-                    'urgency' => $urgency,
-                    'urgency_label' => $urgencyLabel,
                     'projects' => $projects
                 ];
 
@@ -595,55 +574,21 @@ class DashboardModel extends BaseModel {
                 $categorized[$categoryId]['total_value'] += $row['total_value'];
             }
 
-            // Calculate category-level metrics and urgency
+            // Calculate category-level metrics and sort
             foreach ($categorized as &$category) {
                 $category['availability_percentage'] = $category['total_count'] > 0
                     ? round(($category['available_count'] / $category['total_count']) * 100, 1)
                     : 0;
 
-                // Category urgency = worst urgency among equipment types
-                $criticalCount = 0;
-                $warningCount = 0;
-                foreach ($category['equipment_types'] as $equipType) {
-                    if ($equipType['urgency'] === 'critical') {
-                        $criticalCount++;
-                    } elseif ($equipType['urgency'] === 'warning') {
-                        $warningCount++;
-                    }
-                }
-
-                if ($criticalCount > 0) {
-                    $category['urgency'] = 'critical';
-                    $category['urgency_label'] = $criticalCount . ' type(s) out of stock';
-                } elseif ($warningCount > 0) {
-                    $category['urgency'] = 'warning';
-                    $category['urgency_label'] = $warningCount . ' type(s) low stock';
-                } else {
-                    $category['urgency'] = 'normal';
-                    $category['urgency_label'] = 'Adequate Stock';
-                }
-
-                // Sort equipment types by urgency (critical first)
+                // Sort equipment types alphabetically
                 usort($category['equipment_types'], function($a, $b) {
-                    $urgencyOrder = ['critical' => 0, 'warning' => 1, 'normal' => 2];
-                    $orderA = $urgencyOrder[$a['urgency']] ?? 3;
-                    $orderB = $urgencyOrder[$b['urgency']] ?? 3;
-                    if ($orderA !== $orderB) {
-                        return $orderA - $orderB;
-                    }
                     return strcmp($a['equipment_type_name'], $b['equipment_type_name']);
                 });
             }
 
-            // Convert to indexed array and sort by category urgency
+            // Convert to indexed array and sort by category name
             $finalResult = array_values($categorized);
             usort($finalResult, function($a, $b) {
-                $urgencyOrder = ['critical' => 0, 'warning' => 1, 'normal' => 2];
-                $orderA = $urgencyOrder[$a['urgency']] ?? 3;
-                $orderB = $urgencyOrder[$b['urgency']] ?? 3;
-                if ($orderA !== $orderB) {
-                    return $orderA - $orderB;
-                }
                 return strcmp($a['category_name'], $b['category_name']);
             });
 
