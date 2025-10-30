@@ -29,7 +29,80 @@ if (!class_exists('IconMapper')) {
 $financeData = $dashboardData['role_specific']['finance'] ?? [];
 ?>
 
-<!-- Finance Director Dashboard - Neutral Design V2.0 -->
+<!-- Finance Director Dashboard - ONE GLANCE Design V4.0 (UX-Optimized) -->
+
+<!-- CRITICAL SHORTAGE ALERT (First Priority - Immediate Visibility) -->
+<?php
+if (!empty($financeData['inventory_by_project_site'])) {
+    $projects = $financeData['inventory_by_project_site'];
+    include APP_ROOT . '/views/dashboard/role_specific/partials/_critical_shortage_summary.php';
+}
+?>
+
+<!-- COMPLETE INVENTORY TABLE (One Glance View - All Equipment Types Visible) -->
+<?php
+if (!empty($financeData['inventory_by_project_site'])) {
+    $projects = $financeData['inventory_by_project_site'];
+    include APP_ROOT . '/views/dashboard/role_specific/partials/_inventory_table_view.php';
+}
+?>
+
+<!-- Optional: Collapsible Project Cards (For Detailed View) -->
+<?php if (!empty($financeData['inventory_by_project_site'])): ?>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-neutral">
+            <div class="card-header">
+                <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#project-cards-view"
+                        aria-expanded="false"
+                        aria-controls="project-cards-view">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-0">
+                                <i class="bi bi-chevron-down me-2" aria-hidden="true"></i>
+                                <i class="<?= IconMapper::MODULE_ASSETS ?> me-2" aria-hidden="true"></i>
+                                Project-by-Project Details (Optional)
+                            </h5>
+                            <p class="text-muted mb-0 small mt-1">
+                                Click to expand for grouped view by project
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                            <span class="badge bg-secondary">
+                                <?= count($financeData['inventory_by_project_site']) ?> Active Projects
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+            <div class="collapse" id="project-cards-view">
+                <div class="card-body">
+                    <!-- Key Decision Question -->
+                    <div class="alert alert-info d-flex align-items-start mb-3" role="status">
+                        <i class="bi bi-info-circle-fill me-2 mt-1" aria-hidden="true"></i>
+                        <div>
+                            <strong>Decision Support:</strong>
+                            When a Project Manager requests equipment, check if other projects have surplus inventory before purchasing new assets.
+                            <strong>Critical shortages</strong> (red border) indicate urgent procurement needs.
+                        </div>
+                    </div>
+
+                    <!-- Project Inventory Cards -->
+                    <div role="group" aria-labelledby="inventory-by-project-title">
+                        <?php foreach ($financeData['inventory_by_project_site'] as $project): ?>
+                            <?php include APP_ROOT . '/views/dashboard/role_specific/partials/_project_inventory_card.php'; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="row mb-4">
     <div class="col-lg-8">
         <!-- Pending Financial Approvals -->

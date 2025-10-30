@@ -17,6 +17,11 @@ ob_start();
 // Load dashboard module CSS
 require_once APP_ROOT . '/helpers/AssetHelper.php';
 AssetHelper::loadModuleCSS('dashboard');
+
+// Load role-specific CSS for Finance Director
+if ($userRole === 'Finance Director') {
+    AssetHelper::loadModuleCSS('dashboard-finance-director');
+}
 ?>
 
 <!-- Compact Welcome Banner (Neutral Design V2.0) -->
