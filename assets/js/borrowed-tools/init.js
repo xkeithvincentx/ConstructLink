@@ -28,6 +28,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set CSRF token globally for the module
     window.borrowedToolsCsrfToken = csrfToken;
 
+    // Get condition options from data attribute
+    let conditionOptions = [];
+    try {
+        const conditionOptionsJson = appContainer.dataset.conditionOptions;
+        if (conditionOptionsJson) {
+            conditionOptions = JSON.parse(conditionOptionsJson);
+        }
+    } catch (e) {
+        console.error('Failed to parse condition options:', e);
+        // Fallback to default options
+        conditionOptions = {
+            'Good': 'Good',
+            'Fair': 'Fair',
+            'Poor': 'Poor',
+            'Damaged': 'Damaged',
+            'Lost': 'Lost'
+        };
+    }
+
     // Set auto-refresh interval on body element from container data attribute
     const autoRefreshInterval = appContainer.dataset.autoRefreshInterval;
     if (autoRefreshInterval) {
@@ -35,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize the borrowed tools module
-    init(csrfToken);
+    init(csrfToken, conditionOptions);
 
     // Attach refresh button handler
     const refreshBtn = document.getElementById('refreshBtn');

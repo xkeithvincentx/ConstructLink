@@ -287,6 +287,39 @@ tr.batch-items-row[style*="display: none"] td {
 .batch-items-table th:nth-child(9) { width: 8%; }   /* Notes */
 .batch-items-table th:nth-child(10) { width: 16%; } /* Actions */
 
+/* Return Modal Table Column Widths */
+#batchReturnTable .col-return-num { width: 5%; }
+#batchReturnTable .col-return-equipment { width: 23%; }
+#batchReturnTable .col-return-reference { width: 12%; }
+#batchReturnTable .col-return-borrowed { width: 7%; }
+#batchReturnTable .col-return-already-returned { width: 7%; }
+#batchReturnTable .col-return-remaining { width: 7%; }
+#batchReturnTable .col-return-now { width: 9%; }
+#batchReturnTable .col-return-condition { width: 12%; }
+#batchReturnTable .col-return-notes { width: 12%; }
+#batchReturnTable .col-return-action { width: 6%; }
+
+/* Return Modal Form Controls */
+.qty-in-input {
+    width: 70px;
+    display: inline-block;
+}
+
+/* Incident Reported Badge (initially hidden) */
+.incident-reported-badge {
+    display: none !important;
+}
+
+/* Extend Modal Table Column Widths */
+#batchExtendTable .col-extend-select { width: 5%; }
+#batchExtendTable .col-extend-num { width: 5%; }
+#batchExtendTable .col-extend-equipment { width: 30%; }
+#batchExtendTable .col-extend-reference { width: 15%; }
+#batchExtendTable .col-extend-borrowed { width: 10%; }
+#batchExtendTable .col-extend-remaining { width: 10%; }
+#batchExtendTable .col-extend-return-date { width: 15%; }
+#batchExtendTable .col-extend-status { width: 10%; }
+
 /* ============================================
    10. HIDDEN ELEMENTS
    ============================================ */

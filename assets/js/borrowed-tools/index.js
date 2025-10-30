@@ -15,15 +15,19 @@ import { AjaxHandler } from './ajax-handler.js';
 let csrfToken = '';
 let ajax = null;
 
+// Store condition options from configuration
+let conditionOptions = {};
+
 // Track incidents reported during current return session
 const reportedIncidents = {};
 
 /**
  * Initialize the module
  */
-export function init(token) {
+export function init(token, conditions = {}) {
     csrfToken = token;
     ajax = new AjaxHandler(csrfToken);
+    conditionOptions = conditions;
 
     initializeEventListeners();
     initializeFilters();
@@ -260,6 +264,35 @@ function resetModalCheckboxes(modal) {
 }
 
 /**
+ * Generate condition options HTML from configuration
+ * @returns {string} HTML string of option elements
+ */
+function generateConditionOptions() {
+    let optionsHtml = '';
+
+    // Use condition options from config, fallback to defaults
+    const conditions = Object.keys(conditionOptions).length > 0
+        ? conditionOptions
+        : {
+            'Good': 'Good',
+            'Fair': 'Fair',
+            'Poor': 'Poor',
+            'Damaged': 'Damaged',
+            'Lost': 'Lost'
+        };
+
+    // Generate option elements
+    let firstOption = true;
+    for (const [value, label] of Object.entries(conditions)) {
+        const selected = firstOption ? ' selected' : '';
+        optionsHtml += `<option value="${value}"${selected}>${label}</option>`;
+        firstOption = false;
+    }
+
+    return optionsHtml;
+}
+
+/**
  * Handle batch return modal show
  */
 function handleBatchReturnModalShow(event) {
@@ -346,7 +379,6 @@ function handleBatchReturnModalShow(event) {
                        min="0"
                        max="${remaining}"
                        value="${remaining}"
-                       style="width: 70px; display: inline-block;"
                        aria-label="Return quantity for ${equipmentName}">
                 <input type="hidden" name="item_id[]" value="${borrowedToolId}">
                 ` : '<span class="text-muted">-</span>'}
@@ -354,11 +386,7 @@ function handleBatchReturnModalShow(event) {
             <td>
                 ${remaining > 0 ? `
                 <select class="form-select form-select-sm condition-select" name="condition[]" aria-label="Condition for ${equipmentName}">
-                    <option value="Good" selected>Good</option>
-                    <option value="Fair">Fair</option>
-                    <option value="Poor">Poor</option>
-                    <option value="Damaged">Damaged</option>
-                    <option value="Lost">Lost</option>
+                    ${generateConditionOptions()}
                 </select>
                 ` : `<span class="badge bg-info">${returnedCondition || 'Good'}</span>`}
             </td>
@@ -376,7 +404,7 @@ function handleBatchReturnModalShow(event) {
                         title="Report incident for this item">
                     <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                 </button>
-                <small class="d-block mt-1 text-success incident-reported-badge-${borrowedToolId}" style="display:none !important;">
+                <small class="d-block mt-1 text-success incident-reported-badge incident-reported-badge-${borrowedToolId}">
                     <i class="bi bi-check-circle-fill"></i> Incident Reported
                 </small>
                 ` : '-'}

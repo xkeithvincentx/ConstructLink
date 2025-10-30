@@ -71,7 +71,8 @@ $csrfToken = CSRFProtection::generateToken();
 <!-- Borrowed Tools Module Container with Configuration -->
 <div id="borrowed-tools-app"
      data-csrf-token="<?= htmlspecialchars($csrfToken) ?>"
-     data-auto-refresh-interval="<?= config('business_rules.ui.auto_refresh_interval', 300) ?>">
+     data-auto-refresh-interval="<?= config('business_rules.ui.auto_refresh_interval', 300) ?>"
+     data-condition-options="<?= htmlspecialchars(json_encode(config('business_rules.borrowed_tools.condition_options', []))) ?>">
 
 <!-- Action Buttons -->
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
@@ -421,7 +422,7 @@ include APP_ROOT . '/views/components/modal.php';
 <div class="modal fade" id="batchReturnModal" tabindex="-1" aria-labelledby="batchReturnModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="batchReturnModalLabel">
                     <i class="bi bi-box-arrow-down me-2" aria-hidden="true"></i>Return Equipment
                 </h5>
@@ -432,25 +433,25 @@ include APP_ROOT . '/views/components/modal.php';
                     <input type="hidden" name="_csrf_token" value="" id="returnCsrfToken">
                     <input type="hidden" name="batch_id" value="" id="returnBatchId">
 
-                    <div class="alert alert-success" role="alert">
+                    <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
-                        Enter the quantity returned for each item. Check the condition of each item.
+                        <strong>Return Instructions:</strong> Enter the quantity returned for each item (partial returns are allowed). Select the condition of each returned item. Use the incident button if any item is damaged or lost. Add notes as needed.
                     </div>
 
                     <div class="table-responsive">
                         <table class="table table-bordered" id="batchReturnTable">
                             <thead class="table-secondary">
                                 <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 23%">Equipment</th>
-                                    <th style="width: 12%">Reference</th>
-                                    <th style="width: 7%" class="text-center">Borrowed</th>
-                                    <th style="width: 7%" class="text-center">Returned</th>
-                                    <th style="width: 7%" class="text-center">Remaining</th>
-                                    <th style="width: 9%" class="text-center">Return Now</th>
-                                    <th style="width: 12%">Condition</th>
-                                    <th style="width: 12%">Notes</th>
-                                    <th style="width: 6%" class="text-center">Action</th>
+                                    <th class="col-return-num">#</th>
+                                    <th class="col-return-equipment">Equipment</th>
+                                    <th class="col-return-reference">Reference</th>
+                                    <th class="col-return-borrowed text-center">Qty Borrowed</th>
+                                    <th class="col-return-already-returned text-center">Already Returned</th>
+                                    <th class="col-return-remaining text-center">Qty Remaining</th>
+                                    <th class="col-return-now text-center">Returning Now</th>
+                                    <th class="col-return-condition">Condition</th>
+                                    <th class="col-return-notes">Item Notes</th>
+                                    <th class="col-return-action text-center">Incident</th>
                                 </tr>
                             </thead>
                             <tbody id="batchReturnItems">
@@ -505,20 +506,20 @@ include APP_ROOT . '/views/components/modal.php';
                         <table class="table table-bordered" id="batchExtendTable">
                             <thead class="table-secondary">
                                 <tr>
-                                    <th style="width: 5%">
+                                    <th class="col-extend-select">
                                         <input type="checkbox"
                                                class="form-check-input"
                                                id="selectAllExtend"
                                                aria-label="Select all items"
                                                title="Select All">
                                     </th>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 30%">Equipment</th>
-                                    <th style="width: 15%">Reference</th>
-                                    <th style="width: 10%" class="text-center">Borrowed</th>
-                                    <th style="width: 10%" class="text-center">Remaining</th>
-                                    <th style="width: 15%">Current Return Date</th>
-                                    <th style="width: 10%">Status</th>
+                                    <th class="col-extend-num">#</th>
+                                    <th class="col-extend-equipment">Equipment</th>
+                                    <th class="col-extend-reference">Reference</th>
+                                    <th class="col-extend-borrowed text-center">Qty Borrowed</th>
+                                    <th class="col-extend-remaining text-center">Qty Remaining</th>
+                                    <th class="col-extend-return-date">Current Return Date</th>
+                                    <th class="col-extend-status">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="batchExtendItems">
