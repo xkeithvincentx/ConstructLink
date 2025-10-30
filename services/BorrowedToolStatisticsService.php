@@ -1,122 +1,198 @@
 <?php
 /**
  * ConstructLink™ Borrowed Tool Statistics Service
- * Handles business logic for borrowed tools statistics and reporting
- * Created during Phase 2.2 refactoring
+ * Handles statistical queries and reporting for borrowed tools
+ *
+ * @package ConstructLink
+ * @version 2.0.0
  */
 
+require_once APP_ROOT . '/helpers/BorrowedToolStatus.php';
+
 class BorrowedToolStatisticsService {
-    private $batchModel;
-    private $assetModel;
+    private $db;
+    private $borrowedToolModel;
 
-    public function __construct() {
-        require_once APP_ROOT . '/models/BorrowedToolBatchModel.php';
-        require_once APP_ROOT . '/models/AssetModel.php';
+    public function __construct($db = null) {
+        if ($db === null) {
+            require_once APP_ROOT . '/core/Database.php';
+            $database = Database::getInstance();
+            $this->db = $database->getConnection();
+        } else {
+            $this->db = $db;
+        }
 
-        $this->batchModel = new BorrowedToolBatchModel();
-        $this->assetModel = new AssetModel();
+        require_once APP_ROOT . '/models/BorrowedToolModel.php';
+        $this->borrowedToolModel = new BorrowedToolModel($this->db);
     }
 
     /**
-     * Get comprehensive borrowed tools statistics
-     * Moved from BorrowedToolController::index() (Phase 2.2)
+     * Get borrowed tool statistics with optional date and project filtering
      *
-     * @param int|null $projectFilter Optional project ID filter
-     * @return array Statistics including batch stats, equipment count, and time-based stats
+     * @param string|null $dateFrom Start date (YYYY-MM-DD)
+     * @param string|null $dateTo End date (YYYY-MM-DD)
+     * @param int|null $projectId Project ID filter
+     * @return array Statistics data
      */
-    public function getBorrowedToolsStats($projectFilter = null) {
-        // Get batch statistics
-        $batchStats = $this->batchModel->getBatchStats(null, null, $projectFilter);
+    public function getBorrowedToolStats($dateFrom = null, $dateTo = null, $projectId = null) {
+        $conditions = [];
+        $params = [];
 
-        // Get available non-consumable equipment count
-        $availableEquipmentCount = $this->assetModel->getAvailableEquipmentCount($projectFilter);
+        if ($dateFrom) {
+            $conditions[] = "DATE(bt.created_at) >= ?";
+            $params[] = $dateFrom;
+        }
 
-        // Get time-based statistics
-        $timeStats = $this->batchModel->getTimeBasedStatistics($projectFilter);
+        if ($dateTo) {
+            $conditions[] = "DATE(bt.created_at) <= ?";
+            $params[] = $dateTo;
+        }
 
-        // Transform batch stats to match expected format in views
-        $borrowedToolStats = [
-            // MVA workflow stats
-            'pending_verification' => $batchStats['pending_verification'] ?? 0,
-            'pending_approval' => $batchStats['pending_approval'] ?? 0,
-            'approved' => $batchStats['approved'] ?? 0,
+        if ($projectId) {
+            $conditions[] = "a.project_id = ?";
+            $params[] = $projectId;
+        }
 
-            // Active borrowing stats
-            'borrowed' => $batchStats['borrowed'] ?? 0,
-            'overdue' => $batchStats['overdue'] ?? 0,
+        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
 
-            // Completion stats
-            'returned' => $batchStats['returned'] ?? 0,
-            'canceled' => $batchStats['canceled'] ?? 0,
+        $sql = "SELECT
+                    COUNT(*) as total_borrows,
+                    SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as returned_count,
+                    SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as active_count,
+                    SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as overdue_count
+                FROM borrowed_tools bt
+                LEFT JOIN assets a ON bt.asset_id = a.id
+                {$whereClause}";
 
-            // Asset availability
-            'available_equipment' => $availableEquipmentCount,
-
-            // Time-based statistics
-            'today' => $timeStats['today'] ?? 0,
-            'this_week' => $timeStats['this_week'] ?? 0,
-            'this_month' => $timeStats['this_month'] ?? 0,
-            'overdue_items' => $timeStats['overdue'] ?? 0
+        // Prepend status constants to params
+        $statusParams = [
+            BorrowedToolStatus::RETURNED,
+            BorrowedToolStatus::BORROWED,
+            BorrowedToolStatus::OVERDUE
         ];
+        $allParams = array_merge($statusParams, $params);
 
-        return $borrowedToolStats;
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($allParams);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get dashboard statistics summary
+     * Get overdue borrowed tools
      *
-     * @param int|null $projectFilter Optional project ID filter
-     * @return array Dashboard statistics
+     * @param int|null $projectId Project ID filter
+     * @return array Array of overdue tool records
      */
-    public function getDashboardStats($projectFilter = null) {
-        $stats = $this->getBorrowedToolsStats($projectFilter);
-
-        return [
-            'active_borrowings' => $stats['borrowed'] + $stats['overdue'],
-            'pending_actions' => $stats['pending_verification'] + $stats['pending_approval'] + $stats['approved'],
-            'overdue_items' => $stats['overdue'],
-            'available_equipment' => $stats['available_equipment']
+    public function getOverdueTools($projectId = null) {
+        $conditions = [
+            "bt.status IN (?, ?)",
+            "bt.expected_return < CURDATE()"
         ];
+        $params = [
+            BorrowedToolStatus::BORROWED,
+            BorrowedToolStatus::RELEASED
+        ];
+
+        if ($projectId) {
+            $conditions[] = "a.project_id = ?";
+            $params[] = $projectId;
+        }
+
+        $whereClause = "WHERE " . implode(" AND ", $conditions);
+
+        $sql = "SELECT bt.*, a.name as asset_name, a.ref as asset_ref
+                FROM borrowed_tools bt
+                INNER JOIN assets a ON bt.asset_id = a.id
+                {$whereClause}
+                ORDER BY bt.expected_return ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get overdue statistics with details
+     * Get borrowing trends over time
      *
-     * @param int|null $projectFilter Optional project ID filter
-     * @return array Overdue statistics with breakdown
+     * @param string $groupBy Grouping period ('day', 'week', 'month')
+     * @param int $limit Number of periods to return
+     * @param int|null $projectId Project ID filter
+     * @return array Trend data
      */
-    public function getOverdueStats($projectFilter = null) {
-        $timeStats = $this->batchModel->getTimeBasedStatistics($projectFilter);
-        $batchStats = $this->batchModel->getBatchStats(null, null, $projectFilter);
+    public function getBorrowingTrends($groupBy = 'month', $limit = 12, $projectId = null) {
+        $conditions = [];
+        $params = [];
 
-        return [
-            'total_overdue' => $timeStats['overdue'] ?? 0,
-            'overdue_percentage' => $batchStats['borrowed'] > 0
-                ? round(($timeStats['overdue'] / $batchStats['borrowed']) * 100, 1)
-                : 0
-        ];
+        if ($projectId) {
+            $conditions[] = "a.project_id = ?";
+            $params[] = $projectId;
+        }
+
+        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+        $dateFormat = match($groupBy) {
+            'day' => '%Y-%m-%d',
+            'week' => '%Y-W%u',
+            'month' => '%Y-%m',
+            default => '%Y-%m'
+        };
+
+        $sql = "SELECT
+                    DATE_FORMAT(bt.created_at, '{$dateFormat}') as period,
+                    COUNT(*) as borrow_count,
+                    SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as returned_count
+                FROM borrowed_tools bt
+                LEFT JOIN assets a ON bt.asset_id = a.id
+                {$whereClause}
+                GROUP BY period
+                ORDER BY period DESC
+                LIMIT ?";
+
+        // Prepend status constant, append limit
+        array_unshift($params, BorrowedToolStatus::RETURNED);
+        $params[] = $limit;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get trend statistics comparing periods
+     * Get frequent borrowers
      *
-     * @param int|null $projectFilter Optional project ID filter
-     * @return array Trend statistics
+     * @param int $limit Number of borrowers to return
+     * @param int|null $projectId Project ID filter
+     * @return array Array of borrower statistics
      */
-    public function getTrendStats($projectFilter = null) {
-        $timeStats = $this->batchModel->getTimeBasedStatistics($projectFilter);
+    public function getFrequentBorrowers($limit = 10, $projectId = null) {
+        $conditions = [];
+        $params = [];
 
-        return [
-            'today_vs_week' => [
-                'today' => $timeStats['today'] ?? 0,
-                'week_avg' => ($timeStats['this_week'] ?? 0) / 7,
-                'trend' => 'up' // Placeholder - calculate actual trend
-            ],
-            'week_vs_month' => [
-                'week' => $timeStats['this_week'] ?? 0,
-                'month_avg' => ($timeStats['this_month'] ?? 0) / 4,
-                'trend' => 'stable' // Placeholder - calculate actual trend
-            ]
-        ];
+        if ($projectId) {
+            $conditions[] = "a.project_id = ?";
+            $params[] = $projectId;
+        }
+
+        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+        $sql = "SELECT
+                    bt.borrower_name,
+                    bt.borrower_contact,
+                    COUNT(*) as borrow_count,
+                    SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as overdue_count
+                FROM borrowed_tools bt
+                LEFT JOIN assets a ON bt.asset_id = a.id
+                {$whereClause}
+                GROUP BY bt.borrower_name, bt.borrower_contact
+                ORDER BY borrow_count DESC
+                LIMIT ?";
+
+        // Prepend status constant, append limit
+        array_unshift($params, BorrowedToolStatus::OVERDUE);
+        $params[] = $limit;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

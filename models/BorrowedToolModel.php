@@ -4,8 +4,20 @@
  * Handles borrowed tool data operations
  */
 
+require_once APP_ROOT . '/core/traits/ActivityLoggingTrait.php';
+require_once APP_ROOT . '/helpers/AssetStatus.php';
+require_once APP_ROOT . '/helpers/BorrowedToolStatus.php';
+
 class BorrowedToolModel extends BaseModel {
+    use ActivityLoggingTrait;
+
     protected $table = 'borrowed_tools';
+
+    // Service dependencies for delegation
+    private $workflowService;
+    private $returnService;
+    private $statisticsService;
+    private $queryService;
     protected $fillable = [
         'asset_id', 'borrower_name', 'borrower_contact', 'expected_return',
         'actual_return', 'issued_by', 'purpose', 'condition_out', 'condition_in', 'status',
@@ -15,231 +27,81 @@ class BorrowedToolModel extends BaseModel {
         'verified_by', 'verification_date', 'approved_by', 'approval_date',
         'borrowed_by', 'borrowed_date', 'returned_by', 'return_date', 'canceled_by', 'cancellation_date', 'cancellation_reason'
     ];
-    
+
+    /**
+     * Get workflow service instance (lazy loading)
+     */
+    private function getWorkflowService() {
+        if ($this->workflowService === null) {
+            require_once APP_ROOT . '/services/BorrowedToolWorkflowService.php';
+            $this->workflowService = new BorrowedToolWorkflowService($this->db, $this);
+        }
+        return $this->workflowService;
+    }
+
+    /**
+     * Get return service instance (lazy loading)
+     */
+    private function getReturnService() {
+        if ($this->returnService === null) {
+            require_once APP_ROOT . '/services/BorrowedToolReturnService.php';
+            $this->returnService = new BorrowedToolReturnService($this->db);
+        }
+        return $this->returnService;
+    }
+
+    /**
+     * Get statistics service instance (lazy loading)
+     */
+    private function getStatisticsService() {
+        if ($this->statisticsService === null) {
+            require_once APP_ROOT . '/services/BorrowedToolStatisticsService.php';
+            $this->statisticsService = new BorrowedToolStatisticsService($this->db);
+        }
+        return $this->statisticsService;
+    }
+
+    /**
+     * Get query service instance (lazy loading)
+     */
+    private function getQueryService() {
+        if ($this->queryService === null) {
+            require_once APP_ROOT . '/services/BorrowedToolQueryService.php';
+            $this->queryService = new BorrowedToolQueryService($this->db);
+        }
+        return $this->queryService;
+    }
+
     /**
      * Create borrowed tool request (Maker step)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function createBorrowedTool($data) {
-        $validation = $this->validate($data, [
-            'asset_id' => 'required|integer',
-            'borrower_name' => 'required|max:100',
-            'expected_return' => 'required|date',
-            'issued_by' => 'required|integer'
-        ]);
-        if (!$validation['valid']) {
-            return ['success' => false, 'errors' => $validation['errors']];
-        }
-        if (strtotime($data['expected_return']) < strtotime(date('Y-m-d'))) {
-            return ['success' => false, 'message' => 'Expected return date cannot be in the past'];
-        }
-        try {
-            $this->db->beginTransaction();
-            $assetModel = new AssetModel();
-            $asset = $assetModel->find($data['asset_id']);
-            if (!$asset) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset not found'];
-            }
-            if ($asset['status'] !== 'available') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset is not available for borrowing'];
-            }
-            // Set initial status for MVA workflow
-            $borrowData = [
-                'asset_id' => $data['asset_id'],
-                'borrower_name' => $data['borrower_name'],
-                'borrower_contact' => $data['borrower_contact'] ?? null,
-                'expected_return' => $data['expected_return'],
-                'issued_by' => $data['issued_by'],
-                'purpose' => $data['purpose'] ?? null,
-                'condition_out' => $data['condition_out'] ?? null,
-                'status' => 'Pending Verification',
-                'created_at' => date('Y-m-d H:i:s')
-            ];
-            $borrowedTool = $this->create($borrowData);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to create borrowed tool request'];
-            }
-            $this->logActivity('borrow_tool_request', "Tool borrow request created: {$asset['name']} by {$data['borrower_name']}", 'borrowed_tools', $borrowedTool['id']);
-            $this->db->commit();
-            return ['success' => true, 'borrowed_tool' => $borrowedTool];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Borrowed tool creation error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to create borrowed tool request'];
-        }
+        return $this->getWorkflowService()->createBorrowRequest($data);
     }
 
     /**
      * Verify borrowed tool request (Verifier step)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function verifyBorrowedTool($borrowId, $verifiedBy, $notes = null) {
-        try {
-            $this->db->beginTransaction();
-            $borrowedTool = $this->find($borrowId);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Borrowed tool not found'];
-            }
-            if ($borrowedTool['status'] !== 'Pending Verification') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Tool is not in pending verification status'];
-            }
-            $updateData = [
-                'status' => 'Pending Approval',
-                'verified_by' => $verifiedBy,
-                'verification_date' => date('Y-m-d H:i:s'),
-                'notes' => $notes
-            ];
-            $updated = $this->update($borrowId, $updateData);
-            if (!$updated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to verify borrowed tool request'];
-            }
-            $this->logActivity('verify_borrow_tool', "Tool borrow request verified", 'borrowed_tools', $borrowId);
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Tool borrow request verified'];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Borrowed tool verification error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to verify borrowed tool request'];
-        }
+        return $this->getWorkflowService()->verify($borrowId, $verifiedBy, $notes);
     }
 
     /**
      * Approve borrowed tool request (Authorizer step)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function approveBorrowedTool($borrowId, $approvedBy, $notes = null) {
-        try {
-            $this->db->beginTransaction();
-            $borrowedTool = $this->find($borrowId);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Borrowed tool not found'];
-            }
-            if ($borrowedTool['status'] !== 'Pending Approval') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Tool is not in pending approval status'];
-            }
-            $updateData = [
-                'status' => 'Approved',
-                'approved_by' => $approvedBy,
-                'approval_date' => date('Y-m-d H:i:s'),
-                'notes' => $notes
-            ];
-            $updated = $this->update($borrowId, $updateData);
-            if (!$updated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to approve borrowed tool request'];
-            }
-            $this->logActivity('approve_borrow_tool', "Tool borrow request approved", 'borrowed_tools', $borrowId);
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Tool borrow request approved'];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Borrowed tool approval error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to approve borrowed tool request'];
-        }
+        return $this->getWorkflowService()->approve($borrowId, $approvedBy, $notes);
     }
 
     /**
-     * Mark as borrowed (after approval)
-     */
-    public function markAsBorrowed($borrowId, $borrowedBy) {
-        try {
-            $this->db->beginTransaction();
-            $borrowedTool = $this->find($borrowId);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Borrowed tool not found'];
-            }
-            if ($borrowedTool['status'] !== 'Approved') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Tool is not in approved status'];
-            }
-            $updateData = [
-                'status' => 'Borrowed',
-                'borrowed_by' => $borrowedBy,
-                'borrowed_date' => date('Y-m-d H:i:s')
-            ];
-            $updated = $this->update($borrowId, $updateData);
-            if (!$updated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to mark as borrowed'];
-            }
-            // Update asset status to borrowed
-            $assetModel = new AssetModel();
-            $assetUpdated = $assetModel->update($borrowedTool['asset_id'], ['status' => 'borrowed']);
-            if (!$assetUpdated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to update asset status'];
-            }
-            $this->logActivity('mark_borrowed', "Tool marked as borrowed", 'borrowed_tools', $borrowId);
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Tool marked as borrowed'];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Mark as borrowed error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to mark as borrowed'];
-        }
-    }
-
-    /**
-     * Mark as borrowed (after approval)
+     * Mark as borrowed / Release tool (after approval)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function borrowTool($borrowId, $borrowedBy, $notes = null) {
-        try {
-            $this->db->beginTransaction();
-            $borrowedTool = $this->find($borrowId);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Borrowed tool not found'];
-            }
-            if ($borrowedTool['status'] !== 'Approved') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Tool is not in approved status'];
-            }
-            
-            // Update asset status to borrowed
-            $assetModel = new AssetModel();
-            $asset = $assetModel->find($borrowedTool['asset_id']);
-            if (!$asset) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset not found'];
-            }
-            if ($asset['status'] !== 'available') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset is not available for borrowing'];
-            }
-            
-            $updateData = [
-                'status' => 'Borrowed',
-                'borrowed_by' => $borrowedBy,
-                'borrowed_date' => date('Y-m-d H:i:s'),
-                'notes' => $notes
-            ];
-            $updated = $this->update($borrowId, $updateData);
-            if (!$updated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to mark as borrowed'];
-            }
-            
-            // Update asset status to borrowed
-            $assetUpdated = $assetModel->update($borrowedTool['asset_id'], ['status' => 'borrowed']);
-            if (!$assetUpdated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to update asset status'];
-            }
-            
-            $this->logActivity('borrow_tool', "Tool borrowed: {$asset['name']} by {$borrowedTool['borrower_name']}", 'borrowed_tools', $borrowId);
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Tool marked as borrowed successfully'];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Borrow tool error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to mark tool as borrowed'];
-        }
+        return $this->getWorkflowService()->release($borrowId, $borrowedBy, $notes);
     }
 
     /**
@@ -253,14 +115,14 @@ class BorrowedToolModel extends BaseModel {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Borrowed tool not found'];
             }
-            if (!in_array($borrowedTool['status'], ['Borrowed', 'Overdue'])) {
+            if (!in_array($borrowedTool['status'], [BorrowedToolStatus::BORROWED, BorrowedToolStatus::OVERDUE])) {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Tool is not currently borrowed or overdue'];
             }
             $updateData = [
                 'actual_return' => date('Y-m-d'),
                 'condition_in' => $conditionIn,
-                'status' => 'Returned',
+                'status' => BorrowedToolStatus::RETURNED,
                 'returned_by' => $returnedBy,
                 'return_date' => date('Y-m-d H:i:s'),
                 'notes' => $returnNotes
@@ -272,7 +134,7 @@ class BorrowedToolModel extends BaseModel {
             }
             // Update asset status back to available
             $assetModel = new AssetModel();
-            $assetUpdated = $assetModel->update($borrowedTool['asset_id'], ['status' => 'available']);
+            $assetUpdated = $assetModel->update($borrowedTool['asset_id'], ['status' => AssetStatus::AVAILABLE]);
             if (!$assetUpdated) {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Failed to update asset status'];
@@ -285,18 +147,18 @@ class BorrowedToolModel extends BaseModel {
                 // Check if all items in the batch are now returned
                 $checkAllReturnedSql = "
                     SELECT COUNT(*) as total_items,
-                           SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_items
+                           SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as returned_items
                     FROM borrowed_tools
                     WHERE batch_id = ?
                 ";
                 $checkStmt = $this->db->prepare($checkAllReturnedSql);
-                $checkStmt->execute([$borrowedTool['batch_id']]);
+                $checkStmt->execute([BorrowedToolStatus::RETURNED, $borrowedTool['batch_id']]);
                 $batchStatus = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($batchStatus && $batchStatus['total_items'] == $batchStatus['returned_items']) {
                     // All items returned - update batch status
                     $batchModel->update($borrowedTool['batch_id'], [
-                        'status' => 'Returned',
+                        'status' => BorrowedToolStatus::RETURNED,
                         'actual_return' => date('Y-m-d'),
                         'returned_by' => $returnedBy,
                         'return_date' => date('Y-m-d H:i:s')
@@ -304,7 +166,7 @@ class BorrowedToolModel extends BaseModel {
                 } elseif ($batchStatus && $batchStatus['returned_items'] > 0) {
                     // Some items returned - update to partially returned
                     $batchModel->update($borrowedTool['batch_id'], [
-                        'status' => 'Partially Returned'
+                        'status' => BorrowedToolStatus::PARTIALLY_RETURNED
                     ]);
                 }
             }
@@ -321,38 +183,10 @@ class BorrowedToolModel extends BaseModel {
 
     /**
      * Cancel borrowed tool request (any stage before Borrowed)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function cancelBorrowedTool($borrowId, $canceledBy, $reason = null) {
-        try {
-            $this->db->beginTransaction();
-            $borrowedTool = $this->find($borrowId);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Borrowed tool not found'];
-            }
-            if (!in_array($borrowedTool['status'], ['Pending Verification', 'Pending Approval', 'Approved'])) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Cannot cancel at this stage'];
-            }
-            $updateData = [
-                'status' => 'Canceled',
-                'canceled_by' => $canceledBy,
-                'cancellation_date' => date('Y-m-d H:i:s'),
-                'cancellation_reason' => $reason
-            ];
-            $updated = $this->update($borrowId, $updateData);
-            if (!$updated) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to cancel borrowed tool request'];
-            }
-            $this->logActivity('cancel_borrow_tool', "Tool borrow request canceled", 'borrowed_tools', $borrowId);
-            $this->db->commit();
-            return ['success' => true, 'message' => 'Borrowed tool request canceled'];
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Cancel borrowed tool error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to cancel borrowed tool request'];
-        }
+        return $this->getWorkflowService()->cancel($borrowId, $canceledBy, $reason);
     }
     
     /**
@@ -370,7 +204,7 @@ class BorrowedToolModel extends BaseModel {
                 return ['success' => false, 'message' => 'Borrowed tool not found'];
             }
             
-            if (!in_array($borrowedTool['status'], ['borrowed', 'overdue'])) {
+            if (!in_array($borrowedTool['status'], [BorrowedToolStatus::BORROWED, BorrowedToolStatus::OVERDUE])) {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Tool is not currently borrowed or overdue'];
             }
@@ -405,244 +239,26 @@ class BorrowedToolModel extends BaseModel {
     
     /**
      * Get borrowed tools with filters and pagination
+     * DELEGATED TO: BorrowedToolQueryService
      */
     public function getBorrowedToolsWithFilters($filters = [], $page = 1, $perPage = 20) {
-        $conditions = [];
-        $params = [];
-        
-        // Apply filters
-        if (!empty($filters['status'])) {
-            if ($filters['status'] === 'overdue' || $filters['status'] === 'Overdue') {
-                // Check both single items and batches for overdue status
-                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return < CURDATE())
-                                 OR (btb.status = 'Released' AND btb.expected_return < CURDATE()))";
-            } else {
-                // Match status against both tables using COALESCE logic (matches SELECT clause)
-                // This ensures WHERE filtering matches the displayed status values
-                $conditions[] = "((btb.status IS NOT NULL AND btb.status = ?)
-                                 OR (btb.status IS NULL AND bt.status = ?))";
-                $params[] = $filters['status'];
-                $params[] = $filters['status'];
-            }
-        }
-        // No else clause - show all statuses by default (including Canceled and Returned)
-
-        // Priority filter
-        if (!empty($filters['priority'])) {
-            if ($filters['priority'] === 'overdue') {
-                // Check both single items and batches for overdue items
-                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return < CURDATE())
-                                 OR (btb.status = 'Released' AND btb.expected_return < CURDATE()))";
-            } elseif ($filters['priority'] === 'due_soon') {
-                // Check both single items and batches for items due within 3 days
-                $conditions[] = "((bt.status = 'Borrowed' AND bt.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY))
-                                 OR (btb.status = 'Released' AND btb.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)))";
-            } elseif ($filters['priority'] === 'pending_action') {
-                // Check both tables for pending statuses using COALESCE logic
-                $conditions[] = "(COALESCE(btb.status, bt.status) IN ('Pending Verification', 'Pending Approval'))";
-            }
-        }
-
-        if (!empty($filters['date_from'])) {
-            $conditions[] = "DATE(bt.created_at) >= ?";
-            $params[] = $filters['date_from'];
-        }
-
-        if (!empty($filters['date_to'])) {
-            $conditions[] = "DATE(bt.created_at) <= ?";
-            $params[] = $filters['date_to'];
-        }
-
-        if (!empty($filters['search'])) {
-            $conditions[] = "(a.name LIKE ? OR a.ref LIKE ? OR bt.borrower_name LIKE ? OR bt.purpose LIKE ? OR btb.batch_reference LIKE ?)";
-            $searchTerm = "%{$filters['search']}%";
-            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
-        }
-        
-        // Filter by project if specified
-        if (!empty($filters['project_id'])) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $filters['project_id'];
-        }
-        
-        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-
-        // Build ORDER BY clause
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortOrder = strtoupper($filters['sort_order'] ?? 'DESC');
-
-        // Map sort column to SQL expression
-        $orderByMap = [
-            'id' => 'bt.id',
-            'reference' => 'COALESCE(btb.batch_reference, CONCAT("BT-", LPAD(bt.id, 6, "0")))',
-            'borrower' => 'bt.borrower_name',
-            'status' => 'CASE bt.status
-                WHEN "Pending Verification" THEN 1
-                WHEN "Pending Approval" THEN 2
-                WHEN "Approved" THEN 3
-                WHEN "Borrowed" THEN 4
-                WHEN "Partially Returned" THEN 5
-                WHEN "Returned" THEN 6
-                WHEN "Canceled" THEN 7
-                ELSE 8
-            END',
-            'date' => 'bt.created_at',
-            'items' => 'bt.quantity',
-            'created_at' => 'bt.created_at'
-        ];
-
-        $orderByColumn = $orderByMap[$sortBy] ?? 'bt.created_at';
-        $orderByClause = "ORDER BY {$orderByColumn} {$sortOrder}";
-
-        // Count total records
-        $countSql = "
-            SELECT COUNT(*)
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-            {$whereClause}
-        ";
-        
-        $stmt = $this->db->prepare($countSql);
-        $stmt->execute($params);
-        $total = $stmt->fetchColumn();
-        
-        // Get paginated data
-        $offset = ($page - 1) * $perPage;
-        
-        $dataSql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   c.name as category_name,
-                   p.name as project_name,
-                   u.full_name as issued_by_name,
-                   u.full_name as created_by_name,
-                   u_verified.full_name as verified_by_name,
-                   u_approved.full_name as approved_by_name,
-                   btb.batch_reference,
-                   CASE
-                       WHEN btb.status IN ('Partially Returned', 'Returned') THEN btb.status
-                       WHEN bt.status IN ('Borrowed', 'Returned') THEN bt.status
-                       ELSE COALESCE(btb.status, bt.status)
-                   END as status,
-                   CASE
-                       WHEN btb.status IN ('Partially Returned', 'Returned') THEN btb.status
-                       WHEN bt.status = 'Borrowed' AND bt.expected_return < CURDATE() THEN 'Overdue'
-                       WHEN bt.status IN ('Borrowed', 'Returned') THEN bt.status
-                       ELSE COALESCE(btb.status, bt.status)
-                   END as current_status
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-            LEFT JOIN users u_verified ON COALESCE(btb.verified_by, bt.verified_by) = u_verified.id
-            LEFT JOIN users u_approved ON COALESCE(btb.approved_by, bt.approved_by) = u_approved.id
-            {$whereClause}
-            {$orderByClause}
-            LIMIT {$perPage} OFFSET {$offset}
-        ";
-        
-        $stmt = $this->db->prepare($dataSql);
-        $stmt->execute($params);
-        $data = $stmt->fetchAll();
-
-        return [
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
-                'total_pages' => ceil($total / $perPage),
-                'has_next' => $page < ceil($total / $perPage),
-                'has_prev' => $page > 1
-            ]
-        ];
+        return $this->getQueryService()->getBorrowedToolsWithFilters($filters, $page, $perPage);
     }
 
     /**
      * Get borrowed tool with detailed information
+     * DELEGATED TO: BorrowedToolQueryService
      */
     public function getBorrowedToolWithDetails($id, $projectId = null) {
-        $conditions = ["bt.id = ?"];
-        $params = [$id];
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = "WHERE " . implode(" AND ", $conditions);
-        
-        $sql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   c.name as category_name,
-                   p.name as project_name,
-                   u.full_name as issued_by_name
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            {$whereClause}
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetch();
+        return $this->getQueryService()->getBorrowedToolWithDetails($id, $projectId);
     }
 
     /**
      * Get borrowed tool with MVA workflow details
+     * DELEGATED TO: BorrowedToolQueryService
      */
     public function getBorrowedToolWithMVADetails($id, $projectId = null) {
-        $conditions = ["bt.id = ?"];
-        $params = [$id];
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = "WHERE " . implode(" AND ", $conditions);
-        $sql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   a.acquisition_cost,
-                   c.name as category_name,
-                   p.name as project_name,
-                   btb.batch_reference,
-                   u.full_name as issued_by_name,
-                   uv.full_name as verified_by_name,
-                   ua.full_name as approved_by_name,
-                   ub.full_name as borrowed_by_name,
-                   ur.full_name as returned_by_name,
-                   uc.full_name as canceled_by_name
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            LEFT JOIN users uv ON bt.verified_by = uv.id
-            LEFT JOIN users ua ON bt.approved_by = ua.id
-            LEFT JOIN users ub ON bt.borrowed_by = ub.id
-            LEFT JOIN users ur ON bt.returned_by = ur.id
-            LEFT JOIN users uc ON bt.canceled_by = uc.id
-            {$whereClause}
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetch();
+        return $this->getQueryService()->getBorrowedToolWithMVADetails($id, $projectId);
     }
 
     /**
@@ -691,79 +307,18 @@ class BorrowedToolModel extends BaseModel {
     
     /**
      * Get borrowed tool statistics
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getBorrowedToolStats($dateFrom = null, $dateTo = null, $projectId = null) {
-        $conditions = [];
-        $params = [];
-        
-        if ($dateFrom) {
-            $conditions[] = "DATE(bt.created_at) >= ?";
-            $params[] = $dateFrom;
-        }
-        
-        if ($dateTo) {
-            $conditions[] = "DATE(bt.created_at) <= ?";
-            $params[] = $dateTo;
-        }
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-        
-        $sql = "
-            SELECT 
-                COUNT(*) as total_borrowed,
-                COUNT(CASE WHEN bt.status = 'Borrowed' THEN 1 END) as borrowed,
-                COUNT(CASE WHEN bt.status = 'Pending Verification' THEN 1 END) as pending_verification,
-                COUNT(CASE WHEN bt.status = 'Pending Approval' THEN 1 END) as pending_approval,
-                COUNT(CASE WHEN bt.status = 'Approved' THEN 1 END) as approved,
-                COUNT(CASE WHEN bt.status = 'Returned' THEN 1 END) as returned,
-                COUNT(CASE WHEN bt.status = 'Overdue' THEN 1 END) as overdue,
-                COUNT(CASE WHEN bt.status = 'Canceled' THEN 1 END) as canceled,
-                AVG(DATEDIFF(COALESCE(bt.actual_return, CURDATE()), bt.created_at)) as avg_borrowing_days
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            {$whereClause}
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetch();
+        return $this->getStatisticsService()->getBorrowedToolStats($dateFrom, $dateTo, $projectId);
     }
     
     /**
      * Get overdue borrowed tools
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getOverdueBorrowedTools($projectId = null) {
-        $conditions = ["bt.status = 'Borrowed'", "bt.expected_return < CURDATE()"];
-        $params = [];
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = "WHERE " . implode(" AND ", $conditions);
-        
-        $sql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   p.name as project_name,
-                   DATEDIFF(CURDATE(), bt.expected_return) as days_overdue
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN projects p ON a.project_id = p.id
-            {$whereClause}
-            ORDER BY bt.expected_return ASC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getOverdueTools($projectId);
     }
     
     /**
@@ -777,12 +332,12 @@ class BorrowedToolModel extends BaseModel {
                 return ['success' => false, 'message' => 'Borrowed tool not found'];
             }
             
-            if ($borrowedTool['status'] !== 'borrowed') {
+            if ($borrowedTool['status'] !== BorrowedToolStatus::BORROWED) {
                 return ['success' => false, 'message' => 'Tool is not currently borrowed'];
             }
-            
+
             // Update status to overdue
-            $updated = $this->update($borrowId, ['status' => 'overdue']);
+            $updated = $this->update($borrowId, ['status' => BorrowedToolStatus::OVERDUE]);
             
             if ($updated) {
                 // Log activity
@@ -805,15 +360,15 @@ class BorrowedToolModel extends BaseModel {
     public function updateOverdueStatus() {
         try {
             $sql = "
-                UPDATE borrowed_tools 
-                SET status = 'overdue' 
-                WHERE status = 'borrowed' 
+                UPDATE borrowed_tools
+                SET status = ?
+                WHERE status = ?
                 AND expected_return < CURDATE()
             ";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute();
-            
+            $stmt->execute([BorrowedToolStatus::OVERDUE, BorrowedToolStatus::BORROWED]);
+
             return $stmt->rowCount();
             
         } catch (Exception $e) {
@@ -824,256 +379,58 @@ class BorrowedToolModel extends BaseModel {
     
     /**
      * Get overdue borrower contacts
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getOverdueBorrowerContacts() {
-        $sql = "
-            SELECT DISTINCT bt.borrower_name,
-                   bt.borrower_contact,
-                   COUNT(*) as overdue_count,
-                   GROUP_CONCAT(a.name SEPARATOR ', ') as overdue_assets
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            WHERE bt.status = 'borrowed' 
-            AND bt.expected_return < CURDATE()
-            AND bt.borrower_contact IS NOT NULL
-            AND bt.borrower_contact != ''
-            GROUP BY bt.borrower_name, bt.borrower_contact
-            ORDER BY overdue_count DESC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getOverdueBorrowerContacts();
     }
     
     /**
      * Get borrowed tool report data
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getBorrowedToolReport($dateFrom, $dateTo, $status = null, $projectId = null) {
-        $conditions = ["DATE(bt.created_at) BETWEEN ? AND ?"];
-        $params = [$dateFrom, $dateTo];
-        
-        if ($status) {
-            if ($status === 'overdue') {
-                $conditions[] = "bt.status = 'Borrowed' AND bt.expected_return < CURDATE()";
-            } else {
-                $conditions[] = "bt.status = ?";
-                $params[] = $status;
-            }
-        }
-        
-        if ($projectId) {
-            $conditions[] = "a.project_id = ?";
-            $params[] = $projectId;
-        }
-        
-        $whereClause = "WHERE " . implode(" AND ", $conditions);
-        
-        $sql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   c.name as category_name,
-                   p.name as project_name,
-                   u.full_name as issued_by_name,
-                   DATEDIFF(COALESCE(bt.actual_return, CURDATE()), bt.created_at) as borrowing_days
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            {$whereClause}
-            ORDER BY bt.created_at DESC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getBorrowedToolReport($dateFrom, $dateTo, $status, $projectId);
     }
     
     /**
      * Get borrowing trends
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getBorrowingTrends($dateFrom, $dateTo) {
-        $sql = "
-            SELECT DATE(bt.created_at) as borrow_date,
-                   COUNT(*) as daily_borrows,
-                   COUNT(CASE WHEN bt.status = 'returned' THEN 1 END) as daily_returns
-            FROM borrowed_tools bt
-            WHERE DATE(bt.created_at) BETWEEN ? AND ?
-            GROUP BY DATE(bt.created_at)
-            ORDER BY borrow_date ASC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$dateFrom, $dateTo]);
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getBorrowingTrends('day', null, null, $dateFrom, $dateTo);
     }
     
     /**
      * Get most borrowed assets
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getMostBorrowedAssets($limit = 10) {
-        $sql = "
-            SELECT a.name as asset_name,
-                   a.ref as asset_ref,
-                   c.name as category_name,
-                   COUNT(bt.id) as borrow_count,
-                   AVG(DATEDIFF(COALESCE(bt.actual_return, CURDATE()), bt.created_at)) as avg_days
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            GROUP BY bt.asset_id, a.name, a.ref, c.name
-            ORDER BY borrow_count DESC
-            LIMIT ?
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getMostBorrowedAssets($limit);
     }
     
     /**
      * Get frequent borrowers
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getFrequentBorrowers($limit = 10) {
-        $sql = "
-            SELECT bt.borrower_name,
-                   bt.borrower_contact,
-                   COUNT(*) as total_borrows,
-                   COUNT(CASE WHEN bt.status = 'returned' THEN 1 END) as returned_count,
-                   COUNT(CASE WHEN bt.status = 'borrowed' AND bt.expected_return < CURDATE() THEN 1 END) as overdue_count
-            FROM borrowed_tools bt
-            GROUP BY bt.borrower_name, bt.borrower_contact
-            ORDER BY total_borrows DESC
-            LIMIT ?
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll();
+        return $this->getStatisticsService()->getFrequentBorrowers($limit);
     }
     
     /**
      * Get asset borrowing history
+     * DELEGATED TO: BorrowedToolStatisticsService
      */
     public function getAssetBorrowingHistory($assetId) {
-        try {
-            $sql = "
-                SELECT bt.*,
-                       u.full_name as issued_by_name,
-                       DATEDIFF(COALESCE(bt.actual_return, CURDATE()), bt.created_at) as borrowing_days,
-                       CASE 
-                           WHEN bt.status = 'borrowed' AND bt.expected_return < CURDATE() THEN 'overdue'
-                           ELSE bt.status
-                       END as current_status
-                FROM borrowed_tools bt
-                LEFT JOIN users u ON bt.issued_by = u.id
-                WHERE bt.asset_id = ?
-                ORDER BY bt.created_at DESC
-            ";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$assetId]);
-            return $stmt->fetchAll();
-            
-        } catch (Exception $e) {
-            error_log("Get asset borrowing history error: " . $e->getMessage());
-            return [];
-        }
+        return $this->getStatisticsService()->getAssetBorrowingHistory($assetId);
     }
     
     /**
      * Create and process basic tool request in one streamlined operation
-     * This combines create, verify, approve, and mark as borrowed for basic tools (<₱50,000)
+     * DELEGATED TO: BorrowedToolWorkflowService
      */
     public function createAndProcessBasicTool($data) {
-        try {
-            $this->db->beginTransaction();
-            
-            // Validate required fields
-            $errors = [];
-            if (empty($data['asset_id'])) $errors[] = 'Asset is required';
-            if (empty($data['borrower_name'])) $errors[] = 'Borrower name is required';
-            if (empty($data['expected_return'])) $errors[] = 'Expected return date is required';
-            if (empty($data['issued_by'])) $errors[] = 'Issued by is required';
-            
-            if (!empty($errors)) {
-                return ['success' => false, 'errors' => $errors];
-            }
-            
-            // Check if asset is available and is basic tool
-            $assetModel = new AssetModel();
-            $asset = $assetModel->find($data['asset_id']);
-            if (!$asset) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset not found'];
-            }
-            
-            if ($asset['status'] !== 'available') {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Asset is not available for borrowing'];
-            }
-            
-            // Verify this is a basic tool (not critical)
-            if ($this->isCriticalTool($data['asset_id'], $asset['acquisition_cost'])) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Critical tools must follow standard MVA workflow'];
-            }
-            
-            $currentDateTime = date('Y-m-d H:i:s');
-            $currentUserId = $data['issued_by'];
-            
-            // Create borrowed tool record with streamlined status (directly to Borrowed)
-            $borrowData = [
-                'asset_id' => $data['asset_id'],
-                'borrower_name' => $data['borrower_name'],
-                'borrower_contact' => $data['borrower_contact'] ?? null,
-                'expected_return' => $data['expected_return'],
-                'purpose' => $data['purpose'] ?? null,
-                'condition_out' => $data['condition_out'] ?? null,
-                'status' => 'Borrowed', // Skip MVA steps for basic tools
-                'issued_by' => $currentUserId,
-                // Set all MVA fields to the same user and current time for audit trail
-                'verified_by' => $currentUserId,
-                'verification_date' => $currentDateTime,
-                'approved_by' => $currentUserId,
-                'approval_date' => $currentDateTime,
-                'borrowed_by' => $currentUserId,
-                'borrowed_date' => $currentDateTime,
-                'created_at' => $currentDateTime
-            ];
-            
-            $borrowedTool = $this->create($borrowData);
-            if (!$borrowedTool) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to create borrowed tool request'];
-            }
-            
-            // Update asset status to borrowed
-            $assetUpdateSql = "UPDATE assets SET status = 'borrowed' WHERE id = ?";
-            $assetStmt = $this->db->prepare($assetUpdateSql);
-            if (!$assetStmt->execute([$data['asset_id']])) {
-                $this->db->rollBack();
-                return ['success' => false, 'message' => 'Failed to update asset status'];
-            }
-            
-            // Log streamlined activity
-            $this->logActivity(
-                'streamlined_borrow_basic_tool', 
-                "Basic tool streamlined processing: {$asset['name']} borrowed by {$data['borrower_name']} (Maker/Verifier/Authorizer: same user)", 
-                'borrowed_tools', 
-                $borrowedTool['id']
-            );
-            
-            $this->db->commit();
-            return ['success' => true, 'borrowed_tool' => $borrowedTool];
-            
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            error_log("Streamlined borrowed tool creation error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to process tool borrowing request'];
-        }
+        return $this->getWorkflowService()->createAndProcessBasicTool($data);
     }
     
     /**
@@ -1139,32 +496,6 @@ class BorrowedToolModel extends BaseModel {
         } catch (Exception $e) {
             error_log("Get unreturned quantity error: " . $e->getMessage());
             return 0;
-        }
-    }
-
-    /**
-     * Log activity for audit trail
-     */
-    private function logActivity($action, $description, $table, $recordId) {
-        try {
-            $auth = Auth::getInstance();
-            $user = $auth->getCurrentUser();
-
-            $sql = "INSERT INTO activity_logs (user_id, action, description, table_name, record_id, ip_address, user_agent, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                $user['id'] ?? null,
-                $action,
-                $description,
-                $table,
-                $recordId,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null
-            ]);
-        } catch (Exception $e) {
-            error_log("Activity logging error: " . $e->getMessage());
         }
     }
 }
