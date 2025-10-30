@@ -2,22 +2,43 @@
 /**
  * ConstructLink™ Borrowed Tool Return Service
  * Handles business logic for returning borrowed tools and incident creation
- * Created during Phase 2.2 refactoring
+ *
+ * @package ConstructLink
+ * @version 2.0.0
  */
 
+require_once APP_ROOT . '/helpers/BorrowedToolStatus.php';
+require_once APP_ROOT . '/core/utils/ResponseFormatter.php';
+require_once APP_ROOT . '/core/utils/DateValidator.php';
+require_once APP_ROOT . '/core/traits/ActivityLoggingTrait.php';
+
 class BorrowedToolReturnService {
+    use ActivityLoggingTrait;
+
+    private $db;
     private $batchModel;
     private $borrowedToolModel;
     private $incidentModel;
+    private $assetModel;
 
-    public function __construct() {
+    public function __construct($db = null) {
+        if ($db === null) {
+            require_once APP_ROOT . '/core/Database.php';
+            $database = Database::getInstance();
+            $this->db = $database->getConnection();
+        } else {
+            $this->db = $db;
+        }
+
         require_once APP_ROOT . '/models/BorrowedToolBatchModel.php';
         require_once APP_ROOT . '/models/BorrowedToolModel.php';
         require_once APP_ROOT . '/models/IncidentModel.php';
+        require_once APP_ROOT . '/models/AssetModel.php';
 
-        $this->batchModel = new BorrowedToolBatchModel();
-        $this->borrowedToolModel = new BorrowedToolModel();
-        $this->incidentModel = new IncidentModel();
+        $this->batchModel = new BorrowedToolBatchModel($this->db);
+        $this->borrowedToolModel = new BorrowedToolModel($this->db);
+        $this->incidentModel = new IncidentModel($this->db);
+        $this->assetModel = new AssetModel($this->db);
     }
 
     /**
