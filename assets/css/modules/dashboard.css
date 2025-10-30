@@ -337,6 +337,75 @@
 }
 
 /* ==========================================================================
+   Project Inventory Card Component (Finance Director)
+   ========================================================================== */
+
+.project-inventory-card {
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.project-inventory-card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Collapse chevron rotation animation */
+.project-inventory-card [data-bs-toggle="collapse"] i {
+    transition: transform 0.3s ease;
+}
+
+.project-inventory-card [data-bs-toggle="collapse"]:not(.collapsed) i {
+    transform: rotate(90deg);
+}
+
+/* Equipment type row hover effect */
+.project-inventory-card .list-group-item {
+    transition: background-color 0.2s ease, border-left 0.2s ease;
+}
+
+.project-inventory-card .list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-left: 3px solid var(--bs-primary, #0d6efd);
+}
+
+/* Critical/Warning highlight enhancements */
+.bg-danger.bg-opacity-10 {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.bg-warning.bg-opacity-10 {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+/* Responsive adjustments for project cards */
+@media (max-width: 768px) {
+    .project-inventory-card .card-header .row {
+        text-align: center;
+    }
+
+    .project-inventory-card .card-header .text-md-end {
+        text-align: center !important;
+        margin-top: 0.5rem;
+    }
+
+    /* Stack badges vertically on mobile */
+    .project-inventory-card .badge {
+        display: inline-block;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Full width buttons on mobile */
+    .project-inventory-card .d-md-flex {
+        flex-direction: column;
+    }
+
+    .project-inventory-card .d-md-flex .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ==========================================================================
    Dark Mode Support (Future Enhancement)
    ========================================================================== */
 
@@ -351,5 +420,9 @@
 
     .list-group-item-action:hover {
         background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .project-inventory-card .list-group-item:hover {
+        background-color: rgba(255, 255, 255, 0.02);
     }
 }

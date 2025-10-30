@@ -942,6 +942,49 @@ body {
 }
 
 /* ==========================================================================
+   INVENTORY OVERVIEW CARDS (Finance Director Dashboard)
+   ========================================================================== */
+
+.inventory-overview-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.inventory-overview-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.inventory-overview-card.border-danger {
+    border-left-width: 4px;
+    border-left-color: var(--alert-critical);
+}
+
+.inventory-overview-card.border-warning {
+    border-left-width: 4px;
+    border-left-color: #f59e0b;
+}
+
+/* Collapsible project breakdown toggle */
+.inventory-overview-card [data-bs-toggle="collapse"] i.bi-chevron-right {
+    transition: transform 0.2s ease;
+}
+
+.inventory-overview-card [data-bs-toggle="collapse"][aria-expanded="true"] i.bi-chevron-right {
+    transform: rotate(90deg);
+}
+
+/* Compact list group items */
+.inventory-overview-card .list-group-item {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inventory-overview-card .list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* ==========================================================================
    RESPONSIVE ADJUSTMENTS
    ========================================================================== */
 
