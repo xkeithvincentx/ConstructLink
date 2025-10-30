@@ -17,6 +17,12 @@ export function initBatchBorrowingApp(config) {
         csrfToken
     } = config;
 
+    // Define constants
+    const MAX_BORROWER_SUGGESTIONS = 10;
+    const MIN_QUANTITY = 1;
+    const MAX_ITEMS_PER_BATCH = 50;
+    const DEFAULT_RETURN_DAYS = 7;
+
     return {
         // Equipment data
         categories: categories,
@@ -26,6 +32,9 @@ export function initBatchBorrowingApp(config) {
 
         // Cart
         cart: [],
+
+        // Constants exposed to template
+        MIN_QUANTITY,
 
         // Form data
         formData: {
@@ -79,16 +88,16 @@ export function initBatchBorrowingApp(config) {
                         borrowerPart.includes(queryPart) || queryPart.includes(borrowerPart)
                     )
                 );
-            }).slice(0, 10); // Show up to 10 suggestions
+            }).slice(0, MAX_BORROWER_SUGGESTIONS);
         },
 
         // INITIALIZATION
         init() {
             this.filterEquipment();
 
-            // Set default return date to 7 days from now
+            // Set default return date using constant
             const defaultDate = new Date();
-            defaultDate.setDate(defaultDate.getDate() + 7);
+            defaultDate.setDate(defaultDate.getDate() + DEFAULT_RETURN_DAYS);
             this.formData.expected_return = defaultDate.toISOString().split('T')[0];
         },
 
@@ -142,9 +151,11 @@ export function initBatchBorrowingApp(config) {
             if (index >= 0) {
                 this.cart.splice(index, 1);
             } else {
+                // Set initial quantity to 1, store available_quantity
                 this.cart.push({
                     ...item,
-                    quantity: 1
+                    quantity: 1,
+                    available_quantity: item.available_quantity || 1
                 });
             }
         },
@@ -161,9 +172,11 @@ export function initBatchBorrowingApp(config) {
             if (item) {
                 // Serialized items must always be quantity 1 (unique items)
                 if (item.serial_number) {
-                    item.quantity = 1;
+                    item.quantity = MIN_QUANTITY;
                 } else {
-                    item.quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
+                    // Non-serialized items: respect available_quantity from database
+                    const maxAllowed = item.available_quantity || MIN_QUANTITY;
+                    item.quantity = Math.max(MIN_QUANTITY, Math.min(maxAllowed, parseInt(quantity) || MIN_QUANTITY));
                 }
             }
         },

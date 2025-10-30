@@ -87,6 +87,15 @@ return [
 
         // Require condition notes on return
         'require_condition_notes' => false,
+
+        // Equipment condition options for returns
+        'condition_options' => [
+            'Good' => 'Good',
+            'Fair' => 'Fair',
+            'Poor' => 'Poor',
+            'Damaged' => 'Damaged',
+            'Lost' => 'Lost',
+        ],
     ],
 
     /**

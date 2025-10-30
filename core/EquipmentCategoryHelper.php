@@ -68,7 +68,7 @@ class EquipmentCategoryHelper {
         try {
             $db = Database::getInstance()->getConnection();
 
-            // Build query
+            // Build query - include available_quantity for non-serialized items
             $sql = "
                 SELECT
                     a.id,
@@ -79,6 +79,7 @@ class EquipmentCategoryHelper {
                     a.acquisition_cost,
                     a.status,
                     a.current_condition,
+                    a.available_quantity,
                     c.id as category_id,
                     c.name as category_name,
                     c.iso_code,
@@ -105,14 +106,31 @@ class EquipmentCategoryHelper {
 
             // Exclude items currently borrowed or in pending batches
             // But allow items that are fully returned (quantity = quantity_returned) or have status 'Returned'
+            // Use parameterized queries for security
+            $excludedStatuses = [
+                'Pending Verification',
+                'Pending Approval',
+                'Approved',
+                'Released',
+                'Borrowed',
+                'Partially Returned'
+            ];
+
+            // Create placeholders for parameterized query
+            $statusPlaceholders = implode(',', array_fill(0, count($excludedStatuses), '?'));
+
             $sql .= " AND a.id NOT IN (
                 SELECT bt.asset_id
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                WHERE btb.status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Released', 'Borrowed', 'Partially Returned')
-                  AND bt.status != 'Returned'
+                WHERE btb.status IN ($statusPlaceholders)
+                  AND bt.status != ?
                   AND (bt.quantity > bt.quantity_returned OR bt.quantity_returned IS NULL)
             )";
+
+            // Add excluded statuses to params
+            $params = array_merge($params, $excludedStatuses);
+            $params[] = 'Returned'; // For bt.status != ?
 
             $sql .= " ORDER BY c.name, et.name, a.name";
 

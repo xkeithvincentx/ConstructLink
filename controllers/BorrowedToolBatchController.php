@@ -154,23 +154,150 @@ class BorrowedToolBatchController {
         try {
             CSRFProtection::validateRequest();
 
-            // Parse batch data
-            $batchData = [
-                'borrower_name' => Validator::sanitize($_POST['borrower_name'] ?? ''),
-                'borrower_contact' => Validator::sanitize($_POST['borrower_contact'] ?? ''),
-                'expected_return' => $_POST['expected_return'] ?? '',
-                'purpose' => Validator::sanitize($_POST['purpose'] ?? ''),
-                'issued_by' => $currentUser['id']
-            ];
+            // Rate limiting check (max 5 batch creations per minute per session)
+            $rateLimitKey = 'batch_create_rate_limit_' . session_id();
+            $rateLimitWindow = 60; // 1 minute window
+            $maxRequests = 5; // Max 5 batch creations per minute
 
-            // Parse items
+            if (!isset($_SESSION[$rateLimitKey])) {
+                $_SESSION[$rateLimitKey] = [];
+            }
+
+            // Clean old timestamps outside the rate limit window
+            $now = time();
+            $_SESSION[$rateLimitKey] = array_filter(
+                $_SESSION[$rateLimitKey],
+                function($timestamp) use ($now, $rateLimitWindow) {
+                    return ($now - $timestamp) < $rateLimitWindow;
+                }
+            );
+
+            // Check if rate limit exceeded
+            if (count($_SESSION[$rateLimitKey]) >= $maxRequests) {
+                http_response_code(429);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Too many requests. Please wait a moment and try again.'
+                ]);
+                return;
+            }
+
+            // Add current timestamp to rate limit tracker
+            $_SESSION[$rateLimitKey][] = $now;
+
+            // Validate borrower name
+            $borrowerName = Validator::sanitize($_POST['borrower_name'] ?? '');
+            if (empty($borrowerName) || strlen($borrowerName) < 3) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Borrower name must be at least 3 characters']);
+                return;
+            }
+
+            // Validate borrower name format (letters, spaces, commas, periods, hyphens only)
+            if (!preg_match('/^[a-zA-Z\s,.\-]+$/', $borrowerName)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Borrower name contains invalid characters']);
+                return;
+            }
+
+            // Validate expected return date
+            $expectedReturn = $_POST['expected_return'] ?? '';
+            if (empty($expectedReturn)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Expected return date is required']);
+                return;
+            }
+
+            $returnDate = DateTime::createFromFormat('Y-m-d', $expectedReturn);
+            $today = new DateTime();
+            $today->setTime(0, 0, 0);
+
+            if (!$returnDate || $returnDate <= $today) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Return date must be in the future']);
+                return;
+            }
+
+            // Check reasonable date range (max 1 year from today)
+            $maxDate = (clone $today)->modify('+1 year');
+            if ($returnDate > $maxDate) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Return date cannot exceed 1 year from today']);
+                return;
+            }
+
+            // Validate contact if provided
+            $borrowerContact = Validator::sanitize($_POST['borrower_contact'] ?? '');
+            if (!empty($borrowerContact) && strlen($borrowerContact) < 7) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Contact information must be at least 7 characters']);
+                return;
+            }
+
+            // Parse items JSON
             $itemsJson = $_POST['items'] ?? '[]';
             $items = json_decode($itemsJson, true);
 
-            if (empty($items)) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid items data format']);
+                return;
+            }
+
+            if (empty($items) || !is_array($items)) {
+                http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'No items selected']);
                 return;
             }
+
+            // Validate item limit (prevent abuse - max 50 items per batch)
+            if (count($items) > 50) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Cannot borrow more than 50 items in one batch']);
+                return;
+            }
+
+            // Validate each item structure and availability
+            foreach ($items as $item) {
+                if (!isset($item['asset_id']) || !is_numeric($item['asset_id']) || $item['asset_id'] <= 0) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => 'Invalid asset ID in items']);
+                    return;
+                }
+
+                if (!isset($item['quantity']) || !is_numeric($item['quantity']) || $item['quantity'] < 1) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => 'Invalid quantity for item (must be at least 1)']);
+                    return;
+                }
+
+                // Validate against available_quantity from database
+                $asset = $this->assetModel->getAsset($item['asset_id']);
+                if (!$asset) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => 'Asset not found: ' . $item['asset_id']]);
+                    return;
+                }
+
+                // Check if requested quantity exceeds available quantity
+                if ($item['quantity'] > $asset['available_quantity']) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => "Cannot borrow {$item['quantity']} units of '{$asset['name']}' - only {$asset['available_quantity']} available"
+                    ]);
+                    return;
+                }
+            }
+
+            // Prepare batch data
+            $batchData = [
+                'borrower_name' => $borrowerName,
+                'borrower_contact' => $borrowerContact,
+                'expected_return' => $expectedReturn,
+                'purpose' => Validator::sanitize($_POST['purpose'] ?? ''),
+                'issued_by' => $currentUser['id']
+            ];
 
             // Create batch
             $result = $this->batchModel->createBatch($batchData, $items);
@@ -371,10 +498,16 @@ class BorrowedToolBatchController {
                     $borrowedToolId = isset($itemIds[$index]) ? (int)$itemIds[$index] : 0;
 
                     if ($borrowedToolId && isset($returnData['items'][$borrowedToolId])) {
+                        // Sanitize and validate notes length (max 500 characters)
+                        $note = Validator::sanitize($itemNotes[$index] ?? '');
+                        if (strlen($note) > 500) {
+                            $note = substr($note, 0, 500);
+                        }
+
                         $returnData['items'][$borrowedToolId] = [
                             'quantity' => (int)$qty,
                             'condition' => Validator::sanitize($conditions[$index] ?? 'Good'),
-                            'notes' => Validator::sanitize($itemNotes[$index] ?? '')
+                            'notes' => $note
                         ];
                     }
                 }
