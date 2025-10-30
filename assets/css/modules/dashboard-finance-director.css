@@ -316,6 +316,68 @@
 }
 
 /* ========================================
+   EQUIPMENT TYPE CATEGORY CARDS
+   ======================================== */
+
+/* Smooth chevron rotation for equipment type expand buttons */
+[data-bs-toggle="collapse"] .bi-chevron-down {
+    transition: transform 0.2s ease-in-out;
+}
+
+[data-bs-toggle="collapse"]:not(.collapsed) .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Category card styling */
+.inventory-category-card {
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.inventory-category-card:hover {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile responsiveness for category cards */
+@media (max-width: 767.98px) {
+    /* Stack metrics vertically on very small screens if needed */
+    .inventory-category-card .card-header h6 {
+        font-size: 1rem;
+    }
+
+    .inventory-category-card .badge {
+        font-size: 0.75rem;
+    }
+}
+
+/* ========================================
+   EQUIPMENT TYPE CARDS (Within Categories)
+   ======================================== */
+
+/* Smooth chevron rotation for collapse buttons */
+[data-bs-toggle="collapse"] .bi-chevron-right {
+    transition: transform 0.2s ease-in-out;
+}
+
+[data-bs-toggle="collapse"]:not(.collapsed) .bi-chevron-right {
+    transform: rotate(90deg);
+}
+
+/* Compact alert for equipment type cards */
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Equipment type card hover effect */
+.equipment-type-card {
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.equipment-type-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* ========================================
    PRINT STYLES
    ======================================== */
 

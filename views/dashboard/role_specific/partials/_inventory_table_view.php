@@ -194,39 +194,3 @@ foreach ($projects as $project) {
         <?php endif; ?>
     </div>
 </div>
-
-<script>
-// Initialize DataTable with export functionality
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof DataTableHelper !== 'undefined' && $('#inventory-table').length) {
-        // Initialize with export buttons
-        const table = DataTableHelper.initWithExport('#inventory-table', ['copy', 'excel', 'csv', 'print'], {
-            pageLength: 50,
-            order: [[7, 'asc'], [0, 'asc'], [1, 'asc']], // Sort by Status (critical first), then Project, then Category
-            columnDefs: [
-                { targets: [3, 4, 5, 6, 7, 8], className: 'text-center' },
-                { targets: 8, orderable: false, searchable: false }
-            ],
-            rowCallback: function(row, data, index) {
-                // Add aria-label to row for screen readers
-                const urgency = $(row).attr('data-urgency');
-                if (urgency === 'critical') {
-                    $(row).attr('aria-label', 'Critical shortage row');
-                } else if (urgency === 'warning') {
-                    $(row).attr('aria-label', 'Low stock warning row');
-                }
-            }
-        });
-
-        // Add custom search by urgency
-        $('#urgency-filter').on('change', function() {
-            const urgency = $(this).val();
-            if (urgency) {
-                table.column(7).search(urgency, true, false).draw();
-            } else {
-                table.column(7).search('').draw();
-            }
-        });
-    }
-});
-</script>
