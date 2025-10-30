@@ -8,6 +8,11 @@
  * - See controllers/AssetController.php header for full mapping documentation
  */
 
+// Load required helper classes
+require_once APP_ROOT . '/helpers/AssetStatus.php';
+require_once APP_ROOT . '/helpers/AssetWorkflowStatus.php';
+require_once APP_ROOT . '/helpers/UnitHelper.php';
+
 // Start output buffering to capture content
 ob_start();
 

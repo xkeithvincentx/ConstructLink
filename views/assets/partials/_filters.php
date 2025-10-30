@@ -42,13 +42,11 @@
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select form-select-sm" id="status" name="status">
                     <option value="">All Statuses</option>
-                    <option value="available" <?= ($_GET['status'] ?? '') === 'available' ? 'selected' : '' ?>>Available</option>
-                    <option value="in_use" <?= ($_GET['status'] ?? '') === 'in_use' ? 'selected' : '' ?>>In Use</option>
-                    <option value="borrowed" <?= ($_GET['status'] ?? '') === 'borrowed' ? 'selected' : '' ?>>Borrowed</option>
-                    <option value="in_transit" <?= ($_GET['status'] ?? '') === 'in_transit' ? 'selected' : '' ?>>In Transit</option>
-                    <option value="under_maintenance" <?= ($_GET['status'] ?? '') === 'under_maintenance' ? 'selected' : '' ?>>Under Maintenance</option>
-                    <option value="retired" <?= ($_GET['status'] ?? '') === 'retired' ? 'selected' : '' ?>>Retired</option>
-                    <option value="disposed" <?= ($_GET['status'] ?? '') === 'disposed' ? 'selected' : '' ?>>Disposed</option>
+                    <?php foreach (AssetStatus::getStatusesForDropdown() as $value => $label): ?>
+                        <option value="<?= $value ?>" <?= ($_GET['status'] ?? '') === $value ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($label) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
@@ -110,11 +108,11 @@
                 <label for="workflow_status" class="form-label">Workflow Status</label>
                 <select class="form-select form-select-sm" id="workflow_status" name="workflow_status">
                     <option value="">All Workflow Status</option>
-                    <option value="draft" <?= ($_GET['workflow_status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
-                    <option value="pending_verification" <?= ($_GET['workflow_status'] ?? '') === 'pending_verification' ? 'selected' : '' ?>>Pending Verification</option>
-                    <option value="pending_authorization" <?= ($_GET['workflow_status'] ?? '') === 'pending_authorization' ? 'selected' : '' ?>>Pending Authorization</option>
-                    <option value="approved" <?= ($_GET['workflow_status'] ?? '') === 'approved' ? 'selected' : '' ?>>Approved</option>
-                    <option value="rejected" <?= ($_GET['workflow_status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                    <?php foreach (AssetWorkflowStatus::getStatusesForDropdown() as $value => $label): ?>
+                        <option value="<?= $value ?>" <?= ($_GET['workflow_status'] ?? '') === $value ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($label) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <?php endif; ?>
@@ -165,13 +163,11 @@
                     <label for="mobile_status" class="form-label">Status</label>
                     <select class="form-select" id="mobile_status" name="status">
                         <option value="">All Statuses</option>
-                        <option value="available" <?= ($_GET['status'] ?? '') === 'available' ? 'selected' : '' ?>>Available</option>
-                        <option value="in_use" <?= ($_GET['status'] ?? '') === 'in_use' ? 'selected' : '' ?>>In Use</option>
-                        <option value="borrowed" <?= ($_GET['status'] ?? '') === 'borrowed' ? 'selected' : '' ?>>Borrowed</option>
-                        <option value="in_transit" <?= ($_GET['status'] ?? '') === 'in_transit' ? 'selected' : '' ?>>In Transit</option>
-                        <option value="under_maintenance" <?= ($_GET['status'] ?? '') === 'under_maintenance' ? 'selected' : '' ?>>Under Maintenance</option>
-                        <option value="retired" <?= ($_GET['status'] ?? '') === 'retired' ? 'selected' : '' ?>>Retired</option>
-                        <option value="disposed" <?= ($_GET['status'] ?? '') === 'disposed' ? 'selected' : '' ?>>Disposed</option>
+                        <?php foreach (AssetStatus::getStatusesForDropdown() as $value => $label): ?>
+                            <option value="<?= $value ?>" <?= ($_GET['status'] ?? '') === $value ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($label) ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -233,11 +229,11 @@
                     <label for="mobile_workflow_status" class="form-label">Workflow Status</label>
                     <select class="form-select" id="mobile_workflow_status" name="workflow_status">
                         <option value="">All Workflow Status</option>
-                        <option value="draft" <?= ($_GET['workflow_status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
-                        <option value="pending_verification" <?= ($_GET['workflow_status'] ?? '') === 'pending_verification' ? 'selected' : '' ?>>Pending Verification</option>
-                        <option value="pending_authorization" <?= ($_GET['workflow_status'] ?? '') === 'pending_authorization' ? 'selected' : '' ?>>Pending Authorization</option>
-                        <option value="approved" <?= ($_GET['workflow_status'] ?? '') === 'approved' ? 'selected' : '' ?>>Approved</option>
-                        <option value="rejected" <?= ($_GET['workflow_status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                        <?php foreach (AssetWorkflowStatus::getStatusesForDropdown() as $value => $label): ?>
+                            <option value="<?= $value ?>" <?= ($_GET['workflow_status'] ?? '') === $value ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($label) ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <?php endif; ?>

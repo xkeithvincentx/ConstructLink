@@ -3,42 +3,6 @@
  * Asset List Partial
  * Displays asset table/cards with pagination (mobile + desktop views)
  */
-
-// Helper function to properly pluralize units
-function pluralizeUnit($quantity, $unit) {
-    $quantity = (int)$quantity;
-
-    // Units that don't change in plural (mass nouns)
-    $unchangeable = ['kg', 'lbs', 'liters', 'gallons', 'meters', 'm', 'ft'];
-    if (in_array(strtolower($unit), $unchangeable)) {
-        return $unit;
-    }
-
-    // Special plural forms
-    $specialPlurals = [
-        'pc' => 'pcs',
-        'piece' => 'pieces',
-        'box' => 'boxes',
-        'bag' => 'bags',
-        'roll' => 'rolls',
-        'bottle' => 'bottles',
-        'can' => 'cans',
-        'pack' => 'packs',
-        'set' => 'sets',
-        'unit' => 'units'
-    ];
-
-    $lowerUnit = strtolower($unit);
-
-    // Return singular or plural based on quantity
-    if ($quantity == 1) {
-        // For quantity of 1, use singular
-        return array_search($lowerUnit, array_map('strtolower', $specialPlurals)) ?: $unit;
-    } else {
-        // For quantity > 1, use plural
-        return $specialPlurals[$lowerUnit] ?? $unit;
-    }
-}
 ?>
 
 
@@ -89,17 +53,8 @@ function pluralizeUnit($quantity, $unit) {
                         $displayStatus = $workflowStatus === 'pending_verification' ? 'Pending Verification' : 'Pending Authorization';
                         $statusClass = 'bg-warning text-dark';
                     else:
-                        $statusClasses = [
-                            'available' => 'bg-success',
-                            'in_use' => 'bg-primary',
-                            'borrowed' => 'bg-info',
-                            'in_transit' => 'bg-warning',
-                            'under_maintenance' => 'bg-secondary',
-                            'retired' => 'bg-dark',
-                            'disposed' => 'bg-danger'
-                        ];
-                        $statusClass = $statusClasses[$status] ?? 'bg-secondary';
-                        $displayStatus = ucfirst(str_replace('_', ' ', $status));
+                        $statusClass = 'bg-' . AssetStatus::getStatusBadgeColor($status);
+                        $displayStatus = AssetStatus::getDisplayName($status);
                     endif;
                     ?>
                     <div class="card mb-3">
@@ -142,7 +97,7 @@ function pluralizeUnit($quantity, $unit) {
                             <div class="mb-2">
                                 <small class="text-muted">Quantity: </small>
                                 <strong><?= number_format($availableQuantity) ?> / <?= number_format($quantity) ?></strong>
-                                <small class="text-muted"><?= htmlspecialchars(pluralizeUnit($quantity, $asset['unit'] ?? 'pc')) ?></small>
+                                <small class="text-muted"><?= htmlspecialchars(UnitHelper::pluralize($quantity, $asset['unit'] ?? 'pc')) ?></small>
                                 <?php if ($isConsumable && $availableQuantity == 0): ?>
                                     <span class="badge bg-danger ms-1">Out of stock</span>
                                 <?php elseif ($isConsumable && $availableQuantity <= ($quantity * 0.2)): ?>
@@ -326,10 +281,10 @@ function pluralizeUnit($quantity, $unit) {
                                             </div>
                                             <div class="text-center">
                                                 <small class="text-muted d-block d-sm-none">
-                                                    <?= htmlspecialchars(pluralizeUnit($quantity, $unit)) ?>
+                                                    <?= htmlspecialchars(UnitHelper::pluralize($quantity, $unit)) ?>
                                                 </small>
                                                 <small class="text-muted d-none d-sm-block">
-                                                    Available / Total <?= htmlspecialchars(pluralizeUnit($quantity, $unit)) ?>
+                                                    Available / Total <?= htmlspecialchars(UnitHelper::pluralize($quantity, $unit)) ?>
                                                 </small>
                                                 <?php if ($availableQuantity == 0): ?>
                                                     <small class="text-danger">
@@ -349,7 +304,7 @@ function pluralizeUnit($quantity, $unit) {
                                         </div>
                                     <?php else: ?>
                                         <div class="text-center">
-                                            <span class="badge bg-light text-dark">1 <?= htmlspecialchars(pluralizeUnit(1, $unit)) ?></span>
+                                            <span class="badge bg-light text-dark">1 <?= htmlspecialchars(UnitHelper::pluralize(1, $unit)) ?></span>
                                             <small class="text-muted d-block d-none d-sm-block">Individual item</small>
                                         </div>
                                     <?php endif; ?>
@@ -365,16 +320,8 @@ function pluralizeUnit($quantity, $unit) {
                                         $displayStatus = $workflowStatus === 'pending_verification' ? 'Pending Verification' : 'Pending Authorization';
                                         $statusClass = 'bg-warning text-dark';
                                     else:
-                                        $statusClasses = [
-                                            'available' => 'bg-success',
-                                            'in_use' => 'bg-primary',
-                                            'borrowed' => 'bg-info',
-                                            'under_maintenance' => 'bg-warning',
-                                            'retired' => 'bg-secondary',
-                                            'disposed' => 'bg-dark'
-                                        ];
-                                        $statusClass = $statusClasses[$status] ?? 'bg-secondary';
-                                        $displayStatus = ucfirst(str_replace('_', ' ', $status));
+                                        $statusClass = 'bg-' . AssetStatus::getStatusBadgeColor($status);
+                                        $displayStatus = AssetStatus::getDisplayName($status);
                                     endif;
                                     ?>
                                     <span class="badge <?= $statusClass ?>">
