@@ -377,44 +377,460 @@ class DashboardModel extends BaseModel {
     }
     
     /**
+     * Get inventory overview by category for Finance Director
+     *
+     * Provides bird's eye view of inventory across all project sites to support
+     * purchase vs. transfer decisions for procurement requests.
+     *
+     * @return array Array of categories with inventory breakdown by status and project
+     */
+    public function getInventoryOverviewByCategory() {
+        try {
+            $sql = "
+                SELECT
+                    c.id as category_id,
+                    c.name as category_name,
+                    c.is_consumable,
+                    COUNT(DISTINCT a.id) as total_count,
+                    SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                    SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity_consumables,
+                    SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
+                    SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count,
+                    SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as total_value,
+                    COALESCE(c.low_stock_threshold, 5) as low_stock_threshold
+                FROM categories c
+                LEFT JOIN assets a ON c.id = a.category_id
+                WHERE a.status NOT IN ('retired', 'disposed', 'lost') OR a.id IS NULL
+                GROUP BY c.id, c.name, c.is_consumable, c.low_stock_threshold
+                HAVING total_count > 0 OR c.id IN (
+                    SELECT DISTINCT category_id FROM requests WHERE status IN ('Pending', 'Submitted', 'Reviewed')
+                )
+                ORDER BY
+                    CASE
+                        WHEN available_count = 0 THEN 1
+                        WHEN c.is_consumable = 1 AND available_quantity_consumables <= COALESCE(c.low_stock_threshold, 5) THEN 2
+                        WHEN available_count <= 3 THEN 3
+                        ELSE 4
+                    END,
+                    c.name ASC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // For each category, get project site breakdown
+            foreach ($categories as &$category) {
+                $projectSql = "
+                    SELECT
+                        p.id as project_id,
+                        p.name as project_name,
+                        COUNT(DISTINCT a.id) as asset_count,
+                        SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                        SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity
+                    FROM projects p
+                    INNER JOIN assets a ON p.id = a.project_id
+                    INNER JOIN categories c ON a.category_id = c.id
+                    WHERE a.category_id = ?
+                        AND a.status NOT IN ('retired', 'disposed', 'lost')
+                        AND p.is_active = 1
+                    GROUP BY p.id, p.name
+                    HAVING asset_count > 0
+                    ORDER BY available_count DESC, p.name ASC
+                ";
+
+                $projectStmt = $this->db->prepare($projectSql);
+                $projectStmt->execute([$category['category_id']]);
+                $category['projects'] = $projectStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Calculate availability percentage
+                $category['availability_percentage'] = $category['total_count'] > 0
+                    ? round(($category['available_count'] / $category['total_count']) * 100, 1)
+                    : 0;
+
+                // Determine urgency level for procurement decisions
+                if ($category['available_count'] == 0) {
+                    $category['urgency'] = 'critical';
+                    $category['urgency_label'] = 'Out of Stock';
+                } elseif ($category['is_consumable'] == 1 && $category['available_quantity_consumables'] <= $category['low_stock_threshold']) {
+                    $category['urgency'] = 'warning';
+                    $category['urgency_label'] = 'Low Stock';
+                } elseif ($category['available_count'] <= 3) {
+                    $category['urgency'] = 'warning';
+                    $category['urgency_label'] = 'Limited Availability';
+                } else {
+                    $category['urgency'] = 'normal';
+                    $category['urgency_label'] = 'Adequate Stock';
+                }
+            }
+
+            return $categories;
+
+        } catch (Exception $e) {
+            error_log("Inventory overview error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get inventory by equipment type for Finance Director
+     *
+     * Provides granular equipment type breakdown within each category to answer
+     * executive questions like "Do we have enough drills?" instead of just
+     * "Do we have enough power tools?"
+     *
+     * @return array Nested array: categories → equipment types → status counts → projects
+     */
+    public function getInventoryByEquipmentType() {
+        try {
+            $sql = "
+                SELECT
+                    c.id as category_id,
+                    c.name as category_name,
+                    c.is_consumable,
+                    et.id as equipment_type_id,
+                    et.name as equipment_type_name,
+                    COUNT(DISTINCT a.id) as total_count,
+                    SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                    SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity_consumables,
+                    SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
+                    SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count,
+                    SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as total_value,
+                    COALESCE(c.low_stock_threshold, 3) as low_stock_threshold
+                FROM categories c
+                INNER JOIN equipment_types et ON c.id = et.category_id AND et.is_active = 1
+                LEFT JOIN assets a ON et.id = a.equipment_type_id
+                WHERE (a.id IS NULL OR a.status NOT IN ('retired', 'disposed', 'lost'))
+                GROUP BY c.id, c.name, c.is_consumable, et.id, et.name, c.low_stock_threshold
+                HAVING total_count > 0
+                ORDER BY c.name ASC, et.name ASC
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Group by category with nested equipment types
+            $categorized = [];
+            foreach ($results as $row) {
+                $categoryId = $row['category_id'];
+
+                // Initialize category if not exists
+                if (!isset($categorized[$categoryId])) {
+                    $categorized[$categoryId] = [
+                        'category_id' => $categoryId,
+                        'category_name' => $row['category_name'],
+                        'is_consumable' => $row['is_consumable'],
+                        'total_count' => 0,
+                        'available_count' => 0,
+                        'in_use_count' => 0,
+                        'maintenance_count' => 0,
+                        'total_value' => 0,
+                        'equipment_types' => []
+                    ];
+                }
+
+                // Calculate equipment type availability percentage
+                $availabilityPercentage = $row['total_count'] > 0
+                    ? round(($row['available_count'] / $row['total_count']) * 100, 1)
+                    : 0;
+
+                // Determine urgency per equipment type
+                $urgency = 'normal';
+                $urgencyLabel = 'Adequate Stock';
+                if ($row['available_count'] == 0) {
+                    $urgency = 'critical';
+                    $urgencyLabel = 'Out of Stock';
+                } elseif ($row['is_consumable'] == 1 && $row['available_quantity_consumables'] <= $row['low_stock_threshold']) {
+                    $urgency = 'warning';
+                    $urgencyLabel = 'Low Stock';
+                } elseif ($row['available_count'] <= 2) {
+                    $urgency = 'warning';
+                    $urgencyLabel = 'Limited Availability';
+                }
+
+                // Get project distribution for this equipment type
+                $projectSql = "
+                    SELECT
+                        p.id as project_id,
+                        p.name as project_name,
+                        COUNT(DISTINCT a.id) as asset_count,
+                        SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                        SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity
+                    FROM projects p
+                    INNER JOIN assets a ON p.id = a.project_id
+                    INNER JOIN categories c ON a.category_id = c.id
+                    WHERE a.equipment_type_id = ?
+                        AND a.status NOT IN ('retired', 'disposed', 'lost')
+                        AND p.is_active = 1
+                    GROUP BY p.id, p.name
+                    HAVING asset_count > 0
+                    ORDER BY available_count DESC, p.name ASC
+                ";
+
+                $projectStmt = $this->db->prepare($projectSql);
+                $projectStmt->execute([$row['equipment_type_id']]);
+                $projects = $projectStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Add equipment type to category
+                $categorized[$categoryId]['equipment_types'][] = [
+                    'equipment_type_id' => $row['equipment_type_id'],
+                    'equipment_type_name' => $row['equipment_type_name'],
+                    'total_count' => $row['total_count'],
+                    'available_count' => $row['available_count'],
+                    'in_use_count' => $row['in_use_count'],
+                    'maintenance_count' => $row['maintenance_count'],
+                    'total_value' => $row['total_value'],
+                    'availability_percentage' => $availabilityPercentage,
+                    'urgency' => $urgency,
+                    'urgency_label' => $urgencyLabel,
+                    'projects' => $projects
+                ];
+
+                // Aggregate category totals
+                $categorized[$categoryId]['total_count'] += $row['total_count'];
+                $categorized[$categoryId]['available_count'] += $row['available_count'];
+                $categorized[$categoryId]['in_use_count'] += $row['in_use_count'];
+                $categorized[$categoryId]['maintenance_count'] += $row['maintenance_count'];
+                $categorized[$categoryId]['total_value'] += $row['total_value'];
+            }
+
+            // Calculate category-level metrics and urgency
+            foreach ($categorized as &$category) {
+                $category['availability_percentage'] = $category['total_count'] > 0
+                    ? round(($category['available_count'] / $category['total_count']) * 100, 1)
+                    : 0;
+
+                // Category urgency = worst urgency among equipment types
+                $criticalCount = 0;
+                $warningCount = 0;
+                foreach ($category['equipment_types'] as $equipType) {
+                    if ($equipType['urgency'] === 'critical') {
+                        $criticalCount++;
+                    } elseif ($equipType['urgency'] === 'warning') {
+                        $warningCount++;
+                    }
+                }
+
+                if ($criticalCount > 0) {
+                    $category['urgency'] = 'critical';
+                    $category['urgency_label'] = $criticalCount . ' type(s) out of stock';
+                } elseif ($warningCount > 0) {
+                    $category['urgency'] = 'warning';
+                    $category['urgency_label'] = $warningCount . ' type(s) low stock';
+                } else {
+                    $category['urgency'] = 'normal';
+                    $category['urgency_label'] = 'Adequate Stock';
+                }
+
+                // Sort equipment types by urgency (critical first)
+                usort($category['equipment_types'], function($a, $b) {
+                    $urgencyOrder = ['critical' => 0, 'warning' => 1, 'normal' => 2];
+                    $orderA = $urgencyOrder[$a['urgency']] ?? 3;
+                    $orderB = $urgencyOrder[$b['urgency']] ?? 3;
+                    if ($orderA !== $orderB) {
+                        return $orderA - $orderB;
+                    }
+                    return strcmp($a['equipment_type_name'], $b['equipment_type_name']);
+                });
+            }
+
+            // Convert to indexed array and sort by category urgency
+            $finalResult = array_values($categorized);
+            usort($finalResult, function($a, $b) {
+                $urgencyOrder = ['critical' => 0, 'warning' => 1, 'normal' => 2];
+                $orderA = $urgencyOrder[$a['urgency']] ?? 3;
+                $orderB = $urgencyOrder[$b['urgency']] ?? 3;
+                if ($orderA !== $orderB) {
+                    return $orderA - $orderB;
+                }
+                return strcmp($a['category_name'], $b['category_name']);
+            });
+
+            return $finalResult;
+
+        } catch (Exception $e) {
+            error_log("Inventory by equipment type error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get inventory organized by PROJECT SITE first (Finance Director view)
+     *
+     * This method supports transfer vs. purchase decisions by showing:
+     * "What does JCLDS project have?" instead of "What power tools do we have globally?"
+     *
+     * Finance Directors think PROJECT-FIRST when answering procurement requests from
+     * Project Managers. This structure enables questions like:
+     * - "Can JCLDS transfer drills from East Residences instead of purchasing?"
+     * - "Which project site has extra grinders?"
+     *
+     * @return array Projects with nested categories → equipment types → status counts
+     */
+    public function getInventoryByProjectSite() {
+        try {
+            // Step 1: Get all active projects with asset counts
+            $projectSql = "
+                SELECT
+                    p.id as project_id,
+                    p.name as project_name,
+                    p.is_active,
+                    COUNT(DISTINCT a.id) as total_assets,
+                    SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_assets,
+                    SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_assets,
+                    SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_assets
+                FROM projects p
+                LEFT JOIN assets a ON p.id = a.project_id
+                    AND a.status NOT IN ('retired', 'disposed', 'lost')
+                WHERE p.is_active = 1
+                GROUP BY p.id, p.name, p.is_active
+                HAVING total_assets > 0
+                ORDER BY p.name ASC
+            ";
+
+            $stmt = $this->db->prepare($projectSql);
+            $stmt->execute();
+            $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Step 2: For each project, get categories with equipment types
+            foreach ($projects as &$project) {
+                $categorySql = "
+                    SELECT
+                        c.id as category_id,
+                        c.name as category_name,
+                        c.is_consumable,
+                        COUNT(DISTINCT a.id) as total_count,
+                        SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                        SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
+                        SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count
+                    FROM categories c
+                    INNER JOIN assets a ON c.id = a.category_id
+                    WHERE a.project_id = ?
+                        AND a.status NOT IN ('retired', 'disposed', 'lost')
+                    GROUP BY c.id, c.name, c.is_consumable
+                    HAVING total_count > 0
+                    ORDER BY c.name ASC
+                ";
+
+                $categoryStmt = $this->db->prepare($categorySql);
+                $categoryStmt->execute([$project['project_id']]);
+                $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Step 3: For each category, get equipment types
+                foreach ($categories as &$category) {
+                    $equipmentTypeSql = "
+                        SELECT
+                            et.id as equipment_type_id,
+                            et.name as equipment_type_name,
+                            COUNT(DISTINCT a.id) as total_count,
+                            SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
+                            SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
+                            SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count
+                        FROM equipment_types et
+                        INNER JOIN assets a ON et.id = a.equipment_type_id
+                        WHERE a.project_id = ?
+                            AND a.category_id = ?
+                            AND a.status NOT IN ('retired', 'disposed', 'lost')
+                            AND et.is_active = 1
+                        GROUP BY et.id, et.name
+                        HAVING total_count > 0
+                        ORDER BY et.name ASC
+                    ";
+
+                    $equipmentTypeStmt = $this->db->prepare($equipmentTypeSql);
+                    $equipmentTypeStmt->execute([$project['project_id'], $category['category_id']]);
+                    $equipmentTypes = $equipmentTypeStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    // Add urgency to each equipment type
+                    foreach ($equipmentTypes as &$equipType) {
+                        if ($equipType['available_count'] == 0) {
+                            $equipType['urgency'] = 'critical';
+                            $equipType['urgency_label'] = 'Out of Stock';
+                        } elseif ($equipType['available_count'] <= 2) {
+                            $equipType['urgency'] = 'warning';
+                            $equipType['urgency_label'] = 'Low Stock';
+                        } else {
+                            $equipType['urgency'] = 'normal';
+                            $equipType['urgency_label'] = 'Adequate Stock';
+                        }
+                    }
+
+                    $category['equipment_types'] = $equipmentTypes;
+                }
+
+                $project['categories'] = $categories;
+
+                // Determine project-level urgency (worst urgency among all equipment types)
+                $project['has_critical'] = false;
+                $project['has_warning'] = false;
+                foreach ($categories as $cat) {
+                    foreach ($cat['equipment_types'] as $equipType) {
+                        if ($equipType['urgency'] === 'critical') {
+                            $project['has_critical'] = true;
+                        } elseif ($equipType['urgency'] === 'warning') {
+                            $project['has_warning'] = true;
+                        }
+                    }
+                }
+            }
+
+            // Step 4: Sort projects (critical shortages first, then warnings, then adequate)
+            usort($projects, function($a, $b) {
+                if ($a['has_critical'] && !$b['has_critical']) return -1;
+                if (!$a['has_critical'] && $b['has_critical']) return 1;
+                if ($a['has_warning'] && !$b['has_warning']) return -1;
+                if (!$a['has_warning'] && $b['has_warning']) return 1;
+                return strcmp($a['project_name'], $b['project_name']);
+            });
+
+            return $projects;
+
+        } catch (Exception $e) {
+            error_log("Inventory by project site error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Get finance-specific statistics
      */
     private function getFinanceStats() {
         try {
             // Asset value statistics
             $assetSql = "
-                SELECT 
+                SELECT
                     SUM(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as total_asset_value,
                     AVG(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as avg_asset_value,
                     COUNT(CASE WHEN acquisition_cost > 10000 THEN 1 END) as high_value_assets
                 FROM assets
             ";
-            
+
             $stmt = $this->db->prepare($assetSql);
             $stmt->execute();
             $assetStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Pending financial approvals
             $pendingSql = "
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN r.status = 'Reviewed' AND r.estimated_cost > 10000 THEN 1 END) as pending_high_value_requests,
                     COUNT(CASE WHEN po.status = 'Reviewed' AND po.net_total > 10000 THEN 1 END) as pending_high_value_procurement,
                     COUNT(CASE WHEN t.status = 'Pending Approval' THEN 1 END) as pending_transfers,
                     COUNT(CASE WHEN m.status = 'scheduled' AND m.estimated_cost > 5000 THEN 1 END) as pending_maintenance_approval
                 FROM requests r
                 LEFT JOIN procurement_orders po ON 1=1
-                LEFT JOIN transfers t ON 1=1  
+                LEFT JOIN transfers t ON 1=1
                 LEFT JOIN maintenance m ON 1=1
                 WHERE r.status = 'Reviewed' OR po.status = 'Reviewed' OR t.status = 'Pending Approval' OR m.status = 'scheduled'
             ";
-            
+
             $stmt = $this->db->prepare($pendingSql);
             $stmt->execute();
             $pendingStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Budget utilization by project
             $budgetSql = "
-                SELECT 
+                SELECT
                     p.name as project_name,
                     p.budget,
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as utilized
@@ -425,27 +841,43 @@ class DashboardModel extends BaseModel {
                 ORDER BY utilized DESC
                 LIMIT 5
             ";
-            
+
             $stmt = $this->db->prepare($budgetSql);
             $stmt->execute();
             $budgetStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
+            // Inventory overview by category (LEGACY - kept for backward compatibility)
+            $inventoryOverview = $this->getInventoryOverviewByCategory();
+
+            // Inventory by equipment type (GRANULAR - for new dashboard design)
+            $inventoryByEquipmentType = $this->getInventoryByEquipmentType();
+
+            // Inventory by project site (PROJECT-CENTRIC - Finance Director's mental model)
+            $inventoryByProjectSite = $this->getInventoryByProjectSite();
+
             return [
-                'finance' => array_merge($assetStats, $pendingStats),
+                'finance' => array_merge($assetStats, $pendingStats, [
+                    'inventory_overview' => $inventoryOverview, // Legacy category-only
+                    'inventory_by_equipment_type' => $inventoryByEquipmentType, // Granular with equipment types
+                    'inventory_by_project_site' => $inventoryByProjectSite // PROJECT-FIRST view
+                ]),
                 'budget_utilization' => $budgetStats
             ];
-            
+
         } catch (Exception $e) {
             error_log("Finance stats error: " . $e->getMessage());
             return [
                 'finance' => [
-                    'total_asset_value' => 0, 
-                    'avg_asset_value' => 0, 
+                    'total_asset_value' => 0,
+                    'avg_asset_value' => 0,
                     'high_value_assets' => 0,
                     'pending_high_value_requests' => 0,
                     'pending_high_value_procurement' => 0,
                     'pending_transfers' => 0,
-                    'pending_maintenance_approval' => 0
+                    'pending_maintenance_approval' => 0,
+                    'inventory_overview' => [], // Legacy
+                    'inventory_by_equipment_type' => [], // Granular
+                    'inventory_by_project_site' => [] // PROJECT-FIRST
                 ],
                 'budget_utilization' => []
             ];
