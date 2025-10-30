@@ -121,7 +121,7 @@ class BorrowedToolReturnService {
         $updateData = [
             'quantity_returned' => $totalReturned,
             'condition_returned' => $condition,
-            'return_notes' => $notes,
+            'line_notes' => $notes,
             'returned_by' => $userId
         ];
 
@@ -131,7 +131,11 @@ class BorrowedToolReturnService {
             $updateData['status'] = BorrowedToolStatus::RETURNED;
         }
 
-        $this->borrowedToolModel->update($itemId, $updateData);
+        // Update item and verify success
+        $result = $this->borrowedToolModel->update($itemId, $updateData);
+        if (!$result) {
+            throw new Exception("Failed to update borrowed tool item #{$itemId}");
+        }
 
         // Create incident if condition is not Good
         $incidentId = null;

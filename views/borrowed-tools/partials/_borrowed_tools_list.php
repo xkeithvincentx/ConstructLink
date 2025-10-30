@@ -482,7 +482,15 @@
                                 <!-- Condition -->
                                 <td>
                                     <?php if (!$isBatch): ?>
-                                        <?= ViewHelper::renderConditionBadges($tool['condition_out'] ?? null, $tool['condition_returned'] ?? null, false) ?>
+                                        <div>
+                                            <?= ViewHelper::renderConditionBadges($tool['condition_out'] ?? null, $tool['condition_returned'] ?? null, false) ?>
+                                        </div>
+                                        <?php if ($tool['status'] === 'Returned' && !empty($tool['line_notes'])): ?>
+                                            <small class="text-muted d-block mt-1" style="max-width: 200px;" title="<?= htmlspecialchars($tool['line_notes']) ?>">
+                                                <i class="bi bi-sticky"></i>
+                                                <?= htmlspecialchars(mb_strimwidth($tool['line_notes'], 0, 40, '...')) ?>
+                                            </small>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="text-muted">—</span>
                                     <?php endif; ?>
@@ -790,24 +798,33 @@
                                         <div class="batch-items-container">
                                             <table class="batch-items-table">
                                                 <tbody>
-                                                    <tr data-item-id="<?= $tool['id'] ?>" data-asset-id="<?= $tool['asset_id'] ?>">
-                                                        <td>1</td>
+                                                    <?php
+                                                    // For batch items, loop through all items in the batch
+                                                    // For single items, just show the one item
+                                                    $itemsToDisplay = $isBatch ? $batchItems : [$tool];
+                                                    $itemIndex = 0;
+                                                    foreach ($itemsToDisplay as $batchItem):
+                                                        $itemIndex++;
+                                                    ?>
+                                                    <tr data-item-id="<?= $batchItem['id'] ?>" data-asset-id="<?= $batchItem['asset_id'] ?>">
+                                                        <td><?= $itemIndex ?></td>
                                                         <td>
-                                                            <strong><?= htmlspecialchars($tool['asset_name']) ?></strong>
-                                                            <?php if (!empty($tool['category_name'])): ?>
-                                                                <small class="text-muted"><?= htmlspecialchars($tool['category_name']) ?></small>
+                                                            <strong><?= htmlspecialchars($batchItem['asset_name']) ?></strong>
+                                                            <?php if (!empty($batchItem['category_name'])): ?>
+                                                                <small class="text-muted"><?= htmlspecialchars($batchItem['category_name']) ?></small>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td><?= htmlspecialchars($tool['asset_ref']) ?></td>
-                                                        <td><?= $tool['quantity'] ?? 1 ?></td>
-                                                        <td><?= $tool['quantity_returned'] ?? 0 ?></td>
-                                                        <td><?= ($tool['quantity'] ?? 1) - ($tool['quantity_returned'] ?? 0) ?></td>
-                                                        <td><?= !empty($tool['condition_returned']) ? htmlspecialchars($tool['condition_returned']) : '-' ?></td>
-                                                        <td><?= !empty($tool['serial_number']) ? htmlspecialchars($tool['serial_number']) : '-' ?></td>
-                                                        <td><span class="badge"><?= htmlspecialchars($tool['status']) ?></span></td>
-                                                        <td><?= !empty($tool['line_notes']) ? htmlspecialchars($tool['line_notes']) : '-' ?></td>
-                                                        <td class="hidden-asset-id"><?= $tool['asset_id'] ?></td>
+                                                        <td><?= htmlspecialchars($batchItem['asset_ref']) ?></td>
+                                                        <td><?= $batchItem['quantity'] ?? 1 ?></td>
+                                                        <td><?= $batchItem['quantity_returned'] ?? 0 ?></td>
+                                                        <td><?= ($batchItem['quantity'] ?? 1) - ($batchItem['quantity_returned'] ?? 0) ?></td>
+                                                        <td><?= !empty($batchItem['condition_returned']) ? htmlspecialchars($batchItem['condition_returned']) : '-' ?></td>
+                                                        <td><?= !empty($batchItem['serial_number']) ? htmlspecialchars($batchItem['serial_number']) : '-' ?></td>
+                                                        <td><span class="badge"><?= htmlspecialchars($batchItem['status']) ?></span></td>
+                                                        <td><?= !empty($batchItem['line_notes']) ? htmlspecialchars($batchItem['line_notes']) : '-' ?></td>
+                                                        <td class="hidden-asset-id"><?= $batchItem['asset_id'] ?></td>
                                                     </tr>
+                                                    <?php endforeach; ?>
                                                 </tbody>
                                             </table>
                                         </div>
