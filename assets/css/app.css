@@ -19,7 +19,7 @@
     --neutral-color: #6B7280;        /* Slate */
 
     /* Background & UI Colors */
-    --bg-light: #F9FAFB;             /* Off-white background */
+    --bg-light: #444444;             /* Off-white background */
     --bg-card: #FFFFFF;              /* Pure white cards */
     --light-color: #F3F4F6;          /* Light gray for hover states */
     --border-color: #E5E7EB;         /* Light gray borders */
@@ -33,6 +33,11 @@
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+    /* Layout-specific colors (used in layout.css) */
+    --bg-body: #E5E7EB;             /* Body background - darker off-white */
+    --bg-main-content: #F9FAFB;     /* Main content area - subtle off-white */
+    --border-medium: #D1D5DB;       /* Medium gray borders */
 }
 
 /* Global Styles */

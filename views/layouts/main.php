@@ -20,48 +20,28 @@ $branding = BrandingHelper::loadBranding();
     
     <!-- Custom CSS -->
     <link href="/assets/css/app.css" rel="stylesheet">
-    
-    <!-- Layout Specific CSS -->
+    <link href="/assets/css/layout.css" rel="stylesheet">
+
+    <!-- Database-Driven Branding Colors (ONLY inline CSS allowed) -->
     <style>
-        /* Footer Styling */
-        .main-footer {
-            margin-left: 0;
-            background-color: #f8f9fa !important;
-            border-top: 1px solid #dee2e6;
+        /* ==========================================================================
+           DATABASE-DRIVEN BRANDING COLORS
+           Purpose: Override CSS variables with database values
+           Note: This is the ONLY inline CSS allowed - all other styles in external files
+           ========================================================================== */
+        :root {
+            --primary-color: <?= htmlspecialchars($branding['primary_color']) ?>;
+            --secondary-color: <?= htmlspecialchars($branding['secondary_color']) ?>;
+            --accent-color: <?= htmlspecialchars($branding['accent_color']) ?>;
+            --success-color: <?= htmlspecialchars($branding['success_color']) ?>;
+            --warning-color: <?= htmlspecialchars($branding['warning_color']) ?>;
+            --danger-color: <?= htmlspecialchars($branding['danger_color']) ?>;
+            --info-color: <?= htmlspecialchars($branding['info_color']) ?>;
         }
-        
-        .guest-footer {
-            background-color: #f8f9fa !important;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        /* Ensure content has proper spacing */
-        .main-content-wrapper {
-            min-height: calc(100vh - 200px);
-            padding-bottom: 2rem;
-        }
-        
-        /* Guest layout adjustments */
-        .container-fluid.h-100 {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .container-fluid.h-100 .content {
-            flex: 1;
-        }
-        
-        /* Responsive footer adjustments */
-        @media (max-width: 767.98px) {
-            .main-footer .row {
-                text-align: center;
-            }
-            
-            .main-footer .col-md-6:last-child {
-                text-align: center !important;
-                margin-top: 0.5rem;
-            }
+
+        /* Navbar - Database-driven primary color background */
+        .navbar {
+            background-color: <?= htmlspecialchars($branding['primary_color']) ?>;
         }
     </style>
 
@@ -76,7 +56,7 @@ $branding = BrandingHelper::loadBranding();
     <!-- CSRF Token for AJAX requests -->
     <meta name="csrf-token" content="<?= CSRFProtection::generateToken() ?>">
 </head>
-<body class="bg-light">
+<body>
     <?php if (isset($_SESSION['user_id'])): ?>
         <!-- Navigation -->
         <?php include APP_ROOT . '/views/layouts/navbar.php'; ?>

@@ -118,3 +118,5 @@ docs/generated/
 phpunit.xml
 .phpunit.cache/
 coverage/
+*_backup.php
+*_old_backup.php
