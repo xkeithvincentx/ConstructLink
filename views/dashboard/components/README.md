@@ -1178,6 +1178,93 @@ Unlike workflow-based dashboards, System Admin focuses on **monitoring and healt
 
 ---
 
+### Generic Dashboard (Fallback)
+
+**Alpine.js Enhancements:**
+1. **Collapsible Key Metrics**
+   - Collapse/expand control for Key Metrics card
+   - Smooth CSS transitions
+   - 3 metric cards: Active Projects, Under Maintenance, Total Incidents
+   - Visual indicator when incidents exist (critical flag)
+
+2. **Filterable System Status**
+   - Filter by All / Online / Issues
+   - Real-time service status filtering
+   - Dynamic count badges for each status type
+   - Simplified 3-button filter (All/Online/Issues)
+
+3. **Auto-Refresh Timestamp**
+   - Live timestamp showing last update time
+   - Auto-updates every 60 seconds
+   - Monitoring indicator for fallback users
+
+**Purpose:**
+The Generic dashboard serves as a **fallback for users without specific role-based dashboards**. It provides:
+- Basic system monitoring capabilities
+- Key metric overview
+- Simple service status checks
+- Profile management access
+
+**Unique Features:**
+- Simplified compared to role-specific dashboards
+- Focus on essential system information
+- Clean, minimal interface
+- Easy-to-understand status indicators
+
+**Implementation Pattern:**
+```php
+<!-- Collapsible Key Metrics -->
+<div class="card" x-data="{ metricsOpen: true }">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Key Metrics</h5>
+        <button @click="metricsOpen = !metricsOpen">
+            <i :class="metricsOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            <span x-text="metricsOpen ? 'Collapse' : 'Expand'"></span>
+        </button>
+    </div>
+    <div x-show="metricsOpen" x-transition>
+        <!-- Metrics cards -->
+    </div>
+</div>
+
+<!-- Filterable System Services (Simplified) -->
+<div x-data="{
+    services: <?= json_encode($systemServices) ?>,
+    filter: 'all',
+    get filteredServices() {
+        if (this.filter === 'all') return this.services;
+        if (this.filter === 'online') return this.services.filter(s => s.status === 'online');
+        if (this.filter === 'issues') return this.services.filter(s => s.status !== 'online');
+        return this.services;
+    }
+}">
+    <!-- Filter buttons: All / Online / Issues -->
+    <div class="btn-group mb-3">
+        <button @click="filter = 'all'">All (<span x-text="services.length"></span>)</button>
+        <button @click="filter = 'online'">Online (<span x-text="onlineCount"></span>)</button>
+        <button @click="filter = 'issues'">Issues (<span x-text="issuesCount"></span>)</button>
+    </div>
+
+    <!-- Service list -->
+    <template x-for="service in filteredServices">
+        <div class="list-group-item">
+            <span x-text="service.label"></span>
+            <span class="badge badge-success-neutral" x-text="service.value"></span>
+        </div>
+    </template>
+</div>
+```
+
+**Benefits for Fallback Users:**
+- ✅ **Simple Monitoring**: Essential system status at a glance
+- ✅ **Quick Filtering**: Identify issues with one click
+- ✅ **Minimal Clutter**: Collapsible sections for clean interface
+- ✅ **Consistent Experience**: Same Alpine.js patterns as role-specific dashboards
+
+**Location:** `/views/dashboard/role_specific/generic.php`
+
+---
+
 ## DASHBOARD SERVICE LAYER (v2.1)
 
 A new service class has been created to handle dashboard business logic: `/services/DashboardService.php`
@@ -1413,8 +1500,9 @@ $pendingItems = [
 - ✅ Site Inventory Clerk: Filterable actions
 - ✅ Warehouseman: Filterable actions + service layer refactoring
 - ✅ System Administrator: Collapsible sections + filterable services + auto-refresh
+- ✅ Generic (Fallback): Collapsible metrics + filterable services + auto-refresh
 
-**Total Dashboards Enhanced:** 7/7 (100%)
+**Total Dashboards Enhanced:** 8/8 (100%)
 
 ### Code Reduction
 - **Before**: Static HTML for all pending actions (~150 lines per dashboard)
@@ -1435,7 +1523,7 @@ $pendingItems = [
 - Added 3 new PHP components (alert_banner, card_container, data_table)
 - Added 6 Alpine.js components (collapsibleCard, filterableList, statCard, toastManager, dataTable, formValidator)
 - Created dedicated dashboard.css with utility classes and transitions
-- **Enhanced ALL 7 role-specific dashboards with Alpine.js:**
+- **Enhanced ALL 8 dashboards with Alpine.js:**
   - Finance Director: Collapsible equipment cards + filterable actions
   - Asset Director: Filterable actions with Critical filter
   - Procurement Officer: Filterable actions
@@ -1443,14 +1531,15 @@ $pendingItems = [
   - Site Inventory Clerk: Filterable actions
   - Warehouseman: Filterable actions + service layer refactoring
   - System Administrator: Collapsible sections + filterable services + auto-refresh
+  - Generic (Fallback): Collapsible metrics + filterable services + auto-refresh
 - Created DashboardService.php for centralized business logic (MVC compliance)
 - Implemented standard filterable actions pattern across workflow dashboards
-- Added monitoring-specific Alpine.js features for System Admin dashboard
+- Added monitoring-specific Alpine.js features for System Admin and Generic dashboards
 - Added comprehensive Alpine.js and service layer documentation
 - Added print styles and dark mode preparation
-- Code reduction: 700+ lines saved across dashboards (67% per dashboard)
-- Interactive features increased from 5% to 45% (9x improvement)
-- 100% dashboard coverage with Alpine.js enhancements (7/7 dashboards)
+- Code reduction: 800+ lines saved across dashboards (67% per dashboard)
+- Interactive features increased from 5% to 50% (10x improvement)
+- 100% dashboard coverage with Alpine.js enhancements (8/8 dashboards)
 
 **v2.0** (2025-10-28)
 - Initial component library release
