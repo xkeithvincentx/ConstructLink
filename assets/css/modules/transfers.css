@@ -1,0 +1,417 @@
+/**
+ * Transfer Module Styles
+ * Centralized styles for all transfer-related views
+ *
+ * @package ConstructLink
+ * @since 1.0.0
+ */
+
+/* ============================================
+   TIMELINE COMPONENT
+   Used in: view.php, verify.php, complete.php, receive_return.php
+   ============================================ */
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--bs-gray-300, #dee2e6);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--bs-gray-300, #dee2e6);
+}
+
+.timeline-content {
+    background: var(--bs-gray-100, #f8f9fa);
+    padding: 10px 15px;
+    border-radius: 5px;
+    border-left: 3px solid var(--bs-primary, #007bff);
+}
+
+.timeline-item.completed .timeline-content {
+    border-left-color: var(--bs-success, #28a745);
+}
+
+.timeline-item.current .timeline-content {
+    border-left-color: var(--bs-primary, #007bff);
+    background: #e3f2fd;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--bs-gray-600, #6c757d);
+}
+
+/* ============================================
+   RETURN TIMELINE (ENHANCED)
+   Used in: view.php, receive_return.php
+   ============================================ */
+
+.return-timeline {
+    position: relative;
+    padding: 0;
+}
+
+.return-timeline .timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 20px;
+}
+
+.return-timeline .timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -20px;
+    width: 2px;
+    background-color: var(--bs-gray-300, #dee2e6);
+}
+
+.return-timeline .timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.return-timeline .timeline-item.completed .timeline-marker {
+    background-color: var(--bs-success, #198754) !important;
+}
+
+.return-timeline .timeline-item.active .timeline-marker {
+    background-color: var(--bs-primary, #0d6efd) !important;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+}
+
+.return-timeline .timeline-content h6 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+}
+
+.return-timeline .timeline-content small {
+    font-size: 12px;
+}
+
+/* ============================================
+   TRANSFER CARDS
+   Used in: index.php (mobile view)
+   ============================================ */
+
+.transfer-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.transfer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   STATISTICS CARDS
+   Used in: index.php
+   ============================================ */
+
+.stats-card {
+    border-left: 4px solid;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bs-light, #f8f9fa);
+}
+
+/* ============================================
+   FILTER SECTION
+   Used in: index.php
+   ============================================ */
+
+.filter-badge-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
+/* ============================================
+   TRANSFER TABLE
+   Used in: index.php
+   ============================================ */
+
+.transfer-table th {
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--bs-gray-700, #495057);
+}
+
+.transfer-table td {
+    vertical-align: middle;
+}
+
+.transfer-table .text-truncate {
+    max-width: 200px;
+}
+
+/* ============================================
+   STATUS BADGES
+   Used in: All files
+   ============================================ */
+
+.badge.status-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.badge.return-status-badge {
+    font-size: 0.7em;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   Used in: All files
+   ============================================ */
+
+.btn-group-actions .btn {
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-group-actions .btn i {
+    font-size: 1rem;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   Used in: index.php, create.php
+   ============================================ */
+
+@media (max-width: 767.98px) {
+    .timeline {
+        padding-left: 20px;
+    }
+
+    .timeline::before {
+        left: 10px;
+    }
+
+    .timeline-marker {
+        left: -17px;
+    }
+
+    .transfer-card {
+        margin-bottom: 1rem;
+    }
+
+    .stats-card {
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   Used in: index.php
+   ============================================ */
+
+@media print {
+    .no-print,
+    .btn,
+    .btn-group,
+    .offcanvas,
+    .btn-toolbar,
+    .filter-section {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid var(--bs-gray-300, #dee2e6) !important;
+        break-inside: avoid;
+    }
+
+    .badge {
+        border: 1px solid currentColor;
+    }
+
+    .table {
+        font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem;
+    }
+}
+
+/* ============================================
+   ASSET SELECTION DROPDOWN
+   Used in: create.php
+   ============================================ */
+
+.asset-search-dropdown {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.asset-search-dropdown .dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--bs-gray-200, #e9ecef);
+}
+
+.asset-search-dropdown .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.asset-search-dropdown .dropdown-item.active {
+    background-color: var(--bs-primary, #0d6efd);
+    color: white;
+}
+
+.asset-search-dropdown .dropdown-item:hover {
+    background-color: var(--bs-gray-100, #f8f9fa);
+}
+
+/* ============================================
+   FORM VALIDATION
+   Used in: All forms
+   ============================================ */
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--bs-danger, #dc3545);
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-valid,
+.form-select.is-valid {
+    border-color: var(--bs-success, #198754);
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* ============================================
+   ALERT ENHANCEMENTS
+   Used in: All files
+   ============================================ */
+
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: var(--bs-success, #198754);
+}
+
+.alert-danger {
+    border-left-color: var(--bs-danger, #dc3545);
+}
+
+.alert-warning {
+    border-left-color: var(--bs-warning, #ffc107);
+}
+
+.alert-info {
+    border-left-color: var(--bs-info, #0dcaf0);
+}
+
+/* ============================================
+   LOADING STATES
+   Used in: All files with dynamic content
+   ============================================ */
+
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: text-bottom;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-truncate-multiline {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.3s ease-in-out;
+}

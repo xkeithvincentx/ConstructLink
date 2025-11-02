@@ -4,6 +4,9 @@
  * Display transfer details with centralized MVA RBAC
  */
 
+// Load module CSS
+$moduleCSS = ['/assets/css/modules/transfers.css'];
+
 // Start output buffering
 ob_start();
 

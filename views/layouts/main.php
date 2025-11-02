@@ -22,6 +22,13 @@ $branding = BrandingHelper::loadBranding();
     <link href="/assets/css/app.css" rel="stylesheet">
     <link href="/assets/css/layout.css" rel="stylesheet">
 
+    <!-- Module-specific CSS (conditionally loaded) -->
+    <?php if (isset($moduleCSS) && is_array($moduleCSS)): ?>
+        <?php foreach ($moduleCSS as $cssFile): ?>
+            <link href="<?= htmlspecialchars($cssFile) ?>" rel="stylesheet">
+        <?php endforeach; ?>
+    <?php endif; ?>
+
     <!-- Database-Driven Branding Colors (ONLY inline CSS allowed) -->
     <style>
         /* ==========================================================================
