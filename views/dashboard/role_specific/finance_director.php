@@ -54,7 +54,41 @@ $inventoryByEquipmentType = $financeData['inventory_by_equipment_type'] ?? [];
                     Expand categories to see detailed breakdowns and project distribution.
                 </p>
 
-                <div class="row g-3" role="group" aria-labelledby="inventory-equipment-types-title">
+                <!-- Alpine.js Enhanced: Expand/Collapse All Controls -->
+                <div class="mb-4 d-flex gap-2" role="group" aria-label="Category expansion controls">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            @click="expandAll()"
+                            aria-label="Expand all equipment type categories">
+                        <i class="bi bi-arrows-expand me-1" aria-hidden="true"></i>
+                        Expand All
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            @click="collapseAll()"
+                            aria-label="Collapse all equipment type categories">
+                        <i class="bi bi-arrows-collapse me-1" aria-hidden="true"></i>
+                        Collapse All
+                    </button>
+                </div>
+
+                <div class="row g-3"
+                     role="group"
+                     aria-labelledby="inventory-equipment-types-title"
+                     x-data="{
+                         openCategories: {},
+                         toggleCategory(id) {
+                             this.openCategories[id] = !this.openCategories[id];
+                         },
+                         expandAll() {
+                             <?php foreach ($inventoryByEquipmentType as $cat): ?>
+                             this.openCategories[<?= $cat['category_id'] ?>] = true;
+                             <?php endforeach; ?>
+                         },
+                         collapseAll() {
+                             this.openCategories = {};
+                         }
+                     }">
                     <?php foreach ($inventoryByEquipmentType as $category): ?>
                         <?php
                         $categoryId = $category['category_id'];
@@ -114,21 +148,31 @@ $inventoryByEquipmentType = $financeData['inventory_by_equipment_type'] ?? [];
                                         </div>
                                     </div>
 
-                                    <!-- Expand/Collapse Button for Equipment Types -->
-                                    <div class="d-grid mb-3">
-                                        <button class="btn btn-outline-secondary btn-sm collapsed"
+                                    <!-- Alpine.js Enhanced: Expand/Collapse Button for Equipment Types -->
+                                    <div class="d-grid mb-3" x-data="{ categoryId: <?= $categoryId ?> }">
+                                        <button class="btn btn-outline-secondary btn-sm"
                                                 type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#<?= $uniqueId ?>"
-                                                aria-expanded="false"
+                                                @click="toggleCategory(categoryId)"
+                                                :aria-expanded="openCategories[categoryId] ? 'true' : 'false'"
                                                 aria-controls="<?= $uniqueId ?>">
-                                            <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>
-                                            <strong>Show Project Distribution by Equipment Type (<?= $typesCount ?>)</strong>
+                                            <i class="bi me-1"
+                                               :class="openCategories[categoryId] ? 'bi-chevron-up' : 'bi-chevron-down'"
+                                               aria-hidden="true"></i>
+                                            <strong x-text="openCategories[categoryId] ? 'Hide' : 'Show'"></strong>
+                                            <strong> Project Distribution by Equipment Type (<?= $typesCount ?>)</strong>
                                         </button>
                                     </div>
 
-                                    <!-- Collapsible Equipment Types Section -->
-                                    <div class="collapse" id="<?= $uniqueId ?>">
+                                    <!-- Alpine.js Enhanced: Collapsible Equipment Types Section -->
+                                    <div x-show="openCategories[<?= $categoryId ?>]"
+                                         x-transition:enter="transition ease-out duration-300"
+                                         x-transition:enter-start="opacity-0 transform scale-y-90"
+                                         x-transition:enter-end="opacity-100 transform scale-y-100"
+                                         x-transition:leave="transition ease-in duration-200"
+                                         x-transition:leave-start="opacity-100 transform scale-y-100"
+                                         x-transition:leave-end="opacity-0 transform scale-y-90"
+                                         style="transform-origin: top;"
+                                         id="<?= $uniqueId ?>">
                                         <div class="border-top pt-3">
                                             <h6 class="text-muted mb-3">
                                                 <i class="bi bi-tools me-1" aria-hidden="true"></i>
@@ -179,46 +223,124 @@ $inventoryByEquipmentType = $financeData['inventory_by_equipment_type'] ?? [];
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row" role="group" aria-labelledby="pending-approvals-title">
-                    <?php
-                    // Define pending action items - Neutral design (all neutral, not colored)
-                    // High-value approvals are routine for Finance Director, not critical
-                    $pendingItems = [
-                        [
-                            'label' => 'High Value Requests',
-                            'count' => $financeData['pending_high_value_requests'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_REVIEWED, ['high_value' => 1]),
-                            'icon' => IconMapper::MODULE_REQUESTS,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'High Value Procurement',
-                            'count' => $financeData['pending_high_value_procurement'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_REVIEWED, ['high_value' => 1]),
-                            'icon' => IconMapper::MODULE_PROCUREMENT,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Transfer Approvals',
-                            'count' => $financeData['pending_transfers'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_APPROVAL),
-                            'icon' => IconMapper::MODULE_TRANSFERS,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Maintenance Approvals',
-                            'count' => $financeData['pending_maintenance_approval'] ?? 0,
-                            'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED, 'high_value' => 1]),
-                            'icon' => IconMapper::MODULE_MAINTENANCE,
-                            'critical' => false
-                        ]
-                    ];
+                <?php
+                // Define pending action items - Neutral design (all neutral, not colored)
+                // High-value approvals are routine for Finance Director, not critical
+                $pendingItems = [
+                    [
+                        'label' => 'High Value Requests',
+                        'count' => $financeData['pending_high_value_requests'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_REVIEWED, ['high_value' => 1]),
+                        'icon' => IconMapper::MODULE_REQUESTS,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'High Value Procurement',
+                        'count' => $financeData['pending_high_value_procurement'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_REVIEWED, ['high_value' => 1]),
+                        'icon' => IconMapper::MODULE_PROCUREMENT,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Transfer Approvals',
+                        'count' => $financeData['pending_transfers'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_PENDING_APPROVAL),
+                        'icon' => IconMapper::MODULE_TRANSFERS,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Maintenance Approvals',
+                        'count' => $financeData['pending_maintenance_approval'] ?? 0,
+                        'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED, 'high_value' => 1]),
+                        'icon' => IconMapper::MODULE_MAINTENANCE,
+                        'critical' => false
+                    ]
+                ];
 
-                    // Render each pending action card using component
-                    foreach ($pendingItems as $item) {
-                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
-                    }
-                    ?>
+                // Calculate filter counts
+                $totalItems = count($pendingItems);
+                $itemsWithPending = count(array_filter($pendingItems, fn($item) => $item['count'] > 0));
+                $emptyItems = $totalItems - $itemsWithPending;
+                ?>
+
+                <!-- Alpine.js Enhanced: Filterable Pending Actions -->
+                <div x-data="filterableList(<?= htmlspecialchars(json_encode($pendingItems)) ?>)"
+                     role="group"
+                     aria-labelledby="pending-approvals-title">
+
+                    <!-- Filter Controls -->
+                    <div class="btn-group mb-3 d-flex" role="group" aria-label="Filter pending approvals">
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="setFilter('all')"
+                                aria-pressed="{{ filter === 'all' ? 'true' : 'false' }}">
+                            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+                            All (<span x-text="items.length"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'"
+                                @click="setFilter('pending')"
+                                aria-pressed="{{ filter === 'pending' ? 'true' : 'false' }}">
+                            <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
+                            With Items (<span x-text="pendingCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'empty' ? 'btn-success' : 'btn-outline-secondary'"
+                                @click="setFilter('empty')"
+                                aria-pressed="{{ filter === 'empty' ? 'true' : 'false' }}">
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+                            Empty (<span x-text="items.length - pendingCount"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Pending Actions List -->
+                    <div class="row">
+                        <template x-for="(item, index) in filteredItems" :key="item.label">
+                            <div class="col-12 col-md-6 mb-4 mb-md-3 d-flex">
+                                <div class="action-item flex-fill"
+                                     :class="item.critical ? 'action-item-critical' : ''"
+                                     role="group"
+                                     :aria-labelledby="'pending-action-' + index + '-label'">
+
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i :class="item.icon + ' me-2 fs-5'" aria-hidden="true"></i>
+                                            <span class="fw-semibold" :id="'pending-action-' + index + '-label'" x-text="item.label"></span>
+                                        </div>
+                                        <span class="badge rounded-pill"
+                                              :class="item.critical ? 'badge-critical' : 'badge-neutral'"
+                                              role="status"
+                                              :aria-label="item.count + ' pending ' + item.label.toLowerCase()"
+                                              x-text="item.count"></span>
+                                    </div>
+
+                                    <template x-if="item.count > 0">
+                                        <a :href="'?route=' + item.route"
+                                           class="btn btn-sm mt-1"
+                                           :class="item.critical ? 'btn-danger' : 'btn-outline-secondary'"
+                                           :aria-label="'Review Now - ' + item.count + ' ' + item.label.toLowerCase()">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Review Now
+                                        </a>
+                                    </template>
+                                    <template x-if="item.count === 0">
+                                        <small class="text-muted d-block mt-1" role="status">
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>No pending items
+                                        </small>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredItems.length === 0" class="alert alert-info" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No items match the selected filter.
+                    </div>
+
                 </div>
             </div>
         </div>
