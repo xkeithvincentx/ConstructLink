@@ -185,23 +185,258 @@
 }
 
 /* ============================================
-   TRANSFER TABLE
+   TRANSFER TABLE - ADVANCED RESPONSIVE LAYOUT
    Used in: index.php
    ============================================ */
 
+/* Table container with horizontal scroll */
+.transfer-table-wrapper {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Sticky Actions Column (Always Visible) */
+#transfersTable {
+    position: relative;
+}
+
+#transfersTable th:last-child,
+#transfersTable td:last-child {
+    position: sticky;
+    right: 0;
+    background-color: #fff;
+    z-index: 10;
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+    min-width: 100px;
+    text-align: center;
+}
+
+/* Header styling for sticky columns */
+#transfersTable thead th:last-child {
+    background-color: #f8f9fa;
+}
+
+/* Table hover row - maintain sticky column background */
+#transfersTable tbody tr:hover td:last-child {
+    background-color: #f5f5f5;
+}
+
+/* General table styling */
 .transfer-table th {
     white-space: nowrap;
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--bs-gray-700, #495057);
+    padding: 0.75rem;
 }
 
 .transfer-table td {
     vertical-align: middle;
+    padding: 0.75rem;
 }
 
+/* Column-specific widths and truncation */
 .transfer-table .text-truncate {
     max-width: 200px;
+}
+
+/* ID Column - Compact */
+#transfersTable th:nth-child(1),
+#transfersTable td:nth-child(1) {
+    width: 60px;
+    min-width: 60px;
+}
+
+/* Asset Column - Medium */
+#transfersTable th:nth-child(2),
+#transfersTable td:nth-child(2) {
+    min-width: 180px;
+    max-width: 200px;
+}
+
+/* From → To Column - Optimized with Vertical Stacking */
+#transfersTable th:nth-child(3),
+#transfersTable td:nth-child(3) {
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.location-transfer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.location-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
+/* Type Column - Compact */
+#transfersTable th:nth-child(4),
+#transfersTable td:nth-child(4) {
+    width: 90px;
+    min-width: 90px;
+}
+
+/* Reason Column - Truncated with Tooltip */
+#transfersTable th:nth-child(5),
+#transfersTable td:nth-child(5) {
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.reason-text {
+    display: block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* Initiated By Column - Medium */
+#transfersTable th:nth-child(6),
+#transfersTable td:nth-child(6) {
+    min-width: 140px;
+}
+
+/* Date Columns - Compact */
+#transfersTable th:nth-child(7),
+#transfersTable td:nth-child(7),
+#transfersTable th:nth-child(8),
+#transfersTable td:nth-child(8) {
+    width: 110px;
+    min-width: 110px;
+}
+
+/* Return Status Column - Medium */
+#transfersTable th:nth-child(9),
+#transfersTable td:nth-child(9) {
+    min-width: 130px;
+}
+
+/* Status Column - Compact */
+#transfersTable th:nth-child(10),
+#transfersTable td:nth-child(10) {
+    width: 120px;
+    min-width: 120px;
+}
+
+/* Actions Column - Sticky (handled above) */
+
+/* Responsive Column Hiding - Progressive Disclosure */
+@media (max-width: 1399.98px) {
+    /* Hide Expected Return on large screens */
+    #transfersTable th:nth-child(8),
+    #transfersTable td:nth-child(8) {
+        display: none;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    /* Hide Return Status on laptop screens */
+    #transfersTable th:nth-child(9),
+    #transfersTable td:nth-child(9) {
+        display: none;
+    }
+}
+
+@media (max-width: 991.98px) {
+    /* Hide Transfer Date on tablet screens */
+    #transfersTable th:nth-child(7),
+    #transfersTable td:nth-child(7) {
+        display: none;
+    }
+
+    /* Hide Reason on tablet screens */
+    #transfersTable th:nth-child(5),
+    #transfersTable td:nth-child(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    /* Hide table completely - show mobile cards instead */
+    .transfer-table-wrapper {
+        display: none;
+    }
+}
+
+/* Expandable Row Details (Future Enhancement) */
+.transfer-row-details {
+    display: none;
+    background-color: #f8f9fa;
+}
+
+.transfer-row-details.show {
+    display: table-row;
+}
+
+.transfer-row-details td {
+    padding: 1rem;
+    border-top: none;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 0.875rem;
+    color: #212529;
+}
+
+/* Table Scroll Indicator */
+.table-scroll-indicator {
+    position: absolute;
+    right: 100px; /* Offset for sticky actions column */
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.05));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 5;
+}
+
+.table-scroll-indicator.visible {
+    opacity: 1;
+}
+
+/* Compact Action Buttons */
+.transfer-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.transfer-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
 }
 
 /* ============================================

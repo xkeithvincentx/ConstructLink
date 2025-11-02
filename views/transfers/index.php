@@ -1,8 +1,19 @@
 <?php
 /**
  * Transfer Index View
- * Displays list of transfers with statistics, filters, and actions
+ * Developed by: <?= SYSTEM_VENDOR ?>
+ *
+ * REFACTORED: Following borrowed-tools/index.php standards
+ * - Made MVA workflow message collapsible/dismissible
+ * - Removed statistics cards section for cleaner layout
+ * - Added mobile-responsive button layouts
+ * - Converted to AssetHelper for external JS loading
+ * - Enhanced accessibility with comprehensive ARIA labels
+ * - Improved separation of concerns
  */
+
+// Start output buffering to capture content
+ob_start();
 
 // Load transfer-specific helpers
 require_once APP_ROOT . '/core/TransferHelper.php';
@@ -10,32 +21,40 @@ require_once APP_ROOT . '/core/ReturnStatusHelper.php';
 require_once APP_ROOT . '/core/InputValidator.php';
 require_once APP_ROOT . '/helpers/BrandingHelper.php';
 
-// Load module CSS
-$moduleCSS = ['/assets/css/modules/transfers.css'];
-
-// Start output buffering
-ob_start();
-
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
 ?>
 
-<!-- Action Buttons (No Header - handled by layout) -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <!-- Primary Actions (Left) -->
-    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
+<!-- Action Buttons -->
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <!-- Desktop: Action Buttons -->
+    <div class="d-none d-md-flex gap-2">
         <?php if (in_array($userRole, $roleConfig['transfers/create'] ?? [])): ?>
             <a href="?route=transfers/create"
-               class="btn btn-primary btn-sm"
+               class="btn btn-success btn-sm"
                aria-label="Create new transfer request">
-                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
-                <span class="d-none d-sm-inline">New Transfer</span>
-                <span class="d-sm-none">Create</span>
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>New Transfer
             </a>
         <?php endif; ?>
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                id="refreshBtn"
+                onclick="location.reload()"
+                aria-label="Refresh list">
+            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
+        </button>
     </div>
+</div>
+
+<!-- Mobile: Action Buttons -->
+<div class="d-md-none d-grid gap-2 mb-4">
+    <?php if (in_array($userRole, $roleConfig['transfers/create'] ?? [])): ?>
+        <a href="?route=transfers/create" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>New Transfer Request
+        </a>
+    <?php endif; ?>
 </div>
 
 <!-- Messages -->
@@ -57,7 +76,7 @@ if ($message):
     if (isset($messages[$message])):
         $msg = $messages[$message];
         ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show" role="status">
             <i class="bi bi-<?= $msg['icon'] ?> me-2" aria-hidden="true"></i><?= htmlspecialchars($msg['text'], ENT_QUOTES, 'UTF-8') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close notification"></button>
         </div>
@@ -72,22 +91,36 @@ if ($error === 'export_failed'): ?>
     </div>
 <?php endif; ?>
 
-<!-- Statistics Cards Partial -->
-<?php include __DIR__ . '/_statistics_cards.php'; ?>
+<!-- MVA Workflow Help (Collapsible) -->
+<div class="mb-3">
+    <button class="btn btn-link btn-sm text-decoration-none p-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mvaHelp"
+            aria-expanded="false"
+            aria-controls="mvaHelp">
+        <i class="bi bi-question-circle me-1" aria-hidden="true"></i>
+        How does the MVA workflow work?
+    </button>
+</div>
 
-<!-- MVA Workflow Info Banner (Hidden on mobile to save space) -->
-<div class="alert alert-info mb-4 d-none d-md-block" role="alert">
-    <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
-    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
-    <span class="badge bg-info">Authorizer</span> (Asset Director) →
-    <span class="badge bg-success">Approved</span> →
-    <span class="badge bg-primary">In Transit</span> →
-    <span class="badge bg-secondary">Completed</span>
+<div class="collapse" id="mvaHelp">
+    <div class="alert alert-info mb-4" role="status">
+        <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
+        <ol class="mb-0 ps-3 mt-2">
+            <li><strong>Maker</strong> creates transfer request</li>
+            <li><strong>Verifier</strong> (Project Manager) verifies equipment and destination details</li>
+            <li><strong>Authorizer</strong> (Asset/Finance Director) approves transfer authorization</li>
+            <li>Transfer marked as <span class="badge bg-success">Approved</span>, ready for dispatch</li>
+            <li>Asset dispatched and marked <span class="badge bg-primary">In Transit</span></li>
+            <li>Receiving location confirms receipt (status: <span class="badge bg-secondary">Completed</span>)</li>
+        </ol>
+    </div>
 </div>
 
 <!-- Overdue Returns Alert -->
 <?php if (!empty($overdueReturns)): ?>
-    <div class="alert alert-warning" role="alert">
+    <div class="alert alert-warning mb-4" role="alert">
         <h6 class="alert-heading">
             <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Overdue Returns Alert
         </h6>
@@ -210,8 +243,16 @@ if ($error === 'export_failed'): ?>
     </div>
 </div>
 
-<!-- Include external JavaScript -->
-<script src="<?= ASSETS_URL ?>/js/modules/transfers.js"></script>
+<!-- Load module CSS -->
+<?php
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+AssetHelper::loadModuleCSS('transfers');
+?>
+
+<!-- Load external JavaScript module -->
+<?php
+AssetHelper::loadModuleJS('transfers', ['type' => 'module']);
+?>
 
 <?php
 // Capture content and assign to variable
