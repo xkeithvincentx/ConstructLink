@@ -40,48 +40,113 @@ $siteData = $dashboardData['role_specific']['site_clerk'] ?? [];
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row" role="group" aria-labelledby="pending-actions-title">
-                    <?php
-                    // Define pending action items using WorkflowStatus constants
-                    $pendingItems = [
-                        [
-                            'label' => 'Draft Requests',
-                            'count' => $siteData['draft_requests'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_DRAFT),
-                            'icon' => IconMapper::MODULE_REQUESTS,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Deliveries to Verify',
-                            'count' => $siteData['deliveries_to_verify'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
-                            'icon' => 'bi-clipboard-check',
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Transfers to Receive',
-                            'count' => $siteData['transfers_to_receive'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_APPROVED),
-                            'icon' => IconMapper::MODULE_TRANSFERS,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Withdrawals to Verify',
-                            'count' => $siteData['withdrawals_to_verify'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_VERIFICATION),
-                            'icon' => 'bi-check-circle',
-                            'critical' => false
-                        ]
-                    ];
+                <?php
+                // Define pending action items using WorkflowStatus constants
+                $pendingItems = [
+                    [
+                        'label' => 'Draft Requests',
+                        'count' => $siteData['draft_requests'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('requests', WorkflowStatus::REQUEST_DRAFT),
+                        'icon' => IconMapper::MODULE_REQUESTS,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Deliveries to Verify',
+                        'count' => $siteData['deliveries_to_verify'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_DELIVERED),
+                        'icon' => 'bi-clipboard-check',
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Transfers to Receive',
+                        'count' => $siteData['transfers_to_receive'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('transfers', WorkflowStatus::TRANSFER_APPROVED),
+                        'icon' => IconMapper::MODULE_TRANSFERS,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Withdrawals to Verify',
+                        'count' => $siteData['withdrawals_to_verify'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_PENDING_VERIFICATION),
+                        'icon' => 'bi-check-circle',
+                        'critical' => false
+                    ]
+                ];
+                ?>
 
-                    // Set action button text
-                    $actionText = 'Process Now';
+                <!-- Alpine.js Enhanced: Filterable Pending Actions -->
+                <div x-data="filterableList(<?= htmlspecialchars(json_encode($pendingItems)) ?>)"
+                     role="group"
+                     aria-labelledby="pending-actions-title">
 
-                    // Render each pending action card using component
-                    foreach ($pendingItems as $item) {
-                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
-                    }
-                    ?>
+                    <!-- Filter Controls -->
+                    <div class="btn-group mb-3 d-flex" role="group" aria-label="Filter pending site actions">
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="setFilter('all')">
+                            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+                            All (<span x-text="items.length"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'"
+                                @click="setFilter('pending')">
+                            <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
+                            With Items (<span x-text="pendingCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'empty' ? 'btn-success' : 'btn-outline-secondary'"
+                                @click="setFilter('empty')">
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+                            Empty (<span x-text="items.length - pendingCount"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Pending Actions List -->
+                    <div class="row">
+                        <template x-for="(item, index) in filteredItems" :key="item.label">
+                            <div class="col-12 col-md-6 mb-4 mb-md-3 d-flex">
+                                <div class="action-item flex-fill"
+                                     :class="item.critical ? 'action-item-critical' : ''"
+                                     role="group"
+                                     :aria-labelledby="'pending-action-' + index + '-label'">
+
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i :class="item.icon + ' me-2 fs-5'" aria-hidden="true"></i>
+                                            <span class="fw-semibold" :id="'pending-action-' + index + '-label'" x-text="item.label"></span>
+                                        </div>
+                                        <span class="badge rounded-pill"
+                                              :class="item.critical ? 'badge-critical' : 'badge-neutral'"
+                                              role="status"
+                                              x-text="item.count"></span>
+                                    </div>
+
+                                    <template x-if="item.count > 0">
+                                        <a :href="'?route=' + item.route"
+                                           class="btn btn-sm mt-1"
+                                           :class="item.critical ? 'btn-danger' : 'btn-outline-secondary'">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Process Now
+                                        </a>
+                                    </template>
+                                    <template x-if="item.count === 0">
+                                        <small class="text-muted d-block mt-1" role="status">
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>No pending items
+                                        </small>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredItems.length === 0" class="alert alert-info" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No items match the selected filter.
+                    </div>
+
                 </div>
             </div>
         </div>

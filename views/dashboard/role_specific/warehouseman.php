@@ -25,6 +25,11 @@ if (!class_exists('IconMapper')) {
     require_once APP_ROOT . '/includes/constants/IconMapper.php';
 }
 
+// Load Dashboard Service for business logic
+if (!class_exists('DashboardService')) {
+    require_once APP_ROOT . '/services/DashboardService.php';
+}
+
 // Extract role-specific data
 $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
 ?>
@@ -40,49 +45,114 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row" role="group" aria-labelledby="pending-warehouse-title">
-                    <?php
-                    // Define pending action items using WorkflowStatus constants
-                    // All neutral by default - warehouse operations are routine, not critical
-                    $pendingItems = [
-                        [
-                            'label' => 'Scheduled Deliveries',
-                            'count' => $warehouseData['scheduled_deliveries'] ?? 0,
-                            'route' => 'procurement-orders?' . http_build_query(['delivery_status' => WorkflowStatus::DELIVERY_SCHEDULED]),
-                            'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Awaiting Receipt',
-                            'count' => $warehouseData['awaiting_receipt'] ?? 0,
-                            'route' => 'procurement-orders/for-receipt',
-                            'icon' => 'bi-box-arrow-in-down',
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Pending Releases',
-                            'count' => $warehouseData['pending_releases'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
-                            'icon' => 'bi-box-arrow-right',
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Tool Requests',
-                            'count' => $warehouseData['pending_tool_requests'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
-                            'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                            'critical' => false
-                        ]
-                    ];
+                <?php
+                // Define pending action items using WorkflowStatus constants
+                // All neutral by default - warehouse operations are routine, not critical
+                $pendingItems = [
+                    [
+                        'label' => 'Scheduled Deliveries',
+                        'count' => $warehouseData['scheduled_deliveries'] ?? 0,
+                        'route' => 'procurement-orders?' . http_build_query(['delivery_status' => WorkflowStatus::DELIVERY_SCHEDULED]),
+                        'icon' => IconMapper::WORKFLOW_IN_TRANSIT,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Awaiting Receipt',
+                        'count' => $warehouseData['awaiting_receipt'] ?? 0,
+                        'route' => 'procurement-orders/for-receipt',
+                        'icon' => 'bi-box-arrow-in-down',
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Pending Releases',
+                        'count' => $warehouseData['pending_releases'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
+                        'icon' => 'bi-box-arrow-right',
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Tool Requests',
+                        'count' => $warehouseData['pending_tool_requests'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_VERIFICATION),
+                        'icon' => IconMapper::MODULE_BORROWED_TOOLS,
+                        'critical' => false
+                    ]
+                ];
+                ?>
 
-                    // Set custom button text for warehouse
-                    $actionText = 'Process Now';
+                <!-- Alpine.js Enhanced: Filterable Pending Actions -->
+                <div x-data="filterableList(<?= htmlspecialchars(json_encode($pendingItems)) ?>)"
+                     role="group"
+                     aria-labelledby="pending-warehouse-title">
 
-                    // Render each pending action card using component
-                    foreach ($pendingItems as $item) {
-                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
-                    }
-                    ?>
+                    <!-- Filter Controls -->
+                    <div class="btn-group mb-3 d-flex" role="group" aria-label="Filter pending warehouse actions">
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="setFilter('all')">
+                            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+                            All (<span x-text="items.length"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'"
+                                @click="setFilter('pending')">
+                            <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
+                            With Items (<span x-text="pendingCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'empty' ? 'btn-success' : 'btn-outline-secondary'"
+                                @click="setFilter('empty')">
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+                            Empty (<span x-text="items.length - pendingCount"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Pending Actions List -->
+                    <div class="row">
+                        <template x-for="(item, index) in filteredItems" :key="item.label">
+                            <div class="col-12 col-md-6 mb-4 mb-md-3 d-flex">
+                                <div class="action-item flex-fill"
+                                     :class="item.critical ? 'action-item-critical' : ''"
+                                     role="group"
+                                     :aria-labelledby="'pending-action-' + index + '-label'">
+
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i :class="item.icon + ' me-2 fs-5'" aria-hidden="true"></i>
+                                            <span class="fw-semibold" :id="'pending-action-' + index + '-label'" x-text="item.label"></span>
+                                        </div>
+                                        <span class="badge rounded-pill"
+                                              :class="item.critical ? 'badge-critical' : 'badge-neutral'"
+                                              role="status"
+                                              x-text="item.count"></span>
+                                    </div>
+
+                                    <template x-if="item.count > 0">
+                                        <a :href="'?route=' + item.route"
+                                           class="btn btn-sm mt-1"
+                                           :class="item.critical ? 'btn-danger' : 'btn-outline-secondary'">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Process Now
+                                        </a>
+                                    </template>
+                                    <template x-if="item.count === 0">
+                                        <small class="text-muted d-block mt-1" role="status">
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>No pending items
+                                        </small>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredItems.length === 0" class="alert alert-info" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No items match the selected filter.
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -321,50 +391,10 @@ $warehouseData = $dashboardData['role_specific']['warehouse'] ?? [];
         $title = 'Warehouse Operations';
         $titleIcon = null; // Removed decorative icon
 
-        // Define all possible quick actions with permission requirements
-        // Neutral design - all actions use default neutral style (outline-secondary)
-        $allActions = [
-            [
-                'label' => 'Process Deliveries',
-                'route' => 'procurement-orders/for-receipt',
-                'icon' => 'bi-box-arrow-in-down',
-                'permission' => null // No specific permission defined yet
-            ],
-            [
-                'label' => 'Release Items',
-                'route' => WorkflowStatus::buildRoute('withdrawals', WorkflowStatus::WITHDRAWAL_APPROVED),
-                'icon' => 'bi-box-arrow-right',
-                'permission' => null // No specific permission defined yet
-            ],
-            [
-                'label' => 'New Request',
-                'route' => 'borrowed-tools/create-batch',
-                'icon' => IconMapper::MODULE_BORROWED_TOOLS,
-                'permission' => 'borrowed_tools.create'
-            ],
-            [
-                'label' => 'View Inventory',
-                'route' => 'assets?status=available',
-                'icon' => 'bi-list-ul',
-                'permission' => 'assets.view'
-            ]
-        ];
-
-        // Filter actions based on permissions (DRY principle - using centralized hasPermission())
-        $actions = array_filter($allActions, function($action) {
-            // If no permission required, always show
-            if ($action['permission'] === null) {
-                return true;
-            }
-            // Check permission using centralized function
-            return hasPermission($action['permission']);
-        });
-
-        // Remove permission key before passing to component (component doesn't need it)
-        $actions = array_map(function($action) {
-            unset($action['permission']);
-            return $action;
-        }, $actions);
+        // ✅ REFACTORED: Business logic moved to service layer (MVC separation)
+        // Get authorized quick actions from DashboardService
+        $dashboardService = new DashboardService();
+        $actions = $dashboardService->getWarehousemanActions();
 
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
         ?>

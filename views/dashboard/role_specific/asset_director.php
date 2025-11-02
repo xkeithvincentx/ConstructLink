@@ -40,55 +40,120 @@ $assetData = $dashboardData['role_specific']['asset_director'] ?? [];
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row" role="group" aria-labelledby="pending-actions-title">
-                    <?php
-                    // Define pending action items using WorkflowStatus constants
-                    $pendingItems = [
-                        [
-                            'label' => 'Procurement Verification',
-                            'count' => $assetData['pending_procurement_verification'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_PENDING),
-                            'icon' => IconMapper::MODULE_PROCUREMENT,
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Equipment Approvals',
-                            'count' => $dashboardData['borrowed_tools']['pending_approval'] ?? 0,
-                            'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_APPROVAL),
-                            'icon' => 'bi-clipboard-check',
-                            'critical' => false
-                        ],
-                        [
-                            'label' => 'Delivery Discrepancies',
-                            'count' => $assetData['pending_discrepancies'] ?? 0,
-                            'route' => 'delivery-tracking?' . http_build_query(['status' => 'Discrepancy Reported']),
-                            'icon' => IconMapper::MODULE_TRANSFERS,
-                            'critical' => true
-                        ],
-                        [
-                            'label' => 'Incident Resolution',
-                            'count' => $assetData['pending_incident_resolution'] ?? 0,
-                            'route' => 'incidents?' . http_build_query(['status' => WorkflowStatus::INCIDENT_PENDING_AUTHORIZATION]),
-                            'icon' => IconMapper::MODULE_INCIDENTS,
-                            'critical' => true
-                        ],
-                        [
-                            'label' => 'Maintenance Authorization',
-                            'count' => $assetData['pending_maintenance_authorization'] ?? 0,
-                            'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED]),
-                            'icon' => IconMapper::MODULE_MAINTENANCE,
-                            'critical' => false
-                        ]
-                    ];
+                <?php
+                // Define pending action items using WorkflowStatus constants
+                $pendingItems = [
+                    [
+                        'label' => 'Procurement Verification',
+                        'count' => $assetData['pending_procurement_verification'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('procurement-orders', WorkflowStatus::PROCUREMENT_PENDING),
+                        'icon' => IconMapper::MODULE_PROCUREMENT,
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Equipment Approvals',
+                        'count' => $dashboardData['borrowed_tools']['pending_approval'] ?? 0,
+                        'route' => WorkflowStatus::buildRoute('borrowed-tools', WorkflowStatus::BORROWED_TOOLS_PENDING_APPROVAL),
+                        'icon' => 'bi-clipboard-check',
+                        'critical' => false
+                    ],
+                    [
+                        'label' => 'Delivery Discrepancies',
+                        'count' => $assetData['pending_discrepancies'] ?? 0,
+                        'route' => 'delivery-tracking?' . http_build_query(['status' => 'Discrepancy Reported']),
+                        'icon' => IconMapper::MODULE_TRANSFERS,
+                        'critical' => true
+                    ],
+                    [
+                        'label' => 'Incident Resolution',
+                        'count' => $assetData['pending_incident_resolution'] ?? 0,
+                        'route' => 'incidents?' . http_build_query(['status' => WorkflowStatus::INCIDENT_PENDING_AUTHORIZATION]),
+                        'icon' => IconMapper::MODULE_INCIDENTS,
+                        'critical' => true
+                    ],
+                    [
+                        'label' => 'Maintenance Authorization',
+                        'count' => $assetData['pending_maintenance_authorization'] ?? 0,
+                        'route' => 'maintenance?' . http_build_query(['status' => WorkflowStatus::MAINTENANCE_SCHEDULED]),
+                        'icon' => IconMapper::MODULE_MAINTENANCE,
+                        'critical' => false
+                    ]
+                ];
+                ?>
 
-                    // Set action button text
-                    $actionText = 'Review Now';
+                <!-- Alpine.js Enhanced: Filterable Pending Actions -->
+                <div x-data="filterableList(<?= htmlspecialchars(json_encode($pendingItems)) ?>)"
+                     role="group"
+                     aria-labelledby="pending-actions-title">
 
-                    // Render each pending action card using component
-                    foreach ($pendingItems as $item) {
-                        include APP_ROOT . '/views/dashboard/components/pending_action_card.php';
-                    }
-                    ?>
+                    <!-- Filter Controls -->
+                    <div class="btn-group mb-3 d-flex" role="group" aria-label="Filter pending actions">
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="setFilter('all')">
+                            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+                            All (<span x-text="items.length"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'"
+                                @click="setFilter('pending')">
+                            <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
+                            With Items (<span x-text="pendingCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'critical' ? 'btn-danger' : 'btn-outline-secondary'"
+                                @click="setFilter('critical')">
+                            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
+                            Critical (<span x-text="criticalCount"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Pending Actions List -->
+                    <div class="row">
+                        <template x-for="(item, index) in filteredItems" :key="item.label">
+                            <div class="col-12 col-md-6 mb-4 mb-md-3 d-flex">
+                                <div class="action-item flex-fill"
+                                     :class="item.critical ? 'action-item-critical' : ''"
+                                     role="group"
+                                     :aria-labelledby="'pending-action-' + index + '-label'">
+
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i :class="item.icon + ' me-2 fs-5'" aria-hidden="true"></i>
+                                            <span class="fw-semibold" :id="'pending-action-' + index + '-label'" x-text="item.label"></span>
+                                        </div>
+                                        <span class="badge rounded-pill"
+                                              :class="item.critical ? 'badge-critical' : 'badge-neutral'"
+                                              role="status"
+                                              x-text="item.count"></span>
+                                    </div>
+
+                                    <template x-if="item.count > 0">
+                                        <a :href="'?route=' + item.route"
+                                           class="btn btn-sm mt-1"
+                                           :class="item.critical ? 'btn-danger' : 'btn-outline-secondary'">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Review Now
+                                        </a>
+                                    </template>
+                                    <template x-if="item.count === 0">
+                                        <small class="text-muted d-block mt-1" role="status">
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>No pending items
+                                        </small>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredItems.length === 0" class="alert alert-info" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No items match the selected filter.
+                    </div>
+
                 </div>
             </div>
         </div>

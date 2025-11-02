@@ -5,13 +5,20 @@
  * Role-specific dashboard for System Administrator with system overview,
  * health monitoring, and administrative operations.
  *
- * Refactored to use reusable components and eliminate code duplication.
+ * Enhanced with Alpine.js for interactive monitoring and filtering.
  * Implements WCAG 2.1 AA accessibility standards.
+ *
+ * Alpine.js Features:
+ * - Collapsible System Health & Metrics sections
+ * - Filterable System Status services (Online/Limited/Offline)
+ * - Auto-refresh timestamp indicator
+ * - Smooth transitions and animations
  *
  * @package ConstructLink
  * @subpackage Dashboard - Role Specific
- * @version 2.0 - Refactored
+ * @version 2.1 - Alpine.js Enhanced
  * @since 2025-10-28
+ * @updated 2025-11-02
  */
 
 // Ensure required constants are available
@@ -97,18 +104,39 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
             </div>
         </div>
 
-        <!-- System Health & Metrics -->
-        <div class="card">
-            <div class="card-header">
+        <!-- System Health & Metrics with Alpine.js Collapsible -->
+        <div class="card" x-data="{ healthOpen: true, assetOpen: true, workflowOpen: true }">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0" id="system-health-title">
                     <i class="bi bi-shield-check me-2" aria-hidden="true"></i>System Health & Metrics
                 </h5>
+                <button @click="healthOpen = !healthOpen"
+                        class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        :aria-expanded="healthOpen"
+                        aria-controls="health-content">
+                    <i class="bi" :class="healthOpen ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+                    <span x-text="healthOpen ? 'Collapse' : 'Expand'"></span>
+                </button>
             </div>
-            <div class="card-body">
+            <div x-show="healthOpen"
+                 x-transition
+                 id="health-content"
+                 class="card-body">
                 <div class="row" role="group" aria-labelledby="system-health-title">
                     <div class="col-md-6">
-                        <h6 class="text-muted" id="asset-management-title">Asset Management</h6>
-                        <div class="mb-2" role="region" aria-labelledby="asset-management-title">
+                        <!-- Collapsible Asset Management Section -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted mb-0" id="asset-management-title">Asset Management</h6>
+                                <button @click="assetOpen = !assetOpen"
+                                        class="btn btn-sm btn-link text-decoration-none p-0"
+                                        type="button">
+                                    <i class="bi" :class="assetOpen ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div x-show="assetOpen" x-transition>
+                                <div class="mb-2" role="region" aria-labelledby="asset-management-title">
                             <?php
                             // Available Assets Progress Bar
                             $label = 'Available Assets';
@@ -152,10 +180,22 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                             ];
                             include APP_ROOT . '/views/dashboard/components/progress_bar.php';
                             ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted" id="workflow-status-title">Workflow Status</h6>
+                        <!-- Collapsible Workflow Status Section -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted mb-0" id="workflow-status-title">Workflow Status</h6>
+                                <button @click="workflowOpen = !workflowOpen"
+                                        class="btn btn-sm btn-link text-decoration-none p-0"
+                                        type="button">
+                                    <i class="bi" :class="workflowOpen ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div x-show="workflowOpen" x-transition>
                         <?php
                         // Use list_group component for workflow status
                         $items = [
@@ -182,6 +222,8 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
                         ];
                         include APP_ROOT . '/views/dashboard/components/list_group.php';
                         ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -221,50 +263,143 @@ $adminData = $dashboardData['role_specific']['admin'] ?? [];
         include APP_ROOT . '/views/dashboard/components/quick_actions_card.php';
         ?>
 
-        <!-- System Status -->
+        <!-- System Status with Alpine.js Filtering and Auto-Refresh -->
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0" id="system-status-title">
                     <i class="bi bi-server me-2" aria-hidden="true"></i>System Status
                 </h5>
+                <small class="text-muted" x-data="{ lastUpdate: new Date().toLocaleTimeString() }" x-init="setInterval(() => { lastUpdate = new Date().toLocaleTimeString() }, 60000)">
+                    <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+                    <span x-text="lastUpdate"></span>
+                </small>
             </div>
             <div class="card-body">
                 <?php
-                // Use list_group component for system status
-                $items = [
+                // Define system services with status
+                $systemServices = [
                     [
                         'label' => 'Database',
                         'value' => 'Online',
+                        'status' => 'online',
                         'critical' => false,
                         'icon' => 'bi-database'
                     ],
                     [
                         'label' => 'Authentication',
                         'value' => 'Active',
+                        'status' => 'online',
                         'critical' => false,
                         'icon' => 'bi-shield-check'
                     ],
                     [
                         'label' => 'API Services',
                         'value' => 'Running',
+                        'status' => 'online',
                         'critical' => false,
                         'icon' => 'bi-cloud-check'
                     ],
                     [
                         'label' => 'QR Scanner',
                         'value' => 'Ready',
+                        'status' => 'online',
                         'critical' => false,
                         'icon' => 'bi-qr-code-scan'
                     ],
                     [
                         'label' => 'Email Service',
                         'value' => 'Limited',
-                        'critical' => false,
+                        'status' => 'limited',
+                        'critical' => true,
                         'icon' => 'bi-envelope'
                     ]
                 ];
-                include APP_ROOT . '/views/dashboard/components/list_group.php';
                 ?>
+
+                <!-- Alpine.js Enhanced: Filterable System Services -->
+                <div x-data="{
+                    services: <?= htmlspecialchars(json_encode($systemServices)) ?>,
+                    filter: 'all',
+                    setFilter(value) {
+                        this.filter = value;
+                    },
+                    get filteredServices() {
+                        if (this.filter === 'all') return this.services;
+                        if (this.filter === 'online') return this.services.filter(s => s.status === 'online');
+                        if (this.filter === 'limited') return this.services.filter(s => s.status === 'limited');
+                        if (this.filter === 'offline') return this.services.filter(s => s.status === 'offline');
+                        return this.services;
+                    },
+                    get onlineCount() {
+                        return this.services.filter(s => s.status === 'online').length;
+                    },
+                    get limitedCount() {
+                        return this.services.filter(s => s.status === 'limited').length;
+                    },
+                    get offlineCount() {
+                        return this.services.filter(s => s.status === 'offline').length;
+                    }
+                }" role="region" aria-labelledby="system-status-title">
+
+                    <!-- Filter Controls -->
+                    <div class="btn-group mb-3 d-flex" role="group" aria-label="Filter system services">
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="setFilter('all')">
+                            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+                            All (<span x-text="services.length"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'online' ? 'btn-success' : 'btn-outline-secondary'"
+                                @click="setFilter('online')">
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+                            Online (<span x-text="onlineCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'limited' ? 'btn-warning' : 'btn-outline-secondary'"
+                                @click="setFilter('limited')">
+                            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+                            Limited (<span x-text="limitedCount"></span>)
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm"
+                                :class="filter === 'offline' ? 'btn-danger' : 'btn-outline-secondary'"
+                                @click="setFilter('offline')">
+                            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+                            Offline (<span x-text="offlineCount"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Service List -->
+                    <div class="list-group list-group-flush" role="list">
+                        <template x-for="(service, index) in filteredServices" :key="service.label">
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center" role="listitem">
+                                <div class="d-flex align-items-center">
+                                    <i :class="service.icon + ' me-2'" aria-hidden="true"></i>
+                                    <span x-text="service.label"></span>
+                                </div>
+                                <span class="badge"
+                                      :class="{
+                                          'badge-success-neutral': service.status === 'online',
+                                          'badge-warning-neutral': service.status === 'limited',
+                                          'badge-danger-neutral': service.status === 'offline'
+                                      }"
+                                      role="status"
+                                      x-text="service.value"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredServices.length === 0" class="alert alert-info mt-3" role="status">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        No services match the selected filter.
+                    </div>
+                </div>
+
                 <hr>
                 <div class="d-flex justify-content-between align-items-center">
                     <span><strong>System Version</strong></span>
