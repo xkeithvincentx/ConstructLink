@@ -119,7 +119,13 @@ class Router {
                 }
                 
                 // Store intended URL for redirect after login
-                $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'];
+                // Fix: Sanitize and ensure proper query string format
+                $intendedUrl = $_SERVER['REQUEST_URI'] ?? '';
+                // Ensure URL starts with ? or / for proper redirects
+                if (!empty($intendedUrl) && $intendedUrl !== '/' && !str_starts_with($intendedUrl, '?')) {
+                    $intendedUrl = '?' . ltrim($intendedUrl, '/');
+                }
+                $_SESSION['intended_url'] = $intendedUrl;
                 header('Location: ?route=login');
                 exit;
             }

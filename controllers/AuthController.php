@@ -60,6 +60,21 @@ class AuthController {
                             // Redirect to intended page or dashboard
                             $redirectTo = $_SESSION['intended_url'] ?? '?route=dashboard';
                             unset($_SESSION['intended_url']);
+
+                            // Security: Validate redirect URL to prevent open redirects
+                            // Only allow relative URLs starting with / or ?
+                            if (!empty($redirectTo)) {
+                                // Strip any potential protocol/domain (prevent open redirect attacks)
+                                $redirectTo = preg_replace('#^https?://[^/]+#i', '', $redirectTo);
+
+                                // Ensure it starts with / or ?
+                                if (!str_starts_with($redirectTo, '/') && !str_starts_with($redirectTo, '?')) {
+                                    $redirectTo = '?route=dashboard';
+                                }
+                            } else {
+                                $redirectTo = '?route=dashboard';
+                            }
+
                             header('Location: ' . $redirectTo);
                             exit;
                         } else {
