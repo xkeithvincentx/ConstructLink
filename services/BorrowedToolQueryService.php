@@ -43,7 +43,7 @@ class BorrowedToolQueryService {
                 $conditions[] = "((bt.status = ? AND bt.expected_return < CURDATE())
                                  OR (btb.status = ? AND btb.expected_return < CURDATE()))";
                 $params[] = BorrowedToolStatus::BORROWED;
-                $params[] = BorrowedToolStatus::RELEASED;
+                $params[] = BorrowedToolStatus::BORROWED;
             } else {
                 // Match status against both tables using COALESCE logic (matches SELECT clause)
                 // This ensures WHERE filtering matches the displayed status values
@@ -62,13 +62,13 @@ class BorrowedToolQueryService {
                 $conditions[] = "((bt.status = ? AND bt.expected_return < CURDATE())
                                  OR (btb.status = ? AND btb.expected_return < CURDATE()))";
                 $params[] = BorrowedToolStatus::BORROWED;
-                $params[] = BorrowedToolStatus::RELEASED;
+                $params[] = BorrowedToolStatus::BORROWED;
             } elseif ($filters['priority'] === 'due_soon') {
                 // Check both single items and batches for items due within 3 days
                 $conditions[] = "((bt.status = ? AND bt.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY))
                                  OR (btb.status = ? AND btb.expected_return BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)))";
                 $params[] = BorrowedToolStatus::BORROWED;
-                $params[] = BorrowedToolStatus::RELEASED;
+                $params[] = BorrowedToolStatus::BORROWED;
             } elseif ($filters['priority'] === 'pending_action') {
                 // Check both tables for pending statuses using COALESCE logic
                 $conditions[] = "(COALESCE(btb.status, bt.status) IN (?, ?))";

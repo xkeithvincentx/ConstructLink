@@ -24,9 +24,9 @@ $projects = $projects ?? [];
  * 3. Validated values prevent invalid queries while allowing all valid filters
  *
  * Status System Architecture:
- * - borrowed_tool_batches.status: Pending Verification, Pending Approval,
- *   Approved, Released, Partially Returned, Returned, Canceled
- * - borrowed_tools.status: Borrowed, Returned, Canceled
+ * - borrowed_tool_batches.status: Pending Verification, Pending Approval, Approved
+ * - borrowed_tools.status: Borrowed, Partially Returned, Returned, Canceled
+ * - Workflow: Approved → [Release Action] → Borrowed (Release is an action, not a status)
  * - Computed status: Query combines batch + individual statuses
  * - Special filter: Overdue (Borrowed items past due date)
  * ============================================================================
@@ -36,8 +36,9 @@ $projects = $projects ?? [];
  * Validate status parameter against allowed values
  *
  * Includes all workflow statuses plus special filter values:
- * - Workflow statuses: Pending Verification, Pending Approval, Approved, Released, Borrowed, Partially Returned, Returned, Canceled
+ * - Workflow statuses: Pending Verification, Pending Approval, Approved, Borrowed, Partially Returned, Returned, Canceled
  * - Special filters: Overdue (handled as Borrowed + past due in model)
+ * - Note: "Released" is an action, not a status. After release action, status becomes "Borrowed"
  *
  * @param string $status The status value to validate
  * @return string Validated status or empty string
@@ -47,7 +48,6 @@ function validateStatus(string $status): string {
         'Pending Verification',
         'Pending Approval',
         'Approved',
-        'Released',
         'Borrowed',
         'Partially Returned',
         'Returned',
@@ -141,7 +141,6 @@ function renderStatusOptions(Auth $auth, string $currentStatus = ''): string {
         ['value' => 'Pending Verification', 'label' => 'Pending Verification', 'roles' => ['System Admin', 'Project Manager', 'Asset Director']],
         ['value' => 'Pending Approval', 'label' => 'Pending Approval', 'roles' => ['System Admin', 'Asset Director', 'Finance Director']],
         ['value' => 'Approved', 'label' => 'Approved', 'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk']],
-        ['value' => 'Released', 'label' => 'Released', 'roles' => []],
         ['value' => 'Borrowed', 'label' => 'Borrowed', 'roles' => []],
         ['value' => 'Partially Returned', 'label' => 'Partially Returned', 'roles' => []],
         ['value' => 'Returned', 'label' => 'Returned', 'roles' => []],

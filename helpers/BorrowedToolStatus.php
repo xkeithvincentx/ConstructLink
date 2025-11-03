@@ -36,10 +36,8 @@ class BorrowedToolStatus {
      * Active Borrowing Statuses
      */
 
-    // Tool has been released to borrower (currently borrowed)
-    const RELEASED = 'Released';
-
-    // Alias for RELEASED (semantic clarity for borrowed state)
+    // Tool is currently with the borrower (after physical release action)
+    // Note: "Release" is the ACTION of handing over; "Borrowed" is the resulting STATUS
     const BORROWED = 'Borrowed';
 
     /**
@@ -72,7 +70,6 @@ class BorrowedToolStatus {
             self::PENDING_VERIFICATION,
             self::PENDING_APPROVAL,
             self::APPROVED,
-            self::RELEASED,
             self::BORROWED,
             self::PARTIALLY_RETURNED,
             self::RETURNED,
@@ -101,7 +98,6 @@ class BorrowedToolStatus {
      */
     public static function getActiveBorrowingStatuses() {
         return [
-            self::RELEASED,
             self::BORROWED,
             self::PARTIALLY_RETURNED,
             self::OVERDUE,
@@ -175,7 +171,6 @@ class BorrowedToolStatus {
             case self::APPROVED:
                 return 'info';
 
-            case self::RELEASED:
             case self::BORROWED:
                 return 'primary';
 
@@ -213,9 +208,8 @@ class BorrowedToolStatus {
             case self::APPROVED:
                 return 'Approved and ready for release';
 
-            case self::RELEASED:
             case self::BORROWED:
-                return 'Currently borrowed by user';
+                return 'Currently borrowed by user (after physical release)';
 
             case self::PARTIALLY_RETURNED:
                 return 'Some items returned, others still borrowed';
@@ -250,9 +244,6 @@ class BorrowedToolStatus {
 
             case self::APPROVED:
                 return 'Approved';
-
-            case self::RELEASED:
-                return 'Released';
 
             case self::BORROWED:
                 return 'Borrowed';
@@ -291,7 +282,6 @@ class BorrowedToolStatus {
             case self::APPROVED:
                 return 'bi-check-circle';
 
-            case self::RELEASED:
             case self::BORROWED:
                 return 'bi-box-arrow-right';
 
