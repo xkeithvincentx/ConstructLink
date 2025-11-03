@@ -91,7 +91,7 @@ class BorrowedToolBatchStatisticsService {
             BorrowedToolStatus::PENDING_VERIFICATION,
             BorrowedToolStatus::PENDING_APPROVAL,
             BorrowedToolStatus::APPROVED,
-            BorrowedToolStatus::RELEASED,
+            BorrowedToolStatus::BORROWED,
             BorrowedToolStatus::PARTIALLY_RETURNED,
             BorrowedToolStatus::RETURNED,
             BorrowedToolStatus::CANCELED
@@ -114,7 +114,7 @@ class BorrowedToolBatchStatisticsService {
             "btb.status = ?",
             "btb.expected_return < CURDATE()"
         ];
-        $params = [BorrowedToolStatus::RELEASED];
+        $params = [BorrowedToolStatus::BORROWED];
 
         if ($projectId) {
             $conditions[] = "EXISTS (

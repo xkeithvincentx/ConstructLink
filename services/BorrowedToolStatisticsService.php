@@ -85,12 +85,11 @@ class BorrowedToolStatisticsService {
      */
     public function getOverdueTools($projectId = null) {
         $conditions = [
-            "bt.status IN (?, ?)",
+            "bt.status = ?",
             "bt.expected_return < CURDATE()"
         ];
         $params = [
-            BorrowedToolStatus::BORROWED,
-            BorrowedToolStatus::RELEASED
+            BorrowedToolStatus::BORROWED
         ];
 
         if ($projectId) {
@@ -193,6 +192,40 @@ class BorrowedToolStatisticsService {
         // Prepend status constant, append limit
         array_unshift($params, BorrowedToolStatus::OVERDUE);
         $params[] = $limit;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get borrowing history for a specific asset
+     *
+     * @param int $assetId Asset ID
+     * @return array Array of borrowing records for this asset
+     */
+    public function getAssetBorrowingHistory($assetId) {
+        $sql = "SELECT
+                    bt.*,
+                    a.name as asset_name,
+                    a.ref as asset_ref,
+                    u.username as processed_by_username,
+                    u.full_name as processed_by_name,
+                    CASE
+                        WHEN bt.status = ? AND bt.expected_return < CURDATE() THEN ?
+                        ELSE bt.status
+                    END as computed_status
+                FROM borrowed_tools bt
+                INNER JOIN assets a ON bt.asset_id = a.id
+                LEFT JOIN users u ON bt.processed_by = u.id
+                WHERE bt.asset_id = ?
+                ORDER BY bt.created_at DESC";
+
+        $params = [
+            BorrowedToolStatus::BORROWED,
+            BorrowedToolStatus::OVERDUE,
+            $assetId
+        ];
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);

@@ -315,7 +315,7 @@ class BorrowedToolBatchModel extends BaseModel {
                 BorrowedToolStatus::PENDING_VERIFICATION,
                 BorrowedToolStatus::PENDING_APPROVAL,
                 BorrowedToolStatus::APPROVED,
-                BorrowedToolStatus::RELEASED,
+                BorrowedToolStatus::BORROWED,
                 BorrowedToolStatus::PARTIALLY_RETURNED
             ]);
             $existingReservation = $checkStmt->fetch(PDO::FETCH_ASSOC);
@@ -583,7 +583,7 @@ class BorrowedToolBatchModel extends BaseModel {
                         throw new Exception("Cannot extend item {$item['asset_name']} - already fully returned");
                     }
 
-                    if (!in_array($item['status'], [BorrowedToolStatus::BORROWED, BorrowedToolStatus::RELEASED])) {
+                    if ($item['status'] !== BorrowedToolStatus::BORROWED) {
                         throw new Exception("Cannot extend item {$item['asset_name']} - invalid status: {$item['status']}");
                     }
                 }

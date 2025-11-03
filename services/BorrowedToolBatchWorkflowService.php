@@ -210,9 +210,9 @@ class BorrowedToolBatchWorkflowService {
                 );
             }
 
-            // Update batch status
+            // Update batch status to Borrowed after release action
             $updated = $this->batchModel->update($batchId, [
-                'status' => BorrowedToolStatus::RELEASED,
+                'status' => BorrowedToolStatus::BORROWED,
                 'released_by' => $releasedBy,
                 'release_date' => date('Y-m-d H:i:s'),
                 'release_notes' => $notes
