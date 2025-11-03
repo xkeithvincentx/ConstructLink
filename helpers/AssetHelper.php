@@ -114,7 +114,7 @@ class AssetHelper
     /**
      * Load module JavaScript file
      *
-     * @param string $module - Module name (e.g., 'index', 'ajax-handler')
+     * @param string $module - Module name (e.g., 'index', 'ajax-handler', 'transfers')
      * @param array|string $options - Options array or type string for backward compatibility
      * @param bool $print - Whether to echo or return the HTML
      * @return string HTML script tag
@@ -130,7 +130,21 @@ class AssetHelper
 
         $baseUrl = self::getAssetsBaseUrl();
         $version = self::getVersion();
-        $src = "{$baseUrl}/js/borrowed-tools/{$module}.js?v={$version}";
+
+        // Determine JS directory (borrowed-tools has priority for backward compatibility)
+        $directories = ['borrowed-tools', 'modules'];
+        $jsDirectory = 'modules'; // default
+
+        // Check which directory contains the file
+        foreach ($directories as $dir) {
+            $filePath = APP_ROOT . "/assets/js/{$dir}/{$module}.js";
+            if (file_exists($filePath)) {
+                $jsDirectory = $dir;
+                break;
+            }
+        }
+
+        $src = "{$baseUrl}/js/{$jsDirectory}/{$module}.js?v={$version}";
 
         $html = sprintf(
             '<script type="%s" src="%s"></script>',

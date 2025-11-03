@@ -6,6 +6,179 @@
  * @since 1.0.0
  */
 
+/**
+ * ============================================================================
+ * ALPINE.JS TRANSFER FILTERS COMPONENT
+ * ============================================================================
+ *
+ * Provides interactive filter functionality with:
+ * - Auto-submit on filter changes (no manual button click needed)
+ * - Debounced search input (500ms delay)
+ * - Date range validation with inline error messages
+ * - Quick filter buttons for common status filters
+ *
+ * USAGE:
+ * Add x-data="transferFilters()" to filter form wrapper
+ *
+ * FEATURES:
+ * 1. Auto-Submit: Dropdowns auto-submit form on change
+ * 2. Debounced Search: Search input debounces for 500ms before submitting
+ * 3. Date Validation: Prevents invalid date ranges with inline errors
+ * 4. Quick Filters: One-click status filters via quick action buttons
+ *
+ * ============================================================================
+ */
+document.addEventListener('alpine:init', () => {
+    Alpine.data('transferFilters', () => ({
+        /**
+         * Component state
+         */
+        searchQuery: '',
+
+        /**
+         * Initialize component
+         * Sets initial search query value from input field
+         */
+        init() {
+            // Initialize search query from input value (if exists)
+            const searchInput = this.$el.querySelector('[name="search"]');
+            if (searchInput) {
+                this.searchQuery = searchInput.value;
+            }
+        },
+
+        /**
+         * Auto-submit form on filter change
+         * Called by @change event on dropdowns and date inputs
+         *
+         * @returns {void}
+         */
+        autoSubmit() {
+            const form = this.$el.querySelector('form');
+            if (form) {
+                form.submit();
+            }
+        },
+
+        /**
+         * Handle form submission
+         * Prevents default submit behavior and manually submits
+         * Allows for future enhancement (e.g., AJAX submissions)
+         *
+         * @param {Event} event Submit event
+         * @returns {void}
+         */
+        handleSubmit(event) {
+            // Allow normal form submission to proceed
+            event.target.submit();
+        },
+
+        /**
+         * Quick filter - applies status filter with one click
+         * Used by quick action buttons (My Verifications, My Approvals, In Transit)
+         *
+         * @param {string} statusValue The status value to filter by
+         * @returns {void}
+         *
+         * @example
+         * quickFilter('Pending Verification')
+         * // Sets status dropdown to "Pending Verification" and submits form
+         */
+        quickFilter(statusValue) {
+            const statusField = this.$el.querySelector('[name="status"]');
+            if (statusField) {
+                statusField.value = statusValue;
+                this.autoSubmit();
+            }
+        },
+
+        /**
+         * Validate date range
+         * Ensures date_from <= date_to
+         * Shows inline error messages for invalid ranges
+         *
+         * @param {HTMLInputElement} changedInput The date input that was changed
+         * @returns {void}
+         *
+         * @example
+         * // User changes date_from to 2024-01-15
+         * // If date_to is 2024-01-10 (earlier), shows error and clears date_from
+         */
+        validateDateRange(changedInput) {
+            // Get date input references
+            const dateFromInput = this.$refs.dateFrom || this.$refs.mobileDateFrom;
+            const dateToInput = this.$refs.dateTo || this.$refs.mobileDateTo;
+
+            if (!dateFromInput || !dateToInput) {
+                return;
+            }
+
+            const dateFrom = dateFromInput.value;
+            const dateTo = dateToInput.value;
+
+            // Clear previous errors
+            this.clearDateError(dateFromInput);
+            this.clearDateError(dateToInput);
+
+            // Validate if both dates are filled
+            if (dateFrom && dateTo && dateFrom > dateTo) {
+                // Determine which field to clear based on which one changed
+                if (changedInput === dateFromInput) {
+                    this.showDateError(dateFromInput, 'Start date cannot be later than end date');
+                    dateFromInput.value = '';
+                } else {
+                    this.showDateError(dateToInput, 'End date cannot be earlier than start date');
+                    dateToInput.value = '';
+                }
+            } else {
+                // Valid range, auto-submit
+                this.autoSubmit();
+            }
+        },
+
+        /**
+         * Show date error message with Bootstrap validation styling
+         * Adds is-invalid class and displays error message below input
+         *
+         * @param {HTMLInputElement} input The input element to show error for
+         * @param {string} message The error message to display
+         * @returns {void}
+         */
+        showDateError(input, message) {
+            // Add Bootstrap validation class
+            input.classList.add('is-invalid');
+
+            // Create error message div
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            errorDiv.textContent = message;
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.setAttribute('aria-live', 'polite');
+
+            // Insert error message after input
+            input.parentNode.appendChild(errorDiv);
+        },
+
+        /**
+         * Clear date error message
+         * Removes is-invalid class and error message
+         *
+         * @param {HTMLInputElement} input The input element to clear error for
+         * @returns {void}
+         */
+        clearDateError(input) {
+            // Remove Bootstrap validation class
+            input.classList.remove('is-invalid');
+
+            // Remove error message
+            const errorDiv = input.parentNode.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+    }));
+});
+
 const TransferModule = {
     /**
      * Initialize module
