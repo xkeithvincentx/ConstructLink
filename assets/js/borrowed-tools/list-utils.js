@@ -520,6 +520,18 @@ export const initListUtils = () => {
     if (printButton) printButton.addEventListener('click', printTable);
     if (refreshButton) refreshButton.addEventListener('click', refreshBorrowedTools);
 
+    // Records per page selector handler
+    const recordsPerPageSelect = document.getElementById('recordsPerPage');
+    if (recordsPerPageSelect) {
+      recordsPerPageSelect.addEventListener('change', function() {
+        const perPage = this.value;
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', perPage);
+        url.searchParams.delete('page'); // Reset to page 1 when changing per page
+        window.location.href = url.toString();
+      });
+    }
+
     document.addEventListener('click', event => {
       const quickFilterButton = event.target.closest('.quick-filter-btn');
       if (quickFilterButton) {

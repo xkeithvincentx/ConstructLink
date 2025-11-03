@@ -100,7 +100,10 @@ class BorrowedToolStatisticsService {
 
         $whereClause = "WHERE " . implode(" AND ", $conditions);
 
-        $sql = "SELECT bt.*, a.name as asset_name, a.ref as asset_ref
+        $sql = "SELECT bt.*,
+                       a.name as asset_name,
+                       a.ref as asset_ref,
+                       DATEDIFF(CURDATE(), bt.expected_return) as days_overdue
                 FROM borrowed_tools bt
                 INNER JOIN assets a ON bt.asset_id = a.id
                 {$whereClause}

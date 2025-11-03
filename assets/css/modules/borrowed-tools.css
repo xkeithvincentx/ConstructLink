@@ -571,7 +571,160 @@ tr.table-active {
 }
 
 /* ============================================
-   15. PRINT STYLES
+   15. PAGINATION & VIEWPORT OPTIMIZATION
+   ============================================ */
+
+/* Records per page selector styling */
+#recordsPerPage {
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#recordsPerPage:hover {
+    border-color: #86b7fe;
+}
+
+#recordsPerPage:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Enhanced pagination controls */
+.pagination {
+    margin-bottom: 0;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Pagination info styling */
+.pagination-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.pagination-info strong {
+    color: #212529;
+    font-weight: 600;
+}
+
+.pagination-info .text-primary {
+    font-weight: 500;
+}
+
+/* Desktop viewport optimization for 5 records */
+@media (min-width: 768px) {
+    /* Reduce table cell padding for compact view */
+    #borrowedToolsTable tbody td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    #borrowedToolsTable thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Reduce card body padding */
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Optimize table row height */
+    #borrowedToolsTable tbody tr {
+        height: auto;
+        min-height: 60px;
+    }
+
+    /* Reduce spacing for workflow components */
+    .mva-workflow {
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+
+    /* Compact action buttons */
+    .action-buttons .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Ensure pagination is always visible */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    /* Reduce margin for filters */
+    .card.d-none.d-md-block {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Large desktop optimization */
+@media (min-width: 1200px) {
+    /* Increase cell padding slightly on large screens */
+    #borrowedToolsTable tbody td {
+        padding: 0.75rem;
+    }
+
+    #borrowedToolsTable thead th {
+        padding: 1rem 0.75rem;
+    }
+}
+
+/* Extra large desktop - more breathing room */
+@media (min-width: 1400px) {
+    #borrowedToolsTable tbody td {
+        padding: 0.875rem;
+    }
+
+    #borrowedToolsTable thead th {
+        padding: 1rem;
+        font-size: 0.9375rem;
+    }
+
+    .action-buttons .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Sticky pagination on scroll (optional enhancement) */
+.pagination-sticky {
+    position: sticky;
+    bottom: 0;
+    background-color: #fff;
+    padding: 1rem 0;
+    border-top: 1px solid #dee2e6;
+    z-index: 100;
+}
+
+/* ============================================
+   16. PRINT STYLES
    ============================================ */
 
 @media print {

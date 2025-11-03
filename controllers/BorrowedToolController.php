@@ -122,7 +122,13 @@ class BorrowedToolController {
         $currentUser = $this->permissionGuard->getCurrentUser();
 
         $page = (int)($_GET['page'] ?? 1);
-        $perPage = PAGINATION_PER_PAGE_BORROWED_TOOLS;
+
+        // Allow users to select records per page (5, 10, 25, 50, 100)
+        $perPage = (int)($_GET['per_page'] ?? PAGINATION_PER_PAGE_BORROWED_TOOLS);
+        $allowedPerPage = [5, 10, 25, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = PAGINATION_PER_PAGE_BORROWED_TOOLS;
+        }
         
         // Build filters
         $filters = $this->buildFilters();
@@ -171,7 +177,7 @@ class BorrowedToolController {
      */
     private function buildFilters() {
         $filters = [];
-        
+
         if (!empty($_GET['status'])) $filters['status'] = $_GET['status'];
         if (!empty($_GET['search'])) $filters['search'] = $_GET['search'];
         if (!empty($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
@@ -195,7 +201,7 @@ class BorrowedToolController {
 
         $filters['sort_by'] = $sortBy;
         $filters['sort_order'] = $sortOrder;
-        
+
         return $filters;
     }
 

@@ -138,7 +138,7 @@ $csrfToken = CSRFProtection::generateToken();
     </div>
 </div>
 
-<!-- Filters -->
+<!-- Filters (includes integrated view mode toggle) -->
 <?php include APP_ROOT . '/views/borrowed-tools/partials/_filters.php'; ?>
 
 <!-- Borrowed Tools Table -->

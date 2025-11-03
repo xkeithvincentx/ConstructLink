@@ -44,17 +44,14 @@ $projects = $projects ?? [];
  */
 function validateStatus(string $status): string {
     $allowedStatuses = [
-        // Standard workflow statuses
         'Pending Verification',
         'Pending Approval',
         'Approved',
-        'Released',
-        'Borrowed',              // Added: Primary active status from database
+        'Borrowed',
         'Partially Returned',
         'Returned',
         'Canceled',
-        // Special filter values
-        'Overdue'                // Added: Special filter handled in model as Borrowed + past due
+        'Overdue'
     ];
     return in_array($status, $allowedStatuses, true) ? $status : '';
 }
@@ -133,8 +130,7 @@ function renderStatusOptions(Auth $auth, string $currentStatus = ''): string {
         ['value' => 'Pending Verification', 'label' => 'Pending Verification', 'roles' => ['System Admin', 'Project Manager', 'Asset Director']],
         ['value' => 'Pending Approval', 'label' => 'Pending Approval', 'roles' => ['System Admin', 'Asset Director', 'Finance Director']],
         ['value' => 'Approved', 'label' => 'Approved', 'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk']],
-        ['value' => 'Released', 'label' => 'Released', 'roles' => []],
-        ['value' => 'Borrowed', 'label' => 'Currently Out', 'roles' => []],
+        ['value' => 'Borrowed', 'label' => 'Borrowed', 'roles' => []],
         ['value' => 'Partially Returned', 'label' => 'Partially Returned', 'roles' => []],
         ['value' => 'Returned', 'label' => 'Returned', 'roles' => []],
         ['value' => 'Canceled', 'label' => 'Canceled', 'roles' => ['System Admin', 'Asset Director', 'Project Manager']],
