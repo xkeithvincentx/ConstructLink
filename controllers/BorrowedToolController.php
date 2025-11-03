@@ -178,7 +178,21 @@ class BorrowedToolController {
     private function buildFilters() {
         $filters = [];
 
-        if (!empty($_GET['status'])) $filters['status'] = $_GET['status'];
+        // Apply default "Borrowed" status when no filters are active
+        // This matches the UX expectation: show active borrowings by default
+        // IMPORTANT: Use isset() for status to detect explicit "All Statuses" selection (empty string)
+        $hasAnyFilter = isset($_GET['status']) || !empty($_GET['priority']) ||
+                       !empty($_GET['search']) || !empty($_GET['date_from']) ||
+                       !empty($_GET['date_to']) || !empty($_GET['project']);
+
+        if (!empty($_GET['status'])) {
+            $filters['status'] = $_GET['status'];
+        } elseif (!$hasAnyFilter) {
+            // No filters provided - apply default "Borrowed" status
+            $filters['status'] = 'Borrowed';
+        }
+        // If status is explicitly set to empty (All Statuses), don't set filters['status']
+
         if (!empty($_GET['search'])) $filters['search'] = $_GET['search'];
         if (!empty($_GET['date_from'])) $filters['date_from'] = $_GET['date_from'];
         if (!empty($_GET['date_to'])) $filters['date_to'] = $_GET['date_to'];

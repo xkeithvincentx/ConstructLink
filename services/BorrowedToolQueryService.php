@@ -136,9 +136,17 @@ class BorrowedToolQueryService {
         $orderByColumn = $orderByMap[$sortBy] ?? 'bt.created_at';
         $orderByClause = "ORDER BY {$orderByColumn} {$sortOrder}";
 
-        // Count total records
-        $countSql = "
-            SELECT COUNT(*)
+        // BATCH-AWARE PAGINATION FIX
+        // Problem: The view groups records by batch_id, so 5 DB records might become 4 display items
+        // Solution: Get distinct batch/single groups, paginate those, then fetch all their records
+
+        // Step 1: Get distinct batch identifiers (batch_id or 'single_X' for non-batched items)
+        $groupsSql = "
+            SELECT DISTINCT
+                   COALESCE(bt.batch_id, CONCAT('single_', bt.id)) as display_group,
+                   bt.batch_id,
+                   CASE WHEN bt.batch_id IS NULL THEN bt.id ELSE NULL END as single_id,
+                   MIN(bt.id) as min_id
             FROM borrowed_tools bt
             INNER JOIN assets a ON bt.asset_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
@@ -146,63 +154,101 @@ class BorrowedToolQueryService {
             LEFT JOIN users u ON bt.issued_by = u.id
             LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
             {$whereClause}
-        ";
-
-        $stmt = $this->db->prepare($countSql);
-        $stmt->execute($params);
-        $total = $stmt->fetchColumn();
-
-        // Get paginated data
-        $offset = ($page - 1) * $perPage;
-
-        $dataSql = "
-            SELECT bt.*,
-                   a.name as asset_name,
-                   a.ref as asset_ref,
-                   c.name as category_name,
-                   p.name as project_name,
-                   u.full_name as issued_by_name,
-                   u.full_name as created_by_name,
-                   u_verified.full_name as verified_by_name,
-                   u_approved.full_name as approved_by_name,
-                   btb.batch_reference,
-                   CASE
-                       WHEN btb.status IN (?, ?) THEN btb.status
-                       WHEN bt.status IN (?, ?) THEN bt.status
-                       ELSE COALESCE(btb.status, bt.status)
-                   END as status,
-                   CASE
-                       WHEN btb.status IN (?, ?) THEN btb.status
-                       WHEN bt.status = ? AND bt.expected_return < CURDATE() THEN ?
-                       WHEN bt.status IN (?, ?) THEN bt.status
-                       ELSE COALESCE(btb.status, bt.status)
-                   END as current_status
-            FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
-            INNER JOIN categories c ON a.category_id = c.id
-            INNER JOIN projects p ON a.project_id = p.id
-            LEFT JOIN users u ON bt.issued_by = u.id
-            LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-            LEFT JOIN users u_verified ON COALESCE(btb.verified_by, bt.verified_by) = u_verified.id
-            LEFT JOIN users u_approved ON COALESCE(btb.approved_by, bt.approved_by) = u_approved.id
-            {$whereClause}
+            GROUP BY display_group, bt.batch_id, single_id
             {$orderByClause}
-            LIMIT {$perPage} OFFSET {$offset}
         ";
 
-        // Add status constants for CASE statement parameters
-        $statusParams = [
-            BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
-            BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED,
-            BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
-            BorrowedToolStatus::BORROWED, BorrowedToolStatus::OVERDUE,
-            BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED
-        ];
-        $allParams = array_merge($statusParams, $params);
+        $stmt = $this->db->prepare($groupsSql);
+        $stmt->execute($params);
+        $allGroups = $stmt->fetchAll();
 
-        $stmt = $this->db->prepare($dataSql);
-        $stmt->execute($allParams);
-        $data = $stmt->fetchAll();
+        // Step 2: Count total display items (matches what user sees in UI)
+        $total = count($allGroups);
+
+        // Step 3: Paginate the groups array in PHP
+        $offset = ($page - 1) * $perPage;
+        $paginatedGroups = array_slice($allGroups, $offset, $perPage);
+
+        // Step 4: Extract batch IDs and single IDs from paginated groups
+        $batchIds = [];
+        $singleIds = [];
+        foreach ($paginatedGroups as $group) {
+            if ($group['batch_id'] !== null) {
+                $batchIds[] = $group['batch_id'];
+            } else {
+                $singleIds[] = $group['single_id'];
+            }
+        }
+
+        // Step 5: Fetch all records belonging to these paginated groups
+        if (empty($batchIds) && empty($singleIds)) {
+            $data = [];
+        } else {
+            $fetchConditions = [];
+            $fetchParams = [];
+
+            if (!empty($batchIds)) {
+                $batchPlaceholders = implode(',', array_fill(0, count($batchIds), '?'));
+                $fetchConditions[] = "bt.batch_id IN ({$batchPlaceholders})";
+                $fetchParams = array_merge($fetchParams, $batchIds);
+            }
+
+            if (!empty($singleIds)) {
+                $singlePlaceholders = implode(',', array_fill(0, count($singleIds), '?'));
+                $fetchConditions[] = "(bt.batch_id IS NULL AND bt.id IN ({$singlePlaceholders}))";
+                $fetchParams = array_merge($fetchParams, $singleIds);
+            }
+
+            $fetchWhereClause = "WHERE (" . implode(" OR ", $fetchConditions) . ")";
+
+            $dataSql = "
+                SELECT bt.*,
+                       a.name as asset_name,
+                       a.ref as asset_ref,
+                       c.name as category_name,
+                       p.name as project_name,
+                       u.full_name as issued_by_name,
+                       u.full_name as created_by_name,
+                       u_verified.full_name as verified_by_name,
+                       u_approved.full_name as approved_by_name,
+                       btb.batch_reference,
+                       CASE
+                           WHEN btb.status IN (?, ?) THEN btb.status
+                           WHEN bt.status IN (?, ?) THEN bt.status
+                           ELSE COALESCE(btb.status, bt.status)
+                       END as status,
+                       CASE
+                           WHEN btb.status IN (?, ?) THEN btb.status
+                           WHEN bt.status = ? AND bt.expected_return < CURDATE() THEN ?
+                           WHEN bt.status IN (?, ?) THEN bt.status
+                           ELSE COALESCE(btb.status, bt.status)
+                       END as current_status
+                FROM borrowed_tools bt
+                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN categories c ON a.category_id = c.id
+                INNER JOIN projects p ON a.project_id = p.id
+                LEFT JOIN users u ON bt.issued_by = u.id
+                LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
+                LEFT JOIN users u_verified ON COALESCE(btb.verified_by, bt.verified_by) = u_verified.id
+                LEFT JOIN users u_approved ON COALESCE(btb.approved_by, bt.approved_by) = u_approved.id
+                {$fetchWhereClause}
+                {$orderByClause}
+            ";
+
+            // Add status constants for CASE statement parameters
+            $statusParams = [
+                BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
+                BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED,
+                BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
+                BorrowedToolStatus::BORROWED, BorrowedToolStatus::OVERDUE,
+                BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED
+            ];
+            $allParams = array_merge($statusParams, $fetchParams);
+
+            $stmt = $this->db->prepare($dataSql);
+            $stmt->execute($allParams);
+            $data = $stmt->fetchAll();
+        }
 
         return [
             'data' => $data,

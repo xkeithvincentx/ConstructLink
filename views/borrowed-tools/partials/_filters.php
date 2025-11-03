@@ -47,6 +47,7 @@ function validateStatus(string $status): string {
         'Pending Verification',
         'Pending Approval',
         'Approved',
+        'Released',
         'Borrowed',
         'Partially Returned',
         'Returned',
@@ -103,8 +104,18 @@ function sanitizeSearchInput(string $search, int $maxLength = 100): string {
 }
 
 // Validate and sanitize all $_GET parameters
+// Pre-apply "Borrowed" filter by default if no active filters are present
+// IMPORTANT: Use isset() instead of empty() to detect when user explicitly selected "All Statuses" (empty string)
+// - isset() returns true for empty strings, false for missing keys
+// - empty() returns true for empty strings, causing false negatives
+$hasAnyFilter = isset($_GET['status']) || !empty($_GET['priority']) ||
+               !empty($_GET['search']) || !empty($_GET['date_from']) ||
+               !empty($_GET['date_to']) || !empty($_GET['project']);
+
+$defaultStatus = !$hasAnyFilter ? 'Borrowed' : '';
+
 $validatedFilters = [
-    'status' => validateStatus($_GET['status'] ?? ''),
+    'status' => validateStatus($_GET['status'] ?? $defaultStatus),
     'priority' => validatePriority($_GET['priority'] ?? ''),
     'project' => filter_var($_GET['project'] ?? '', FILTER_VALIDATE_INT) ?: '',
     'date_from' => validateDate($_GET['date_from'] ?? ''),
@@ -130,6 +141,7 @@ function renderStatusOptions(Auth $auth, string $currentStatus = ''): string {
         ['value' => 'Pending Verification', 'label' => 'Pending Verification', 'roles' => ['System Admin', 'Project Manager', 'Asset Director']],
         ['value' => 'Pending Approval', 'label' => 'Pending Approval', 'roles' => ['System Admin', 'Asset Director', 'Finance Director']],
         ['value' => 'Approved', 'label' => 'Approved', 'roles' => ['System Admin', 'Warehouseman', 'Site Inventory Clerk']],
+        ['value' => 'Released', 'label' => 'Released', 'roles' => []],
         ['value' => 'Borrowed', 'label' => 'Borrowed', 'roles' => []],
         ['value' => 'Partially Returned', 'label' => 'Partially Returned', 'roles' => []],
         ['value' => 'Returned', 'label' => 'Returned', 'roles' => []],
@@ -222,9 +234,75 @@ function renderQuickActions(Auth $auth): string {
 }
 ?>
 
-<!-- Filters -->
+<!-- Filters with Alpine.js Reactive System -->
 <!-- Mobile: Offcanvas, Desktop: Card -->
-<div class="mb-4">
+<!--
+    Alpine.js Filter Component
+
+    Responsibilities:
+    - Manages filter state reactively across mobile and desktop views
+    - Handles auto-submit on filter changes
+    - Implements debounced search with 500ms delay
+    - Provides quick filter shortcuts for common status/priority combinations
+    - Synchronizes filter values between mobile offcanvas and desktop card
+
+    Default Behavior:
+    - "Borrowed" status filter is pre-applied when no other filters are active
+    - This shows currently active borrowings by default (most common use case)
+
+    Filter Types:
+    - status: Workflow status filter (Pending Verification, Borrowed, Returned, etc.)
+    - priority: Time-based priority filter (overdue, due_soon, pending_action)
+    - project: Project-specific filter (Project Managers only)
+    - date_from/date_to: Date range filters
+    - search: Full-text search (reference, equipment name, borrower name)
+-->
+<div class="mb-4"
+     x-data="{
+         // State management
+         mobileOffcanvasOpen: false,
+         filters: {
+             status: '<?= htmlspecialchars($validatedFilters['status']) ?>',
+             priority: '<?= htmlspecialchars($validatedFilters['priority']) ?>',
+             project: '<?= htmlspecialchars($validatedFilters['project']) ?>',
+             date_from: '<?= htmlspecialchars($validatedFilters['date_from']) ?>',
+             date_to: '<?= htmlspecialchars($validatedFilters['date_to']) ?>',
+             search: '<?= htmlspecialchars($validatedFilters['search']) ?>'
+         },
+         activeFilterCount: <?= $activeFilters ?>,
+         searchTimeout: null,
+
+         // Submit filter form (auto-submit on change)
+         submitFilters() {
+             const form = this.$refs.desktopForm || this.$refs.mobileForm;
+             if (form) form.submit();
+         },
+
+         // Clear all filters and reload page with defaults
+         clearAllFilters() {
+             window.location.href = '?route=borrowed-tools';
+         },
+
+         // Quick filter shortcut (used by quick action buttons)
+         quickFilter(value, type = 'status') {
+             if (type === 'status') {
+                 this.filters.status = value;
+                 this.filters.priority = '';
+             } else if (type === 'priority') {
+                 this.filters.priority = value;
+                 this.filters.status = '';
+             }
+             this.submitFilters();
+         },
+
+         // Debounced search handler (500ms delay)
+         handleSearchInput() {
+             clearTimeout(this.searchTimeout);
+             this.searchTimeout = setTimeout(() => {
+                 this.submitFilters();
+             }, 500);
+         }
+     }">
     <!-- Mobile Filter Button (Sticky) -->
     <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3 filters-mobile-sticky">
         <button class="btn btn-primary w-100"
@@ -254,11 +332,15 @@ function renderQuickActions(Auth $auth): string {
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close filters panel"></button>
         </div>
         <div class="offcanvas-body">
-            <form method="GET" action="?route=borrowed-tools" id="filter-form-mobile" role="search">
+            <form method="GET" action="?route=borrowed-tools" id="filter-form-mobile" role="search" x-ref="mobileForm">
                 <!-- Status Filter -->
                 <div class="mb-3">
                     <label for="status-mobile" class="form-label">Status</label>
-                    <select class="form-select" id="status-mobile" name="status">
+                    <select class="form-select"
+                            id="status-mobile"
+                            name="status"
+                            x-model="filters.status"
+                            @change="submitFilters()">
                         <?= renderStatusOptions($auth, $validatedFilters['status']) ?>
                     </select>
                 </div>
@@ -267,20 +349,28 @@ function renderQuickActions(Auth $auth): string {
                 <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                     <div class="mb-3">
                         <label for="priority-mobile" class="form-label">Priority</label>
-                        <select class="form-select" id="priority-mobile" name="priority">
+                        <select class="form-select"
+                                id="priority-mobile"
+                                name="priority"
+                                x-model="filters.priority"
+                                @change="submitFilters()">
                             <?= renderPriorityOptions($validatedFilters['priority']) ?>
                         </select>
                     </div>
                 <?php else: ?>
                     <!-- Hidden priority field for quick filter buttons (users without management roles) -->
-                    <input type="hidden" name="priority" value="<?= htmlspecialchars($validatedFilters['priority']) ?>">
+                    <input type="hidden" name="priority" x-model="filters.priority">
                 <?php endif; ?>
 
                 <!-- Project Filter - For Project Managers and Site Staff -->
                 <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk']) && !empty($projects)): ?>
                     <div class="mb-3">
                         <label for="project-mobile" class="form-label">Project</label>
-                        <select class="form-select" id="project-mobile" name="project">
+                        <select class="form-select"
+                                id="project-mobile"
+                                name="project"
+                                x-model="filters.project"
+                                @change="submitFilters()">
                             <?= renderProjectOptions($projects, $validatedFilters['project']) ?>
                         </select>
                     </div>
@@ -293,8 +383,9 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control"
                            id="date_from-mobile"
                            name="date_from"
-                           aria-describedby="date_from_help"
-                           value="<?= htmlspecialchars($validatedFilters['date_from']) ?>">
+                           x-model="filters.date_from"
+                           @change="submitFilters()"
+                           aria-describedby="date_from_help">
                     <small id="date_from_help" class="form-text text-muted">Start of date range</small>
                 </div>
                 <div class="mb-3">
@@ -303,8 +394,9 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control"
                            id="date_to-mobile"
                            name="date_to"
-                           aria-describedby="date_to_help"
-                           value="<?= htmlspecialchars($validatedFilters['date_to']) ?>">
+                           x-model="filters.date_to"
+                           @change="submitFilters()"
+                           aria-describedby="date_to_help">
                     <small id="date_to_help" class="form-text text-muted">End of date range</small>
                 </div>
 
@@ -316,8 +408,9 @@ function renderQuickActions(Auth $auth): string {
                            id="search-mobile"
                            name="search"
                            placeholder="Reference, equipment name, borrower..."
-                           aria-describedby="search_help"
-                           value="<?= htmlspecialchars($validatedFilters['search']) ?>">
+                           x-model="filters.search"
+                           @input="handleSearchInput()"
+                           aria-describedby="search_help">
                     <small id="search_help" class="form-text text-muted">Search by reference, equipment, or borrower name</small>
                 </div>
 
@@ -326,15 +419,30 @@ function renderQuickActions(Auth $auth): string {
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1" aria-hidden="true"></i>Apply Filters
                     </button>
-                    <a href="?route=borrowed-tools" class="btn btn-outline-secondary">
+                    <button type="button" class="btn btn-outline-secondary" @click="clearAllFilters()">
                         <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear All
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Quick Action Buttons -->
                 <hr class="my-3">
                 <div class="d-grid gap-2">
-                    <?= renderQuickActions($auth) ?>
+                    <template x-if="<?= $auth->hasRole(['System Admin', 'Project Manager']) ? 'true' : 'false' ?>">
+                        <button type="button" class="btn btn-outline-warning btn-sm" @click="quickFilter('Pending Verification', 'status')" aria-label="Filter pending verifications">
+                            <i class="bi bi-clock me-1" aria-hidden="true"></i>My Verifications
+                        </button>
+                    </template>
+                    <template x-if="<?= $auth->hasRole(['System Admin', 'Asset Director', 'Finance Director']) ? 'true' : 'false' ?>">
+                        <button type="button" class="btn btn-outline-info btn-sm" @click="quickFilter('Pending Approval', 'status')" aria-label="Filter pending approvals">
+                            <i class="bi bi-shield-check me-1" aria-hidden="true"></i>My Approvals
+                        </button>
+                    </template>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @click="quickFilter('Borrowed', 'status')" aria-label="Filter currently borrowed items">
+                        <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Currently Out
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" @click="quickFilter('overdue', 'priority')" aria-label="Filter overdue items">
+                        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Overdue
+                    </button>
                 </div>
             </form>
         </div>
@@ -348,12 +456,12 @@ function renderQuickActions(Auth $auth): string {
             </h6>
         </div>
         <div class="card-body">
-            <form method="GET" id="filter-form" class="row g-3" role="search">
+            <form method="GET" id="filter-form" class="row g-3" role="search" x-ref="desktopForm">
                 <input type="hidden" name="route" value="borrowed-tools">
 
-                <!-- Hidden priority field for quick filter buttons (always present for JavaScript) -->
+                <!-- Hidden priority field for quick filter buttons (always present for Alpine) -->
                 <?php if (!$auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
-                    <input type="hidden" name="priority" value="<?= htmlspecialchars($validatedFilters['priority']) ?>">
+                    <input type="hidden" name="priority" x-model="filters.priority">
                 <?php endif; ?>
 
                 <!-- Search Field -->
@@ -364,15 +472,20 @@ function renderQuickActions(Auth $auth): string {
                            id="search"
                            name="search"
                            placeholder="Reference, equipment name, borrower..."
-                           aria-describedby="search_desktop_help"
-                           value="<?= htmlspecialchars($validatedFilters['search']) ?>">
+                           x-model="filters.search"
+                           @input="handleSearchInput()"
+                           aria-describedby="search_desktop_help">
                     <small id="search_desktop_help" class="form-text text-muted visually-hidden">Search by reference, equipment, or borrower name</small>
                 </div>
 
                 <!-- Status Filter -->
                 <div class="col-lg-2 col-md-4">
                     <label for="status" class="form-label">Status</label>
-                    <select class="form-select form-select-sm" id="status" name="status">
+                    <select class="form-select form-select-sm"
+                            id="status"
+                            name="status"
+                            x-model="filters.status"
+                            @change="submitFilters()">
                         <?= renderStatusOptions($auth, $validatedFilters['status']) ?>
                     </select>
                 </div>
@@ -381,7 +494,11 @@ function renderQuickActions(Auth $auth): string {
                 <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Finance Director', 'Project Manager'])): ?>
                     <div class="col-lg-2 col-md-4">
                         <label for="priority" class="form-label">Priority</label>
-                        <select class="form-select form-select-sm" id="priority" name="priority">
+                        <select class="form-select form-select-sm"
+                                id="priority"
+                                name="priority"
+                                x-model="filters.priority"
+                                @change="submitFilters()">
                             <?= renderPriorityOptions($validatedFilters['priority']) ?>
                         </select>
                     </div>
@@ -391,7 +508,11 @@ function renderQuickActions(Auth $auth): string {
                 <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk']) && !empty($projects)): ?>
                     <div class="col-lg-2 col-md-6">
                         <label for="project" class="form-label">Project</label>
-                        <select class="form-select form-select-sm" id="project" name="project">
+                        <select class="form-select form-select-sm"
+                                id="project"
+                                name="project"
+                                x-model="filters.project"
+                                @change="submitFilters()">
                             <?= renderProjectOptions($projects, $validatedFilters['project']) ?>
                         </select>
                     </div>
@@ -404,7 +525,8 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control form-control-sm"
                            id="date_from"
                            name="date_from"
-                           value="<?= htmlspecialchars($validatedFilters['date_from']) ?>">
+                           x-model="filters.date_from"
+                           @change="submitFilters()">
                 </div>
                 <div class="col-lg-2 col-md-3">
                     <label for="date_to" class="form-label">Date To</label>
@@ -412,7 +534,8 @@ function renderQuickActions(Auth $auth): string {
                            class="form-control form-control-sm"
                            id="date_to"
                            name="date_to"
-                           value="<?= htmlspecialchars($validatedFilters['date_to']) ?>">
+                           x-model="filters.date_to"
+                           @change="submitFilters()">
                 </div>
 
                 <!-- Action Buttons -->
@@ -421,15 +544,30 @@ function renderQuickActions(Auth $auth): string {
                         <button type="submit" class="btn btn-primary btn-sm" aria-label="Apply filters">
                             <i class="bi bi-search me-1" aria-hidden="true"></i>Apply Filters
                         </button>
-                        <a href="?route=borrowed-tools" class="btn btn-outline-secondary btn-sm" aria-label="Clear all filters">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="clearAllFilters()" aria-label="Clear all filters">
                             <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear All
-                        </a>
+                        </button>
 
                         <!-- Divider -->
                         <div class="vr d-none d-lg-block filter-divider"></div>
 
                         <!-- Quick Action Buttons -->
-                        <?= renderQuickActions($auth) ?>
+                        <template x-if="<?= $auth->hasRole(['System Admin', 'Project Manager']) ? 'true' : 'false' ?>">
+                            <button type="button" class="btn btn-outline-warning btn-sm" @click="quickFilter('Pending Verification', 'status')" aria-label="Filter pending verifications">
+                                <i class="bi bi-clock me-1" aria-hidden="true"></i>My Verifications
+                            </button>
+                        </template>
+                        <template x-if="<?= $auth->hasRole(['System Admin', 'Asset Director', 'Finance Director']) ? 'true' : 'false' ?>">
+                            <button type="button" class="btn btn-outline-info btn-sm" @click="quickFilter('Pending Approval', 'status')" aria-label="Filter pending approvals">
+                                <i class="bi bi-shield-check me-1" aria-hidden="true"></i>My Approvals
+                            </button>
+                        </template>
+                        <button type="button" class="btn btn-outline-primary btn-sm" @click="quickFilter('Borrowed', 'status')" aria-label="Filter currently borrowed items">
+                            <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Currently Out
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" @click="quickFilter('overdue', 'priority')" aria-label="Filter overdue items">
+                            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Overdue
+                        </button>
                     </div>
                 </div>
             </form>

@@ -469,23 +469,10 @@ export const refreshBorrowedTools = () => location.reload();
 export const sendOverdueReminder = () => showNotification('Overdue reminder functionality coming soon', 'info');
 
 // Export: Quick filter
+// NOTE: Quick filter functionality now handled by Alpine.js in _filters.php
 export const quickFilter = filterValue => {
-  try {
-    // Try desktop form first, then mobile form
-    const form = document.getElementById('filter-form') || document.getElementById('filter-form-mobile');
-    if (!form) return;
-
-    // Determine which field to update based on filter type
-    const fieldName = filterValue === 'overdue' ? 'priority' : 'status';
-    const field = form.querySelector(`[name="${fieldName}"]`);
-
-    if (field) {
-      field.value = filterValue;
-      form.submit();
-    }
-  } catch (error) {
-    // Silent fail - filter not applied
-  }
+  // Quick filter now handled by Alpine.js
+  console.info('Quick filter is now handled by Alpine.js in the filter component');
 };
 
 // Init: Initialize all list utilities
@@ -532,13 +519,8 @@ export const initListUtils = () => {
       });
     }
 
-    document.addEventListener('click', event => {
-      const quickFilterButton = event.target.closest('.quick-filter-btn');
-      if (quickFilterButton) {
-        const filterValue = quickFilterButton.getAttribute('data-quick-filter');
-        if (filterValue) quickFilter(filterValue);
-      }
-    });
+    // Quick filter buttons are now handled by Alpine.js in _filters.php
+    // No event listener needed here
   } catch (error) {
     // Silent fail - initialization error
   }

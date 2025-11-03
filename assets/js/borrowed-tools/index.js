@@ -752,29 +752,12 @@ async function handleIncidentSubmit(e) {
 
 /**
  * Initialize filter functionality
+ * NOTE: Filter functionality now handled by Alpine.js in _filters.php
+ * This function is kept for backward compatibility but does nothing
  */
 function initializeFilters() {
-    const filterForm = document.querySelector('form[action="?route=borrowed-tools"]');
-    if (!filterForm) return;
-
-    const filterInputs = filterForm.querySelectorAll('select, input[name="date_from"], input[name="date_to"]');
-
-    filterInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            filterForm.submit();
-        });
-    });
-
-    let searchTimeout;
-    const searchInput = filterForm.querySelector('input[name="search"]');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                filterForm.submit();
-            }, 500);
-        });
-    }
+    // Filters are now handled by Alpine.js in the view
+    // No JavaScript initialization needed
 }
 
 /**
