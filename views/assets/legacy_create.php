@@ -116,17 +116,12 @@ $mode = 'legacy';
     </div>
 </div>
 
-<!-- Inline JavaScript removed - now loaded as ES6 module below -->
-
+<!-- JavaScript Dependencies -->
 <!-- Asset Standardizer JavaScript -->
 <script src="/assets/js/asset-standardizer.js"></script>
 
 <!-- jQuery (required for Select2) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Select2 CSS for searchable dropdowns -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -156,7 +151,10 @@ $moduleCSS = [
     '/assets/css/modules/assets/responsive.css',
     '/assets/css/modules/assets/discipline-checkboxes.css',
     '/assets/css/modules/assets/legacy-specific.css',
-    '/assets/css/modules/assets/select2-custom.css'
+    '/assets/css/modules/assets/select2-custom.css',
+    // Select2 library CSS (required for searchable dropdowns)
+    'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
+    'https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css'
 ];
 
 // Include main layout
