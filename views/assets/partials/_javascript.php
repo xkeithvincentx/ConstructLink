@@ -37,6 +37,7 @@ AssetHelper::loadModuleCSS('assets/assets');
 // Load external JavaScript modules
 AssetHelper::loadModuleJS('assets/core-functions', ['type' => 'module']);
 AssetHelper::loadModuleJS('assets/enhanced-search', ['type' => 'module']);
+AssetHelper::loadModuleJS('assets/ui/pagination', ['type' => 'module']);
 AssetHelper::loadModuleJS('assets/init', ['type' => 'module']);
 ?>
 

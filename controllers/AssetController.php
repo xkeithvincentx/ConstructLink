@@ -65,7 +65,13 @@ class AssetController {
         }
         
         $page = (int)($_GET['page'] ?? 1);
-        $perPage = 20;
+
+        // Allow users to select records per page (5, 10, 25, 50, 100)
+        $perPage = (int)($_GET['per_page'] ?? 5); // Default to 5 records
+        $allowedPerPage = [5, 10, 25, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 5; // Fallback to default if invalid value
+        }
         
         // Build filters from query parameters
         $filters = [];

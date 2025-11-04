@@ -10,7 +10,25 @@
 <div class="card">
     <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
         <h6 class="card-title mb-0">Inventory</h6>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <!-- Records Per Page Selector (Desktop Only) -->
+            <div class="d-none d-md-flex align-items-center gap-2">
+                <label for="recordsPerPage" class="mb-0 text-nowrap" style="font-size: 0.875rem;">
+                    <i class="bi bi-list-ul me-1" aria-hidden="true"></i>Show:
+                </label>
+                <select id="recordsPerPage"
+                        class="form-select form-select-sm"
+                        style="width: auto; min-width: 80px;"
+                        aria-label="Records per page">
+                    <option value="5" <?= (!isset($_GET['per_page']) || $_GET['per_page'] == 5) ? 'selected' : '' ?>>5</option>
+                    <option value="10" <?= (isset($_GET['per_page']) && $_GET['per_page'] == 10) ? 'selected' : '' ?>>10</option>
+                    <option value="25" <?= (isset($_GET['per_page']) && $_GET['per_page'] == 25) ? 'selected' : '' ?>>25</option>
+                    <option value="50" <?= (isset($_GET['per_page']) && $_GET['per_page'] == 50) ? 'selected' : '' ?>>50</option>
+                    <option value="100" <?= (isset($_GET['per_page']) && $_GET['per_page'] == 100) ? 'selected' : '' ?>>100</option>
+                </select>
+                <span class="text-muted" style="font-size: 0.875rem;">entries</span>
+            </div>
+            <div class="vr d-none d-md-block"></div>
             <?php if (in_array($userRole, $roleConfig['assets/export'] ?? [])): ?>
                 <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
                     <i class="bi bi-file-earmark-excel me-1"></i>
@@ -536,47 +554,151 @@
                 </table>
             </div>
             
-            <!-- Pagination -->
-            <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-                <nav aria-label="Assets pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagination['current_page'] > 1): ?>
-                            <li class="page-item">
-                                <?php 
-                                $prevParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
-                                $prevParams['page'] = $pagination['current_page'] - 1;
-                                ?>
-                                <a class="page-link" href="?route=assets&<?= http_build_query($prevParams) ?>">
-                                    Previous
-                                </a>
-                            </li>
+            <!-- Enhanced Pagination Controls -->
+            <?php if (isset($pagination)): ?>
+                <?php
+                // Calculate offset from current_page and per_page
+                $offset = ($pagination['current_page'] - 1) * $pagination['per_page'];
+                $total_records = $pagination['total'] ?? 0;
+                ?>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3">
+                    <!-- Showing Info -->
+                    <div class="text-muted small">
+                        Showing
+                        <strong><?= number_format($offset + 1) ?></strong> to
+                        <strong><?= number_format(min($offset + $pagination['per_page'], $total_records)) ?></strong>
+                        of
+                        <strong><?= number_format($total_records) ?></strong>
+                        entries
+                        <?php if (!empty($_GET['status']) || !empty($_GET['search']) || !empty($_GET['category_id']) || !empty($_GET['project_id'])): ?>
+                            <span class="text-primary">(filtered)</span>
                         <?php endif; ?>
-                        
-                        <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                            <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                                <?php 
-                                $pageParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
-                                $pageParams['page'] = $i;
+                    </div>
+
+                    <!-- Pagination Navigation -->
+                    <?php if ($pagination['total_pages'] > 1): ?>
+                        <nav aria-label="Assets pagination">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center justify-content-md-end">
+                                <!-- Previous Page -->
+                                <?php if ($pagination['current_page'] > 1): ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $prevParams = $_GET;
+                                        unset($prevParams['route'], $prevParams['page']);
+                                        $prevParams['page'] = $pagination['current_page'] - 1;
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=assets&<?= http_build_query($prevParams) ?>"
+                                           aria-label="Go to previous page">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="d-none d-sm-inline ms-1">Previous</span>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="d-none d-sm-inline ms-1">Previous</span>
+                                        </span>
+                                    </li>
+                                <?php endif; ?>
+
+                                <!-- Page Numbers (Smart Pagination) -->
+                                <?php
+                                $startPage = max(1, $pagination['current_page'] - 2);
+                                $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+
+                                // Show first page if not in range
+                                if ($startPage > 1):
+                                    $firstParams = $_GET;
+                                    unset($firstParams['route'], $firstParams['page']);
+                                    $firstParams['page'] = 1;
                                 ?>
-                                <a class="page-link" href="?route=assets&<?= http_build_query($pageParams) ?>">
-                                    <?= $i ?>
-                                </a>
-                            </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                            <li class="page-item">
-                                <?php 
-                                $nextParams = array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route');
-                                $nextParams['page'] = $pagination['current_page'] + 1;
-                                ?>
-                                <a class="page-link" href="?route=assets&<?= http_build_query($nextParams) ?>">
-                                    Next
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?route=assets&<?= http_build_query($firstParams) ?>"
+                                           aria-label="Go to page 1">1</a>
+                                    </li>
+                                    <?php if ($startPage > 2): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <!-- Page number buttons -->
+                                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <?php if ($i == $pagination['current_page']): ?>
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">
+                                                <?= $i ?>
+                                                <span class="visually-hidden">(current)</span>
+                                            </span>
+                                        </li>
+                                    <?php else: ?>
+                                        <li class="page-item">
+                                            <?php
+                                            $pageParams = $_GET;
+                                            unset($pageParams['route'], $pageParams['page']);
+                                            $pageParams['page'] = $i;
+                                            ?>
+                                            <a class="page-link"
+                                               href="?route=assets&<?= http_build_query($pageParams) ?>"
+                                               aria-label="Go to page <?= $i ?>">
+                                                <?= $i ?>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+
+                                <!-- Show last page if not in range -->
+                                <?php if ($endPage < $pagination['total_pages']): ?>
+                                    <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif; ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $lastParams = $_GET;
+                                        unset($lastParams['route'], $lastParams['page']);
+                                        $lastParams['page'] = $pagination['total_pages'];
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=assets&<?= http_build_query($lastParams) ?>"
+                                           aria-label="Go to page <?= $pagination['total_pages'] ?>">
+                                            <?= $pagination['total_pages'] ?>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
+                                <!-- Next Page -->
+                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $nextParams = $_GET;
+                                        unset($nextParams['route'], $nextParams['page']);
+                                        $nextParams['page'] = $pagination['current_page'] + 1;
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=assets&<?= http_build_query($nextParams) ?>"
+                                           aria-label="Go to next page">
+                                            <span class="d-none d-sm-inline me-1">Next</span>
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            <span class="d-none d-sm-inline me-1">Next</span>
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </span>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>
