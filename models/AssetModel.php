@@ -616,6 +616,14 @@ class AssetModel extends BaseModel {
             if (!empty($filters['status'])) {
                 $conditions[] = "a.status = ?";
                 $params[] = $filters['status'];
+
+                // BUSINESS RULE: "Available" means status='available' AND workflow_status='approved'
+                // Only show assets that are truly available (not pending verification or authorization)
+                // If workflow_status is not explicitly set, auto-apply 'approved' for 'available' status
+                if ($filters['status'] === 'available' && empty($filters['workflow_status'])) {
+                    $conditions[] = "a.workflow_status = ?";
+                    $params[] = 'approved';
+                }
             }
             
             if (!empty($filters['category_id'])) {

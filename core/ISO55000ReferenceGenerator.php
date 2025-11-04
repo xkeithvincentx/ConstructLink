@@ -10,18 +10,25 @@
  */
 
 class ISO55000ReferenceGenerator {
-    
+
     private $db;
     private $orgCode;
-    
+    private $tableName;
+
     // Note: Category and discipline codes are now stored in database tables:
     // - categories.iso_code (2-character ISO 55000:2024 category codes)
     // - asset_disciplines.iso_code (2-character ISO 55000:2024 discipline codes)
     // This provides full scalability and configurability without code changes.
-    
-    public function __construct() {
+
+    /**
+     * Constructor
+     *
+     * @param string $tableName Database table name for reference generation (default: 'assets')
+     */
+    public function __construct($tableName = 'assets') {
         $this->db = Database::getInstance()->getConnection();
         $this->orgCode = defined('ASSET_ORG_CODE') ? ASSET_ORG_CODE : 'CON';
+        $this->tableName = $tableName;
     }
     
     /**
@@ -124,14 +131,14 @@ class ISO55000ReferenceGenerator {
      */
     private function getNextSequentialNumber($categoryCode, $disciplineCode, $yearComponent) {
         $prefix = "{$this->orgCode}-{$yearComponent}-{$categoryCode}-{$disciplineCode}-";
-        
-        // Get the highest sequence number for this prefix
-        $sql = "SELECT MAX(CAST(SUBSTRING(ref, LENGTH(?) + 1) AS UNSIGNED)) as max_seq 
-                FROM assets WHERE ref LIKE ?";
+
+        // Get the highest sequence number for this prefix (supports multiple tables)
+        $sql = "SELECT MAX(CAST(SUBSTRING(ref, LENGTH(?) + 1) AS UNSIGNED)) as max_seq
+                FROM {$this->tableName} WHERE ref LIKE ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$prefix, "{$prefix}%"]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         $maxSeq = (int)($result['max_seq'] ?? 0);
         return $maxSeq + 1;
     }
@@ -140,11 +147,11 @@ class ISO55000ReferenceGenerator {
      * Validate reference uniqueness
      */
     private function isReferenceUnique($reference) {
-        $sql = "SELECT COUNT(*) as count FROM assets WHERE ref = ?";
+        $sql = "SELECT COUNT(*) as count FROM {$this->tableName} WHERE ref = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$reference]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         return (int)($result['count'] ?? 0) === 0;
     }
     

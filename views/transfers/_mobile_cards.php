@@ -28,9 +28,9 @@ $userRole = $user['role_name'] ?? 'Guest';
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <a href="?route=transfers/view&id=<?= $transfer['id'] ?>"
-                           class="text-decoration-none fw-bold"
-                           aria-label="View transfer #<?= $transfer['id'] ?> details">
-                            #<?= $transfer['id'] ?>
+                           class="text-decoration-none fw-bold font-monospace"
+                           aria-label="View transfer <?= htmlspecialchars($transfer['ref'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?> details">
+                            <?= htmlspecialchars($transfer['ref'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?>
                         </a>
                         <span class="ms-2 badge <?= $transfer['transfer_type'] === 'permanent' ? 'bg-primary' : 'bg-info' ?>">
                             <?= htmlspecialchars(ucfirst($transfer['transfer_type']), ENT_QUOTES, 'UTF-8') ?>

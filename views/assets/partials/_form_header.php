@@ -78,13 +78,13 @@ $permissionDeniedMessage = $mode === 'legacy'
 <!-- Permission Check -->
 <?php
 $hasPermission = in_array($user['role_name'], $roleConfig[$routeKey] ?? []);
-if (!$hasPermission):
+if (!$hasPermission) {
 ?>
     <div class="alert alert-danger mt-4" role="alert">
         <?= htmlspecialchars($permissionDeniedMessage) ?>
     </div>
 <?php
     return; // Stop rendering if no permission
-endif;
+}
 ?>
 <!-- User has permission - form content will be included here by the main view file -->

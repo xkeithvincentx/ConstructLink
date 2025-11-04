@@ -22,17 +22,40 @@ window.ConstructLinkConfig = {
     userId: <?= (int)($user['id'] ?? 0) ?>,
     userRole: '<?= htmlspecialchars($user['role_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>'
 };
-
-// Debug: Log config info
-console.log('=== ConstructLink Assets Module ===');
-console.log('Config loaded:', !!window.ConstructLinkConfig);
-console.log('CSRF Token:', window.ConstructLinkConfig.csrfToken ? 'Present' : 'Missing');
-console.log('User Role:', window.ConstructLinkConfig.userRole);
 </script>
 
+<!-- jQuery (required for Select2 on filters) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous"></script>
+
+<!-- Select2 CSS for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+      integrity="sha256-zaSoHBhwFdle0scfGEFUCwggPN7F+ip9XRglo8IWb4w="
+      crossorigin="anonymous" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+      rel="stylesheet"
+      integrity="sha256-RuT3RU9KidUWRvNmrrM+n4vPWdPFnKN0Ds2qVXjRCYM="
+      crossorigin="anonymous" />
+
 <?php
-// Load external CSS module
+// Load external CSS module first
 AssetHelper::loadModuleCSS('assets/assets');
+?>
+
+<!-- CRITICAL: Load custom Select2 CSS LAST to override everything -->
+<link href="/assets/css/modules/assets/select2-custom.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
+        integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmMw5rJZrA="
+        crossorigin="anonymous"></script>
+
+<!-- Filter Select2 Initialization -->
+<script src="/assets/js/modules/assets/init/filter-select2.js"></script>
+
+<?php
 
 // Load external JavaScript modules
 AssetHelper::loadModuleJS('assets/core-functions', ['type' => 'module']);

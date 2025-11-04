@@ -24,7 +24,7 @@ $userRole = $user['role_name'] ?? 'Guest';
     <table class="table table-hover transfer-table" id="transfersTable">
         <thead>
             <tr>
-                <th scope="col">ID</th>
+                <th scope="col">Reference</th>
                 <th scope="col">Asset</th>
                 <th scope="col">
                     <span class="d-flex align-items-center gap-1">
@@ -48,9 +48,9 @@ $userRole = $user['role_name'] ?? 'Guest';
                 <tr>
                     <td>
                         <a href="?route=transfers/view&id=<?= $transfer['id'] ?>"
-                           class="text-decoration-none fw-medium"
-                           aria-label="View transfer #<?= $transfer['id'] ?> details">
-                            #<?= $transfer['id'] ?>
+                           class="text-decoration-none fw-medium font-monospace"
+                           aria-label="View transfer <?= htmlspecialchars($transfer['ref'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?> details">
+                            <?= htmlspecialchars($transfer['ref'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?>
                         </a>
                     </td>
                     <td>

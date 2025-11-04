@@ -946,14 +946,16 @@ class TransferController {
     
     /**
      * Get available assets for transfer (excluding already borrowed/withdrawn/transferred assets)
-     * Project Managers can see assets from all sites for transfer purposes
+     * Project Managers can only see assets from OTHER inventories (not their own)
+     * System Admin, Finance Director, and Asset Director see ALL assets
      */
     private function getAvailableAssetsForTransfer() {
         try {
             $db = Database::getInstance()->getConnection();
             $currentUser = $this->auth->getCurrentUser();
             $userRole = $currentUser['role_name'] ?? '';
-            
+            $userProjectId = $currentUser['current_project_id'] ?? null;
+
             // Base query
             $sql = "
                 SELECT a.*, c.name as category_name, p.name as project_name, p.location as project_location
@@ -970,25 +972,33 @@ class TransferController {
                       SELECT DISTINCT asset_id FROM transfers WHERE status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Received')
                   )
             ";
-            
+
             $params = [];
-            
+
             // Apply role-based filtering
-            if (in_array($userRole, ['Finance Director', 'Asset Director', 'Project Manager', 'System Admin'])) {
-                // These roles can see all assets for transfer purposes
+            if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])) {
+                // These roles can see ALL assets for transfer purposes
                 // No additional filtering needed
+            } elseif ($userRole === 'Project Manager') {
+                // Project Managers can only see assets from OTHER inventories (not their own)
+                // This prevents pointless self-transfers
+                if ($userProjectId) {
+                    $sql .= " AND a.project_id != ?";
+                    $params[] = $userProjectId;
+                }
+                // If Project Manager has no assigned project, show all assets
             } else {
                 // Other roles get limited access or no access
                 // For security, default to no assets unless explicitly allowed
                 return [];
             }
-            
+
             $sql .= " ORDER BY p.name ASC, a.name ASC";
-            
+
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
         } catch (Exception $e) {
             error_log("Get available assets for transfer error: " . $e->getMessage());
             return [];

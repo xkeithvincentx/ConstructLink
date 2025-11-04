@@ -91,7 +91,7 @@ if ($error === 'export_failed'): ?>
     </div>
 <?php endif; ?>
 
-<!-- MVA Workflow Help (Collapsible) -->
+<!-- Transfer System Help (Collapsible) -->
 <div class="mb-3">
     <button class="btn btn-link btn-sm text-decoration-none p-0"
             type="button"
@@ -100,21 +100,67 @@ if ($error === 'export_failed'): ?>
             aria-expanded="false"
             aria-controls="mvaHelp">
         <i class="bi bi-question-circle me-1" aria-hidden="true"></i>
-        How does the MVA workflow work?
+        How does the transfer system work? (MVA Workflow & ISO References)
     </button>
 </div>
 
 <div class="collapse" id="mvaHelp">
     <div class="alert alert-info mb-4" role="status">
-        <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
-        <ol class="mb-0 ps-3 mt-2">
-            <li><strong>Maker</strong> creates transfer request</li>
-            <li><strong>Verifier</strong> (Project Manager) verifies equipment and destination details</li>
-            <li><strong>Authorizer</strong> (Asset/Finance Director) approves transfer authorization</li>
-            <li>Transfer marked as <span class="badge bg-success">Approved</span>, ready for dispatch</li>
-            <li>Asset dispatched and marked <span class="badge bg-primary">In Transit</span></li>
-            <li>Receiving location confirms receipt (status: <span class="badge bg-secondary">Completed</span>)</li>
-        </ol>
+        <!-- Transfer Reference System Section -->
+        <div class="mb-4">
+            <strong><i class="bi bi-tag me-2" aria-hidden="true"></i>Transfer Reference System:</strong>
+            <p class="mt-2 mb-2">
+                Each transfer is automatically assigned a unique reference for complete traceability and audit compliance.
+            </p>
+            <div class="bg-light p-3 rounded-3 border border-secondary">
+                <h6 class="mb-2"><i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Reference Format:</h6>
+                <div class="font-monospace text-center mb-3" style="font-size: 1.3rem; letter-spacing: 2px;">
+                    <span class="badge bg-primary">TR</span>-<span class="badge bg-secondary">2025</span>-<span class="badge bg-success">0001</span>
+                </div>
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.875rem;">
+                    <tbody>
+                        <tr>
+                            <td class="text-end" style="width: 30%;"><strong>TR</strong></td>
+                            <td><i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Transfer - Identifies this as a transfer request</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end"><strong>2025</strong></td>
+                            <td><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>Year of Transfer Request Creation</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end"><strong>0001</strong></td>
+                            <td><i class="bi bi-hash me-1" aria-hidden="true"></i>Sequential Transfer Number (unique within the year)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb me-1" aria-hidden="true"></i>
+                    <strong>Benefits:</strong> References enable easy tracking, chronological ordering, quick identification of transfers,
+                    and comprehensive audit trails for compliance reporting and asset movement history.
+                </small>
+            </div>
+        </div>
+
+        <!-- MVA Workflow Section -->
+        <div class="border-top pt-3">
+            <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Maker-Verifier-Authorizer (MVA) Workflow:</strong>
+            <ol class="mb-0 ps-3 mt-2">
+                <li><strong>Maker</strong> creates transfer request (auto-generates ISO reference)</li>
+                <li><strong>Verifier</strong> (Project Manager) verifies equipment and destination details</li>
+                <li><strong>Authorizer</strong> (Asset/Finance Director) approves transfer authorization</li>
+                <li>Transfer marked as <span class="badge bg-success">Approved</span>, ready for dispatch</li>
+                <li>Asset dispatched and marked <span class="badge bg-primary">In Transit</span></li>
+                <li>Receiving location confirms receipt (status: <span class="badge bg-secondary">Completed</span>)</li>
+            </ol>
+            <div class="mt-2">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
+                    This multi-level approval ensures accountability, prevents unauthorized transfers, and maintains complete audit trails.
+                </small>
+            </div>
+        </div>
     </div>
 </div>
 

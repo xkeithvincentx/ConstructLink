@@ -290,6 +290,62 @@ function generateLegacyAssetReference() {
 }
 
 /**
+ * Generate simple transfer reference
+ *
+ * Format: TR-YYYY-NNNN
+ * Example: TR-2025-0023
+ *
+ * Sequential numbering is unique within each year and pulled from database.
+ * This format is simpler and more suitable for transfers than the ISO 55000:2024
+ * format used for assets.
+ *
+ * @return string Transfer reference in TR-YYYY-NNNN format
+ */
+function generateTransferReference() {
+    try {
+        $db = Database::getInstance()->getConnection();
+        $year = date('Y');
+        $prefix = "TR-{$year}-";
+
+        // Get the highest sequential number for this year
+        $sql = "SELECT MAX(CAST(SUBSTRING(ref, LENGTH(?) + 1) AS UNSIGNED)) as max_seq
+                FROM transfers
+                WHERE ref LIKE ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$prefix, "{$prefix}%"]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $maxSeq = (int)($result['max_seq'] ?? 0);
+        $nextSeq = $maxSeq + 1;
+
+        // Format as TR-YYYY-NNNN (4-digit zero-padded)
+        $reference = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+
+        // Validate uniqueness
+        $checkSql = "SELECT COUNT(*) as count FROM transfers WHERE ref = ?";
+        $checkStmt = $db->prepare($checkSql);
+        $checkStmt->execute([$reference]);
+        $checkResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ((int)$checkResult['count'] > 0) {
+            // Reference already exists, retry with incremented number
+            $nextSeq++;
+            $reference = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+        }
+
+        return $reference;
+
+    } catch (Exception $e) {
+        error_log("Transfer reference generation error: " . $e->getMessage());
+
+        // Fallback to time-based format (should never happen)
+        $prefix = "TR";
+        $year = date('Y');
+        return $prefix . '-' . $year . '-' . str_pad(time() % 10000, 4, '0', STR_PAD_LEFT);
+    }
+}
+
+/**
  * Check if user has permission based on roles.php configuration
  */
 function hasPermission($permission) {

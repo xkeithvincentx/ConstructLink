@@ -252,17 +252,17 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
     - search: Full-text search (asset name, reference, serial number, disciplines)
 -->
 <div class="mb-4"
-     x-data="{
+     x-data='{
          // State management
          mobileOffcanvasOpen: false,
          filters: {
-             status: '<?= htmlspecialchars($validatedFilters['status']) ?>',
-             category_id: '<?= htmlspecialchars($validatedFilters['category_id']) ?>',
-             project_id: '<?= htmlspecialchars($validatedFilters['project_id']) ?>',
-             brand_id: '<?= htmlspecialchars($validatedFilters['brand_id']) ?>',
-             asset_type: '<?= htmlspecialchars($validatedFilters['asset_type']) ?>',
-             workflow_status: '<?= htmlspecialchars($validatedFilters['workflow_status']) ?>',
-             search: '<?= htmlspecialchars($validatedFilters['search']) ?>'
+             status: "<?= htmlspecialchars($validatedFilters['status']) ?>",
+             category_id: "<?= htmlspecialchars($validatedFilters['category_id']) ?>",
+             project_id: "<?= htmlspecialchars($validatedFilters['project_id']) ?>",
+             brand_id: "<?= htmlspecialchars($validatedFilters['brand_id']) ?>",
+             asset_type: "<?= htmlspecialchars($validatedFilters['asset_type']) ?>",
+             workflow_status: "<?= htmlspecialchars($validatedFilters['workflow_status']) ?>",
+             search: "<?= htmlspecialchars($validatedFilters['search']) ?>"
          },
          activeFilterCount: <?= $activeFilters ?>,
          searchTimeout: null,
@@ -275,15 +275,36 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
 
          // Clear all filters and reload page with defaults
          clearAllFilters() {
-             window.location.href = '?route=assets';
+             window.location.href = "?route=assets";
          },
 
          // Quick filter shortcut (used by quick action buttons)
-         quickFilter(value, type = 'status') {
-             if (type === 'status') {
+         // IMPORTANT: Clears ALL other filters to ensure precise filtering
+         quickFilter(value, type = "status") {
+             if (type === "status") {
+                 // Clear all filters first
+                 this.filters.status = "";
+                 this.filters.category_id = "";
+                 this.filters.project_id = "";
+                 this.filters.brand_id = "";
+                 this.filters.asset_type = "";
+                 this.filters.workflow_status = "";
+                 this.filters.search = "";
+
+                 // Set the requested status filter
                  this.filters.status = value;
+
+                 // BUSINESS RULE: "Available" means status=available AND workflow_status=approved
+                 // Only show assets that are truly available (not pending authorization)
+                 if (value === "available") {
+                     this.filters.workflow_status = "approved";
+                 }
              }
-             this.submitFilters();
+
+             // Use $nextTick to ensure DOM updates before form submission
+             this.$nextTick(() => {
+                 this.submitFilters();
+             });
          },
 
          // Debounced search handler (500ms delay)
@@ -293,7 +314,7 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
                  this.submitFilters();
              }, 500);
          }
-     }">
+     }'>
     <!-- Mobile Filter Button (Sticky) -->
     <div class="d-md-none position-sticky top-0 z-3 bg-body py-2 mb-3 filters-mobile-sticky">
         <button class="btn btn-primary w-100"
@@ -325,7 +346,9 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close filters panel"></button>
         </div>
         <div class="offcanvas-body">
-            <form method="GET" action="?route=assets" id="filter-form-mobile" role="search" x-ref="mobileForm">
+            <form method="GET" id="filter-form-mobile" role="search" x-ref="mobileForm">
+                <input type="hidden" name="route" value="assets">
+
                 <!-- Search Field (Top Priority on Mobile) -->
                 <div class="mb-3">
                     <label for="search-mobile" class="form-label">Search</label>

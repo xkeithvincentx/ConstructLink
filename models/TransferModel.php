@@ -7,7 +7,7 @@
 class TransferModel extends BaseModel {
     protected $table = 'transfers';
     protected $fillable = [
-        'asset_id', 'from_project', 'to_project', 'reason', 'initiated_by',
+        'ref', 'asset_id', 'from_project', 'to_project', 'reason', 'initiated_by',
         'transfer_type', 'approved_by', 'transfer_date', 'expected_return',
         'actual_return', 'approval_date', 'status', 'notes', 'verified_by',
         'verification_date', 'dispatched_by', 'dispatch_date', 'dispatch_notes',
@@ -73,11 +73,15 @@ class TransferModel extends BaseModel {
                 return ['success' => false, 'message' => 'Asset is not available for transfer'];
             }
             
+            // Generate simple transfer reference in TR-YYYY-NNNN format
+            $transferReference = generateTransferReference();
+            $data['ref'] = $transferReference;
+
             // Get initiator role for smart workflow
             $userModel = new UserModel();
             $initiator = $userModel->getUserWithRole($data['initiated_by']);
             $initiatorRole = $initiator ? ($initiator['role_name'] ?? '') : '';
-            
+
             // Smart workflow logic based on initiator role
             if (in_array($initiatorRole, ['Finance Director', 'Asset Director'])) {
                 // Finance Director or Asset Director - streamlined process (skip to Received)

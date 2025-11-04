@@ -7,27 +7,178 @@
  * This was a reported issue where search boxes were hidden, making
  * category/project selection difficult with large datasets.
  *
+ * CRITICAL FIX 2: Removes double arrow issue by completely removing
+ * native select styling and ensuring Select2 takes over completely.
+ *
  * @module assets/select2-custom
- * @version 3.0.0
+ * @version 3.1.0
  * @since Phase 3 Refactoring
  */
+
+/* ==========================================================================
+   CRITICAL: Remove ALL Native Select Styling
+   This must come first to prevent browser default styles
+   ========================================================================== */
+
+/* Target all selects in filter forms - highest priority */
+#filter-form select,
+#filter-form-mobile select,
+select#status,
+select#status-mobile,
+select#category_id,
+select#category_id-mobile,
+select#project_id,
+select#project_id-mobile,
+select#brand_id,
+select#brand_id-mobile,
+select#asset_type,
+select#asset_type-mobile,
+select#workflow_status,
+select#workflow_status-mobile {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+  background: transparent !important;
+  padding-right: 0.75rem !important;
+}
 
 /* ==========================================================================
    Base Select2 Integration with Bootstrap 5
    ========================================================================== */
 
+/* Hide native select element when Select2 is active */
+.select2-hidden-accessible {
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+  white-space: nowrap !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Remove native select appearance - CRITICAL: Must override Bootstrap */
+select.form-select,
+select.form-select-sm,
+#filter-form select,
+#filter-form-mobile select,
+.form-select,
+.form-select-sm {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+  background-position: initial !important;
+  background-repeat: no-repeat !important;
+  background-size: initial !important;
+  padding-right: 0.75rem !important;
+}
+
+/* Override Bootstrap's select arrow background */
+select[class*="form-select"] {
+  background-image: none !important;
+  padding-right: 0.75rem !important;
+}
+
+/* Completely hide select when Select2 is active */
+select.select2-hidden-accessible {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
 .select2-container--bootstrap-5 .select2-selection--single {
+  position: relative;
   height: calc(2.5rem + 2px);
-  padding: 0.375rem 0.75rem;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  background-color: #fff;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #212529;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
 }
 
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
   line-height: 1.5;
   color: #495057;
+  padding-left: 0;
+  padding-right: 0;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
-  height: calc(2.5rem);
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
+  border-color: #495057 transparent transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0 4px;
+  height: 0;
+  left: 50%;
+  margin-left: -4px;
+  margin-top: -2px;
+  position: absolute;
+  top: 50%;
+  width: 0;
+}
+
+/* Clear button positioning */
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__clear {
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  color: #6c757d;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Make Select2 container block-level to replace native select */
+.select2-container {
+  display: block !important;
+}
+
+/* Small form-select variant for filter dropdowns */
+.form-select-sm + .select2-container--bootstrap-5 .select2-selection--single {
+  height: calc(1.5em + 0.5rem + 2px);
+  padding: 0.25rem 2rem 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+}
+
+.form-select-sm + .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+  height: calc(1.5em + 0.5rem);
+}
+
+/* Placeholder styling */
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: #6c757d;
 }
 
 /* ==========================================================================
