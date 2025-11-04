@@ -112,6 +112,122 @@ $csrfToken = CSRFProtection::generateToken();
     </a>
 </div>
 
+<!-- Overdue Tools Alert (Enhanced) -->
+<?php if (!empty($overdueTools)): ?>
+<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+    <div class="d-flex align-items-start">
+        <!-- Alert Icon -->
+        <div class="flex-shrink-0 me-3">
+            <i class="bi bi-exclamation-triangle-fill fs-2" aria-hidden="true"></i>
+        </div>
+
+        <!-- Alert Content -->
+        <div class="flex-grow-1">
+            <h5 class="alert-heading mb-2">
+                <strong><?= count($overdueTools) ?> Tool(s) Overdue for Return</strong>
+            </h5>
+            <p class="mb-3">
+                The following equipment items are overdue and require immediate follow-up.
+                Please contact borrowers or update return dates.
+            </p>
+
+            <!-- Overdue Items Summary (Collapsible) -->
+            <div class="accordion accordion-flush" id="overdueAccordion">
+                <div class="accordion-item bg-transparent border-0">
+                    <h2 class="accordion-header" id="overdueHeading">
+                        <button class="accordion-button collapsed bg-transparent text-dark p-0 shadow-none"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#overdueDetails"
+                                aria-expanded="false"
+                                aria-controls="overdueDetails">
+                            <i class="bi bi-chevron-down me-2" aria-hidden="true"></i>
+                            View Overdue Items (<?= count($overdueTools) ?>)
+                        </button>
+                    </h2>
+                    <div id="overdueDetails"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="overdueHeading"
+                         data-bs-parent="#overdueAccordion">
+                        <div class="accordion-body px-0 pt-3">
+                            <div class="row g-2">
+                                <?php foreach (array_slice($overdueTools, 0, 6) as $overdueTool): ?>
+                                    <div class="col-md-6">
+                                        <div class="card border-danger mb-2">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <strong class="d-block mb-1">
+                                                            <a href="?route=borrowed-tools/view&id=<?= $overdueTool['id'] ?>"
+                                                               class="text-decoration-none text-danger">
+                                                                <?= htmlspecialchars($overdueTool['asset_name']) ?>
+                                                            </a>
+                                                        </strong>
+                                                        <small class="text-muted d-block mb-1">
+                                                            <i class="bi bi-person me-1" aria-hidden="true"></i>
+                                                            Borrower: <?= htmlspecialchars($overdueTool['borrower_name']) ?>
+                                                        </small>
+                                                        <?php if (!empty($overdueTool['borrower_contact'])): ?>
+                                                            <small class="text-muted d-block">
+                                                                <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+                                                                <?= htmlspecialchars($overdueTool['borrower_contact']) ?>
+                                                            </small>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <span class="badge bg-danger d-block mb-1">
+                                                            <?= $overdueTool['days_overdue'] ?> days overdue
+                                                        </span>
+                                                        <small class="text-muted d-block">
+                                                            Due: <?= date('M j', strtotime($overdueTool['expected_return'])) ?>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php if (count($overdueTools) > 6): ?>
+                                <p class="text-muted mt-3 mb-0">
+                                    And <?= count($overdueTools) - 6 ?> more overdue tool(s)...
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="d-flex gap-2 mt-3 flex-wrap">
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger quick-filter-btn"
+                        data-quick-filter="overdue"
+                        aria-label="Filter to show only overdue items">
+                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>
+                    Show Only Overdue
+                </button>
+                <?php if ($auth->hasRole(['System Admin', 'Asset Director', 'Project Manager', 'Warehouseman'])): ?>
+                    <a href="?route=borrowed-tools/overdue-report"
+                       class="btn btn-sm btn-outline-secondary"
+                       aria-label="Generate overdue report">
+                        <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>
+                        Generate Report
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Dismiss Button -->
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Dismiss overdue alert">
+        </button>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- MVA Workflow Help (Collapsible) -->
 <div class="mb-3">
     <button class="btn btn-link btn-sm text-decoration-none p-0"
@@ -143,49 +259,6 @@ $csrfToken = CSRFProtection::generateToken();
 
 <!-- Borrowed Tools Table -->
 <?php include APP_ROOT . '/views/borrowed-tools/partials/_borrowed_tools_list.php'; ?>
-
-<!-- Overdue Tools Alert -->
-<?php if (!empty($overdueTools)): ?>
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Overdue Tools Alert
-                </h6>
-            </div>
-            <div class="card-body">
-                <p class="text-danger mb-3">
-                    <strong><?= count($overdueTools) ?> tool(s)</strong> are overdue for return. Please follow up with borrowers.
-                </p>
-                <div class="row">
-                    <?php foreach (array_slice($overdueTools, 0, 6) as $overdueTool): ?>
-                        <div class="col-md-6 mb-2">
-                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                                <div>
-                                    <strong><?= htmlspecialchars($overdueTool['asset_name']) ?></strong>
-                                    <br>
-                                    <small class="text-muted">
-                                        Borrowed by: <?= htmlspecialchars($overdueTool['borrower_name']) ?>
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge bg-danger">
-                                        <?= $overdueTool['days_overdue'] ?> days overdue
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php if (count($overdueTools) > 6): ?>
-                    <p class="text-muted mt-2">And <?= count($overdueTools) - 6 ?> more overdue tools...</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
 
 <!-- Load borrowed tools module CSS -->
 <?php
