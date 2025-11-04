@@ -1,6 +1,11 @@
 <?php
 /**
  * ConstructLink™ Request Create View - Unified Request Management
+ *
+ * Refactored to use partials and external resources following DRY principles.
+ * All inline JavaScript and styles have been extracted.
+ *
+ * @version 2.0.0
  */
 
 // Start output buffering to capture content
@@ -9,10 +14,15 @@ ob_start();
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
-?>
 
-<!-- Navigation Actions (No Header - handled by layout) -->
-<!-- Add navigation buttons here if needed -->
+// Add external CSS and JS to page head
+$additionalCSS = ['assets/css/modules/requests.css'];
+$additionalJS = [
+    'assets/js/modules/requests/init/form-validation.js',
+    'assets/js/modules/requests/components/field-toggles.js',
+    'assets/js/modules/requests/components/sample-data.js'
+];
+?>
 
 <div class="row">
     <div class="col-lg-8">
@@ -20,7 +30,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-form-check me-2"></i>Request Details
+                    <i class="bi bi-plus-circle me-2"></i>Request Details
                 </h6>
             </div>
             <div class="card-body">
@@ -28,11 +38,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <?php if (in_array($user['role_name'], $roleConfig['requests/create'] ?? [])): ?>
                 <form method="POST" action="?route=requests/create" id="requestForm">
                     <?= CSRFProtection::getTokenField() ?>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="project_id" class="form-label">Project <span class="text-danger">*</span></label>
-                            <select name="project_id" id="project_id" class="form-select" required>
+                            <label for="project_id" class="form-label">
+                                Project <span class="text-danger">*</span>
+                            </label>
+                            <select name="project_id" id="project_id" class="form-select" required aria-required="true">
                                 <option value="">Select Project</option>
                                 <?php if (isset($projects) && is_array($projects)): ?>
                                     <?php foreach ($projects as $project): ?>
@@ -42,37 +54,39 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
-                            <div class="invalid-feedback">
+                            <div class="invalid-feedback" role="alert">
                                 Please select a project.
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="request_type" class="form-label">Request Type <span class="text-danger">*</span></label>
-                            <select name="request_type" id="request_type" class="form-select" required onchange="toggleCategoryField()">
+                            <label for="request_type" class="form-label">
+                                Request Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="request_type" id="request_type" class="form-select" required aria-required="true">
                                 <option value="">Select Request Type</option>
-                                <?php 
+                                <?php
                                 // Role-based request type restrictions
                                 $allowedTypes = ['Material', 'Tool', 'Equipment', 'Service', 'Petty Cash', 'Other'];
-                                
+
                                 // Site Inventory Clerk can only request Materials and Tools
                                 if ($user['role_name'] === 'Site Inventory Clerk') {
                                     $allowedTypes = ['Material', 'Tool'];
                                 }
-                                
+
                                 // Project Manager restrictions (can't request Petty Cash)
                                 if ($user['role_name'] === 'Project Manager') {
                                     $allowedTypes = array_diff($allowedTypes, ['Petty Cash']);
                                 }
-                                
-                                foreach ($allowedTypes as $type): 
+
+                                foreach ($allowedTypes as $type):
                                 ?>
                                     <option value="<?= $type ?>" <?= ($formData['request_type'] ?? '') === $type ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($type) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <div class="invalid-feedback">
+                            <div class="invalid-feedback" role="alert">
                                 Please select a request type.
                             </div>
                             <?php if ($user['role_name'] === 'Site Inventory Clerk'): ?>
@@ -82,11 +96,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    
+
                     <div class="row">
-                        <div class="col-md-6 mb-3" id="categoryField" style="display: none;">
+                        <div class="col-md-6 mb-3 conditional-field" id="categoryField" aria-hidden="true">
                             <label for="category" class="form-label">Category</label>
-                            <select name="category" id="category" class="form-select">
+                            <select name="category" id="category" class="form-select" aria-label="Select request category">
                                 <option value="">Select Category (Optional)</option>
                                 <?php if (isset($categories) && is_array($categories)): ?>
                                     <?php foreach ($categories as $category): ?>
@@ -100,68 +114,79 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 Select a category if applicable to your request type.
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="urgency" class="form-label">Urgency</label>
-                            <select name="urgency" id="urgency" class="form-select">
+                            <select name="urgency" id="urgency" class="form-select" aria-label="Select urgency level">
                                 <option value="Normal" <?= ($formData['urgency'] ?? 'Normal') === 'Normal' ? 'selected' : '' ?>>Normal</option>
                                 <option value="Urgent" <?= ($formData['urgency'] ?? '') === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
                                 <option value="Critical" <?= ($formData['urgency'] ?? '') === 'Critical' ? 'selected' : '' ?>>Critical</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="date_needed" class="form-label">Date Needed</label>
-                            <input type="date" name="date_needed" id="date_needed" class="form-control" 
-                                   value="<?= $formData['date_needed'] ?? '' ?>" min="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+                            <input type="date" name="date_needed" id="date_needed" class="form-control"
+                                   value="<?= $formData['date_needed'] ?? '' ?>"
+                                   min="<?= date('Y-m-d', strtotime('+1 day')) ?>"
+                                   aria-label="Date when this request is needed">
                             <div class="form-text">
                                 When do you need this request fulfilled?
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-                        <textarea name="description" id="description" class="form-control" rows="4" required 
-                                  placeholder="Provide detailed description of what you're requesting..."><?= htmlspecialchars($formData['description'] ?? '') ?></textarea>
-                        <div class="invalid-feedback">
+                        <label for="description" class="form-label">
+                            Description <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="description" id="description" class="form-control" rows="4" required
+                                  placeholder="Provide detailed description of what you're requesting..."
+                                  aria-required="true"><?= htmlspecialchars($formData['description'] ?? '') ?></textarea>
+                        <div class="invalid-feedback" role="alert">
                             Please provide a detailed description.
                         </div>
                         <div class="form-text">
                             Be as specific as possible. Include specifications, quantities, brands, models, etc.
                         </div>
                     </div>
-                    
-                    <div class="row" id="quantityFields" style="display: none;">
+
+                    <div class="row conditional-field" id="quantityFields" aria-hidden="true">
                         <div class="col-md-6 mb-3">
                             <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" name="quantity" id="quantity" class="form-control" min="1" 
-                                   value="<?= $formData['quantity'] ?? '' ?>" placeholder="Enter quantity">
+                            <input type="number" name="quantity" id="quantity" class="form-control" min="1"
+                                   value="<?= $formData['quantity'] ?? '' ?>"
+                                   placeholder="Enter quantity"
+                                   aria-label="Quantity needed">
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="unit" class="form-label">Unit</label>
-                            <input type="text" name="unit" id="unit" class="form-control" 
-                                   value="<?= htmlspecialchars($formData['unit'] ?? '') ?>" placeholder="e.g., pcs, kg, m, liters">
+                            <input type="text" name="unit" id="unit" class="form-control"
+                                   value="<?= htmlspecialchars($formData['unit'] ?? '') ?>"
+                                   placeholder="e.g., pcs, kg, m, liters"
+                                   aria-label="Unit of measurement">
                         </div>
                     </div>
-                    
-                    <div class="mb-3" id="estimatedCostField" style="display: none;">
+
+                    <div class="mb-3 conditional-field" id="estimatedCostField" aria-hidden="true">
                         <label for="estimated_cost" class="form-label">Estimated Cost (PHP)</label>
-                        <input type="number" name="estimated_cost" id="estimated_cost" class="form-control" 
-                               step="0.01" min="0" value="<?= $formData['estimated_cost'] ?? '' ?>" 
-                               placeholder="Enter estimated cost if known">
+                        <input type="number" name="estimated_cost" id="estimated_cost" class="form-control"
+                               step="0.01" min="0" value="<?= $formData['estimated_cost'] ?? '' ?>"
+                               placeholder="Enter estimated cost if known"
+                               aria-label="Estimated cost in Philippine Pesos">
                         <div class="form-text">
                             Provide an estimated cost if you have an idea of the expense involved.
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="remarks" class="form-label">Additional Remarks</label>
-                        <textarea name="remarks" id="remarks" class="form-control" rows="3" 
-                                  placeholder="Any additional information, special instructions, or notes..."><?= htmlspecialchars($formData['remarks'] ?? '') ?></textarea>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"
+                                  placeholder="Any additional information, special instructions, or notes..."
+                                  aria-label="Additional remarks or notes"><?= htmlspecialchars($formData['remarks'] ?? '') ?></textarea>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between">
                         <a href="?route=requests" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-1"></i>Cancel
@@ -172,12 +197,14 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     </div>
                 </form>
                 <?php else: ?>
-                <div class="alert alert-danger mt-4">You do not have permission to create a request.</div>
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to create a request.
+                </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Request Guidelines -->
         <div class="card">
@@ -196,7 +223,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         <li>Estimated costs help with budget planning</li>
                     </ul>
                 </div>
-                
+
                 <h6>Request Types:</h6>
                 <ul class="small">
                     <li><strong>Material:</strong> Construction materials, supplies</li>
@@ -206,7 +233,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <li><strong>Petty Cash:</strong> Small cash expenses</li>
                     <li><strong>Other:</strong> Miscellaneous requests</li>
                 </ul>
-                
+
                 <h6>Approval Process:</h6>
                 <ol class="small">
                     <li>Request Generated</li>
@@ -217,7 +244,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </ol>
             </div>
         </div>
-        
+
         <!-- Quick Actions -->
         <div class="card mt-3">
             <div class="card-header">
@@ -227,13 +254,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="fillSampleMaterial()">
+                    <button type="button" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-hammer me-1"></i>Sample Material Request
                     </button>
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="fillSampleTool()">
+                    <button type="button" class="btn btn-outline-info btn-sm">
                         <i class="bi bi-tools me-1"></i>Sample Tool Request
                     </button>
-                    <button type="button" class="btn btn-outline-success btn-sm" onclick="fillSampleService()">
+                    <button type="button" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-gear me-1"></i>Sample Service Request
                     </button>
                 </div>
@@ -241,85 +268,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div>
-
-<script>
-// Toggle category field based on request type
-function toggleCategoryField() {
-    const requestType = document.getElementById('request_type').value;
-    const categoryField = document.getElementById('categoryField');
-    const quantityFields = document.getElementById('quantityFields');
-    const estimatedCostField = document.getElementById('estimatedCostField');
-    
-    // Show category for Material, Tool, Equipment
-    if (['Material', 'Tool', 'Equipment'].includes(requestType)) {
-        categoryField.style.display = 'block';
-        quantityFields.style.display = 'block';
-    } else {
-        categoryField.style.display = 'none';
-        quantityFields.style.display = 'none';
-    }
-    
-    // Show estimated cost for all except Petty Cash
-    if (requestType && requestType !== 'Petty Cash') {
-        estimatedCostField.style.display = 'block';
-    } else {
-        estimatedCostField.style.display = 'none';
-    }
-}
-
-// Sample data functions
-function fillSampleMaterial() {
-    document.getElementById('request_type').value = 'Material';
-    document.getElementById('description').value = 'Portland cement bags for foundation work. Need high-grade cement suitable for structural applications.';
-    document.getElementById('quantity').value = '50';
-    document.getElementById('unit').value = 'bags';
-    document.getElementById('estimated_cost').value = '15000';
-    document.getElementById('urgency').value = 'Urgent';
-    toggleCategoryField();
-}
-
-function fillSampleTool() {
-    document.getElementById('request_type').value = 'Tool';
-    document.getElementById('description').value = 'Heavy-duty angle grinder with cutting discs for metal fabrication work.';
-    document.getElementById('quantity').value = '2';
-    document.getElementById('unit').value = 'pcs';
-    document.getElementById('estimated_cost').value = '8000';
-    document.getElementById('urgency').value = 'Normal';
-    toggleCategoryField();
-}
-
-function fillSampleService() {
-    document.getElementById('request_type').value = 'Service';
-    document.getElementById('description').value = 'Professional electrical inspection and certification for completed electrical installations.';
-    document.getElementById('estimated_cost').value = '25000';
-    document.getElementById('urgency').value = 'Normal';
-    toggleCategoryField();
-}
-
-// Form validation
-document.getElementById('requestForm').addEventListener('submit', function(e) {
-    const projectId = document.getElementById('project_id').value;
-    const requestType = document.getElementById('request_type').value;
-    const description = document.getElementById('description').value.trim();
-    
-    if (!projectId || !requestType || !description) {
-        e.preventDefault();
-        alert('Please fill in all required fields.');
-        return false;
-    }
-    
-    if (description.length < 10) {
-        e.preventDefault();
-        alert('Please provide a more detailed description (at least 10 characters).');
-        return false;
-    }
-});
-
-// Initialize form
-document.addEventListener('DOMContentLoaded', function() {
-    toggleCategoryField();
-});
-</script>
 
 <?php
 // Capture content and assign to variable

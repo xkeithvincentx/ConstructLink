@@ -1,6 +1,12 @@
 <?php
 /**
  * ConstructLink™ Request Index View - Unified Request Management
+ *
+ * Refactored to use partials and external resources following DRY principles.
+ * Statistics cards now use reusable partial (150+ lines reduction).
+ * All inline JavaScript and styles have been extracted.
+ *
+ * @version 2.0.0
  */
 
 // Start output buffering to capture content
@@ -11,6 +17,13 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 
 $roleConfig = require APP_ROOT . '/config/roles.php';
+
+// Add external CSS and JS to page head
+$additionalCSS = ['assets/css/modules/requests.css'];
+$additionalJS = ['assets/js/modules/requests/components/index-actions.js'];
+
+// Note: $_GET access should be sanitized at controller level
+// This is noted for future refactoring with database-refactor-agent
 ?>
 
 <!-- Action Buttons (No Header - handled by layout) -->
@@ -48,13 +61,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         'request_declined' => ['type' => 'danger', 'text' => 'Request has been declined.'],
         'request_forwarded' => ['type' => 'info', 'text' => 'Request has been forwarded for further review.']
     ];
-    
+
     $message = $messages[$_GET['message']] ?? null;
     if ($message):
     ?>
         <div class="alert alert-<?= $message['type'] ?> alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-2"></i><?= $message['text'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 <?php endif; ?>
@@ -63,185 +76,36 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     <?php if ($_GET['error'] === 'export_failed'): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle me-2"></i>Failed to export requests. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 <?php endif; ?>
 
-<!-- Statistics Cards -->
+<!-- Statistics Cards - Using Partial (DRY Refactoring) -->
 <div class="row g-3 mb-4">
-    <!-- Draft/Submitted -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-pencil-square text-info fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Draft/Submitted</h6>
-                        <h3 class="mb-0"><?= ($requestStats['draft'] ?? 0) + ($requestStats['submitted'] ?? 0) ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-clock-history me-1"></i>Awaiting initial review
-                </p>
-                <a href="?route=requests&status=Submitted" class="btn btn-sm btn-outline-info w-100 mt-2">
-                    <i class="bi bi-eye me-1"></i>Review (<?= $requestStats['my_pending_reviews'] ?? 0 ?>)
-                </a>
-            </div>
-        </div>
-    </div>
+    <?php
+    // Load statistics cards configuration
+    $statisticsCards = include APP_ROOT . '/views/requests/_partials/_statistics-cards-data.php';
 
-    <!-- Under Review -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-search text-warning fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Under Review</h6>
-                        <h3 class="mb-0"><?= ($requestStats['reviewed'] ?? 0) + ($requestStats['forwarded'] ?? 0) ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-person-check me-1"></i>Project Manager verified
-                </p>
-            </div>
-        </div>
-    </div>
+    // Render each card using the reusable partial
+    foreach ($statisticsCards as $card) {
+        $title = $card['title'];
+        $value = $card['value'];
+        $icon = $card['icon'];
+        $color = $card['color'];
+        $description = $card['description'];
+        $actionUrl = $card['actionUrl'];
+        $actionLabel = $card['actionLabel'];
+        $actionBadge = $card['actionBadge'] ?? 0;
 
-    <!-- Procurement Ready -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-check-circle text-success fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Procurement Ready</h6>
-                        <h3 class="mb-0"><?= $requestStats['approved'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-check2-all me-1"></i>Approved, awaiting PO creation
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- In Procurement -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-cart-check text-primary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">In Procurement</h6>
-                        <h3 class="mb-0"><?= $requestStats['in_procurement'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-clock me-1"></i>PO created and in progress
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Urgent/Critical -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--danger-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Urgent/Critical</h6>
-                        <h3 class="mb-0"><?= ($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0) ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-exclamation-circle me-1"></i><?= $requestStats['overdue_requests'] ?? 0 ?> overdue
-                </p>
-                <?php if ((($requestStats['critical'] ?? 0) + ($requestStats['urgent'] ?? 0)) > 0): ?>
-                    <a href="?route=requests&urgency=Critical" class="btn btn-sm btn-outline-danger w-100 mt-2">
-                        <i class="bi bi-eye me-1"></i>Review Priority Items
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Completed -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-check-all text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Completed</h6>
-                        <h3 class="mb-0"><?= $requestStats['completed'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-archive me-1"></i>Fulfilled requests
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Declined -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-x-circle text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Declined</h6>
-                        <h3 class="mb-0"><?= $requestStats['declined'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-slash-circle me-1"></i>Rejected requests
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Total Requests -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-list-ul text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Total Requests</h6>
-                        <h3 class="mb-0"><?= $requestStats['total_requests'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-graph-up me-1"></i>All time
-                </p>
-            </div>
-        </div>
-    </div>
+        include APP_ROOT . '/views/requests/_partials/_statistics-card.php';
+    }
+    ?>
 </div>
 
 <!-- MVA Workflow Info Banner -->
 <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Project Manager', 'Procurement Officer'])): ?>
-<div class="alert alert-info mb-4">
+<div class="alert alert-info mb-4" role="status">
     <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
     <span class="badge bg-info">Maker</span> (Site Inventory Clerk) →
     <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
@@ -250,8 +114,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     <span class="badge bg-secondary">Completed</span>
 </div>
 <?php endif; ?>
-
-<!-- Old cards removed - using standardized design above -->
 
 <!-- Delivery Alerts Section -->
 <?php if (isset($deliveryAlerts) && !empty($deliveryAlerts)): ?>
@@ -285,7 +147,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </div>
                 <?php if (count($deliveryAlerts) > 3): ?>
                 <div class="text-center">
-                    <button class="btn btn-sm btn-outline-warning" onclick="toggleAllAlerts()">
+                    <button class="btn btn-sm btn-outline-warning" type="button" aria-label="Show all delivery alerts">
                         <i class="bi bi-chevron-down me-1"></i>Show All Alerts (<?= count($deliveryAlerts) - 3 ?> more)
                     </button>
                 </div>
@@ -306,8 +168,8 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     <div class="card-body">
         <form method="GET" action="?route=requests" class="row g-3">
             <div class="col-md-2">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <label class="form-label" for="filter-status">Status</label>
+                <select name="status" id="filter-status" class="form-select" aria-label="Filter by status">
                     <option value="">All Statuses</option>
                     <option value="Draft" <?= ($_GET['status'] ?? '') === 'Draft' ? 'selected' : '' ?>>Draft</option>
                     <option value="Submitted" <?= ($_GET['status'] ?? '') === 'Submitted' ? 'selected' : '' ?>>Submitted</option>
@@ -318,10 +180,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <option value="Procured" <?= ($_GET['status'] ?? '') === 'Procured' ? 'selected' : '' ?>>Procured</option>
                 </select>
             </div>
-            
+
             <div class="col-md-2">
-                <label class="form-label">Request Type</label>
-                <select name="request_type" class="form-select">
+                <label class="form-label" for="filter-type">Request Type</label>
+                <select name="request_type" id="filter-type" class="form-select" aria-label="Filter by request type">
                     <option value="">All Types</option>
                     <option value="Material" <?= ($_GET['request_type'] ?? '') === 'Material' ? 'selected' : '' ?>>Material</option>
                     <option value="Tool" <?= ($_GET['request_type'] ?? '') === 'Tool' ? 'selected' : '' ?>>Tool</option>
@@ -331,14 +193,14 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <option value="Other" <?= ($_GET['request_type'] ?? '') === 'Other' ? 'selected' : '' ?>>Other</option>
                 </select>
             </div>
-            
+
             <div class="col-md-2">
-                <label class="form-label">Project</label>
-                <select name="project_id" class="form-select">
+                <label class="form-label" for="filter-project">Project</label>
+                <select name="project_id" id="filter-project" class="form-select" aria-label="Filter by project">
                     <option value="">All Projects</option>
                     <?php if (isset($projects) && is_array($projects)): ?>
                         <?php foreach ($projects as $project): ?>
-                            <option value="<?= $project['id'] ?>" 
+                            <option value="<?= $project['id'] ?>"
                                     <?= ($_GET['project_id'] ?? '') == $project['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($project['name']) ?>
                             </option>
@@ -346,36 +208,39 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <?php endif; ?>
                 </select>
             </div>
-            
+
             <div class="col-md-2">
-                <label class="form-label">Urgency</label>
-                <select name="urgency" class="form-select">
+                <label class="form-label" for="filter-urgency">Urgency</label>
+                <select name="urgency" id="filter-urgency" class="form-select" aria-label="Filter by urgency">
                     <option value="">All Urgency</option>
                     <option value="Normal" <?= ($_GET['urgency'] ?? '') === 'Normal' ? 'selected' : '' ?>>Normal</option>
                     <option value="Urgent" <?= ($_GET['urgency'] ?? '') === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
                     <option value="Critical" <?= ($_GET['urgency'] ?? '') === 'Critical' ? 'selected' : '' ?>>Critical</option>
                 </select>
             </div>
-            
+
             <div class="col-md-2">
-                <label class="form-label">Date From</label>
-                <input type="date" class="form-control" name="date_from" 
-                       value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
+                <label class="form-label" for="filter-date-from">Date From</label>
+                <input type="date" class="form-control" name="date_from" id="filter-date-from"
+                       value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>"
+                       aria-label="Filter from date">
             </div>
-            
+
             <div class="col-md-2">
-                <label class="form-label">Date To</label>
-                <input type="date" class="form-control" name="date_to" 
-                       value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
+                <label class="form-label" for="filter-date-to">Date To</label>
+                <input type="date" class="form-control" name="date_to" id="filter-date-to"
+                       value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>"
+                       aria-label="Filter to date">
             </div>
-            
+
             <div class="col-md-8">
-                <label class="form-label">Search</label>
-                <input type="text" class="form-control" name="search" 
+                <label class="form-label" for="filter-search">Search</label>
+                <input type="text" class="form-control" name="search" id="filter-search"
                        placeholder="Search by description, project, or requester..."
-                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
+                       aria-label="Search requests">
             </div>
-            
+
             <div class="col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="bi bi-search me-1"></i>Filter
@@ -399,20 +264,20 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     <div class="card-body">
         <?php if (!empty($requests)): ?>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" aria-label="Requests table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Project</th>
-                            <th>Urgency</th>
-                            <th>Status</th>
-                            <th>Delivery Status</th>
-                            <th>Procurement</th>
-                            <th>Requested By</th>
-                            <th>Date Created</th>
-                            <th>Actions</th>
+                            <th scope="col">ID</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Project</th>
+                            <th scope="col">Urgency</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Delivery Status</th>
+                            <th scope="col">Procurement</th>
+                            <th scope="col">Requested By</th>
+                            <th scope="col">Date Created</th>
+                            <th scope="col">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -441,57 +306,33 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 </td>
                                 <td>
                                     <?php
-                                    $urgencyClass = [
-                                        'Normal' => 'bg-secondary',
-                                        'Urgent' => 'bg-warning',
-                                        'Critical' => 'bg-danger'
-                                    ];
-                                    $class = $urgencyClass[$request['urgency']] ?? 'bg-secondary';
+                                    $urgency = $request['urgency'];
+                                    $includeIcon = true;
+                                    $size = 'normal';
+                                    include APP_ROOT . '/views/requests/_partials/_badge-urgency.php';
                                     ?>
-                                    <span class="badge <?= $class ?>">
-                                        <?= htmlspecialchars($request['urgency']) ?>
-                                    </span>
                                 </td>
                                 <td>
                                     <?php
-                                    $statusClass = [
-                                        'Draft' => 'bg-secondary',
-                                        'Submitted' => 'bg-warning',
-                                        'Reviewed' => 'bg-info',
-                                        'Forwarded' => 'bg-primary',
-                                        'Approved' => 'bg-success',
-                                        'Declined' => 'bg-danger',
-                                        'Procured' => 'bg-dark'
-                                    ];
-                                    $class = $statusClass[$request['status']] ?? 'bg-secondary';
+                                    $status = $request['status'];
+                                    $includeIcon = false;
+                                    $size = 'normal';
+                                    include APP_ROOT . '/views/requests/_partials/_badge-status.php';
                                     ?>
-                                    <span class="badge <?= $class ?>">
-                                        <?= htmlspecialchars($request['status']) ?>
-                                    </span>
                                 </td>
                                 <td>
                                     <?php
                                     $deliveryStatus = $request['overall_delivery_status'] ?? 'Not Started';
-                                    $deliveryStatusClass = [
-                                        'Completed' => 'bg-success',
-                                        'In Progress' => 'bg-primary',
-                                        'Scheduled' => 'bg-info',
-                                        'Ready for Delivery' => 'bg-warning',
-                                        'Processing' => 'bg-secondary',
-                                        'Awaiting Procurement' => 'bg-light text-dark',
-                                        'Not Started' => 'bg-light text-muted'
-                                    ];
-                                    $deliveryClass = $deliveryStatusClass[$deliveryStatus] ?? 'bg-secondary';
+                                    $includeIcon = false;
+                                    $size = 'small';
+                                    include APP_ROOT . '/views/requests/_partials/_badge-delivery.php';
                                     ?>
-                                    <span class="badge <?= $deliveryClass ?> small">
-                                        <?= htmlspecialchars($deliveryStatus) ?>
-                                    </span>
-                                    
+
                                     <!-- Delivery Alert Icons -->
                                     <?php if (isset($request['has_delivery_alert']) && $request['has_delivery_alert']): ?>
                                         <br><i class="bi bi-exclamation-triangle text-warning small" title="Has delivery alerts"></i>
                                     <?php endif; ?>
-                                    
+
                                     <?php if (isset($request['is_overdue']) && $request['is_overdue']): ?>
                                         <br><i class="bi bi-clock text-danger small" title="Overdue delivery"></i>
                                     <?php endif; ?>
@@ -506,21 +347,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <?php if (isset($request['procurement_status'])): ?>
                                             <br>
                                             <?php
-                                            $procStatusClass = [
-                                                'Draft' => 'bg-secondary',
-                                                'Pending' => 'bg-warning',
-                                                'Approved' => 'bg-success',
-                                                'Rejected' => 'bg-danger',
-                                                'Scheduled for Delivery' => 'bg-info',
-                                                'In Transit' => 'bg-primary',
-                                                'Delivered' => 'bg-success',
-                                                'Received' => 'bg-dark'
-                                            ];
-                                            $procClass = $procStatusClass[$request['procurement_status']] ?? 'bg-secondary';
+                                            $procurementStatus = $request['procurement_status'];
+                                            $includeIcon = false;
+                                            $size = 'small';
+                                            include APP_ROOT . '/views/requests/_partials/_badge-procurement.php';
                                             ?>
-                                            <span class="badge <?= $procClass ?> small">
-                                                <?= htmlspecialchars($request['procurement_status']) ?>
-                                            </span>
                                         <?php endif; ?>
                                     <?php else: ?>
                                         <span class="text-muted small">No PO</span>
@@ -542,24 +373,24 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 <td>
                                     <?php $currentUser = $auth->getCurrentUser(); ?>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="?route=requests/view&id=<?= $request['id'] ?>" 
+                                        <a href="?route=requests/view&id=<?= $request['id'] ?>"
                                            class="btn btn-outline-primary" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <?php if ($request['status'] === 'Submitted' && in_array($user['role_name'], $roleConfig['requests/review'] ?? [])): ?>
-                                            <a href="?route=requests/review&id=<?= $request['id'] ?>" 
+                                            <a href="?route=requests/review&id=<?= $request['id'] ?>"
                                                class="btn btn-outline-info" title="Review/Forward">
                                                 <i class="bi bi-arrow-right-circle"></i>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (in_array($request['status'], ['Reviewed', 'Forwarded']) && in_array($user['role_name'], $roleConfig['requests/approve'] ?? [])): ?>
-                                            <a href="?route=requests/approve&id=<?= $request['id'] ?>" 
+                                            <a href="?route=requests/approve&id=<?= $request['id'] ?>"
                                                class="btn btn-outline-success" title="Approve">
                                                 <i class="bi bi-check-circle"></i>
                                             </a>
                                         <?php endif; ?>
                                         <?php if ($request['status'] === 'Approved' && in_array($user['role_name'], $roleConfig['requests/generate-po'] ?? []) && empty($request['procurement_id'])): ?>
-                                            <a href="?route=requests/generate-po&request_id=<?= $request['id'] ?>" 
+                                            <a href="?route=requests/generate-po&request_id=<?= $request['id'] ?>"
                                                class="btn btn-outline-primary" title="Create PO">
                                                 <i class="bi bi-plus-circle"></i>
                                             </a>
@@ -581,13 +412,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 <a class="page-link" href="?route=requests&page=<?= $pagination['current_page'] - 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">Previous</a>
                             </li>
                         <?php endif; ?>
-                        
+
                         <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
                             <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
                                 <a class="page-link" href="?route=requests&page=<?= $i ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>"><?= $i ?></a>
                             </li>
                         <?php endfor; ?>
-                        
+
                         <?php if ($pagination['has_next']): ?>
                             <li class="page-item">
                                 <a class="page-link" href="?route=requests&page=<?= $pagination['current_page'] + 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page' && $k !== 'route'), '', '&') ?>">Next</a>
@@ -611,59 +442,13 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
     </div>
 </div>
 
-<script>
-function exportRequests(format) {
-    const params = new URLSearchParams(window.location.search);
-    params.set('format', format);
-    window.location.href = '?route=requests/export&' + params.toString();
-}
-
-function toggleAllAlerts() {
-    const hiddenAlerts = document.querySelectorAll('.hidden-alert');
-    const button = event.target;
-    
-    if (hiddenAlerts.length > 0) {
-        hiddenAlerts.forEach(alert => {
-            alert.style.display = alert.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        const isShowing = hiddenAlerts[0].style.display !== 'none';
-        button.innerHTML = isShowing ? 
-            '<i class="bi bi-chevron-up me-1"></i>Hide Additional Alerts' : 
-            '<i class="bi bi-chevron-down me-1"></i>Show All Alerts (' + hiddenAlerts.length + ' more)';
-    }
-}
-
-// Auto-refresh for real-time updates
-setInterval(function() {
-    // Only refresh if no filters are applied to avoid disrupting user workflow
-    if (window.location.search === '?route=requests' || window.location.search === '') {
-        location.reload();
-    }
-}, 300000); // Refresh every 5 minutes
-
-// Highlight overdue requests
-document.addEventListener('DOMContentLoaded', function() {
-    const overdueRows = document.querySelectorAll('tr[data-overdue="true"]');
-    overdueRows.forEach(row => {
-        row.classList.add('table-danger');
-    });
-    
-    // Add tooltips for delivery status badges
-    const deliveryBadges = document.querySelectorAll('[title]');
-    deliveryBadges.forEach(badge => {
-        new bootstrap.Tooltip(badge);
-    });
-});
-</script>
-
 <?php
 // Capture content and assign to variable
 $content = ob_get_clean();
 
 // Set page variables
 $pageTitle = 'Request Management - ConstructLink™';
-$pageHeader = 'Unified Request Management';
+$pageHeader = 'Request Management';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
     ['title' => 'Requests', 'url' => '?route=requests']

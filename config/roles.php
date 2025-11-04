@@ -14,7 +14,7 @@ return [
         'authorizer' => ['Finance Director'], // Approves based on budget/priority
         'viewer' => ['System Admin', 'Asset Director', 'Procurement Officer'] // Can view all requests
     ],
-    'requests/create' => ['Site Inventory Clerk', 'Site Admin', 'System Admin'],
+    'requests/create' => ['Site Inventory Clerk', 'Site Admin', 'Project Manager', 'System Admin'],
     'requests/review' => ['Project Manager', 'System Admin'],
     'requests/approve' => ['Finance Director', 'System Admin'],
     'requests/view' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager', 'Site Inventory Clerk', 'Site Admin'],

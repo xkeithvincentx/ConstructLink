@@ -1,6 +1,12 @@
 <?php
 /**
  * ConstructLink™ Request View Details - Unified Request Management
+ *
+ * Refactored to use partials and external resources following DRY principles.
+ * Badge rendering now uses reusable partials.
+ * All inline JavaScript and styles have been extracted.
+ *
+ * @version 2.0.0
  */
 
 // Start output buffering to capture content
@@ -9,6 +15,10 @@ ob_start();
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
+
+// Add external CSS and JS to page head
+$additionalCSS = ['assets/css/modules/requests.css'];
+$additionalJS = ['assets/js/modules/requests/components/view-actions.js'];
 ?>
 
 <!-- Navigation Actions (No Header - handled by layout) -->
@@ -17,9 +27,9 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         <!-- Action Buttons -->
         <?php if ($request['status'] === 'Draft' && $request['requested_by'] == $user['id']): ?>
             <div class="btn-group me-2">
-                <form method="POST" action="?route=requests/submit&id=<?= $request['id'] ?>" style="display: inline;">
+                <form method="POST" action="?route=requests/submit&id=<?= $request['id'] ?>" class="form-inline-hidden">
                     <?= CSRFProtection::getTokenField() ?>
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to submit this request for review?')">
+                    <button type="submit" class="btn btn-primary">
                         <i class="bi bi-send me-1"></i>Submit Request
                     </button>
                 </form>
@@ -68,21 +78,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <dt class="col-sm-5">Status:</dt>
                             <dd class="col-sm-7">
                                 <?php
-                                $statusClass = [
-                                    'Draft' => 'bg-secondary',
-                                    'Submitted' => 'bg-info',
-                                    'Reviewed' => 'bg-warning',
-                                    'Forwarded' => 'bg-primary',
-                                    'Approved' => 'bg-success',
-                                    'Declined' => 'bg-danger',
-                                    'Procured' => 'bg-dark',
-                                    'Fulfilled' => 'bg-success'
-                                ];
-                                $class = $statusClass[$request['status']] ?? 'bg-secondary';
+                                $status = $request['status'];
+                                $includeIcon = false;
+                                include APP_ROOT . '/views/requests/_partials/_badge-status.php';
                                 ?>
-                                <span class="badge <?= $class ?>">
-                                    <?= htmlspecialchars($request['status']) ?>
-                                </span>
                             </dd>
                             
                             <dt class="col-sm-5">Request Type:</dt>
@@ -100,16 +99,10 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             <dt class="col-sm-5">Urgency:</dt>
                             <dd class="col-sm-7">
                                 <?php
-                                $urgencyClass = [
-                                    'Normal' => 'bg-secondary',
-                                    'Urgent' => 'bg-warning',
-                                    'Critical' => 'bg-danger'
-                                ];
-                                $class = $urgencyClass[$request['urgency']] ?? 'bg-secondary';
+                                $urgency = $request['urgency'];
+                                $includeIcon = true;
+                                include APP_ROOT . '/views/requests/_partials/_badge-urgency.php';
                                 ?>
-                                <span class="badge <?= $class ?>">
-                                    <?= htmlspecialchars($request['urgency']) ?>
-                                </span>
                             </dd>
                         </dl>
                     </div>
@@ -507,7 +500,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     <?php if ($request['status'] === 'Draft' && $request['requested_by'] == $user['id']): ?>
                         <form method="POST" action="?route=requests/submit&id=<?= $request['id'] ?>">
                             <?= CSRFProtection::getTokenField() ?>
-                            <button type="submit" class="btn btn-primary btn-sm w-100" onclick="return confirm('Are you sure you want to submit this request for review?')">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
                                 <i class="bi bi-send me-1"></i>Submit Request
                             </button>
                         </form>
@@ -531,7 +524,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                         </a>
                     <?php endif; ?>
                     
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                    <button type="button" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-printer me-1"></i>Print Request
                     </button>
                     
@@ -577,68 +570,6 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
     </div>
 </div>
-
-<style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -35px;
-    top: 5px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.timeline-item:not(:last-child)::before {
-    content: '';
-    position: absolute;
-    left: -31px;
-    top: 15px;
-    width: 2px;
-    height: calc(100% + 10px);
-    background-color: #dee2e6;
-}
-
-.timeline-title {
-    font-size: 0.9rem;
-    margin-bottom: 5px;
-}
-
-.timeline-text {
-    font-size: 0.85rem;
-    margin-bottom: 5px;
-}
-
-.stat-item {
-    padding: 10px;
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-@media print {
-    .btn-toolbar,
-    .card:not(:first-child) {
-        display: none !important;
-    }
-}
-</style>
 
 <?php
 // Capture content and assign to variable
