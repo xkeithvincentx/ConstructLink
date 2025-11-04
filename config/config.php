@@ -147,7 +147,7 @@ define('PAGINATION_PER_PAGE_DEFAULT', 20);
 define('PAGINATION_PER_PAGE_ASSETS', 20);
 define('PAGINATION_PER_PAGE_BORROWED_TOOLS', 5); // Reduced to 5 for better desktop viewport fit
 define('PAGINATION_PER_PAGE_WITHDRAWALS', 20);
-define('PAGINATION_PER_PAGE_TRANSFERS', 20);
+define('PAGINATION_PER_PAGE_TRANSFERS', 5); // Match borrowed-tools default for better desktop viewport fit
 
 // Error Handling
 if (APP_DEBUG) {

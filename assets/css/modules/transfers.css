@@ -650,3 +650,99 @@
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     transition: box-shadow 0.3s ease-in-out;
 }
+
+/* ============================================
+   PAGINATION & RECORDS PER PAGE SELECTOR
+   Used in: index.php
+   Follows borrowed-tools pattern for consistency
+   ============================================ */
+
+/* Records per page selector styling */
+#recordsPerPage {
+    cursor: pointer;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#recordsPerPage:hover {
+    border-color: #86b7fe;
+}
+
+#recordsPerPage:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: 0;
+}
+
+/* Enhanced pagination controls */
+.pagination {
+    margin-bottom: 0;
+}
+
+.pagination .page-link {
+    color: var(--bs-primary, #0d6efd);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination .page-link:hover {
+    background-color: var(--bs-gray-100, #e9ecef);
+    border-color: var(--bs-border-color, #dee2e6);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--bs-primary, #0d6efd);
+    border-color: var(--bs-primary, #0d6efd);
+    color: #fff;
+    font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Pagination info styling */
+.pagination-info {
+    font-size: 0.875rem;
+    color: var(--bs-gray-600, #6c757d);
+}
+
+.pagination-info strong {
+    color: var(--bs-gray-900, #212529);
+    font-weight: 600;
+}
+
+/* Desktop viewport optimization for 5 records */
+@media (min-width: 768px) {
+    #transfersTable tbody td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    #transfersTable thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    #transfersTable tbody tr {
+        height: auto;
+        min-height: 60px;
+    }
+}
+
+/* Responsive pagination - hide text labels on mobile */
+@media (max-width: 575.98px) {
+    .pagination .page-link span:not([aria-hidden]) {
+        font-size: 0.875rem;
+    }
+}

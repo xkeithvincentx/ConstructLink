@@ -63,7 +63,13 @@ class TransferController {
         }
         
         $page = (int)($_GET['page'] ?? 1);
-        $perPage = 20;
+
+        // Allow users to select records per page (5, 10, 25, 50, 100)
+        $perPage = (int)($_GET['per_page'] ?? PAGINATION_PER_PAGE_TRANSFERS);
+        $allowedPerPage = [5, 10, 25, 50, 100];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = PAGINATION_PER_PAGE_TRANSFERS;
+        }
         
         // Build filters
         $filters = [];

@@ -146,20 +146,43 @@ if ($error === 'export_failed'): ?>
 
 <!-- Transfers Table -->
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
         <h6 class="card-title mb-0">Transfer Requests</h6>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <!-- Records Per Page Selector (Desktop Only) -->
+            <?php
+            // Get current per_page value (handles both URL parameter and default)
+            $currentPerPage = isset($_GET['per_page']) ? (int)$_GET['per_page'] : PAGINATION_PER_PAGE_TRANSFERS;
+            $perPageOptions = [5, 10, 25, 50, 100];
+            ?>
+            <div class="d-none d-md-flex align-items-center gap-2">
+                <label for="recordsPerPage" class="mb-0 text-nowrap" style="font-size: 0.875rem;">
+                    <i class="bi bi-list-ul me-1" aria-hidden="true"></i>Show:
+                </label>
+                <select id="recordsPerPage"
+                        class="form-select form-select-sm"
+                        style="width: auto; min-width: 80px;"
+                        aria-label="Records per page">
+                    <?php foreach ($perPageOptions as $option): ?>
+                        <option value="<?= $option ?>" <?= $currentPerPage === $option ? 'selected' : '' ?>><?= $option ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="text-muted" style="font-size: 0.875rem;">entries</span>
+            </div>
+            <div class="vr d-none d-md-block"></div>
             <?php if (in_array($userRole, $roleConfig['transfers/export'] ?? [])): ?>
                 <button class="btn btn-sm btn-outline-primary"
-                        onclick="exportToExcel()"
+                        id="exportBtn"
                         aria-label="Export transfers to Excel">
-                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Export
+                    <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>
+                    <span class="d-none d-md-inline">Export</span>
                 </button>
             <?php endif; ?>
             <button class="btn btn-sm btn-outline-secondary"
-                    onclick="printTable()"
+                    id="printBtn"
                     aria-label="Print transfers table">
-                <i class="bi bi-printer me-1" aria-hidden="true"></i>Print
+                <i class="bi bi-printer me-1" aria-hidden="true"></i>
+                <span class="d-none d-md-inline">Print</span>
             </button>
         </div>
     </div>
@@ -184,60 +207,154 @@ if ($error === 'export_failed'): ?>
             <!-- Desktop Table View Partial -->
             <?php include __DIR__ . '/_table.php'; ?>
 
-            <!-- Pagination -->
-            <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-                <nav aria-label="Transfers pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagination['current_page'] > 1): ?>
-                            <?php
-                            $prevParams = $_GET;
-                            unset($prevParams['route']);
-                            $prevParams['page'] = $pagination['current_page'] - 1;
-                            $prevQuery = http_build_query($prevParams);
-                            ?>
-                            <li class="page-item">
-                                <a class="page-link"
-                                   href="?route=transfers&<?= $prevQuery ?>"
-                                   aria-label="Go to previous page">
-                                    Previous
-                                </a>
-                            </li>
+            <!-- Enhanced Pagination Controls -->
+            <?php if (isset($pagination)): ?>
+                <?php
+                // Calculate offset from current_page and per_page
+                $offset = ($pagination['current_page'] - 1) * $pagination['per_page'];
+                $total_records = $pagination['total'] ?? 0;
+                ?>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3">
+                    <!-- LEFT: Showing Info -->
+                    <div class="text-muted small order-2 order-md-1">
+                        Showing
+                        <strong><?= number_format($offset + 1) ?></strong> to
+                        <strong><?= number_format(min($offset + $pagination['per_page'], $total_records)) ?></strong>
+                        of
+                        <strong><?= number_format($total_records) ?></strong>
+                        entries
+                        <?php if (!empty($_GET['status']) || !empty($_GET['search']) || !empty($_GET['transfer_type']) || !empty($_GET['from_project']) || !empty($_GET['to_project'])): ?>
+                            <span class="text-primary">(filtered)</span>
                         <?php endif; ?>
+                    </div>
 
-                        <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                            <?php
-                            $pageParams = $_GET;
-                            unset($pageParams['route']);
-                            $pageParams['page'] = $i;
-                            $pageQuery = http_build_query($pageParams);
-                            ?>
-                            <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                                <a class="page-link"
-                                   href="?route=transfers&<?= $pageQuery ?>"
-                                   aria-label="Go to page <?= $i ?>"
-                                   <?= $i === $pagination['current_page'] ? 'aria-current="page"' : '' ?>>
-                                    <?= $i ?>
-                                </a>
-                            </li>
-                        <?php endfor; ?>
+                    <!-- RIGHT: Pagination Navigation -->
+                    <?php if ($pagination['total_pages'] > 1): ?>
+                        <nav aria-label="Transfers pagination" class="order-1 order-md-2">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center justify-content-md-end">
+                                <!-- Previous Page -->
+                                <?php if ($pagination['current_page'] > 1): ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $prevParams = $_GET;
+                                        unset($prevParams['route'], $prevParams['page']);
+                                        $prevParams['page'] = $pagination['current_page'] - 1;
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=transfers&<?= http_build_query($prevParams) ?>"
+                                           aria-label="Go to previous page">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="d-none d-sm-inline ms-1">Previous</span>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="d-none d-sm-inline ms-1">Previous</span>
+                                        </span>
+                                    </li>
+                                <?php endif; ?>
 
-                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                            <?php
-                            $nextParams = $_GET;
-                            unset($nextParams['route']);
-                            $nextParams['page'] = $pagination['current_page'] + 1;
-                            $nextQuery = http_build_query($nextParams);
-                            ?>
-                            <li class="page-item">
-                                <a class="page-link"
-                                   href="?route=transfers&<?= $nextQuery ?>"
-                                   aria-label="Go to next page">
-                                    Next
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
+                                <!-- Page Numbers (Smart Pagination with Ellipsis) -->
+                                <?php
+                                $startPage = max(1, $pagination['current_page'] - 2);
+                                $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+
+                                // Show first page if not in range
+                                if ($startPage > 1):
+                                    $firstParams = $_GET;
+                                    unset($firstParams['route'], $firstParams['page']);
+                                    $firstParams['page'] = 1;
+                                ?>
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?route=transfers&<?= http_build_query($firstParams) ?>"
+                                           aria-label="Go to page 1">1</a>
+                                    </li>
+                                    <?php if ($startPage > 2): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <!-- Page number buttons -->
+                                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <?php if ($i == $pagination['current_page']): ?>
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">
+                                                <?= $i ?>
+                                                <span class="visually-hidden">(current)</span>
+                                            </span>
+                                        </li>
+                                    <?php else: ?>
+                                        <li class="page-item">
+                                            <?php
+                                            $pageParams = $_GET;
+                                            unset($pageParams['route'], $pageParams['page']);
+                                            $pageParams['page'] = $i;
+                                            ?>
+                                            <a class="page-link"
+                                               href="?route=transfers&<?= http_build_query($pageParams) ?>"
+                                               aria-label="Go to page <?= $i ?>">
+                                                <?= $i ?>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+
+                                <!-- Show last page if not in range -->
+                                <?php if ($endPage < $pagination['total_pages']): ?>
+                                    <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif; ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $lastParams = $_GET;
+                                        unset($lastParams['route'], $lastParams['page']);
+                                        $lastParams['page'] = $pagination['total_pages'];
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=transfers&<?= http_build_query($lastParams) ?>"
+                                           aria-label="Go to page <?= $pagination['total_pages'] ?>">
+                                            <?= $pagination['total_pages'] ?>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
+                                <!-- Next Page -->
+                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                    <li class="page-item">
+                                        <?php
+                                        $nextParams = $_GET;
+                                        unset($nextParams['route'], $nextParams['page']);
+                                        $nextParams['page'] = $pagination['current_page'] + 1;
+                                        ?>
+                                        <a class="page-link"
+                                           href="?route=transfers&<?= http_build_query($nextParams) ?>"
+                                           aria-label="Go to next page">
+                                            <span class="d-none d-sm-inline me-1">Next</span>
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            <span class="d-none d-sm-inline me-1">Next</span>
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </span>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php else: ?>
+                        <!-- Spacer for single page (keeps layout consistent) -->
+                        <div class="order-1 order-md-2"></div>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>
@@ -251,7 +368,7 @@ AssetHelper::loadModuleCSS('transfers');
 
 <!-- Load external JavaScript module -->
 <?php
-AssetHelper::loadModuleJS('transfers', ['type' => 'module']);
+AssetHelper::loadModuleJS('transfers');
 ?>
 
 <?php
