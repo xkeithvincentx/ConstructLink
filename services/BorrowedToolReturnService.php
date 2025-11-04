@@ -82,13 +82,17 @@ class BorrowedToolReturnService {
         // Check if all items in batch are now returned
         $allReturned = $this->checkAllItemsReturned($batchId);
 
-        // Update batch status - only mark as RETURNED if all items are back
+        // Update batch status based on return state
         $updateData = [];
 
         if ($allReturned) {
+            // All items returned - mark batch as fully returned
             $updateData['status'] = BorrowedToolStatus::RETURNED;
             $updateData['return_date'] = date('Y-m-d H:i:s');
             $updateData['returned_by'] = $userId;
+        } else {
+            // Some items returned but not all - mark as partially returned
+            $updateData['status'] = BorrowedToolStatus::PARTIALLY_RETURNED;
         }
 
         // Always update return notes if provided
