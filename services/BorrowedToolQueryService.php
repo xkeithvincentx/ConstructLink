@@ -238,10 +238,10 @@ class BorrowedToolQueryService {
             // Add status constants for CASE statement parameters
             $statusParams = [
                 BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
-                BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED,
+                BorrowedToolStatus::BORROWED, BorrowedToolStatus::PARTIALLY_RETURNED,
                 BorrowedToolStatus::PARTIALLY_RETURNED, BorrowedToolStatus::RETURNED,
                 BorrowedToolStatus::BORROWED, BorrowedToolStatus::OVERDUE,
-                BorrowedToolStatus::BORROWED, BorrowedToolStatus::RETURNED
+                BorrowedToolStatus::BORROWED, BorrowedToolStatus::PARTIALLY_RETURNED
             ];
             $allParams = array_merge($statusParams, $fetchParams);
 
