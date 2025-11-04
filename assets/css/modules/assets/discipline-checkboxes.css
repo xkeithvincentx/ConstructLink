@@ -1,0 +1,100 @@
+/**
+ * Asset Forms - Discipline Checkboxes
+ *
+ * Multi-select discipline checkbox styling with responsive column layouts.
+ * Automatically adjusts from 1 column (mobile) to 3 columns (desktop).
+ *
+ * @module assets/discipline-checkboxes
+ * @version 3.0.0
+ * @since Phase 3 Refactoring
+ */
+
+/* ==========================================================================
+   Base Styles (Mobile First)
+   ========================================================================== */
+
+#discipline-checkboxes {
+  max-height: 160px;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+#discipline-checkboxes .form-check {
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+#discipline-checkboxes .form-check-input {
+  margin-top: 0.25rem;
+}
+
+#discipline-checkboxes .form-check-label {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Multi-column Layout: Large Screens (992px and up)
+   ========================================================================== */
+
+@media (min-width: 992px) {
+  #discipline-checkboxes {
+    columns: 2;
+    column-gap: 1.25rem;
+    max-height: 180px;
+  }
+
+  /* Prevent column breaks inside checkboxes */
+  #discipline-checkboxes .form-check {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* ==========================================================================
+   Multi-column Layout: Extra Large Screens (1200px and up)
+   ========================================================================== */
+
+@media (min-width: 1200px) {
+  #discipline-checkboxes {
+    columns: 3;
+    column-gap: 1.25rem;
+    max-height: 180px;
+  }
+}
+
+/* ==========================================================================
+   Responsive: Tablet (768px and below)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  #discipline-checkboxes {
+    max-height: 140px;
+    padding: 0.75rem;
+  }
+
+  #discipline-checkboxes .form-check-label {
+    font-size: 0.9rem;
+  }
+}
+
+/* ==========================================================================
+   Responsive: Mobile (576px and below)
+   ========================================================================== */
+
+@media (max-width: 576px) {
+  #discipline-checkboxes {
+    max-height: 120px;
+    padding: 0.75rem;
+  }
+
+  #discipline-checkboxes .form-check {
+    margin-bottom: 0.4rem;
+    padding-left: 1.25rem;
+  }
+
+  #discipline-checkboxes .form-check-label {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+}

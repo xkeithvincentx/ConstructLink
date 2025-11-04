@@ -1,0 +1,608 @@
+/**
+ * Assets Module - Main Stylesheet
+ * Extracted from inline styles for better maintainability and caching
+ *
+ * SECTIONS:
+ * 1. Filter Styles
+ * 2. Enhanced Search Styles
+ * 3. Table & Column Styles
+ * 4. Responsive Utilities
+ * 5. Dashboard Card Styles
+ * 6. Print Styles
+ */
+
+/* ============================================
+   1. FILTER STYLES
+   ============================================ */
+
+/* Mobile sticky filter button */
+.filters-mobile-sticky {
+    z-index: 1020; /* Above most elements, below modals */
+}
+
+/* Filters offcanvas custom height */
+.filters-offcanvas {
+    height: 85vh !important; /* Override Bootstrap default */
+}
+
+/* Filter button divider */
+.filter-divider {
+    height: 24px;
+}
+
+/* Active filter badge enhancements */
+.badge.bg-warning.text-dark {
+    font-weight: 600;
+}
+
+/* ============================================
+   2. ENHANCED SEARCH STYLES
+   ============================================ */
+
+/* Search spinner animation */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Search feedback container */
+#search-feedback {
+    min-height: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Enhanced focus state for search input */
+.input-group .form-control:focus + .input-group-text {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Keyboard shortcut hint (desktop only) */
+.search-hint {
+    position: absolute;
+    right: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .search-hint {
+        display: none;
+    }
+}
+
+/* ============================================
+   3. TABLE & COLUMN STYLES
+   ============================================ */
+
+/* Sortable columns (if implemented) */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+th.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+th.sortable i {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+/* Action buttons column */
+.action-buttons {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.action-buttons .d-flex {
+    margin: 0 !important;
+}
+
+.action-buttons .btn-group {
+    white-space: nowrap;
+}
+
+/* ============================================
+   4. RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Responsive table improvements */
+@media (max-width: 1200px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+    }
+
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+
+    .badge {
+        font-size: 0.65em;
+        padding: 0.25em 0.4em;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.3rem;
+        font-size: 0.7rem;
+    }
+
+    .table-responsive {
+        font-size: 0.75rem;
+    }
+
+    .badge {
+        font-size: 0.6em;
+        padding: 0.2em 0.3em;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        font-size: 0.7rem;
+    }
+
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+        min-width: 36px;
+    }
+
+    /* Stack buttons vertically on very small screens */
+    .btn-group-sm .btn {
+        padding: 0.15rem 0.25rem;
+        font-size: 0.65rem;
+        border-radius: 0.2rem;
+    }
+}
+
+/* ============================================
+   5. DASHBOARD CARD STYLES
+   ============================================ */
+
+/* Card uniformity improvements */
+.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.375rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-body {
+        padding: 0.75rem;
+    }
+}
+
+/* Button group responsiveness */
+.btn-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn-group {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+    .btn-toolbar .btn-group {
+        width: 100%;
+    }
+
+    .btn-toolbar .btn {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Table action buttons responsive stacking */
+@media (max-width: 576px) {
+    .table td:last-child .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .table td:last-child .btn-group .btn {
+        border-radius: 0.25rem !important;
+        margin-bottom: 2px;
+    }
+
+    .table td:last-child .btn-group .btn:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* Role-based Dashboard Cards - Enhanced Responsive Design */
+.row.mb-4 {
+    margin-left: -0.375rem;
+    margin-right: -0.375rem;
+}
+
+.row.mb-4 > [class*="col-"] {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+}
+
+/* Dashboard card enhancements for equal heights and optimal spacing */
+.card.h-100 {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card.h-100:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+.card.h-100 .card-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card.h-100 .card-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    background-color: rgba(0,0,0,0.1);
+}
+
+/* Role-specific card background variations */
+.bg-primary-dark {
+    background-color: rgba(13, 110, 253, 0.8) !important;
+}
+
+.bg-success-dark {
+    background-color: rgba(25, 135, 84, 0.8) !important;
+}
+
+.bg-info-dark {
+    background-color: rgba(13, 202, 240, 0.8) !important;
+}
+
+.bg-warning-dark {
+    background-color: rgba(255, 193, 7, 0.8) !important;
+}
+
+.bg-danger-dark {
+    background-color: rgba(220, 53, 69, 0.8) !important;
+}
+
+.bg-secondary-dark {
+    background-color: rgba(108, 117, 125, 0.8) !important;
+}
+
+/* Responsive breakpoints for dashboard cards */
+/* Extra Large screens (1400px and up) - 4 cards per row with more spacing */
+@media (min-width: 1400px) {
+    .row.mb-4 {
+        margin-left: -0.75rem;
+        margin-right: -0.75rem;
+    }
+
+    .row.mb-4 > [class*="col-"] {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .card.h-100 .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* Large screens (1200px to 1399px) - 4 cards per row, standard spacing */
+@media (min-width: 1200px) and (max-width: 1399px) {
+    .card.h-100 .card-body {
+        padding: 1.25rem;
+    }
+
+    .card.h-100 h3 {
+        font-size: 1.75rem;
+    }
+}
+
+/* Medium screens (992px to 1199px) - 3 cards per row */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .row.mb-4 .col-lg-3 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+
+    .card.h-100 .card-body {
+        padding: 1rem;
+    }
+
+    .card.h-100 h6 {
+        font-size: 0.9rem;
+    }
+
+    .card.h-100 h3 {
+        font-size: 1.5rem;
+    }
+
+    .card.h-100 small {
+        font-size: 0.75rem;
+    }
+}
+
+/* Small screens (768px to 991px) - 2 cards per row */
+@media (min-width: 768px) and (max-width: 991px) {
+    .card.h-100 .card-body {
+        padding: 1rem;
+    }
+
+    .card.h-100 h6 {
+        font-size: 0.85rem;
+    }
+
+    .card.h-100 h3 {
+        font-size: 1.4rem;
+    }
+
+    .card.h-100 .display-6 {
+        font-size: 2.5rem;
+    }
+
+    .card.h-100 small {
+        font-size: 0.7rem;
+    }
+}
+
+/* Extra small screens (576px to 767px) - 1 card per row with optimized spacing */
+@media (max-width: 767px) {
+    .row.mb-4 {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+        margin-bottom: 2rem !important;
+    }
+
+    .row.mb-4 > [class*="col-"] {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .card.h-100 {
+        margin-bottom: 0.75rem;
+    }
+
+    .card.h-100 .card-body {
+        padding: 1rem;
+    }
+
+    .card.h-100 h6 {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card.h-100 h3 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card.h-100 .display-6 {
+        font-size: 2.25rem;
+    }
+
+    .card.h-100 small {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    .card.h-100 .card-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .card.h-100 .card-footer small {
+        font-size: 0.75rem;
+    }
+}
+
+/* Very small screens (below 576px) - Single column with compact design */
+@media (max-width: 575px) {
+    .row.mb-4 {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+    }
+
+    .row.mb-4 > [class*="col-"] {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .card.h-100 {
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+    }
+
+    .card.h-100 .card-body {
+        padding: 0.75rem;
+    }
+
+    .card.h-100 .d-flex {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .card.h-100 h6 {
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+        order: 2;
+    }
+
+    .card.h-100 h3 {
+        font-size: 2rem;
+        margin-bottom: 0.25rem;
+        order: 1;
+    }
+
+    .card.h-100 .display-6 {
+        font-size: 2rem;
+        order: 1;
+        align-self: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .card.h-100 small {
+        font-size: 0.75rem;
+        order: 3;
+        margin-top: 0.25rem;
+    }
+
+    .card.h-100 .card-footer {
+        padding: 0.5rem;
+        text-align: center;
+    }
+
+    .card.h-100 .card-footer small {
+        font-size: 0.7rem;
+    }
+}
+
+/* Mobile-first adjustments */
+@media (max-width: 480px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn-toolbar {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .form-select-sm, .form-control-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Card content optimization for readability */
+@media (max-width: 768px) {
+    .card.h-100 .opacity-75 {
+        opacity: 0.85;
+    }
+
+    .card.h-100 .bi {
+        margin-right: 0.25rem;
+    }
+}
+
+/* Ensure proper contrast and accessibility */
+.card.text-white small {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.card.text-white .opacity-75 {
+    opacity: 0.85 !important;
+}
+
+/* ============================================
+   6. FOCUS INDICATORS (ACCESSIBILITY)
+   ============================================ */
+
+/* Visible focus indicators for keyboard navigation */
+.form-control:focus,
+.form-select:focus,
+.btn:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Ensure focus is visible on buttons */
+.btn-primary:focus,
+.btn-outline-primary:focus,
+.btn-outline-secondary:focus,
+.btn-outline-success:focus,
+.btn-outline-warning:focus,
+.btn-outline-danger:focus,
+.btn-outline-info:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* ============================================
+   7. PRINT STYLES
+   ============================================ */
+
+@media print {
+    .btn, .dropdown, .alert, .card-header, .filters-mobile-sticky, .offcanvas {
+        display: none !important;
+    }
+
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    /* Hide filter section when printing */
+    .card.d-none.d-md-block:has(#filter-form) {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   8. SMOOTH TRANSITIONS
+   ============================================ */
+
+.card, .btn, .badge {
+    transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}

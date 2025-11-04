@@ -1,0 +1,152 @@
+/**
+ * Asset Forms - Select2 Customizations
+ *
+ * Custom styling for Select2 dropdowns integrated with Bootstrap 5.
+ *
+ * CRITICAL FIX: Forces search boxes to be always visible in dropdowns.
+ * This was a reported issue where search boxes were hidden, making
+ * category/project selection difficult with large datasets.
+ *
+ * @module assets/select2-custom
+ * @version 3.0.0
+ * @since Phase 3 Refactoring
+ */
+
+/* ==========================================================================
+   Base Select2 Integration with Bootstrap 5
+   ========================================================================== */
+
+.select2-container--bootstrap-5 .select2-selection--single {
+  height: calc(2.5rem + 2px);
+  padding: 0.375rem 0.75rem;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  line-height: 1.5;
+  color: #495057;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+  height: calc(2.5rem);
+}
+
+/* ==========================================================================
+   CRITICAL: Force Search Box to be Visible
+   This fixes the reported issue where search was hidden in dropdowns
+   ========================================================================== */
+
+.select2-search--dropdown {
+  display: block !important;
+  padding: 4px;
+}
+
+.select2-search--dropdown .select2-search__field {
+  display: block !important;
+  width: 100% !important;
+  padding: 6px 12px !important;
+  margin: 0 !important;
+}
+
+/* ==========================================================================
+   Dropdown Container Styling
+   ========================================================================== */
+
+.select2-container--bootstrap-5 .select2-dropdown {
+  border-color: #dee2e6;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ==========================================================================
+   Search Box Styling
+   ========================================================================== */
+
+.select2-container--bootstrap-5 .select2-search--dropdown {
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  font-size: 0.95rem;
+  background-color: white;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
+}
+
+.select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075), 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field::placeholder {
+  color: #6c757d;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Results Styling
+   ========================================================================== */
+
+.select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
+  background-color: #0d6efd;
+}
+
+/* ==========================================================================
+   Form Group Integration
+   ========================================================================== */
+
+.form-group .select2-container {
+  display: block;
+}
+
+/* ==========================================================================
+   Focus States
+   ========================================================================== */
+
+.select2-container--bootstrap-5 .select2-selection--single:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* ==========================================================================
+   Z-index Fix for Modal Compatibility
+   ========================================================================== */
+
+.select2-container--open {
+  z-index: 1050;
+}
+
+/* ==========================================================================
+   Validation Styling
+   ========================================================================== */
+
+.was-validated .form-select:invalid ~ .select2-container .select2-selection {
+  border-color: #dc3545;
+}
+
+.was-validated .form-select:valid ~ .select2-container .select2-selection {
+  border-color: #198754;
+}
+
+/* ==========================================================================
+   Responsive: Mobile (576px and below)
+   ========================================================================== */
+
+@media (max-width: 576px) {
+  .select2-container {
+    width: 100% !important;
+  }
+
+  .select2-dropdown {
+    width: 100% !important;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  .select2-container--bootstrap-5 .select2-selection--single {
+    font-size: 16px;
+  }
+}

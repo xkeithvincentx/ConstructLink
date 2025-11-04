@@ -73,7 +73,7 @@ class AssetController {
         if (!empty($_GET['category_id'])) $filters['category_id'] = $_GET['category_id'];
         if (!empty($_GET['project_id'])) $filters['project_id'] = $_GET['project_id'];
         if (!empty($_GET['search'])) $filters['search'] = $_GET['search'];
-        if (!empty($_GET['maker_id'])) $filters['maker_id'] = $_GET['maker_id'];
+        if (!empty($_GET['brand_id'])) $filters['brand_id'] = $_GET['brand_id'];
         if (!empty($_GET['vendor_id'])) $filters['vendor_id'] = $_GET['vendor_id'];
         if (!empty($_GET['asset_type'])) $filters['asset_type'] = $_GET['asset_type'];
         if (isset($_GET['is_client_supplied'])) $filters['is_client_supplied'] = $_GET['is_client_supplied'];
@@ -104,13 +104,17 @@ class AssetController {
             // Get filter options
             $categoryModel = new CategoryModel();
             $projectModel = new ProjectModel();
-            $makerModel = new MakerModel();
             $vendorModel = new VendorModel();
 
             $categories = $categoryModel->getActiveCategories();
             $projects = $projectModel->getActiveProjects();
-            $makers = $makerModel->findAll([], 'name ASC');
             $vendors = $vendorModel->findAll([], 'name ASC');
+
+            // Load brands from asset_brands table (not makers table)
+            $brandQuery = "SELECT id, official_name, quality_tier FROM asset_brands WHERE is_active = 1 ORDER BY official_name ASC";
+            $stmt = $this->db->prepare($brandQuery);
+            $stmt->execute();
+            $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             $pageTitle = 'Inventory - ConstructLink™';
             $pageHeader = 'Inventory Management';

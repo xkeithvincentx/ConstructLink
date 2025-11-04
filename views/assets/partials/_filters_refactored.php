@@ -40,11 +40,9 @@ function validateAssetStatus(string $status): string {
 
 /**
  * Validate asset type parameter
- * Only consumable and non_consumable are valid
- * Low stock and out of stock are excluded as they're calculated based on project needs
  */
 function validateAssetType(string $type): string {
-    $allowedTypes = ['consumable', 'non_consumable'];
+    $allowedTypes = ['consumable', 'non_consumable', 'low_stock', 'out_of_stock'];
     return in_array($type, $allowedTypes, true) ? $type : '';
 }
 
@@ -75,7 +73,7 @@ function validateId(mixed $id): string {
 // Validate and sanitize all $_GET parameters
 // Pre-apply "Available" filter by default if no active filters are present
 $hasAnyFilter = isset($_GET['status']) || !empty($_GET['category_id']) ||
-               !empty($_GET['project_id']) || !empty($_GET['brand_id']) ||
+               !empty($_GET['project_id']) || !empty($_GET['maker_id']) ||
                !empty($_GET['asset_type']) || !empty($_GET['workflow_status']) ||
                !empty($_GET['search']);
 
@@ -85,7 +83,7 @@ $validatedFilters = [
     'status' => validateAssetStatus($_GET['status'] ?? $defaultStatus),
     'category_id' => validateId($_GET['category_id'] ?? ''),
     'project_id' => validateId($_GET['project_id'] ?? ''),
-    'brand_id' => validateId($_GET['brand_id'] ?? ''),
+    'maker_id' => validateId($_GET['maker_id'] ?? ''),
     'asset_type' => validateAssetType($_GET['asset_type'] ?? ''),
     'workflow_status' => validateWorkflowStatus($_GET['workflow_status'] ?? ''),
     'search' => sanitizeAssetSearch($_GET['search'] ?? '')
@@ -120,14 +118,15 @@ function renderAssetStatusOptions(string $currentStatus = ''): string {
 }
 
 /**
- * Render asset type options (consumable and non-consumable only)
- * Low stock and out of stock are excluded as they're calculated based on project needs
+ * Render asset type options
  */
 function renderAssetTypeOptions(string $currentType = ''): string {
     $types = [
         '' => 'All Types',
         'consumable' => 'Consumable',
-        'non_consumable' => 'Non-Consumable'
+        'non_consumable' => 'Non-Consumable',
+        'low_stock' => 'Low Stock',
+        'out_of_stock' => 'Out of Stock'
     ];
 
     $options = [];
@@ -183,22 +182,18 @@ function renderProjectOptions(array $projects, $currentProject = ''): string {
 }
 
 /**
- * Render brand options (from asset_brands table)
+ * Render maker options
  */
-function renderBrandOptions(array $brands, $currentBrand = ''): string {
-    $options = ['<option value="">All Brands</option>'];
+function renderMakerOptions(array $makers, $currentMaker = ''): string {
+    $options = ['<option value="">All Manufacturers</option>'];
 
-    foreach ($brands as $brand) {
-        $selected = (string)$currentBrand === (string)$brand['id'] ? 'selected' : '';
-        $brandLabel = $brand['official_name'];
-        if (!empty($brand['quality_tier'])) {
-            $brandLabel .= ' - ' . ucfirst($brand['quality_tier']);
-        }
+    foreach ($makers as $maker) {
+        $selected = (string)$currentMaker === (string)$maker['id'] ? 'selected' : '';
         $options[] = sprintf(
             '<option value="%s" %s>%s</option>',
-            htmlspecialchars($brand['id']),
+            htmlspecialchars($maker['id']),
             $selected,
-            htmlspecialchars($brandLabel)
+            htmlspecialchars($maker['name'] ?? 'Unknown')
         );
     }
 
@@ -246,9 +241,9 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
     - status: Asset status (available, in_use, borrowed, maintenance, disposed, lost)
     - category_id: Category filter
     - project_id: Project filter (role-based visibility)
-    - brand_id: Brand/Manufacturer filter (from asset_brands table)
-    - asset_type: Asset type (consumable, non_consumable)
-    - workflow_status: Workflow status (draft, pending_verification, pending_authorization, approved) - role-based
+    - maker_id: Manufacturer filter
+    - asset_type: Asset type (consumable, non_consumable, low_stock, out_of_stock)
+    - workflow_status: Workflow status (draft, pending_verification, pending_authorization, approved)
     - search: Full-text search (asset name, reference, serial number, disciplines)
 -->
 <div class="mb-4"
@@ -259,7 +254,7 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
              status: '<?= htmlspecialchars($validatedFilters['status']) ?>',
              category_id: '<?= htmlspecialchars($validatedFilters['category_id']) ?>',
              project_id: '<?= htmlspecialchars($validatedFilters['project_id']) ?>',
-             brand_id: '<?= htmlspecialchars($validatedFilters['brand_id']) ?>',
+             maker_id: '<?= htmlspecialchars($validatedFilters['maker_id']) ?>',
              asset_type: '<?= htmlspecialchars($validatedFilters['asset_type']) ?>',
              workflow_status: '<?= htmlspecialchars($validatedFilters['workflow_status']) ?>',
              search: '<?= htmlspecialchars($validatedFilters['search']) ?>'
@@ -282,6 +277,10 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
          quickFilter(value, type = 'status') {
              if (type === 'status') {
                  this.filters.status = value;
+                 this.filters.asset_type = '';
+             } else if (type === 'asset_type') {
+                 this.filters.asset_type = value;
+                 this.filters.status = '';
              }
              this.submitFilters();
          },
@@ -378,15 +377,15 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
                     </div>
                 <?php endif; ?>
 
-                <!-- Brand/Manufacturer Filter -->
+                <!-- Manufacturer Filter -->
                 <div class="mb-3">
-                    <label for="brand_id-mobile" class="form-label">Brand/Manufacturer</label>
+                    <label for="maker_id-mobile" class="form-label">Manufacturer</label>
                     <select class="form-select"
-                            id="brand_id-mobile"
-                            name="brand_id"
-                            x-model="filters.brand_id"
+                            id="maker_id-mobile"
+                            name="maker_id"
+                            x-model="filters.maker_id"
                             @change="submitFilters()">
-                        <?= renderBrandOptions($brands ?? [], $validatedFilters['brand_id']) ?>
+                        <?= renderMakerOptions($makers ?? [], $validatedFilters['maker_id']) ?>
                     </select>
                 </div>
 
@@ -431,6 +430,12 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
                 <div class="d-grid gap-2">
                     <button type="button" class="btn btn-outline-success btn-sm" @click="quickFilter('available', 'status')" aria-label="Filter available items">
                         <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Available Items
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" @click="quickFilter('low_stock', 'asset_type')" aria-label="Filter low stock items">
+                        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Low Stock
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" @click="quickFilter('out_of_stock', 'asset_type')" aria-label="Filter out of stock items">
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Out of Stock
                     </button>
                     <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
                         <button type="button" class="btn btn-outline-info btn-sm" @click="quickFilter('pending_verification', 'workflow_status')" aria-label="Filter pending verification">
@@ -512,15 +517,15 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
                     </div>
                 <?php endif; ?>
 
-                <!-- Brand/Manufacturer Filter -->
+                <!-- Manufacturer Filter -->
                 <div class="col-lg-2 col-md-3">
-                    <label for="brand_id" class="form-label">Brand/Manufacturer</label>
+                    <label for="maker_id" class="form-label">Manufacturer</label>
                     <select class="form-select form-select-sm"
-                            id="brand_id"
-                            name="brand_id"
-                            x-model="filters.brand_id"
+                            id="maker_id"
+                            name="maker_id"
+                            x-model="filters.maker_id"
                             @change="submitFilters()">
-                        <?= renderBrandOptions($brands ?? [], $validatedFilters['brand_id']) ?>
+                        <?= renderMakerOptions($makers ?? [], $validatedFilters['maker_id']) ?>
                     </select>
                 </div>
 
@@ -566,6 +571,12 @@ function renderWorkflowStatusOptions(string $currentStatus = ''): string {
                         <!-- Quick Action Buttons -->
                         <button type="button" class="btn btn-outline-success btn-sm" @click="quickFilter('available', 'status')" aria-label="Filter available items">
                             <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Available
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" @click="quickFilter('low_stock', 'asset_type')" aria-label="Filter low stock items">
+                            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Low Stock
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" @click="quickFilter('out_of_stock', 'asset_type')" aria-label="Filter out of stock items">
+                            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Out of Stock
                         </button>
                         <?php if (in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])): ?>
                             <button type="button" class="btn btn-outline-info btn-sm" @click="quickFilter('pending_verification', 'workflow_status')" aria-label="Filter pending verification">

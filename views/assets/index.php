@@ -12,6 +12,7 @@
 require_once APP_ROOT . '/helpers/AssetStatus.php';
 require_once APP_ROOT . '/helpers/AssetWorkflowStatus.php';
 require_once APP_ROOT . '/helpers/UnitHelper.php';
+require_once APP_ROOT . '/helpers/AssetHelper.php';
 
 // Start output buffering to capture content
 ob_start();

@@ -1,0 +1,50 @@
+/**
+ * Asset Forms - Legacy-Specific Styles
+ *
+ * Styles unique to legacy_create.php that are not shared with create.php.
+ * These are minor differences found during CSS extraction.
+ *
+ * @module assets/legacy-specific
+ * @version 3.0.0
+ * @since Phase 3 Refactoring
+ */
+
+/* ==========================================================================
+   Legacy-Specific: Select2 Color Adjustment
+   ========================================================================== */
+
+/**
+ * Legacy form uses slightly different text color in Select2 rendered selection
+ * This is defined in legacy_create.php but not in create.php
+ */
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  color: #495057;
+}
+
+/* ==========================================================================
+   Legacy-Specific: Dropdown Box Shadow
+   ========================================================================== */
+
+/**
+ * Legacy form has enhanced box-shadow on dropdown
+ * Create.php uses basic Bootstrap border only
+ */
+.select2-container--bootstrap-5 .select2-dropdown {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* ==========================================================================
+   Legacy-Specific: Validation Styling
+   ========================================================================== */
+
+/**
+ * Legacy form includes form validation styling for Select2
+ * Not present in create.php
+ */
+.was-validated .form-select:invalid ~ .select2-container .select2-selection {
+  border-color: #dc3545;
+}
+
+.was-validated .form-select:valid ~ .select2-container .select2-selection {
+  border-color: #198754;
+}

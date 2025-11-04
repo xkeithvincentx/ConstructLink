@@ -458,12 +458,52 @@ body {
     background-color: var(--primary-dark);
 }
 
-/* Focus Styles for Accessibility */
+/* Focus Styles for Accessibility (WCAG 2.1 AA Compliant) */
+/* Using :focus-visible for better UX - only shows focus on keyboard navigation */
+button:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible,
+.nav-link:focus-visible,
+a:focus-visible {
+    outline: 2px solid #0066cc !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.25);
+}
+
+/* Fallback for older browsers that don't support :focus-visible */
 .btn:focus,
 .form-control:focus,
+.form-select:focus,
 .nav-link:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+/* Select2 Dropdown Focus Indicators */
+.select2-container--bootstrap-5.select2-container--focus .select2-selection,
+.select2-container--bootstrap-5.select2-container--open .select2-selection {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.25);
+}
+
+/* Skip to main content link (accessibility best practice) */
+.skip-to-main {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #0066cc;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    z-index: 10000;
+    font-weight: 600;
+}
+
+.skip-to-main:focus {
+    top: 0;
 }
 
 /* High Contrast Mode Support */

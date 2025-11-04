@@ -650,35 +650,31 @@ class AssetModel extends BaseModel {
                 $params[] = $filters['vendor_id'];
             }
             
-            if (!empty($filters['maker_id'])) {
-                $conditions[] = "a.maker_id = ?";
-                $params[] = $filters['maker_id'];
+            if (!empty($filters['brand_id'])) {
+                $conditions[] = "a.brand_id = ?";
+                $params[] = $filters['brand_id'];
             }
             
             if (isset($filters['is_client_supplied'])) {
                 $conditions[] = "a.is_client_supplied = ?";
                 $params[] = $filters['is_client_supplied'];
             }
-            
-            // Workflow status filter commented out as column doesn't exist in database
-            // if (!empty($filters['workflow_status'])) {
-            //     $conditions[] = "a.workflow_status = ?";
-            //     $params[] = $filters['workflow_status'];
-            // }
-            
+
+            // Workflow status filter
+            if (!empty($filters['workflow_status'])) {
+                $conditions[] = "a.workflow_status = ?";
+                $params[] = $filters['workflow_status'];
+            }
+
             if (!empty($filters['asset_type'])) {
+                // Only consumable and non_consumable are valid
+                // Low stock and out of stock removed - replenishment is based on project needs, not stock levels
                 switch ($filters['asset_type']) {
                     case 'consumable':
                         $conditions[] = "c.is_consumable = 1";
                         break;
                     case 'non_consumable':
                         $conditions[] = "(c.is_consumable = 0 OR c.is_consumable IS NULL)";
-                        break;
-                    case 'low_stock':
-                        $conditions[] = "c.is_consumable = 1 AND a.available_quantity <= (a.quantity * 0.2) AND a.available_quantity > 0";
-                        break;
-                    case 'out_of_stock':
-                        $conditions[] = "c.is_consumable = 1 AND a.available_quantity = 0";
                         break;
                 }
             }
@@ -697,7 +693,7 @@ class AssetModel extends BaseModel {
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 LEFT JOIN vendors v ON a.vendor_id = v.id
-                LEFT JOIN makers m ON a.maker_id = m.id
+                LEFT JOIN asset_brands b ON a.brand_id = b.id
                 LEFT JOIN procurement_orders po ON a.procurement_order_id = po.id
                 LEFT JOIN procurement_items pi ON a.procurement_item_id = pi.id
                 {$whereClause}
@@ -711,17 +707,18 @@ class AssetModel extends BaseModel {
             $orderBy = $filters['order_by'] ?? 'a.created_at DESC';
             
             $dataSql = "
-                SELECT a.*, 
+                SELECT a.*,
                        c.name as category_name,
                        p.name as project_name,
                        v.name as vendor_name,
-                       m.name as maker_name,
+                       b.official_name as brand_name,
+                       b.quality_tier as brand_quality,
                        po.po_number, pi.item_name as procurement_item_name, pi.brand as procurement_item_brand
                 FROM assets a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 LEFT JOIN vendors v ON a.vendor_id = v.id
-                LEFT JOIN makers m ON a.maker_id = m.id
+                LEFT JOIN asset_brands b ON a.brand_id = b.id
                 LEFT JOIN procurement_orders po ON a.procurement_order_id = po.id
                 LEFT JOIN procurement_items pi ON a.procurement_item_id = pi.id
                 {$whereClause}
