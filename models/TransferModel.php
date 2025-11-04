@@ -785,10 +785,11 @@ class TransferModel extends BaseModel {
     public function getAssetTransferHistory($assetId) {
         try {
             $sql = "
-                SELECT t.*, 
+                SELECT t.*,
+                       t.created_at as transfer_date,
                        pf.name as from_project_name,
                        pt.name as to_project_name,
-                       ui.full_name as initiated_by_name,
+                       ui.full_name as requested_by_name,
                        ua.full_name as approved_by_name
                 FROM transfers t
                 LEFT JOIN projects pf ON t.from_project = pf.id
@@ -798,11 +799,11 @@ class TransferModel extends BaseModel {
                 WHERE t.asset_id = ?
                 ORDER BY t.created_at DESC
             ";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$assetId]);
             return $stmt->fetchAll();
-            
+
         } catch (Exception $e) {
             error_log("Get asset transfer history error: " . $e->getMessage());
             return [];

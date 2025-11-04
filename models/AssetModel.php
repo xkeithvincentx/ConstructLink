@@ -1305,10 +1305,10 @@ class AssetModel extends BaseModel {
         try {
             $auth = Auth::getInstance();
             $user = $auth->getCurrentUser();
-            
-            $sql = "INSERT INTO activity_logs (user_id, action, description, table_name, record_id, ip_address, user_agent, created_at) 
+
+            $sql = "INSERT INTO activity_logs (user_id, action, description, table_name, record_id, ip_address, user_agent, created_at)
                     VALUES (?, ?, ?, 'assets', ?, ?, ?, NOW())";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $user['id'] ?? null,
@@ -1322,7 +1322,49 @@ class AssetModel extends BaseModel {
             error_log("Asset activity logging error: " . $e->getMessage());
         }
     }
-    
+
+    /**
+     * Get complete activity logs for an asset
+     * Returns all activity log entries for the specified asset
+     *
+     * @param int $assetId - Asset ID
+     * @param int|null $limit - Optional limit for number of records (null = all records)
+     * @return array Array of activity log entries
+     */
+    public function getCompleteActivityLogs($assetId, $limit = null) {
+        try {
+            $sql = "
+                SELECT
+                    al.id,
+                    al.user_id,
+                    al.action,
+                    al.description,
+                    al.ip_address,
+                    al.user_agent,
+                    al.created_at,
+                    u.full_name as user_name,
+                    u.username,
+                    u.email as user_email
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE al.table_name = 'assets' AND al.record_id = ?
+                ORDER BY al.created_at DESC
+            ";
+
+            if ($limit !== null && is_numeric($limit)) {
+                $sql .= " LIMIT " . (int)$limit;
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$assetId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (Exception $e) {
+            error_log("Get complete activity logs error for asset $assetId: " . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Delete asset (with validation)
      */

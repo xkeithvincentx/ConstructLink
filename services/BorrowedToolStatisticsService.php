@@ -206,18 +206,27 @@ class BorrowedToolStatisticsService {
      */
     public function getAssetBorrowingHistory($assetId) {
         $sql = "SELECT
-                    bt.*,
+                    bt.id,
+                    bt.batch_id,
+                    bt.asset_id,
+                    bt.borrower_name,
+                    bt.expected_return as expected_return_date,
+                    bt.actual_return as returned_date,
+                    bt.borrowed_date,
+                    bt.return_date,
+                    bt.purpose,
+                    bt.status,
+                    bt.created_at,
                     a.name as asset_name,
                     a.ref as asset_ref,
-                    u.username as processed_by_username,
-                    u.full_name as processed_by_name,
+                    batch.batch_reference as batch_number,
                     CASE
                         WHEN bt.status = ? AND bt.expected_return < CURDATE() THEN ?
                         ELSE bt.status
-                    END as computed_status
+                    END as current_status
                 FROM borrowed_tools bt
                 INNER JOIN assets a ON bt.asset_id = a.id
-                LEFT JOIN users u ON bt.processed_by = u.id
+                LEFT JOIN borrowed_tool_batches batch ON bt.batch_id = batch.id
                 WHERE bt.asset_id = ?
                 ORDER BY bt.created_at DESC";
 

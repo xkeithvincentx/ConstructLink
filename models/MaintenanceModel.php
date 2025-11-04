@@ -694,12 +694,17 @@ class MaintenanceModel extends BaseModel {
      */
     public function getAssetMaintenanceHistory($assetId) {
         $sql = "
-            SELECT m.*
+            SELECT
+                m.*,
+                m.type as maintenance_type,
+                m.scheduled_date as maintenance_date,
+                m.actual_cost as cost,
+                m.assigned_to as technician_name
             FROM {$this->table} m
             WHERE m.asset_id = ?
             ORDER BY m.scheduled_date DESC
         ";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$assetId]);
         return $stmt->fetchAll();

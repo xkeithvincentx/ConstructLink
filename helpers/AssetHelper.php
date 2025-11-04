@@ -17,7 +17,6 @@
  * ```
  *
  * @package ConstructLink
- * @author Ranoa Digital Solutions
  */
 
 class AssetHelper
@@ -272,5 +271,169 @@ class AssetHelper
         }
 
         return $html;
+    }
+
+    /**
+     * Get Bootstrap badge class for asset status
+     * Single source of truth for status badge styling
+     *
+     * @param string $status - Asset status
+     * @return string Bootstrap badge class
+     */
+    public static function getAssetStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'available' => 'bg-success',
+            'in_use' => 'bg-primary',
+            'borrowed' => 'bg-info',
+            'under_maintenance' => 'bg-warning',
+            'retired' => 'bg-secondary',
+            'disposed' => 'bg-dark',
+            'pending' => 'bg-warning',
+            'lost' => 'bg-danger',
+            'damaged' => 'bg-danger'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Get Bootstrap badge class for withdrawal status
+     *
+     * @param string $status - Withdrawal status
+     * @return string Bootstrap badge class
+     */
+    public static function getWithdrawalStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'pending' => 'bg-warning',
+            'released' => 'bg-success',
+            'returned' => 'bg-info',
+            'canceled' => 'bg-secondary',
+            'cancelled' => 'bg-secondary'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Get Bootstrap badge class for borrowing status
+     *
+     * @param string $status - Borrowing status
+     * @return string Bootstrap badge class
+     */
+    public static function getBorrowingStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'borrowed' => 'bg-primary',
+            'returned' => 'bg-success',
+            'overdue' => 'bg-danger',
+            'canceled' => 'bg-secondary',
+            'cancelled' => 'bg-secondary',
+            'partially_returned' => 'bg-warning'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Get Bootstrap badge class for transfer status
+     *
+     * @param string $status - Transfer status
+     * @return string Bootstrap badge class
+     */
+    public static function getTransferStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'pending' => 'bg-warning',
+            'approved' => 'bg-info',
+            'completed' => 'bg-success',
+            'rejected' => 'bg-danger',
+            'canceled' => 'bg-secondary',
+            'cancelled' => 'bg-secondary'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Get Bootstrap badge class for maintenance status
+     *
+     * @param string $status - Maintenance status
+     * @return string Bootstrap badge class
+     */
+    public static function getMaintenanceStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'scheduled' => 'bg-info',
+            'in_progress' => 'bg-warning',
+            'completed' => 'bg-success',
+            'canceled' => 'bg-secondary',
+            'cancelled' => 'bg-secondary',
+            'pending' => 'bg-warning'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Get Bootstrap badge class for incident status
+     *
+     * @param string $status - Incident status
+     * @return string Bootstrap badge class
+     */
+    public static function getIncidentStatusBadgeClass(string $status): string
+    {
+        $statusClasses = [
+            'reported' => 'bg-warning',
+            'investigating' => 'bg-info',
+            'resolved' => 'bg-success',
+            'closed' => 'bg-secondary',
+            'pending' => 'bg-warning'
+        ];
+
+        return $statusClasses[strtolower($status)] ?? 'bg-secondary';
+    }
+
+    /**
+     * Format date for display with consistent formatting
+     *
+     * @param string|null $date - Date string
+     * @param string $format - Date format (default: 'M j, Y')
+     * @return string Formatted date or 'N/A'
+     */
+    public static function formatDate(?string $date, string $format = 'M j, Y'): string
+    {
+        if (empty($date)) {
+            return 'N/A';
+        }
+
+        try {
+            return date($format, strtotime($date));
+        } catch (Exception $e) {
+            error_log("Date formatting error: " . $e->getMessage());
+            return 'N/A';
+        }
+    }
+
+    /**
+     * Format datetime for display with consistent formatting
+     *
+     * @param string|null $datetime - Datetime string
+     * @param string $format - Datetime format (default: 'M j, Y g:i A')
+     * @return string Formatted datetime or 'N/A'
+     */
+    public static function formatDateTime(?string $datetime, string $format = 'M j, Y g:i A'): string
+    {
+        if (empty($datetime)) {
+            return 'N/A';
+        }
+
+        try {
+            return date($format, strtotime($datetime));
+        } catch (Exception $e) {
+            error_log("DateTime formatting error: " . $e->getMessage());
+            return 'N/A';
+        }
     }
 }

@@ -607,7 +607,10 @@ class IncidentModel extends BaseModel {
      */
     public function getAssetIncidentHistory($assetId) {
         $sql = "
-            SELECT i.*, 
+            SELECT i.*,
+                   i.date_reported as incident_date,
+                   i.type as incident_type,
+                   i.resolution_notes as resolution,
                    ur.full_name as reported_by_name,
                    ures.full_name as resolved_by_name
             FROM {$this->table} i
@@ -616,7 +619,7 @@ class IncidentModel extends BaseModel {
             WHERE i.asset_id = ?
             ORDER BY i.date_reported DESC
         ";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$assetId]);
         return $stmt->fetchAll();

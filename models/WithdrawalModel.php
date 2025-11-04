@@ -878,8 +878,9 @@ class WithdrawalModel extends BaseModel {
     public function getAssetWithdrawalHistory($assetId) {
         try {
             $sql = "
-                SELECT w.*, 
-                       u.full_name as withdrawn_by_name,
+                SELECT w.*,
+                       w.created_at as withdrawal_date,
+                       u.full_name as receiver_name,
                        p.name as project_name,
                        r.released_by, r.released_at, r.notes as release_notes,
                        ur.full_name as released_by_name
@@ -891,11 +892,11 @@ class WithdrawalModel extends BaseModel {
                 WHERE w.asset_id = ?
                 ORDER BY w.created_at DESC
             ";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$assetId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
         } catch (Exception $e) {
             error_log("Get asset withdrawal history error: " . $e->getMessage());
             return [];

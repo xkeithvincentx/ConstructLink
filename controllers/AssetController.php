@@ -211,7 +211,32 @@ class AssetController {
                 error_log("Borrow history error for asset $assetId: " . $e->getMessage());
                 $borrowHistory = [];
             }
-            
+
+            // Get complete activity logs
+            $completeLogs = [];
+            try {
+                $completeLogs = $this->assetModel->getCompleteActivityLogs($assetId);
+            } catch (Exception $e) {
+                error_log("Complete logs error for asset $assetId: " . $e->getMessage());
+                $completeLogs = [];
+            }
+
+            // Detect asset category type (consumable vs non-consumable)
+            $isConsumable = false;
+            $isNonConsumable = false;
+            try {
+                $categoryModel = new CategoryModel();
+                $category = $categoryModel->find($asset['category_id']);
+                if ($category) {
+                    $isConsumable = (isset($category['is_consumable']) && $category['is_consumable'] == 1);
+                    $isNonConsumable = !$isConsumable;
+                }
+            } catch (Exception $e) {
+                error_log("Category detection error for asset $assetId: " . $e->getMessage());
+                // Default to non-consumable if error occurs
+                $isNonConsumable = true;
+            }
+
             $pageTitle = 'Inventory Details - ' . $asset['name'];
             $pageHeader = 'Item: ' . $asset['ref'];
             $breadcrumbs = [
