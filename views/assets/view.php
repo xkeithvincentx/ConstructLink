@@ -11,6 +11,9 @@
 // Start output buffering to capture content
 ob_start();
 
+// Load required helpers
+require_once APP_ROOT . '/helpers/AssetHelper.php';
+
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $roleConfig = require APP_ROOT . '/config/roles.php';
@@ -76,18 +79,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                             
                             <dt class="col-sm-5">Status:</dt>
                             <dd class="col-sm-7">
-                                <?php
-                                $statusClasses = [
-                                    'available' => 'bg-success',
-                                    'in_use' => 'bg-primary',
-                                    'borrowed' => 'bg-info',
-                                    'under_maintenance' => 'bg-warning',
-                                    'retired' => 'bg-secondary',
-                                    'disposed' => 'bg-dark'
-                                ];
-                                $statusClass = $statusClasses[$asset['status']] ?? 'bg-secondary';
-                                ?>
-                                <span class="badge <?= $statusClass ?>">
+                                <span class="badge <?= AssetHelper::getAssetStatusBadgeClass($asset['status']) ?>">
                                     <?= ucfirst(str_replace('_', ' ', $asset['status'])) ?>
                                 </span>
                             </dd>
@@ -249,7 +241,70 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 <?php endif; ?>
             </div>
         </div>
-        
+
+        <!-- Legacy Asset Workflow -->
+        <?php if (!empty($asset['asset_source']) && $asset['asset_source'] === 'legacy'): ?>
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clipboard-check me-2"></i>Legacy Asset Workflow
+                </h6>
+            </div>
+            <div class="card-body">
+                <?php
+                $workflowStatus = $asset['workflow_status'] ?? 'approved';
+                $statusInfo = [
+                    'draft' => ['icon' => 'bi-file-earmark', 'color' => 'secondary', 'text' => 'Draft - Asset pending verification'],
+                    'pending_verification' => ['icon' => 'bi-clock-history', 'color' => 'warning', 'text' => 'Pending Verification - Awaiting Asset Director review'],
+                    'pending_authorization' => ['icon' => 'bi-shield-check', 'color' => 'info', 'text' => 'Pending Authorization - Awaiting Finance Director approval'],
+                    'approved' => ['icon' => 'bi-check-circle-fill', 'color' => 'success', 'text' => 'Approved - Asset ready for deployment'],
+                    'rejected' => ['icon' => 'bi-x-circle', 'color' => 'danger', 'text' => 'Rejected - Asset requires attention']
+                ];
+                $status = $statusInfo[$workflowStatus] ?? $statusInfo['draft'];
+                ?>
+
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi <?= $status['icon'] ?> text-<?= $status['color'] ?> me-2"></i>
+                    <strong class="text-<?= $status['color'] ?>"><?= $status['text'] ?></strong>
+                </div>
+
+                <?php if (!empty($asset['verification_notes']) || !empty($asset['authorization_notes'])): ?>
+                    <div class="border-top pt-3">
+                        <h6>Workflow Notes:</h6>
+                        <?php if (!empty($asset['verification_notes'])): ?>
+                            <div class="mb-2">
+                                <strong class="text-warning">Verification Notes:</strong><br>
+                                <small class="text-muted"><?= nl2br(htmlspecialchars($asset['verification_notes'])) ?></small>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($asset['authorization_notes'])): ?>
+                            <div class="mb-2">
+                                <strong class="text-info">Authorization Notes:</strong><br>
+                                <small class="text-muted"><?= nl2br(htmlspecialchars($asset['authorization_notes'])) ?></small>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Quick Actions for Workflow -->
+                <?php if ($workflowStatus === 'pending_verification' && in_array($user['role_name'], $roleConfig['assets/legacy-verify'] ?? [])): ?>
+                    <div class="border-top pt-3">
+                        <a href="?route=assets/verify&id=<?= $asset['id'] ?>" class="btn btn-warning">
+                            <i class="bi bi-check-circle me-1"></i>Verify Asset
+                        </a>
+                    </div>
+                <?php elseif ($workflowStatus === 'pending_authorization' && in_array($user['role_name'], $roleConfig['assets/legacy-authorize'] ?? [])): ?>
+                    <div class="border-top pt-3">
+                        <a href="?route=assets/authorization-dashboard" class="btn btn-info">
+                            <i class="bi bi-shield-check me-1"></i>Authorize Asset
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Financial Information -->
         <?php if ($auth->hasRole(['System Admin', 'Finance Director', 'Asset Director']) && ($asset['acquisition_cost'] || $asset['unit_cost'])): ?>
         <div class="card mt-4">
@@ -497,264 +552,114 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                 </button>
             </div>
         </div>
-        
-        <!-- Asset Quality Information -->
-        <?php if (!empty($asset['asset_source']) && $asset['asset_source'] === 'legacy'): ?>
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-clipboard-check me-2"></i>Legacy Asset Workflow
-                </h6>
-            </div>
-            <div class="card-body">
-                <?php 
-                $workflowStatus = $asset['workflow_status'] ?? 'approved';
-                $statusInfo = [
-                    'draft' => ['icon' => 'bi-file-earmark', 'color' => 'secondary', 'text' => 'Draft - Asset pending verification'],
-                    'pending_verification' => ['icon' => 'bi-clock-history', 'color' => 'warning', 'text' => 'Pending Verification - Awaiting Asset Director review'],
-                    'pending_authorization' => ['icon' => 'bi-shield-check', 'color' => 'info', 'text' => 'Pending Authorization - Awaiting Finance Director approval'],
-                    'approved' => ['icon' => 'bi-check-circle-fill', 'color' => 'success', 'text' => 'Approved - Asset ready for deployment'],
-                    'rejected' => ['icon' => 'bi-x-circle', 'color' => 'danger', 'text' => 'Rejected - Asset requires attention']
-                ];
-                $status = $statusInfo[$workflowStatus] ?? $statusInfo['draft'];
-                ?>
-                
-                <div class="d-flex align-items-center mb-3">
-                    <i class="bi <?= $status['icon'] ?> text-<?= $status['color'] ?> me-2"></i>
-                    <strong class="text-<?= $status['color'] ?>"><?= $status['text'] ?></strong>
-                </div>
-                
-                <?php if (!empty($asset['verification_notes']) || !empty($asset['authorization_notes'])): ?>
-                    <div class="border-top pt-3">
-                        <h6>Workflow Notes:</h6>
-                        <?php if (!empty($asset['verification_notes'])): ?>
-                            <div class="mb-2">
-                                <strong class="text-warning">Verification Notes:</strong><br>
-                                <small class="text-muted"><?= nl2br(htmlspecialchars($asset['verification_notes'])) ?></small>
-                            </div>
+
+    </div>
+</div>
+
+<!-- Complete Audit Trail Section -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-clock-history me-2"></i>Complete Audit Trail
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" id="auditTrailTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="activity-logs-tab" data-bs-toggle="tab" data-bs-target="#activity-logs" type="button" role="tab" aria-controls="activity-logs" aria-selected="true">
+                    <i class="bi bi-activity me-1"></i>Activity Logs
+                    <?php if (!empty($completeLogs)): ?>
+                        <span class="badge bg-primary ms-1"><?= count($completeLogs) ?></span>
+                    <?php endif; ?>
+                </button>
+            </li>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab" aria-controls="incidents" aria-selected="false">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Incidents
+                    <?php if (!empty($incidents)): ?>
+                        <span class="badge bg-warning ms-1"><?= count($incidents) ?></span>
+                    <?php endif; ?>
+                </button>
+            </li>
+
+            <?php if ($isNonConsumable): ?>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab" aria-controls="maintenance" aria-selected="false">
+                        <i class="bi bi-wrench me-1"></i>Maintenance
+                        <?php if (!empty($maintenance)): ?>
+                            <span class="badge bg-info ms-1"><?= count($maintenance) ?></span>
                         <?php endif; ?>
-                        
-                        <?php if (!empty($asset['authorization_notes'])): ?>
-                            <div class="mb-2">
-                                <strong class="text-info">Authorization Notes:</strong><br>
-                                <small class="text-muted"><?= nl2br(htmlspecialchars($asset['authorization_notes'])) ?></small>
-                            </div>
+                    </button>
+                </li>
+
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="borrowed-tools-tab" data-bs-toggle="tab" data-bs-target="#borrowed-tools" type="button" role="tab" aria-controls="borrowed-tools" aria-selected="false">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Borrowing History
+                        <?php if (!empty($borrowHistory)): ?>
+                            <span class="badge bg-success ms-1"><?= count($borrowHistory) ?></span>
                         <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- Quick Actions for Workflow -->
-                <?php if ($workflowStatus === 'pending_verification' && in_array($user['role_name'], $roleConfig['assets/legacy-verify'] ?? [])): ?>
-                    <div class="border-top pt-3">
-                        <a href="?route=assets/verify&id=<?= $asset['id'] ?>" class="btn btn-warning">
-                            <i class="bi bi-check-circle me-1"></i>Verify Asset
-                        </a>
-                    </div>
-                <?php elseif ($workflowStatus === 'pending_authorization' && in_array($user['role_name'], $roleConfig['assets/legacy-authorize'] ?? [])): ?>
-                    <div class="border-top pt-3">
-                        <a href="?route=assets/authorization-dashboard" class="btn btn-info">
-                            <i class="bi bi-shield-check me-1"></i>Authorize Asset
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Recent Activity -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-activity me-2"></i>Recent Activity
-                </h6>
-            </div>
-            <div class="card-body">
-                <?php if (!empty($withdrawals)): ?>
-                    <h6 class="text-primary">Recent Withdrawals</h6>
-                    <?php foreach (array_slice($withdrawals, 0, 3) as $withdrawal): ?>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="fw-medium"><?= htmlspecialchars($withdrawal['receiver_name'] ?? 'Unknown') ?></small>
-                                <br>
-                                <small class="text-muted"><?= htmlspecialchars($withdrawal['purpose'] ?? '') ?></small>
-                            </div>
-                            <div class="text-end">
-                                <?php
-                                $statusClasses = [
-                                    'pending' => 'bg-warning',
-                                    'released' => 'bg-success',
-                                    'returned' => 'bg-info',
-                                    'canceled' => 'bg-secondary'
-                                ];
-                                $statusClass = $statusClasses[$withdrawal['status']] ?? 'bg-secondary';
-                                ?>
-                                <span class="badge <?= $statusClass ?>">
-                                    <?= ucfirst($withdrawal['status']) ?>
-                                </span>
-                                <br>
-                                <small class="text-muted"><?= date('M j, Y', strtotime($withdrawal['created_at'])) ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (count($withdrawals) > 3): ?>
-                        <small class="text-muted">And <?= count($withdrawals) - 3 ?> more...</small>
+                    </button>
+                </li>
+            <?php endif; ?>
+
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="transfers-tab" data-bs-toggle="tab" data-bs-target="#transfers" type="button" role="tab" aria-controls="transfers" aria-selected="false">
+                    <i class="bi bi-arrow-left-right me-1"></i>Transfers
+                    <?php if (!empty($transfers)): ?>
+                        <span class="badge bg-secondary ms-1"><?= count($transfers) ?></span>
                     <?php endif; ?>
-                    <hr>
-                <?php endif; ?>
-                
-                <?php if (!empty($borrowHistory)): ?>
-                    <h6 class="text-info">Borrowing History</h6>
-                    <?php foreach (array_slice($borrowHistory, 0, 3) as $borrow): ?>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="fw-medium"><?= htmlspecialchars($borrow['borrower_name'] ?? 'Unknown') ?></small>
-                                <br>
-                                <small class="text-muted"><?= htmlspecialchars($borrow['purpose'] ?? '') ?></small>
-                            </div>
-                            <div class="text-end">
-                                <?php
-                                $borrowStatusClasses = [
-                                    'borrowed' => 'bg-warning',
-                                    'returned' => 'bg-success',
-                                    'overdue' => 'bg-danger',
-                                    'canceled' => 'bg-secondary'
-                                ];
-                                $currentStatus = $borrow['current_status'] ?? $borrow['status'];
-                                $borrowStatusClass = $borrowStatusClasses[$currentStatus] ?? 'bg-secondary';
-                                ?>
-                                <span class="badge <?= $borrowStatusClass ?>">
-                                    <?= ucfirst(str_replace('_', ' ', $currentStatus)) ?>
-                                </span>
-                                <br>
-                                <small class="text-muted"><?= date('M j, Y', strtotime($borrow['created_at'])) ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (count($borrowHistory) > 3): ?>
-                        <small class="text-muted">And <?= count($borrowHistory) - 3 ?> more...</small>
-                    <?php endif; ?>
-                    <hr>
-                <?php endif; ?>
-                
-                <?php if (!empty($transfers)): ?>
-                    <h6 class="text-primary">Transfer History</h6>
-                    <?php foreach (array_slice($transfers, 0, 2) as $transfer): ?>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="fw-medium">From: <?= htmlspecialchars($transfer['from_project_name'] ?? 'Unknown') ?></small>
-                                <br>
-                                <small class="text-muted">To: <?= htmlspecialchars($transfer['to_project_name'] ?? 'Unknown') ?></small>
-                            </div>
-                            <div class="text-end">
-                                <?php
-                                $transferStatusClasses = [
-                                    'pending' => 'bg-warning',
-                                    'approved' => 'bg-success',
-                                    'completed' => 'bg-info',
-                                    'rejected' => 'bg-danger',
-                                    'canceled' => 'bg-secondary'
-                                ];
-                                $transferStatusClass = $transferStatusClasses[$transfer['status']] ?? 'bg-secondary';
-                                ?>
-                                <span class="badge <?= $transferStatusClass ?>">
-                                    <?= ucfirst($transfer['status']) ?>
-                                </span>
-                                <br>
-                                <small class="text-muted"><?= date('M j, Y', strtotime($transfer['created_at'])) ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (count($transfers) > 2): ?>
-                        <small class="text-muted">And <?= count($transfers) - 2 ?> more...</small>
-                    <?php endif; ?>
-                    <hr>
-                <?php endif; ?>
-                
-                <?php if (!empty($maintenance)): ?>
-                    <h6 class="text-warning">Maintenance Records</h6>
-                    <?php foreach (array_slice($maintenance, 0, 2) as $maint): ?>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="fw-medium"><?= ucfirst($maint['type']) ?> Maintenance</small>
-                                <br>
-                                <small class="text-muted"><?= htmlspecialchars($maint['description']) ?></small>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-warning">
-                                    <?= ucfirst($maint['status']) ?>
-                                </span>
-                                <br>
-                                <small class="text-muted"><?= date('M j, Y', strtotime($maint['scheduled_date'])) ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                    <hr>
-                <?php endif; ?>
-                
-                <?php if (!empty($incidents)): ?>
-                    <h6 class="text-danger">Incident Reports</h6>
-                    <?php foreach (array_slice($incidents, 0, 2) as $incident): ?>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="fw-medium"><?= ucfirst($incident['type']) ?></small>
-                                <br>
-                                <small class="text-muted"><?= htmlspecialchars($incident['description']) ?></small>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-danger">
-                                    <?= ucfirst($incident['status']) ?>
-                                </span>
-                                <br>
-                                <small class="text-muted"><?= date('M j, Y', strtotime($incident['date_reported'])) ?></small>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <?php if (empty($withdrawals) && empty($borrowHistory) && empty($transfers) && empty($maintenance) && empty($incidents)): ?>
-                    <div class="text-center py-3">
-                        <i class="bi bi-activity display-4 text-muted"></i>
-                        <p class="text-muted mt-2">No recent activity</p>
-                    </div>
-                <?php endif; ?>
+                </button>
+            </li>
+
+            <?php if ($isConsumable): ?>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab" aria-controls="withdrawals" aria-selected="false">
+                        <i class="bi bi-box-arrow-down me-1"></i>Withdrawals
+                        <?php if (!empty($withdrawals)): ?>
+                            <span class="badge bg-danger ms-1"><?= count($withdrawals) ?></span>
+                        <?php endif; ?>
+                    </button>
+                </li>
+            <?php endif; ?>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content mt-3" id="auditTrailTabContent">
+            <!-- Activity Logs Tab -->
+            <div class="tab-pane fade show active" id="activity-logs" role="tabpanel" aria-labelledby="activity-logs-tab">
+                <?php include APP_ROOT . '/views/assets/partials/_activity_logs.php'; ?>
             </div>
-        </div>
-        
-        <!-- Asset Statistics -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="bi bi-graph-up me-2"></i>Asset Statistics
-                </h6>
+
+            <!-- Incidents Tab -->
+            <div class="tab-pane fade" id="incidents" role="tabpanel" aria-labelledby="incidents-tab">
+                <?php include APP_ROOT . '/views/assets/partials/_incidents.php'; ?>
             </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-3">
-                        <div class="stat-item">
-                            <div class="stat-value text-success"><?= count($withdrawals ?? []) ?></div>
-                            <div class="stat-label">Withdrawals</div>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="stat-item">
-                            <div class="stat-value text-info"><?= count($borrowHistory ?? []) ?></div>
-                            <div class="stat-label">Borrowings</div>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="stat-item">
-                            <div class="stat-value text-primary"><?= count($transfers ?? []) ?></div>
-                            <div class="stat-label">Transfers</div>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="stat-item">
-                            <div class="stat-value text-warning"><?= count($maintenance ?? []) ?></div>
-                            <div class="stat-label">Maintenance</div>
-                        </div>
-                    </div>
+
+            <!-- Maintenance Tab (Non-Consumable Only) -->
+            <?php if ($isNonConsumable): ?>
+                <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+                    <?php include APP_ROOT . '/views/assets/partials/_maintenance.php'; ?>
                 </div>
+
+                <!-- Borrowed Tools Tab (Non-Consumable Only) -->
+                <div class="tab-pane fade" id="borrowed-tools" role="tabpanel" aria-labelledby="borrowed-tools-tab">
+                    <?php include APP_ROOT . '/views/assets/partials/_borrowed_tools.php'; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Transfers Tab -->
+            <div class="tab-pane fade" id="transfers" role="tabpanel" aria-labelledby="transfers-tab">
+                <?php include APP_ROOT . '/views/assets/partials/_transfers.php'; ?>
             </div>
+
+            <!-- Withdrawals Tab (Consumable Only) -->
+            <?php if ($isConsumable): ?>
+                <div class="tab-pane fade" id="withdrawals" role="tabpanel" aria-labelledby="withdrawals-tab">
+                    <?php include APP_ROOT . '/views/assets/partials/_withdrawals.php'; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
