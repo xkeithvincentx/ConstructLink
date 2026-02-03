@@ -209,7 +209,7 @@ class BorrowedToolReturnService {
 
         // Create incident
         $incidentData = [
-            'asset_id' => $item['asset_id'],
+            'asset_id' => $item['inventory_item_id'],
             'incident_type' => $incidentType,
             'severity' => $severity,
             'description' => "Item returned in {$condition} condition. " . $notes,

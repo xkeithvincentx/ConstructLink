@@ -61,7 +61,7 @@ class BorrowedToolBatchStatisticsService {
         if ($projectId) {
             $conditions[] = "EXISTS (
                 SELECT 1 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 WHERE bt.batch_id = btb.id AND a.project_id = ?
             )";
             $params[] = $projectId;
@@ -119,7 +119,7 @@ class BorrowedToolBatchStatisticsService {
         if ($projectId) {
             $conditions[] = "EXISTS (
                 SELECT 1 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 WHERE bt.batch_id = btb.id AND a.project_id = ?
             )";
             $params[] = $projectId;
@@ -157,7 +157,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE DATE(bt.borrowed_date) = CURDATE()
                   AND bt.borrowed_date IS NOT NULL
                   " . ($projectId ? "AND a.project_id = ?" : "") . "
@@ -171,7 +171,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE DATE(bt.return_date) = CURDATE()
                   AND bt.status = ?
                   " . ($projectId ? "AND a.project_id = ?" : "") . "
@@ -186,7 +186,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE DATE(bt.expected_return) = CURDATE()
                   AND bt.status IN (?, ?)
                   AND (bt.quantity > bt.quantity_returned OR bt.quantity_returned IS NULL)
@@ -204,7 +204,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE bt.expected_return > CURDATE()
                   AND bt.expected_return <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
                   AND bt.status IN (?, ?)
@@ -224,7 +224,7 @@ class BorrowedToolBatchStatisticsService {
                     (SELECT COUNT(DISTINCT bt.id)
                      FROM borrowed_tools bt
                      INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                     " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                     " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                      WHERE bt.borrowed_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                        AND bt.borrowed_date IS NOT NULL
                        " . ($projectId ? "AND a.project_id = ?" : "") . "
@@ -232,7 +232,7 @@ class BorrowedToolBatchStatisticsService {
                     (SELECT COUNT(DISTINCT bt.id)
                      FROM borrowed_tools bt
                      INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                     " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                     " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                      WHERE bt.return_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                        AND bt.status = ?
                        " . ($projectId ? "AND a.project_id = ?" : "") . "
@@ -249,7 +249,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE YEAR(bt.borrowed_date) = YEAR(CURDATE())
                   AND MONTH(bt.borrowed_date) = MONTH(CURDATE())
                   AND bt.borrowed_date IS NOT NULL
@@ -264,7 +264,7 @@ class BorrowedToolBatchStatisticsService {
                 SELECT COUNT(DISTINCT bt.id) as count
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                " . ($projectId ? "INNER JOIN assets a ON bt.asset_id = a.id" : "") . "
+                " . ($projectId ? "INNER JOIN inventory_items a ON bt.inventory_item_id = a.id" : "") . "
                 WHERE YEAR(bt.return_date) = YEAR(CURDATE())
                   AND MONTH(bt.return_date) = MONTH(CURDATE())
                   AND bt.status = ?

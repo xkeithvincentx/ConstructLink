@@ -477,7 +477,7 @@ $userRole = $user['role_name'] ?? 'Guest';
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk'])): ?>
-                        <a href="?route=withdrawals/create&project_id=<?= $project['id'] ?>" class="btn btn-outline-primary">
+                        <a href="?route=withdrawals/create-batch&project_id=<?= $project['id'] ?>" class="btn btn-outline-primary">
                             <i class="bi bi-arrow-down-circle me-2"></i>Create Withdrawal
                         </a>
                     <?php endif; ?>

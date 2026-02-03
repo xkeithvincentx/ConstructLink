@@ -462,7 +462,7 @@ $userRole = $user['role_name'] ?? 'Guest';
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="?route=assets/view&id=<?= $transfer['asset_id'] ?>" class="btn btn-outline-primary btn-sm">
+                    <a href="?route=assets/view&id=<?= $transfer['inventory_item_id'] ?>" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-eye me-1"></i>View Asset Details
                     </a>
                     <a href="?route=projects/view&id=<?= $transfer['from_project'] ?>" class="btn btn-outline-secondary btn-sm">

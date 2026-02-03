@@ -197,6 +197,11 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                 <td>
                                     <strong><?= htmlspecialchars($asset['name']) ?></strong><br>
                                     <small class="text-muted">REF: <?= htmlspecialchars($asset['ref']) ?></small>
+                                    <?php if (!empty($asset['pending_quantity_addition']) && $asset['pending_quantity_addition'] > 0): ?>
+                                        <br><span class="badge bg-warning text-dark">
+                                            <i class="bi bi-plus-circle"></i> Quantity Addition
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= htmlspecialchars($asset['brand'] ?? 'N/A') ?></td>
                                 <td><?= htmlspecialchars($asset['maker_name'] ?? 'N/A') ?></td>
@@ -210,7 +215,14 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                                         <span class="text-muted">Not set</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?= htmlspecialchars($asset['quantity'] ?? 1) ?> <?= htmlspecialchars($asset['unit'] ?? 'pc') ?></td>
+                                <td>
+                                    <?= htmlspecialchars($asset['quantity'] ?? 1) ?> <?= htmlspecialchars($asset['unit'] ?? 'pc') ?>
+                                    <?php if (!empty($asset['pending_quantity_addition']) && $asset['pending_quantity_addition'] > 0): ?>
+                                        <br><small class="text-warning">
+                                            <i class="bi bi-plus"></i> <?= htmlspecialchars($asset['pending_quantity_addition']) ?> <?= htmlspecialchars($asset['unit'] ?? 'pc') ?> pending
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($asset['created_by_username'] ?? 'Unknown') ?></td>
                                 <td><?= htmlspecialchars($asset['verified_by_username'] ?? 'Unknown') ?></td>
                                 <td><?= !empty($asset['verified_at']) ? date('M d, Y', strtotime($asset['verified_at'])) : 'N/A' ?></td>

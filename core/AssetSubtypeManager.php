@@ -24,11 +24,11 @@ class AssetSubtypeManager {
      * @return array Equipment types
      */
     public function getEquipmentTypesByCategory($categoryId) {
-        $sql = "SELECT id, name, code, description 
-                FROM asset_equipment_types 
-                WHERE category_id = ? AND is_active = 1 
+        $sql = "SELECT id, name, code, description
+                FROM inventory_equipment_types
+                WHERE category_id = ? AND is_active = 1
                 ORDER BY name ASC";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$categoryId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -41,11 +41,11 @@ class AssetSubtypeManager {
      * @return array Asset subtypes
      */
     public function getSubtypesByEquipmentType($equipmentTypeId) {
-        $sql = "SELECT id, name, code, technical_name, description, discipline_tags 
-                FROM asset_subtypes 
-                WHERE equipment_type_id = ? AND is_active = 1 
+        $sql = "SELECT id, name, code, technical_name, description, discipline_tags
+                FROM inventory_subtypes
+                WHERE equipment_type_id = ? AND is_active = 1
                 ORDER BY name ASC";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$equipmentTypeId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -66,7 +66,7 @@ class AssetSubtypeManager {
         // Get discipline name for matching
         $disciplineName = null;
         if ($disciplineId) {
-            $stmt = $this->db->prepare("SELECT name FROM asset_disciplines WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT name FROM inventory_disciplines WHERE id = ?");
             $stmt->execute([$disciplineId]);
             $discipline = $stmt->fetch(PDO::FETCH_ASSOC);
             $disciplineName = $discipline ? $discipline['name'] : null;
@@ -81,7 +81,7 @@ class AssetSubtypeManager {
             $params[] = $categoryId;
         }
         
-        $sql = "SELECT 
+        $sql = "SELECT
                     ast.id,
                     ast.name,
                     ast.code,
@@ -90,8 +90,8 @@ class AssetSubtypeManager {
                     ast.discipline_tags,
                     aet.name as equipment_type_name,
                     c.name as category_name
-                FROM asset_subtypes ast
-                JOIN asset_equipment_types aet ON ast.equipment_type_id = aet.id
+                FROM inventory_subtypes ast
+                JOIN inventory_equipment_types aet ON ast.equipment_type_id = aet.id
                 JOIN categories c ON aet.category_id = c.id
                 WHERE " . implode(" AND ", $whereConditions) . "
                 ORDER BY ast.name ASC";
@@ -228,23 +228,23 @@ class AssetSubtypeManager {
      * @return array Specification templates
      */
     public function getSpecificationTemplates($subtypeId) {
-        $sql = "SELECT field_name, field_label, field_type, field_options, 
+        $sql = "SELECT field_name, field_label, field_type, field_options,
                        is_required, display_order, unit
-                FROM asset_specification_templates 
-                WHERE subtype_id = ? 
+                FROM inventory_specification_templates
+                WHERE subtype_id = ?
                 ORDER BY display_order ASC, field_label ASC";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$subtypeId]);
         $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Parse JSON field_options
         foreach ($templates as &$template) {
             if ($template['field_options']) {
                 $template['field_options'] = json_decode($template['field_options'], true);
             }
         }
-        
+
         return $templates;
     }
     
@@ -262,8 +262,8 @@ class AssetSubtypeManager {
             foreach ($properties as $name => $value) {
                 if ($value !== null && $value !== '') {
                     $stmt = $this->db->prepare("
-                        INSERT INTO asset_extended_properties (asset_id, property_name, property_value) 
-                        VALUES (?, ?, ?) 
+                        INSERT INTO inventory_extended_properties (asset_id, property_name, property_value)
+                        VALUES (?, ?, ?)
                         ON DUPLICATE KEY UPDATE property_value = VALUES(property_value)
                     ");
                     $stmt->execute([$assetId, $name, $value]);
@@ -287,14 +287,14 @@ class AssetSubtypeManager {
      * @return array Properties as name => value pairs
      */
     public function getAssetProperties($assetId) {
-        $sql = "SELECT property_name, property_value, property_unit 
-                FROM asset_extended_properties 
+        $sql = "SELECT property_name, property_value, property_unit
+                FROM inventory_extended_properties
                 WHERE asset_id = ?";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$assetId]);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $properties = [];
         foreach ($results as $result) {
             $properties[$result['property_name']] = [
@@ -302,7 +302,7 @@ class AssetSubtypeManager {
                 'unit' => $result['property_unit']
             ];
         }
-        
+
         return $properties;
     }
     
@@ -313,7 +313,7 @@ class AssetSubtypeManager {
      * @return array|null Asset type hierarchy
      */
     public function getAssetTypeHierarchy($assetId) {
-        $sql = "SELECT 
+        $sql = "SELECT
                     a.name as asset_name,
                     c.name as category_name,
                     aet.name as equipment_type_name,
@@ -322,10 +322,10 @@ class AssetSubtypeManager {
                     ast.code as subtype_code,
                     ast.technical_name,
                     ast.description as subtype_description
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
-                LEFT JOIN asset_equipment_types aet ON a.equipment_type_id = aet.id
-                LEFT JOIN asset_subtypes ast ON a.subtype_id = ast.id
+                LEFT JOIN inventory_equipment_types aet ON a.equipment_type_id = aet.id
+                LEFT JOIN inventory_subtypes ast ON a.subtype_id = ast.id
                 WHERE a.id = ?";
         
         $stmt = $this->db->prepare($sql);

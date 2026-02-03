@@ -11,7 +11,7 @@
  */
 
 import { EnhancedAssetSearch, setCsrfToken as setSearchCsrfToken } from './enhanced-search.js';
-import { setCsrfToken as setCoreCsrfToken } from './core-functions.js';
+import { setCsrfToken as setCoreCsrfToken, verifyAsset, authorizeAsset } from './core-functions.js';
 
 // Global asset search instance
 let assetSearch;
@@ -24,14 +24,20 @@ function initAssetsModule(config = {}) {
     if (config.csrfToken) {
         setSearchCsrfToken(config.csrfToken);
         setCoreCsrfToken(config.csrfToken);
+        // Make CSRF token globally available for non-module scripts
+        if (typeof window !== 'undefined') {
+            window.CSRFTokenValue = config.csrfToken;
+        }
     }
 
     // Initialize enhanced search
     assetSearch = new EnhancedAssetSearch(config.csrfToken);
 
-    // Make search instance globally accessible
+    // Make search instance and functions globally accessible
     if (typeof window !== 'undefined') {
         window.assetSearch = assetSearch;
+        window.verifyAsset = verifyAsset;
+        window.authorizeAsset = authorizeAsset;
     }
 
     // Initialize keyboard shortcuts

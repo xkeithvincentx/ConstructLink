@@ -21,6 +21,7 @@ class BorrowedToolBatchController {
     private $permissionGuard;
     private $batchModel;
     private $borrowedToolModel;
+    private $assetModel;
 
     public function __construct() {
         $this->permissionGuard = new BorrowedToolsPermissionGuard();
@@ -34,9 +35,11 @@ class BorrowedToolBatchController {
 
         require_once APP_ROOT . '/models/BorrowedToolBatchModel.php';
         require_once APP_ROOT . '/models/BorrowedToolModel.php';
+        require_once APP_ROOT . '/models/AssetModel.php';
 
         $this->batchModel = new BorrowedToolBatchModel();
         $this->borrowedToolModel = new BorrowedToolModel();
+        $this->assetModel = new AssetModel();
     }
 
     /**
@@ -100,7 +103,8 @@ class BorrowedToolBatchController {
 
         // Check project assignment (MVA oversight roles exempt)
         $currentUser = $this->permissionGuard->getCurrentUser();
-        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
+        $permissionsConfig = require APP_ROOT . '/config/permissions.php';
+        $mvaOversightRoles = $permissionsConfig['borrowed_tools.mva_oversight'] ?? [];
 
         if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
             BorrowedToolsResponseHelper::renderError(
@@ -143,7 +147,8 @@ class BorrowedToolBatchController {
 
         // Validate project assignment
         $currentUser = $this->permissionGuard->getCurrentUser();
-        $mvaOversightRoles = config('permissions.borrowed_tools.mva_oversight', []);
+        $permissionsConfig = require APP_ROOT . '/config/permissions.php';
+        $mvaOversightRoles = $permissionsConfig['borrowed_tools.mva_oversight'] ?? [];
 
         if (!in_array($currentUser['role_name'], $mvaOversightRoles) && !$currentUser['current_project_id']) {
             http_response_code(403);
@@ -272,7 +277,7 @@ class BorrowedToolBatchController {
                 }
 
                 // Validate against available_quantity from database
-                $asset = $this->assetModel->getAsset($item['asset_id']);
+                $asset = $this->assetModel->find($item['asset_id']);
                 if (!$asset) {
                     http_response_code(400);
                     echo json_encode(['success' => false, 'message' => 'Asset not found: ' . $item['asset_id']]);

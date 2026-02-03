@@ -121,10 +121,10 @@ class ReportModel extends BaseModel {
                         THEN DATEDIFF(w.actual_return, w.created_at) END) as avg_usage_days,
                     MAX(w.created_at) as last_used,
                     DATEDIFF(CURDATE(), MAX(w.created_at)) as days_since_last_use
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
-                LEFT JOIN withdrawals w ON a.id = w.asset_id 
+                LEFT JOIN withdrawals w ON a.id = w.inventory_item_id 
                     AND w.created_at BETWEEN ? AND ?
                 {$whereClause}
                 GROUP BY a.id, a.ref, a.name, a.status, c.name, p.name, p.location
@@ -145,7 +145,7 @@ class ReportModel extends BaseModel {
                     c.name as category_name,
                     p.name as project_name,
                     DATEDIFF(CURDATE(), a.created_at) as days_since_acquisition
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 WHERE a.id NOT IN (
@@ -224,7 +224,7 @@ class ReportModel extends BaseModel {
                         ELSE NULL
                     END as days_out
                 FROM withdrawals w
-                LEFT JOIN assets a ON w.asset_id = a.id
+                LEFT JOIN inventory_items a ON w.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON w.project_id = p.id
                 LEFT JOIN users u ON w.withdrawn_by = u.id
@@ -300,7 +300,7 @@ class ReportModel extends BaseModel {
                         ELSE DATEDIFF(CURDATE(), t.created_at)
                     END as days_in_process
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -380,7 +380,7 @@ class ReportModel extends BaseModel {
                         ELSE 0
                     END as days_overdue
                 FROM maintenance m
-                LEFT JOIN assets a ON m.asset_id = a.id
+                LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 {$whereClause}
@@ -470,7 +470,7 @@ class ReportModel extends BaseModel {
                         ELSE 0
                     END as is_overdue
                 FROM incidents i
-                LEFT JOIN assets a ON i.asset_id = a.id
+                LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 LEFT JOIN users ur ON i.reported_by = ur.id

@@ -78,13 +78,13 @@ class DashboardController {
             $db = Database::getInstance()->getConnection();
             
             // Basic asset statistics
-            $stmt = $db->query("SELECT COUNT(*) as total FROM assets");
+            $stmt = $db->query("SELECT COUNT(*) as total FROM inventory_items");
             $data['total_assets'] = $stmt->fetch()['total'] ?? 0;
             
-            $stmt = $db->query("SELECT COUNT(*) as count FROM assets WHERE status = 'available'");
+            $stmt = $db->query("SELECT COUNT(*) as count FROM inventory_items WHERE status = 'available'");
             $data['available_assets'] = $stmt->fetch()['count'] ?? 0;
             
-            $stmt = $db->query("SELECT COUNT(*) as count FROM assets WHERE status = 'in_use'");
+            $stmt = $db->query("SELECT COUNT(*) as count FROM inventory_items WHERE status = 'in_use'");
             $data['in_use_assets'] = $stmt->fetch()['count'] ?? 0;
             
             $stmt = $db->query("SELECT COUNT(*) as count FROM withdrawals WHERE status = 'pending'");

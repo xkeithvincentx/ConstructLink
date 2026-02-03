@@ -70,7 +70,7 @@ function handleGet($db) {
                 FROM asset_brands b
                 LEFT JOIN (
                     SELECT brand_id, COUNT(*) as count
-                    FROM assets
+                    FROM inventory_items
                     WHERE deleted_at IS NULL
                     GROUP BY brand_id
                 ) asset_count ON b.id = asset_count.brand_id
@@ -161,7 +161,7 @@ function handleGet($db) {
             FROM asset_brands b
             LEFT JOIN (
                 SELECT brand_id, COUNT(*) as count
-                FROM assets
+                FROM inventory_items
                 WHERE deleted_at IS NULL
                 GROUP BY brand_id
             ) asset_count ON b.id = asset_count.brand_id
@@ -352,7 +352,7 @@ function handleDelete($db) {
     
     try {
         // Check if brand has assets
-        $assetsCheckSql = "SELECT COUNT(*) FROM assets WHERE brand_id = ?";
+        $assetsCheckSql = "SELECT COUNT(*) FROM inventory_items WHERE brand_id = ?";
         $assetsCheckStmt = $db->prepare($assetsCheckSql);
         $assetsCheckStmt->execute([$id]);
         

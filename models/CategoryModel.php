@@ -45,7 +45,7 @@ class CategoryModel extends BaseModel {
                 COUNT(a.id) as asset_count
             FROM {$this->table} c
             LEFT JOIN {$this->table} p ON c.parent_id = p.id
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             GROUP BY c.id
             ORDER BY COALESCE(p.name, c.name), c.name
         ";
@@ -129,7 +129,7 @@ class CategoryModel extends BaseModel {
                    COUNT(a.id) as assets_count,
                    p.name as parent_name
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             LEFT JOIN {$this->table} p ON c.parent_id = p.id
             {$whereClause}
             GROUP BY c.id, c.name, c.is_consumable, c.description, c.parent_id, c.created_at, p.name
@@ -172,7 +172,7 @@ class CategoryModel extends BaseModel {
                 SUM(CASE WHEN a.status = 'under_maintenance' THEN 1 ELSE 0 END) as maintenance_assets,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             {$whereClause}
         ";
         
@@ -194,7 +194,7 @@ class CategoryModel extends BaseModel {
                    COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                    p.name as parent_name
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             LEFT JOIN {$this->table} p ON c.parent_id = p.id
             WHERE c.id = ?
             GROUP BY c.id
@@ -357,7 +357,7 @@ class CategoryModel extends BaseModel {
             }
             
             // Check if category has assets
-            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE category_id = ?");
+            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM inventory_items WHERE category_id = ?");
             $assetCount->execute([$id]);
             
             if ($assetCount->fetchColumn() > 0) {
@@ -533,7 +533,7 @@ class CategoryModel extends BaseModel {
                            ELSE 'Undefined'
                        END as business_classification
                 FROM {$this->table} c
-                LEFT JOIN assets a ON c.id = a.category_id
+                LEFT JOIN inventory_items a ON c.id = a.category_id
                 LEFT JOIN {$this->table} p ON c.parent_id = p.id
                 WHERE c.id = ?
                 GROUP BY c.id

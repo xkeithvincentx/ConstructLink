@@ -664,17 +664,17 @@ class IncidentController {
             $sql = "
                 SELECT a.*, c.name as category_name, p.name as project_name,
                        CASE 
-                           WHEN bt.asset_id IS NOT NULL THEN CONCAT(a.status, ' (Borrowed by ', bt.borrower_name, ')')
-                           WHEN w.asset_id IS NOT NULL THEN CONCAT(a.status, ' (Withdrawn by ', w.receiver_name, ')')
-                           WHEN t.asset_id IS NOT NULL THEN CONCAT(a.status, ' (In Transfer)')
+                           WHEN bt.inventory_item_id IS NOT NULL THEN CONCAT(a.status, ' (Borrowed by ', bt.borrower_name, ')')
+                           WHEN w.inventory_item_id IS NOT NULL THEN CONCAT(a.status, ' (Withdrawn by ', w.receiver_name, ')')
+                           WHEN t.inventory_item_id IS NOT NULL THEN CONCAT(a.status, ' (In Transfer)')
                            ELSE a.status
                        END as detailed_status
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
-                LEFT JOIN borrowed_tools bt ON a.id = bt.asset_id AND bt.status = 'borrowed'
-                LEFT JOIN withdrawals w ON a.id = w.asset_id AND w.status IN ('pending', 'released')
-                LEFT JOIN transfers t ON a.id = t.asset_id AND t.status IN ('pending', 'approved')
+                LEFT JOIN borrowed_tools bt ON a.id = bt.inventory_item_id AND bt.status = 'borrowed'
+                LEFT JOIN withdrawals w ON a.id = w.inventory_item_id AND w.status IN ('pending', 'released')
+                LEFT JOIN transfers t ON a.id = t.inventory_item_id AND t.status IN ('pending', 'approved')
                 WHERE a.status != 'retired'
                   AND p.is_active = 1
                 ORDER BY a.name ASC

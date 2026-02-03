@@ -1,0 +1,440 @@
+/**
+ * Withdrawal Batch Print Styles
+ * Optimized for printing batch detail pages
+ */
+
+@media print {
+    /* ===========================================
+       GLOBAL PRINT SETTINGS
+       =========================================== */
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        font-size: 12pt;
+        line-height: 1.4;
+        color: #000;
+        background: white !important;
+    }
+
+    /* Remove page margins */
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+
+    /* ===========================================
+       HIDE NON-PRINTABLE ELEMENTS
+       =========================================== */
+
+    .no-print,
+    .navbar,
+    .sidebar,
+    .breadcrumb,
+    .btn,
+    button,
+    .action-button-group,
+    .batch-actions-card,
+    .dropdown,
+    .alert,
+    .modal,
+    .offcanvas,
+    footer,
+    .back-button,
+    .edit-button,
+    .delete-button {
+        display: none !important;
+    }
+
+    /* ===========================================
+       PAGE BREAKS
+       =========================================== */
+
+    .page-break {
+        page-break-before: always;
+    }
+
+    .page-break-after {
+        page-break-after: always;
+    }
+
+    .avoid-break {
+        page-break-inside: avoid;
+    }
+
+    /* Keep headers with content */
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* Keep tables together */
+    table {
+        page-break-inside: avoid;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-footer-group;
+    }
+
+    /* ===========================================
+       BATCH HEADER
+       =========================================== */
+
+    .batch-header-card {
+        border: 2px solid #000 !important;
+        padding: 15pt !important;
+        margin-bottom: 15pt !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    .batch-reference {
+        font-size: 18pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .batch-info-label {
+        font-size: 9pt !important;
+        color: #666 !important;
+        font-weight: bold !important;
+    }
+
+    .batch-info-value {
+        font-size: 11pt !important;
+        color: #000 !important;
+    }
+
+    /* ===========================================
+       WORKFLOW TIMELINE (SIMPLIFIED FOR PRINT)
+       =========================================== */
+
+    .workflow-timeline-card {
+        border: 1px solid #ddd !important;
+        padding: 12pt !important;
+        margin-bottom: 15pt !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    .timeline-horizontal {
+        padding: 10pt 0 !important;
+    }
+
+    .timeline-horizontal::before {
+        background: #000 !important;
+        height: 2px !important;
+    }
+
+    .timeline-step-icon {
+        width: 40pt !important;
+        height: 40pt !important;
+        border: 2px solid #000 !important;
+        font-size: 14pt !important;
+    }
+
+    .timeline-step.completed .timeline-step-icon {
+        background: #000 !important;
+        color: white !important;
+    }
+
+    .timeline-step.current .timeline-step-icon {
+        background: #666 !important;
+        color: white !important;
+        box-shadow: none !important;
+        animation: none !important;
+    }
+
+    .timeline-step.pending .timeline-step-icon {
+        background: white !important;
+        border-color: #ccc !important;
+        color: #999 !important;
+    }
+
+    .timeline-step-label {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .timeline-step-details {
+        font-size: 9pt !important;
+        color: #666 !important;
+    }
+
+    /* ===========================================
+       RECEIVER INFORMATION
+       =========================================== */
+
+    .receiver-card {
+        border: 1px solid #ddd !important;
+        background: #f9f9f9 !important;
+        padding: 12pt !important;
+        margin-bottom: 15pt !important;
+        page-break-inside: avoid;
+    }
+
+    .receiver-avatar {
+        width: 40pt !important;
+        height: 40pt !important;
+        background: #000 !important;
+        color: white !important;
+        font-size: 14pt !important;
+    }
+
+    .receiver-name {
+        font-size: 14pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .receiver-meta {
+        font-size: 10pt !important;
+        color: #666 !important;
+    }
+
+    /* ===========================================
+       ITEMS TABLE
+       =========================================== */
+
+    .batch-items-card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+        margin-bottom: 15pt !important;
+    }
+
+    .batch-items-table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+
+    .batch-items-table thead {
+        background: #f0f0f0 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+
+    .batch-items-table th {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        padding: 8pt !important;
+        border: 1px solid #666 !important;
+        text-align: left !important;
+    }
+
+    .batch-items-table td {
+        font-size: 10pt !important;
+        padding: 8pt !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .item-name {
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .item-ref {
+        font-size: 9pt !important;
+        color: #666 !important;
+    }
+
+    .quantity-value {
+        font-size: 12pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    /* ===========================================
+       PURPOSE & NOTES
+       =========================================== */
+
+    .purpose-card {
+        border: 1px solid #ddd !important;
+        padding: 12pt !important;
+        margin-bottom: 15pt !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    .purpose-text {
+        font-size: 10pt !important;
+        color: #000 !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ===========================================
+       STATUS BADGES
+       =========================================== */
+
+    .status-badge {
+        border: 1px solid #000 !important;
+        padding: 3pt 8pt !important;
+        font-size: 9pt !important;
+        font-weight: bold !important;
+    }
+
+    .status-badge.status-pending-verification {
+        background: #fff3cd !important;
+        color: #000 !important;
+    }
+
+    .status-badge.status-pending-approval {
+        background: #cfe2ff !important;
+        color: #000 !important;
+    }
+
+    .status-badge.status-approved {
+        background: #d1e7dd !important;
+        color: #000 !important;
+    }
+
+    .status-badge.status-released {
+        background: #cfe2ff !important;
+        color: #000 !important;
+    }
+
+    .status-badge.status-canceled {
+        background: #f8d7da !important;
+        color: #000 !important;
+    }
+
+    /* ===========================================
+       AUDIT TRAIL (OPTIONAL - MAY BE HIDDEN)
+       =========================================== */
+
+    .audit-trail-card {
+        border: 1px solid #ddd !important;
+        padding: 12pt !important;
+        margin-bottom: 15pt !important;
+        box-shadow: none !important;
+    }
+
+    .audit-entry {
+        border-bottom: 1px solid #ddd !important;
+        padding: 6pt 0 !important;
+    }
+
+    .audit-icon {
+        background: #f0f0f0 !important;
+        width: 30pt !important;
+        height: 30pt !important;
+    }
+
+    .audit-action {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+    }
+
+    .audit-meta {
+        font-size: 9pt !important;
+        color: #666 !important;
+    }
+
+    /* ===========================================
+       SIGNATURE SECTION (OPTIONAL)
+       =========================================== */
+
+    .signature-section {
+        margin-top: 30pt !important;
+        page-break-inside: avoid;
+    }
+
+    .signature-box {
+        border: 1px solid #000 !important;
+        padding: 12pt !important;
+        margin-bottom: 15pt !important;
+    }
+
+    .signature-label {
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        margin-bottom: 20pt !important;
+        display: block;
+    }
+
+    .signature-line {
+        border-bottom: 1px solid #000 !important;
+        width: 200pt !important;
+        display: inline-block;
+        margin-bottom: 5pt !important;
+    }
+
+    .signature-text {
+        font-size: 9pt !important;
+        color: #666 !important;
+        display: block;
+        margin-top: 3pt !important;
+    }
+
+    /* ===========================================
+       FOOTER (PAGE NUMBER, DATE)
+       =========================================== */
+
+    .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 9pt !important;
+        color: #666 !important;
+        padding: 8pt 0 !important;
+        border-top: 1px solid #ddd !important;
+    }
+
+    /* ===========================================
+       UTILITIES
+       =========================================== */
+
+    .text-center {
+        text-align: center !important;
+    }
+
+    .text-right {
+        text-align: right !important;
+    }
+
+    .font-weight-bold {
+        font-weight: bold !important;
+    }
+
+    /* Remove shadows and rounded corners */
+    .card,
+    .shadow,
+    .shadow-sm {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Ensure links are visible */
+    a {
+        color: #000 !important;
+        text-decoration: underline !important;
+    }
+
+    /* Show URLs after links (optional) */
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 8pt;
+        color: #666;
+    }
+
+    /* Don't show URLs for internal links */
+    a[href^="#"]:after,
+    a[href^="javascript"]:after {
+        content: "";
+    }
+}

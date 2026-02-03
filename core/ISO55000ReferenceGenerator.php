@@ -17,15 +17,15 @@ class ISO55000ReferenceGenerator {
 
     // Note: Category and discipline codes are now stored in database tables:
     // - categories.iso_code (2-character ISO 55000:2024 category codes)
-    // - asset_disciplines.iso_code (2-character ISO 55000:2024 discipline codes)
+    // - inventory_disciplines.iso_code (2-character ISO 55000:2024 discipline codes)
     // This provides full scalability and configurability without code changes.
 
     /**
      * Constructor
      *
-     * @param string $tableName Database table name for reference generation (default: 'assets')
+     * @param string $tableName Database table name for reference generation (default: 'inventory_items')
      */
-    public function __construct($tableName = 'assets') {
+    public function __construct($tableName = 'inventory_items') {
         $this->db = Database::getInstance()->getConnection();
         $this->orgCode = defined('ASSET_ORG_CODE') ? ASSET_ORG_CODE : 'CON';
         $this->tableName = $tableName;
@@ -109,8 +109,8 @@ class ISO55000ReferenceGenerator {
         if (!$disciplineId) {
             return 'GN'; // General - allow null discipline for flexibility
         }
-        
-        $sql = "SELECT iso_code, name FROM asset_disciplines WHERE id = ?";
+
+        $sql = "SELECT iso_code, name FROM inventory_disciplines WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$disciplineId]);
         $discipline = $stmt->fetch(PDO::FETCH_ASSOC);

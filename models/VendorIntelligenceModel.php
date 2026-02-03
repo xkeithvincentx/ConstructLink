@@ -159,10 +159,10 @@ class VendorIntelligenceModel extends BaseModel {
             $sql = "
                 SELECT 
                     COUNT(DISTINCT a.id) as total_assets,
-                    COUNT(DISTINCT i.asset_id) as assets_with_incidents,
+                    COUNT(DISTINCT i.inventory_item_id) as assets_with_incidents,
                     AVG(CASE WHEN i.type = 'damaged' THEN 1 ELSE 0 END) as damage_incident_rate
-                FROM assets a
-                LEFT JOIN incidents i ON a.id = i.asset_id AND i.created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                FROM inventory_items a
+                LEFT JOIN incidents i ON a.id = i.inventory_item_id AND i.created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
                 WHERE a.vendor_id = ?
             ";
             

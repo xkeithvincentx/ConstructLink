@@ -173,7 +173,7 @@ try {
             'urls' => [
                 'view' => "?route=assets/view&id={$asset['id']}",
                 'edit' => "?route=assets/edit&id={$asset['id']}",
-                'withdraw' => "?route=withdrawals/create&asset_id={$asset['id']}"
+                'withdraw' => "?route=withdrawals/create-batch&asset_id={$asset['id']}"
             ]
         ];
     }

@@ -185,6 +185,37 @@ $routes = [
         'auth' => true,
         'roles' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager']
     ],
+    // New MVA Workflow Routes
+    'requests/verify' => [
+        'controller' => 'RequestController',
+        'action' => 'verify',
+        'auth' => true,
+        'roles' => getRolesFor('requests/verify')
+    ],
+    'requests/authorize' => [
+        'controller' => 'RequestController',
+        'action' => 'authorize',
+        'auth' => true,
+        'roles' => getRolesFor('requests/authorize')
+    ],
+    'requests/approveWorkflow' => [
+        'controller' => 'RequestController',
+        'action' => 'approveWorkflow',
+        'auth' => true,
+        'roles' => getRolesFor('requests/approve')
+    ],
+    'requests/decline' => [
+        'controller' => 'RequestController',
+        'action' => 'decline',
+        'auth' => true,
+        'roles' => getRolesFor('requests/decline')
+    ],
+    'requests/resubmit' => [
+        'controller' => 'RequestController',
+        'action' => 'resubmit',
+        'auth' => true,
+        'roles' => getRolesFor('requests/create')
+    ],
 
     // =================================================================
     // 2. 🛒 PROCUREMENT ORDERS (MVA: Procurement Officer → Asset Director → Finance Director)
@@ -575,8 +606,8 @@ $routes = [
         'roles' => getRolesFor('withdrawals/view')
     ],
     'withdrawals/create' => [
-        'controller' => 'WithdrawalController',
-        'action' => 'create',
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'createBatch',
         'auth' => true,
         'roles' => getRolesFor('withdrawals/create')
     ],
@@ -615,6 +646,72 @@ $routes = [
         'action' => 'cancel',
         'auth' => true,
         'roles' => getRolesFor('withdrawals/cancel')
+    ],
+
+    // Multi-Item Batch Withdrawal Routes
+    'withdrawals/create-batch' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'createBatch',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/create')
+    ],
+    'withdrawals/batch/create' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'storeBatch',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/create')
+    ],
+    'withdrawals/batch/view' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'viewBatch',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/view')
+    ],
+    'withdrawals/batch-list' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'listBatches',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/view')
+    ],
+    'withdrawals/batch/verify' => [
+        'controller' => 'WithdrawalController',
+        'action' => 'batchVerify',
+        'method' => 'POST',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/verify')
+    ],
+    'withdrawals/batch/approve' => [
+        'controller' => 'WithdrawalController',
+        'action' => 'batchApprove',
+        'method' => 'POST',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/approve')
+    ],
+    'withdrawals/batch/release' => [
+        'controller' => 'WithdrawalController',
+        'action' => 'batchRelease',
+        'method' => 'POST',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/release')
+    ],
+    'withdrawals/batch/return' => [
+        'controller' => 'WithdrawalController',
+        'action' => 'batchReturn',
+        'method' => 'POST',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/return')
+    ],
+    'withdrawals/batch/cancel' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'cancelBatch',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/cancel')
+    ],
+    'withdrawals/batch/print' => [
+        'controller' => 'WithdrawalBatchController',
+        'action' => 'printBatch',
+        'auth' => true,
+        'roles' => getRolesFor('withdrawals/view')
     ],
 
     // =================================================================
@@ -815,58 +912,52 @@ $routes = [
     'assets/verify-asset' => [
         'controller' => 'AssetController',
         'action' => 'verifyAsset',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
     ],
     'assets/authorize-asset' => [
         'controller' => 'AssetController',
         'action' => 'authorizeAsset',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-authorize')
+        'auth' => true
     ],
     'assets/batch-verify' => [
         'controller' => 'AssetController',
         'action' => 'batchVerify',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
     ],
     'assets/batch-authorize' => [
         'controller' => 'AssetController',
         'action' => 'batchAuthorize',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-authorize')
+        'auth' => true
     ],
-    
+
     // Enhanced Verification System API Routes
     'api/assets/verification-data' => [
         'controller' => 'AssetController',
         'action' => 'getVerificationData',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
     ],
     'api/assets/authorization-data' => [
         'controller' => 'AssetController',
         'action' => 'getAuthorizationData',
-        'auth' => true,
-        'roles' => getRolesFor('assets/authorize')
+        'auth' => true
     ],
     'api/assets/validate-quality' => [
         'controller' => 'AssetController',
         'action' => 'validateAssetQuality',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
+        // Permission check handled by controller
     ],
     'assets/reject-verification' => [
         'controller' => 'AssetController',
         'action' => 'rejectVerification',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
+        // Permission check handled by controller
     ],
     'assets/approve-with-conditions' => [
         'controller' => 'AssetController',
         'action' => 'approveWithConditions',
-        'auth' => true,
-        'roles' => getRolesFor('assets/legacy-verify')
+        'auth' => true
+        // Permission check handled by controller
     ],
 
     // =================================================================

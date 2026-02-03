@@ -828,13 +828,13 @@ class ProcurementOrderController {
                                     ];
                                     $columns = implode(", ", array_keys($assetData));
                                     $placeholders = implode(", ", array_fill(0, count($assetData), '?'));
-                                    $sql = "INSERT INTO assets ($columns) VALUES ($placeholders)";
+                                    $sql = "INSERT INTO inventory_items ($columns) VALUES ($placeholders)";
                                     $stmt = $db->prepare($sql);
                                     $result = $stmt->execute(array_values($assetData));
                                     if ($result) {
                                         $assetId = $db->lastInsertId();
-                                        // Link asset to procurement_assets
-                                        $linkSql = "INSERT INTO procurement_assets (asset_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
+                                        // Link asset to procurement_inventory
+                                        $linkSql = "INSERT INTO procurement_inventory (inventory_item_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
                                         $linkStmt = $db->prepare($linkSql);
                                         $linkStmt->execute([$assetId, $orderId, $itemId]);
                                         $generatedAssets++;
@@ -865,13 +865,13 @@ class ProcurementOrderController {
                                         ];
                                         $columns = implode(", ", array_keys($assetData));
                                         $placeholders = implode(", ", array_fill(0, count($assetData), '?'));
-                                        $sql = "INSERT INTO assets ($columns) VALUES ($placeholders)";
+                                        $sql = "INSERT INTO inventory_items ($columns) VALUES ($placeholders)";
                                         $stmt = $db->prepare($sql);
                                         $result = $stmt->execute(array_values($assetData));
                                         if ($result) {
                                             $assetId = $db->lastInsertId();
-                                            // Link asset to procurement_assets
-                                            $linkSql = "INSERT INTO procurement_assets (asset_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
+                                            // Link asset to procurement_inventory
+                                            $linkSql = "INSERT INTO procurement_inventory (inventory_item_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
                                             $linkStmt = $db->prepare($linkSql);
                                             $linkStmt->execute([$assetId, $orderId, $itemId]);
                                             $generatedAssets++;
@@ -1648,10 +1648,27 @@ class ProcurementOrderController {
                 
                 if (empty($errors)) {
                     $result = $this->procurementOrderModel->confirmReceipt($id, $receiptData, $this->auth->getCurrentUser()['id']);
-                    
+
                     if ($result['success']) {
-                        // If asset generation is requested and receipt was successful
-                        if ($generateAssets) {
+                        // Check if this is a restock request before asset generation
+                        $linkedRequest = $this->getLinkedRestockRequest($id);
+
+                        if ($linkedRequest && $linkedRequest['is_restock'] == 1) {
+                            // RESTOCK: Add quantity to existing item (DO NOT create duplicate assets)
+                            try {
+                                $restockResult = $this->processRestockDelivery($id, $linkedRequest);
+                                if ($restockResult['success']) {
+                                    header('Location: ?route=procurement-orders/view&id=' . $id . '&message=restock_delivered');
+                                    exit;
+                                } else {
+                                    $errors[] = $restockResult['message'];
+                                }
+                            } catch (Exception $restockError) {
+                                error_log("Restock delivery error: " . $restockError->getMessage());
+                                $errors[] = 'Failed to process restock delivery: ' . $restockError->getMessage();
+                            }
+                        } else if ($generateAssets) {
+                            // NEW ITEM: Create new inventory records (existing logic)
                             try {
                                 // Get items for asset generation
                                 $availableItems = $this->procurementItemModel->getItemsForAssetGeneration($id);
@@ -1718,13 +1735,13 @@ class ProcurementOrderController {
                                                     ];
                                                     $columns = implode(", ", array_keys($assetData));
                                                     $placeholders = implode(", ", array_fill(0, count($assetData), '?'));
-                                                    $sql = "INSERT INTO assets ($columns) VALUES ($placeholders)";
+                                                    $sql = "INSERT INTO inventory_items ($columns) VALUES ($placeholders)";
                                                     $stmt = $db->prepare($sql);
                                                     $result = $stmt->execute(array_values($assetData));
                                                     if ($result) {
                                                         $assetId = $db->lastInsertId();
-                                                        // Link asset to procurement_assets
-                                                        $linkSql = "INSERT INTO procurement_assets (asset_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
+                                                        // Link asset to procurement_inventory
+                                                        $linkSql = "INSERT INTO procurement_inventory (inventory_item_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
                                                         $linkStmt = $db->prepare($linkSql);
                                                         $linkStmt->execute([$assetId, $orderId, $itemId]);
                                                         $generatedAssets++;
@@ -1755,13 +1772,13 @@ class ProcurementOrderController {
                                                         ];
                                                         $columns = implode(", ", array_keys($assetData));
                                                         $placeholders = implode(", ", array_fill(0, count($assetData), '?'));
-                                                        $sql = "INSERT INTO assets ($columns) VALUES ($placeholders)";
+                                                        $sql = "INSERT INTO inventory_items ($columns) VALUES ($placeholders)";
                                                         $stmt = $db->prepare($sql);
                                                         $result = $stmt->execute(array_values($assetData));
                                                         if ($result) {
                                                             $assetId = $db->lastInsertId();
-                                                            // Link asset to procurement_assets
-                                                            $linkSql = "INSERT INTO procurement_assets (asset_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
+                                                            // Link asset to procurement_inventory
+                                                            $linkSql = "INSERT INTO procurement_inventory (inventory_item_id, procurement_order_id, procurement_item_id, created_at) VALUES (?, ?, ?, NOW())";
                                                             $linkStmt = $db->prepare($linkSql);
                                                             $linkStmt->execute([$assetId, $orderId, $itemId]);
                                                             $generatedAssets++;
@@ -2202,7 +2219,7 @@ class ProcurementOrderController {
             $db = Database::getInstance()->getConnection();
             
             // Get the highest existing reference number
-            $sql = "SELECT ref FROM assets WHERE ref LIKE 'CL%' ORDER BY ref DESC LIMIT 1";
+            $sql = "SELECT ref FROM inventory_items WHERE ref LIKE 'CL%' ORDER BY ref DESC LIMIT 1";
             $stmt = $db->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetch();
@@ -2810,12 +2827,86 @@ class ProcurementOrderController {
             
             echo json_encode($response);
             exit;
-            
+
         } catch (Exception $e) {
             error_log("File preview error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Preview generation failed']);
             exit;
+        }
+    }
+
+    /**
+     * Get linked restock request for procurement order
+     *
+     * Queries for restock request linked to procurement order.
+     * Returns request details including inventory_item_id if found.
+     *
+     * @param int $orderId Procurement order ID
+     * @return array|null Request details or null if not found
+     */
+    private function getLinkedRestockRequest($orderId) {
+        try {
+            $sql = "
+                SELECT r.*, r.inventory_item_id, r.is_restock
+                FROM requests r
+                INNER JOIN procurement_orders po ON r.id = po.request_id
+                WHERE po.id = ?
+                    AND r.is_restock = 1
+                LIMIT 1
+            ";
+
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$orderId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Get linked restock request error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Process restock delivery for procurement order
+     *
+     * Adds quantity to existing inventory item instead of creating new asset.
+     * Uses RestockWorkflowService to handle quantity addition and activity logging.
+     *
+     * @param int $orderId Procurement order ID
+     * @param array $request Restock request details
+     * @return array Response with success status and message
+     */
+    private function processRestockDelivery($orderId, $request) {
+        try {
+            require_once APP_ROOT . '/services/RestockWorkflowService.php';
+
+            $db = Database::getInstance()->getConnection();
+            $restockService = new RestockWorkflowService($db);
+            $result = $restockService->processRestockDelivery($orderId, $request['id']);
+
+            if (!$result['success']) {
+                throw new Exception($result['message']);
+            }
+
+            // Log procurement activity
+            try {
+                $currentUser = $this->auth->getCurrentUser();
+                $this->procurementOrderModel->logProcurementActivity(
+                    $orderId,
+                    $currentUser['id'],
+                    'restock_delivered',
+                    null,
+                    null,
+                    "Restock delivery processed: Added {$request['quantity']} units to inventory item #{$request['inventory_item_id']}"
+                );
+            } catch (Exception $logError) {
+                error_log("Failed to log procurement activity: " . $logError->getMessage());
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            error_log("Process restock delivery error: " . $e->getMessage());
+            throw $e;
         }
     }
 }

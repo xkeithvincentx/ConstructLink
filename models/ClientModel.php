@@ -18,7 +18,7 @@ class ClientModel extends BaseModel {
                 COUNT(a.id) as asset_count,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            LEFT JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             GROUP BY c.id, c.name, c.contact_info, c.address, c.phone, c.email, c.contact_person, c.company_type, c.created_at, c.updated_at
             ORDER BY c.name
         ";
@@ -198,7 +198,7 @@ class ClientModel extends BaseModel {
             }
             
             // Check if client has assets
-            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE client_id = ?");
+            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM inventory_items WHERE client_id = ?");
             $assetCount->execute([$id]);
             
             if ($assetCount->fetchColumn() > 0) {
@@ -262,7 +262,7 @@ class ClientModel extends BaseModel {
                    COUNT(a.id) as assets_count,
                    COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            LEFT JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             {$whereClause}
             GROUP BY c.id, c.name, c.contact_info, c.address, c.phone, c.email, c.contact_person, c.company_type, c.created_at, c.updated_at
             ORDER BY {$orderBy}
@@ -298,7 +298,7 @@ class ClientModel extends BaseModel {
                    SUM(CASE WHEN a.status = 'under_maintenance' THEN 1 ELSE 0 END) as maintenance_assets,
                    COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            LEFT JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             WHERE c.id = ?
             GROUP BY c.id, c.name, c.contact_info, c.address, c.phone, c.email, c.contact_person, c.company_type, c.created_at, c.updated_at
         ";
@@ -324,7 +324,7 @@ class ClientModel extends BaseModel {
                 COUNT(CASE WHEN c.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as new_clients_30_days,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            LEFT JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             {$whereClause}
         ";
         
@@ -343,7 +343,7 @@ class ClientModel extends BaseModel {
                 COUNT(a.id) as asset_count,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                 GROUP_CONCAT(DISTINCT a.status) as statuses
-            FROM assets a
+            FROM inventory_items a
             INNER JOIN categories c ON a.category_id = c.id
             WHERE a.client_id = ? AND a.is_client_supplied = 1
             GROUP BY c.id, c.name
@@ -367,7 +367,7 @@ class ClientModel extends BaseModel {
                 COUNT(a.id) as asset_count,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            INNER JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            INNER JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             GROUP BY c.id, c.name, c.company_type
             ORDER BY total_value DESC
             LIMIT ?
@@ -390,7 +390,7 @@ class ClientModel extends BaseModel {
                 COUNT(a.id) as asset_count,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} c
-            LEFT JOIN assets a ON c.id = a.client_id AND a.is_client_supplied = 1
+            LEFT JOIN inventory_items a ON c.id = a.client_id AND a.is_client_supplied = 1
             WHERE c.company_type IS NOT NULL AND c.company_type != ''
             GROUP BY c.company_type
             ORDER BY client_count DESC
@@ -428,7 +428,7 @@ class ClientModel extends BaseModel {
                 DATE_FORMAT(a.acquired_date, '%Y-%m') as month,
                 COUNT(a.id) as asset_count,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
-            FROM assets a
+            FROM inventory_items a
             WHERE a.client_id = ? 
                 AND a.is_client_supplied = 1
                 AND a.acquired_date >= DATE_SUB(NOW(), INTERVAL ? MONTH)

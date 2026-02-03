@@ -6,10 +6,8 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
-function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Released' && in_array($userRole, $roleConfig['withdrawals/return'] ?? []);
-}
+
+// RBAC helpers are now in core/helpers.php
 ?>
 
 <!-- Navigation Actions (No Header - handled by layout) -->
@@ -35,18 +33,18 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-check-circle me-2"></i>Confirm Asset Return
+                    <i class="bi bi-check-circle me-2"></i>Confirm Consumable Return
                 </h6>
             </div>
             <div class="card-body">
                 <div class="alert alert-info" role="alert">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>Asset Return Process:</strong> By marking this asset as returned, you confirm that:
+                    <strong>Consumable Return Process:</strong> By marking this consumable as returned, you confirm that:
                     <ul class="mb-0 mt-2">
-                        <li>The asset has been physically returned</li>
-                        <li>The asset condition has been inspected</li>
+                        <li>The consumable has been physically returned</li>
+                        <li>The consumable condition has been inspected</li>
                         <li>Any damages or issues have been documented</li>
-                        <li>The asset status will be changed back to "Available"</li>
+                        <li>The consumable status will be changed back to "Available"</li>
                     </ul>
                 </div>
                 
@@ -55,13 +53,13 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                     <?php $daysOverdue = floor((time() - strtotime($withdrawal['expected_return'])) / (60 * 60 * 24)); ?>
                     <div class="alert alert-warning" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Overdue Return:</strong> This asset was expected to be returned on 
+                        <strong>Overdue Return:</strong> This consumable was expected to be returned on 
                         <?= date('M j, Y', strtotime($withdrawal['expected_return'])) ?> 
                         and is now <strong><?= $daysOverdue ?> days overdue</strong>.
                     </div>
                 <?php endif; ?>
                 
-                <?php if (canReturnWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+                <?php if (canReturnWithdrawal($withdrawal, $user)): ?>
                 <form method="POST" action="?route=withdrawals/return&id=<?= $withdrawal['id'] ?>" id="returnForm">
                     <?= CSRFProtection::getTokenField() ?>
                     
@@ -103,9 +101,9 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                                   id="return_notes" 
                                   name="return_notes" 
                                   rows="4" 
-                                  placeholder="Enter any notes about the asset condition, damages, or return process..."></textarea>
+                                  placeholder="Enter any notes about the consumable condition, damages, or return process..."></textarea>
                         <div class="form-text">
-                            Document any issues, damages, or observations about the returned asset.
+                            Document any issues, damages, or observations about the returned consumable.
                         </div>
                     </div>
                     
@@ -118,7 +116,7 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                                   rows="3" 
                                   placeholder="Describe the damage in detail..."></textarea>
                         <div class="form-text text-danger">
-                            Please provide detailed information about any damage to the asset.
+                            Please provide detailed information about any damage to the consumable.
                         </div>
                     </div>
                     
@@ -127,7 +125,7 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="confirmReturn" required>
                             <label class="form-check-label" for="confirmReturn">
-                                I confirm that I have physically received and inspected this asset before marking it as returned.
+                                I confirm that I have physically received and inspected this consumable before marking it as returned.
                             </label>
                         </div>
                     </div>
@@ -144,7 +142,7 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                 </form>
                 <?php else: ?>
                 <div class="alert alert-danger mt-4">
-                    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to return this asset or it is not in a returnable status.
+                    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to return this consumable or it is not in a returnable status.
                 </div>
                 <?php endif; ?>
             </div>
@@ -166,8 +164,8 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
                     
                     <dt class="col-sm-5">Asset:</dt>
                     <dd class="col-sm-7">
-                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['asset_name']) ?></div>
-                        <small class="text-muted"><?= htmlspecialchars($withdrawal['asset_ref']) ?></small>
+                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['item_name']) ?></div>
+                        <small class="text-muted"><?= htmlspecialchars($withdrawal['item_ref']) ?></small>
                     </dd>
                     
                     <dt class="col-sm-5">Receiver:</dt>
@@ -262,7 +260,7 @@ function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
             </div>
             <div class="card-body">
                 <small class="text-muted">
-                    This asset has been out for 
+                    This consumable has been out for 
                     <strong><?= floor((time() - strtotime($withdrawal['released_at'])) / (60 * 60 * 24)) ?> days</strong>
                     <?php if ($withdrawal['expected_return']): ?>
                         <?php if (strtotime($withdrawal['expected_return']) < time()): ?>
@@ -319,13 +317,13 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
     
     if (!confirmCheckbox.checked) {
         e.preventDefault();
-        alert('Please confirm that you have inspected the asset.');
+        alert('Please confirm that you have inspected the consumable.');
         return false;
     }
     
     if (!conditionSelected) {
         e.preventDefault();
-        alert('Please select the asset condition.');
+        alert('Please select the consumable condition.');
         return false;
     }
     
@@ -340,9 +338,9 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
     }
     
     // Final confirmation
-    let confirmMessage = 'Are you sure you want to mark this asset as returned?';
+    let confirmMessage = 'Are you sure you want to mark this consumable as returned?';
     if (conditionSelected.value === 'damaged') {
-        confirmMessage += '\n\nNote: This asset will be marked as damaged and may require maintenance.';
+        confirmMessage += '\n\nNote: This consumable will be marked as damaged and may require maintenance.';
     }
     
     if (!confirm(confirmMessage)) {

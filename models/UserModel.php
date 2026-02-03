@@ -1116,7 +1116,7 @@ class UserModel extends BaseModel {
             // Get user's project-specific stats if assigned to a project
             if ($user['current_project_id']) {
                 // Assets in user's project
-                $sql = "SELECT COUNT(*) FROM assets WHERE project_id = ?";
+                $sql = "SELECT COUNT(*) FROM inventory_items WHERE project_id = ?";
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([$user['current_project_id']]);
                 $stats['project_assets'] = $stmt->fetchColumn();

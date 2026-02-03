@@ -337,7 +337,7 @@ class ProcurementModel extends BaseModel {
      */
     private function linkProcurementAsset($procurementId, $assetId, $serialNumber = null) {
         try {
-            $sql = "INSERT INTO procurement_assets (procurement_id, asset_id, serial_number, created_at) VALUES (?, ?, ?, NOW())";
+            $sql = "INSERT INTO procurement_inventory (procurement_order_id, inventory_item_id, serial_number, created_at) VALUES (?, ?, ?, NOW())";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([$procurementId, $assetId, $serialNumber]);
         } catch (Exception $e) {
@@ -403,7 +403,7 @@ class ProcurementModel extends BaseModel {
     private function generateAssetReference($prefix) {
         try {
             // Get next sequence number
-            $sql = "SELECT MAX(CAST(SUBSTRING(ref, LENGTH(?) + 1) AS UNSIGNED)) as max_seq FROM assets WHERE ref LIKE ?";
+            $sql = "SELECT MAX(CAST(SUBSTRING(ref, LENGTH(?) + 1) AS UNSIGNED)) as max_seq FROM inventory_items WHERE ref LIKE ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$prefix, $prefix . '%']);
             $result = $stmt->fetch();
@@ -645,13 +645,13 @@ class ProcurementModel extends BaseModel {
     public function getProcurementAssets($procurementId) {
         try {
             $sql = "
-                SELECT a.*, pa.serial_number as procurement_serial
-                FROM assets a
-                INNER JOIN procurement_assets pa ON a.id = pa.asset_id
-                WHERE pa.procurement_id = ?
+                SELECT a.*, pi.serial_number as procurement_serial
+                FROM inventory_items a
+                INNER JOIN procurement_inventory pi ON a.id = pi.inventory_item_id
+                WHERE pi.procurement_order_id = ?
                 ORDER BY a.created_at ASC
             ";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$procurementId]);
             return $stmt->fetchAll();
@@ -844,9 +844,9 @@ class ProcurementModel extends BaseModel {
             }
             
             $this->beginTransaction();
-            
+
             // Remove related data
-            $sql = "DELETE FROM procurement_assets WHERE procurement_id = ?";
+            $sql = "DELETE FROM procurement_inventory WHERE procurement_order_id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$id]);
             

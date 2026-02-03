@@ -220,7 +220,7 @@ ob_start();
                 <p><strong>Current Location:</strong><br><?= htmlspecialchars($transfer['from_project_name']) ?></p>
 
                 <div class="d-grid">
-                    <a href="?route=assets/view&id=<?= $transfer['asset_id'] ?>"
+                    <a href="?route=assets/view&id=<?= $transfer['inventory_item_id'] ?>"
                        class="btn btn-outline-primary btn-sm"
                        aria-label="View detailed asset information">
                         <i class="bi bi-eye me-1" aria-hidden="true"></i>View Asset Details

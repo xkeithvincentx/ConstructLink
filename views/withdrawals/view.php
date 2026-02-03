@@ -7,29 +7,7 @@ $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
 
-// RBAC helpers for MVA workflow
-function canVerifyWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Pending Verification' && in_array($userRole, $roleConfig['withdrawals/verify'] ?? []);
-}
-function canApproveWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Pending Approval' && in_array($userRole, $roleConfig['withdrawals/approve'] ?? []);
-}
-function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Approved' && in_array($userRole, $roleConfig['withdrawals/release'] ?? []);
-}
-function canReturnWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Released' && in_array($userRole, $roleConfig['withdrawals/return'] ?? []);
-}
-function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
-    if ($userRole === 'System Admin') return true;
-    $canCancelByRole = in_array($userRole, $roleConfig['withdrawals/cancel'] ?? []);
-    $canCancelByOwnership = $withdrawal['withdrawn_by'] == $userId;
-    return ($canCancelByRole || $canCancelByOwnership) && in_array($withdrawal['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'Released']);
-}
+// RBAC helpers are now in core/helpers.php
 ?>
 
 <!-- Navigation Actions (No Header - handled by layout) -->
@@ -128,26 +106,26 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
             </div>
         </div>
         
-        <!-- Asset Information -->
+        <!-- Consumable Information -->
         <div class="card mt-4">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-box me-2"></i>Asset Information
+                    <i class="bi bi-box me-2"></i>Consumable Information
                 </h6>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <dl class="row">
-                            <dt class="col-sm-5">Asset Reference:</dt>
+                            <dt class="col-sm-5">Consumable Reference:</dt>
                             <dd class="col-sm-7">
-                                <a href="?route=assets/view&id=<?= $withdrawal['asset_id'] ?>" class="text-decoration-none">
-                                    <?= htmlspecialchars($withdrawal['asset_ref']) ?>
+                                <a href="?route=inventory/view&id=<?= $withdrawal['inventory_item_id'] ?>" class="text-decoration-none">
+                                    <?= htmlspecialchars($withdrawal['item_ref']) ?>
                                 </a>
                             </dd>
-                            
-                            <dt class="col-sm-5">Asset Name:</dt>
-                            <dd class="col-sm-7"><?= htmlspecialchars($withdrawal['asset_name']) ?></dd>
+
+                            <dt class="col-sm-5">Consumable Name:</dt>
+                            <dd class="col-sm-7"><?= htmlspecialchars($withdrawal['item_name']) ?></dd>
                             
                             <dt class="col-sm-5">Category:</dt>
                             <dd class="col-sm-7"><?= htmlspecialchars($withdrawal['category_name']) ?></dd>
@@ -165,16 +143,17 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                             <dt class="col-sm-5">Current Status:</dt>
                             <dd class="col-sm-7">
                                 <?php
-                                $assetStatusClasses = [
+                                $consumableStatusClasses = [
                                     'available' => 'bg-success',
                                     'in_use' => 'bg-primary',
                                     'under_maintenance' => 'bg-warning',
                                     'retired' => 'bg-secondary'
                                 ];
-                                $assetStatusClass = $assetStatusClasses[$withdrawal['asset_status']] ?? 'bg-secondary';
+                                $itemStatus = $withdrawal['item_status'] ?? 'available';
+                                $consumableStatusClass = $consumableStatusClasses[$itemStatus] ?? 'bg-secondary';
                                 ?>
-                                <span class="badge <?= $assetStatusClass ?>">
-                                    <?= ucfirst(str_replace('_', ' ', $withdrawal['asset_status'])) ?>
+                                <span class="badge <?= $consumableStatusClass ?>">
+                                    <?= ucfirst(str_replace('_', ' ', $itemStatus)) ?>
                                 </span>
                             </dd>
                             
@@ -185,8 +164,94 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                 </div>
             </div>
         </div>
+
+        <!-- Return Information -->
+        <?php if ($withdrawal['status'] === 'Returned' && $withdrawal['returned_quantity']): ?>
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-box-arrow-down me-2"></i>Return Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Returned Quantity:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-success">
+                                    <?= htmlspecialchars($withdrawal['returned_quantity']) ?>
+                                    <?php if (!empty($withdrawal['unit'])): ?>
+                                        <?= htmlspecialchars($withdrawal['unit']) ?>
+                                    <?php endif; ?>
+                                </span>
+                                <div class="small text-muted mt-1">
+                                    of <?= htmlspecialchars($withdrawal['quantity']) ?> withdrawn
+                                </div>
+                            </dd>
+
+                            <dt class="col-sm-5">Return Condition:</dt>
+                            <dd class="col-sm-7">
+                                <?php
+                                $conditionBadges = [
+                                    'Good' => 'bg-success',
+                                    'Fair' => 'bg-warning text-dark',
+                                    'Damaged' => 'bg-danger',
+                                    'Consumed' => 'bg-secondary'
+                                ];
+                                $conditionBadge = $conditionBadges[$withdrawal['return_condition']] ?? 'bg-secondary';
+                                ?>
+                                <span class="badge <?= $conditionBadge ?>">
+                                    <?= htmlspecialchars($withdrawal['return_condition'] ?? 'Not Specified') ?>
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Returned By:</dt>
+                            <dd class="col-sm-7">
+                                <?= htmlspecialchars($withdrawal['returned_by_name'] ?? 'N/A') ?>
+                            </dd>
+
+                            <dt class="col-sm-5">Return Date:</dt>
+                            <dd class="col-sm-7">
+                                <?php if ($withdrawal['return_date']): ?>
+                                    <?= date('M j, Y g:i A', strtotime($withdrawal['return_date'])) ?>
+                                <?php else: ?>
+                                    N/A
+                                <?php endif; ?>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <?php if ($withdrawal['return_item_notes']): ?>
+                    <hr>
+                    <div class="mt-3">
+                        <h6 class="fw-semibold">Return Notes:</h6>
+                        <div class="alert alert-light mb-0">
+                            <?= nl2br(htmlspecialchars($withdrawal['return_item_notes'])) ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Return Impact -->
+                <hr>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Inventory Impact:</strong>
+                    <?php if ($withdrawal['return_condition'] === 'Consumed'): ?>
+                        This consumable was marked as consumed and was not restored to inventory.
+                    <?php else: ?>
+                        <?= htmlspecialchars($withdrawal['returned_quantity']) ?> units were restored to inventory in <?= htmlspecialchars($withdrawal['return_condition']) ?> condition.
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
-    
+
     <div class="col-lg-4">
         <!-- Actions -->
         <div class="card">
@@ -196,40 +261,40 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                 </h6>
             </div>
             <div class="card-body">
-                <?php if (canVerifyWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+                <?php if (canVerifyWithdrawal($withdrawal, $user)): ?>
                     <a href="?route=withdrawals/verify&id=<?= $withdrawal['id'] ?>" class="btn btn-warning w-100 mb-2">
                         <i class="bi bi-search me-1"></i>Verify
                     </a>
                 <?php endif; ?>
-                
-                <?php if (canApproveWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+
+                <?php if (canApproveWithdrawal($withdrawal, $user)): ?>
                     <a href="?route=withdrawals/approve&id=<?= $withdrawal['id'] ?>" class="btn btn-info w-100 mb-2">
                         <i class="bi bi-person-check me-1"></i>Approve
                     </a>
                 <?php endif; ?>
-                
-                <?php if (canReleaseWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+
+                <?php if (canReleaseWithdrawal($withdrawal, $user)): ?>
                     <a href="?route=withdrawals/release&id=<?= $withdrawal['id'] ?>" class="btn btn-success w-100 mb-2">
                         <i class="bi bi-check-circle me-1"></i>Release
                     </a>
                 <?php endif; ?>
-                
-                <?php if (canReturnWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+
+                <?php if (canReturnWithdrawal($withdrawal, $user)): ?>
                     <a href="?route=withdrawals/return&id=<?= $withdrawal['id'] ?>" class="btn btn-primary w-100 mb-2">
                         <i class="bi bi-arrow-return-left me-1"></i>Return
                     </a>
                 <?php endif; ?>
-                
-                <?php if (canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $user['id'])): ?>
+
+                <?php if (canCancelWithdrawal($withdrawal, $user)): ?>
                     <a href="?route=withdrawals/cancel&id=<?= $withdrawal['id'] ?>" class="btn btn-outline-danger w-100 mb-2">
                         <i class="bi bi-x-circle me-1"></i>Cancel
                     </a>
                 <?php endif; ?>
                 
                 <hr>
-                
-                <a href="?route=assets/view&id=<?= $withdrawal['asset_id'] ?>" class="btn btn-outline-primary w-100 mb-2">
-                    <i class="bi bi-box me-1"></i>View Asset Details
+
+                <a href="?route=inventory/view&id=<?= $withdrawal['inventory_item_id'] ?>" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-box me-1"></i>View Consumable Details
                 </a>
                 
                 <button onclick="window.print()" class="btn btn-outline-secondary w-100">
@@ -259,27 +324,48 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                         </div>
                     </div>
                     
-                    <!-- Asset Released -->
+                    <!-- Consumable Released -->
                     <?php if ($withdrawal['release_date']): ?>
                         <div class="timeline-item">
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6 class="timeline-title">Asset Released</h6>
+                                <h6 class="timeline-title">Consumable Released</h6>
                                 <p class="timeline-text">
-                                    Asset released by <?= htmlspecialchars($withdrawal['released_by_name'] ?? 'N/A') ?>
+                                    Consumable released by <?= htmlspecialchars($withdrawal['released_by_name'] ?? 'N/A') ?>
                                 </p>
                                 <small class="text-muted"><?= date('M j, Y g:i A', strtotime($withdrawal['release_date'])) ?></small>
                             </div>
                         </div>
                     <?php endif; ?>
-                    
-                    <!-- Asset Returned -->
+
+                    <!-- Consumable Returned -->
                     <?php if ($withdrawal['actual_return']): ?>
                         <div class="timeline-item">
-                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
-                                <h6 class="timeline-title">Asset Returned</h6>
-                                <p class="timeline-text">Asset returned and marked as available</p>
+                                <h6 class="timeline-title">Consumable Returned</h6>
+                                <p class="timeline-text">
+                                    <?php if ($withdrawal['returned_quantity']): ?>
+                                        <strong><?= htmlspecialchars($withdrawal['returned_quantity']) ?></strong>
+                                        <?php if (!empty($withdrawal['unit'])): ?>
+                                            <?= htmlspecialchars($withdrawal['unit']) ?>
+                                        <?php endif; ?>
+                                        returned
+                                    <?php else: ?>
+                                        Consumable returned
+                                    <?php endif; ?>
+                                    <?php if ($withdrawal['returned_by_name']): ?>
+                                        by <?= htmlspecialchars($withdrawal['returned_by_name']) ?>
+                                    <?php endif; ?>
+                                    <?php if ($withdrawal['return_condition']): ?>
+                                        in <span class="badge badge-sm bg-secondary"><?= htmlspecialchars($withdrawal['return_condition']) ?></span> condition
+                                    <?php endif; ?>
+                                </p>
+                                <?php if ($withdrawal['return_item_notes']): ?>
+                                    <div class="alert alert-light alert-sm mt-2 mb-2">
+                                        <small><strong>Note:</strong> <?= htmlspecialchars($withdrawal['return_item_notes']) ?></small>
+                                    </div>
+                                <?php endif; ?>
                                 <small class="text-muted"><?= date('M j, Y g:i A', strtotime($withdrawal['actual_return'])) ?></small>
                             </div>
                         </div>
@@ -333,9 +419,49 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                     <?php endif; ?>
                 <?php elseif ($withdrawal['status'] === 'Returned'): ?>
                     <div class="text-center">
-                        <i class="bi bi-check-circle-fill text-success display-4"></i>
-                        <h6 class="mt-2">Asset Returned</h6>
-                        <small class="text-muted">Withdrawal completed successfully</small>
+                        <i class="bi bi-box-arrow-down-fill text-success display-4"></i>
+                        <h6 class="mt-3 mb-2">Consumable Returned</h6>
+
+                        <?php if ($withdrawal['returned_quantity']): ?>
+                            <div class="mb-3">
+                                <span class="badge bg-success fs-6 px-3 py-2">
+                                    <?= htmlspecialchars($withdrawal['returned_quantity']) ?>
+                                    <?php if (!empty($withdrawal['unit'])): ?>
+                                        <?= htmlspecialchars($withdrawal['unit']) ?>
+                                    <?php endif; ?>
+                                </span>
+                                <div class="small text-muted mt-1">
+                                    of <?= htmlspecialchars($withdrawal['quantity']) ?> withdrawn
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($withdrawal['return_condition']): ?>
+                            <div class="mb-2">
+                                <small class="text-muted">Condition:</small>
+                                <?php
+                                $conditionBadges = [
+                                    'Good' => 'bg-success',
+                                    'Fair' => 'bg-warning text-dark',
+                                    'Damaged' => 'bg-danger',
+                                    'Consumed' => 'bg-secondary'
+                                ];
+                                $conditionBadge = $conditionBadges[$withdrawal['return_condition']] ?? 'bg-secondary';
+                                ?>
+                                <div>
+                                    <span class="badge <?= $conditionBadge ?>">
+                                        <?= htmlspecialchars($withdrawal['return_condition']) ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($withdrawal['return_date']): ?>
+                            <hr class="my-2">
+                            <small class="text-muted">
+                                Returned on <?= date('M j, Y', strtotime($withdrawal['return_date'])) ?>
+                            </small>
+                        <?php endif; ?>
                     </div>
                 <?php elseif ($withdrawal['status'] === 'Pending Verification'): ?>
                     <div class="text-center">
@@ -358,8 +484,8 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                 <?php elseif ($withdrawal['status'] === 'Released'): ?>
                     <div class="text-center">
                         <i class="bi bi-check-circle-fill text-success display-4"></i>
-                        <h6 class="mt-2">Asset Released</h6>
-                        <small class="text-muted">Asset released</small>
+                        <h6 class="mt-2">Consumable Released</h6>
+                        <small class="text-muted">Consumable released</small>
                     </div>
                 <?php elseif ($withdrawal['status'] === 'Canceled'): ?>
                     <div class="text-center">

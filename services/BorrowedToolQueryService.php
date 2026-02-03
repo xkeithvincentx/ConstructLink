@@ -148,7 +148,7 @@ class BorrowedToolQueryService {
                    CASE WHEN bt.batch_id IS NULL THEN bt.id ELSE NULL END as single_id,
                    MIN(bt.id) as min_id
             FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
+            INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN users u ON bt.issued_by = u.id
@@ -224,7 +224,7 @@ class BorrowedToolQueryService {
                            ELSE COALESCE(btb.status, bt.status)
                        END as current_status
                 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 INNER JOIN categories c ON a.category_id = c.id
                 INNER JOIN projects p ON a.project_id = p.id
                 LEFT JOIN users u ON bt.issued_by = u.id
@@ -289,7 +289,7 @@ class BorrowedToolQueryService {
                    p.name as project_name,
                    u.full_name as issued_by_name
             FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
+            INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN users u ON bt.issued_by = u.id
@@ -335,7 +335,7 @@ class BorrowedToolQueryService {
                    ur.full_name as returned_by_name,
                    uc.full_name as canceled_by_name
             FROM borrowed_tools bt
-            INNER JOIN assets a ON bt.asset_id = a.id
+            INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
             INNER JOIN categories c ON a.category_id = c.id
             INNER JOIN projects p ON a.project_id = p.id
             LEFT JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id

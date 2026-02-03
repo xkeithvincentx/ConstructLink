@@ -1047,15 +1047,16 @@ function canApproveRequest($request, $userRole) {
  * Get allowed request types for user role
  */
 function getAllowedRequestTypes($userRole) {
-    $allTypes = ['Material', 'Tool', 'Equipment', 'Service', 'Petty Cash', 'Other'];
-    
+    $allTypes = ['Material', 'Tool', 'Equipment', 'Service', 'Petty Cash', 'Restock', 'Other'];
+
     switch ($userRole) {
         case 'Site Inventory Clerk':
-            return ['Material', 'Tool'];
+            return ['Material', 'Tool', 'Restock'];
         case 'Project Manager':
             return array_diff($allTypes, ['Petty Cash']);
         case 'System Admin':
         case 'Asset Director':
+        case 'Finance Director':
         case 'Procurement Officer':
         case 'Warehouseman':
             return $allTypes;
@@ -1309,10 +1310,31 @@ function canMakeWithdrawal($withdrawal, $user) {
     return $user['role_name'] === 'Warehouseman' && $withdrawal['project_id'] == $user['current_project_id'];
 }
 function canVerifyWithdrawal($withdrawal, $user) {
-    return $user['role_name'] === 'Site Inventory Clerk' && $withdrawal['project_id'] == $user['current_project_id'] && $withdrawal['status'] === 'Pending';
+    $roleConfig = require APP_ROOT . '/config/roles.php';
+    if ($user['role_name'] === 'System Admin') return true;
+    return $withdrawal['status'] === 'Pending Verification' && in_array($user['role_name'], $roleConfig['withdrawals/verify'] ?? []);
 }
-function canAuthorizeWithdrawal($withdrawal, $user) {
-    return $user['role_name'] === 'Project Manager' && $withdrawal['project_manager_id'] == $user['id'] && $withdrawal['status'] === 'For Approval';
+function canApproveWithdrawal($withdrawal, $user) {
+    $roleConfig = require APP_ROOT . '/config/roles.php';
+    if ($user['role_name'] === 'System Admin') return true;
+    return $withdrawal['status'] === 'Pending Approval' && in_array($user['role_name'], $roleConfig['withdrawals/approve'] ?? []);
+}
+function canReleaseWithdrawal($withdrawal, $user) {
+    $roleConfig = require APP_ROOT . '/config/roles.php';
+    if ($user['role_name'] === 'System Admin') return true;
+    return $withdrawal['status'] === 'Approved' && in_array($user['role_name'], $roleConfig['withdrawals/release'] ?? []);
+}
+function canReturnWithdrawal($withdrawal, $user) {
+    $roleConfig = require APP_ROOT . '/config/roles.php';
+    if ($user['role_name'] === 'System Admin') return true;
+    return $withdrawal['status'] === 'Released' && in_array($user['role_name'], $roleConfig['withdrawals/return'] ?? []);
+}
+function canCancelWithdrawal($withdrawal, $user) {
+    $roleConfig = require APP_ROOT . '/config/roles.php';
+    if ($user['role_name'] === 'System Admin') return true;
+    $canCancelByRole = in_array($user['role_name'], $roleConfig['withdrawals/cancel'] ?? []);
+    $canCancelByOwnership = $withdrawal['withdrawn_by'] == $user['id'];
+    return ($canCancelByRole || $canCancelByOwnership) && in_array($withdrawal['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'Released']);
 }
 
 // --- INCIDENTS ---

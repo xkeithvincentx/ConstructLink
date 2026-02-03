@@ -509,7 +509,7 @@ class AssetScanner {
                     <i class="bi bi-eye me-1"></i>View Details
                 </a>
                 ${asset.status === 'available' ? `
-                    <a href="?route=withdrawals/create&asset_id=${asset.id}" class="btn btn-outline-success btn-sm">
+                    <a href="?route=withdrawals/create-batch&asset_id=${asset.id}" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-box-arrow-right me-1"></i>Withdraw Asset
                     </a>
                 ` : ''}

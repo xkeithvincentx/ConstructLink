@@ -605,7 +605,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
                     
                     <?php if ($asset['status'] === 'available'): ?>
                         <?php if ($auth->hasRole(['System Admin', 'Project Manager', 'Site Inventory Clerk'])): ?>
-                            <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-outline-success btn-sm">
+                            <a href="?route=withdrawals/create-batch&asset_id=<?= $asset['id'] ?>" class="btn btn-outline-success btn-sm">
                                 <i class="bi bi-box-arrow-right me-1"></i>Withdraw Asset
                             </a>
                         <?php endif; ?>

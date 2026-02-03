@@ -1079,7 +1079,7 @@ class AssetTagController {
                     SUM(CASE WHEN qr_tag_printed IS NOT NULL AND qr_tag_applied IS NULL THEN 1 ELSE 0 END) as needs_application,
                     SUM(CASE WHEN qr_tag_applied IS NOT NULL AND qr_tag_verified IS NULL THEN 1 ELSE 0 END) as needs_verification,
                     SUM(CASE WHEN qr_tag_verified IS NOT NULL THEN 1 ELSE 0 END) as fully_tagged
-                FROM assets 
+                FROM inventory_items 
                 {$whereClause}
             ");
             
@@ -1156,7 +1156,7 @@ class AssetTagController {
             // Get total count
             $countSql = "
                 SELECT COUNT(*) 
-                FROM assets a 
+                FROM inventory_items a 
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 {$whereClause}
@@ -1173,7 +1173,7 @@ class AssetTagController {
                 SELECT a.*, 
                        c.name as category_name, c.is_consumable,
                        p.name as project_name
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 {$whereClause}

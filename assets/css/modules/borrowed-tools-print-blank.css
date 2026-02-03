@@ -35,7 +35,7 @@ body {
 /* Each Quarter Form */
 .form-quarter {
     border: 1px dashed #999; /* Dashed cutting guide */
-    padding: 3mm;
+    padding: 2mm;
     overflow: hidden;
     page-break-inside: avoid;
 }
@@ -64,12 +64,12 @@ body {
 .form-header {
     text-align: center;
     border-bottom: 2px solid #000;
-    padding-bottom: 1mm;
-    margin-bottom: 2mm;
+    padding-bottom: 0.5mm;
+    margin-bottom: 1mm;
 }
 
 .form-header h1 {
-    font-size: 8pt;
+    font-size: 7pt;
     font-weight: bold;
     line-height: 1.1;
 }
@@ -80,16 +80,17 @@ body {
     color: #666;
 }
 
-/* Info Section - Compact */
+/* Info Section - Compact (2-row layout) */
 .info-section {
-    font-size: 6pt;
-    margin-bottom: 2mm;
+    font-size: 5pt;
+    margin-bottom: 1mm;
 }
 
 .info-row {
     display: flex;
-    gap: 2mm;
-    margin-bottom: 1mm;
+    gap: 0.5mm;
+    margin-bottom: 0.3mm;
+    line-height: 1.1;
 }
 
 .info-field {
@@ -100,14 +101,15 @@ body {
 
 .info-label {
     font-weight: bold;
-    margin-right: 1mm;
+    margin-right: 0.3mm;
     white-space: nowrap;
+    font-size: 4.5pt;
 }
 
 .info-value {
     border-bottom: 1px solid #000;
     flex: 1;
-    min-height: 3mm;
+    min-height: 2.5mm;
 }
 
 /* Equipment Table */
@@ -115,35 +117,38 @@ body {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #000;
-    margin-bottom: 2mm;
-    font-size: 5.5pt;
+    margin-bottom: 1mm;
+    font-size: 4.5pt;
+    line-height: 1.1;
 }
 
 .equipment-table th {
     background: #000;
     color: #fff;
-    padding: 0.5mm;
-    font-size: 5pt;
+    padding: 0.3mm;
+    font-size: 4.5pt;
     font-weight: bold;
     text-align: center;
     border: 1px solid #000;
 }
 
 .equipment-table td {
-    padding: 0.5mm 1mm;
+    padding: 0.3mm 0.5mm;
     border: 0.5px solid #999;
     vertical-align: middle;
+    height: 3.5mm;
 }
 
 .category-row {
     background: #d0d0d0;
     font-weight: bold;
-    font-size: 6pt;
+    font-size: 5pt;
+    height: 3mm;
 }
 
 .checkbox {
-    width: 2.5mm;
-    height: 2.5mm;
+    width: 2mm;
+    height: 2mm;
     border: 1px solid #000;
     display: inline-block;
 }
@@ -157,30 +162,83 @@ body {
     background: #f0f0f0;
 }
 
-/* Signature Section - Simplified */
+/* Others Section - Numbered Rows */
+.others-row-number {
+    display: inline-block;
+    font-weight: bold;
+    margin-right: 1mm;
+    min-width: 3mm;
+}
+
+/* Totals Section - Anti-Fraud */
+.totals-section {
+    background: #e8e8e8;
+    border: 1.5px solid #000;
+    padding: 1mm;
+    margin: 1mm 0;
+    font-size: 5pt;
+    line-height: 1.2;
+}
+
+.totals-header {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0.5mm;
+    font-size: 5pt;
+    text-transform: uppercase;
+}
+
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.5mm 0;
+}
+
+.totals-label {
+    font-weight: bold;
+    font-size: 4.5pt;
+}
+
+.totals-input-box {
+    display: inline-block;
+    border-bottom: 1px solid #000;
+    min-width: 12mm;
+    height: 3mm;
+    background: #fff;
+}
+
+/* Signature Section - Compact with Print Name + Signature */
 .signature-section {
     display: flex;
-    gap: 1mm;
-    font-size: 5pt;
+    gap: 0.5mm;
+    font-size: 4pt;
+    margin-top: 1mm;
 }
 
 .sig-box {
     flex: 1;
     text-align: center;
     border: 1px solid #000;
-    padding: 1mm;
-    min-height: 12mm;
+    padding: 0.5mm;
+    min-height: 10mm;
 }
 
 .sig-label {
     font-weight: bold;
-    margin-bottom: 0.5mm;
+    margin-bottom: 0.3mm;
+    font-size: 4.5pt;
 }
 
-.sig-space {
-    min-height: 8mm;
+.sig-line {
+    min-height: 3mm;
     border-bottom: 1px solid #000;
-    margin-bottom: 0.5mm;
+    margin: 0.3mm 0;
+}
+
+.sig-text-small {
+    font-size: 3.5pt;
+    margin-top: 0.2mm;
 }
 
 .date-field {
@@ -192,11 +250,18 @@ body {
 /* Footer */
 .form-footer {
     text-align: center;
-    margin-top: 1mm;
-    padding-top: 0.5mm;
+    margin-top: 0.5mm;
+    padding-top: 0.3mm;
     border-top: 0.5px solid #ccc;
-    font-size: 4pt;
+    font-size: 3.5pt;
     color: #666;
+    line-height: 1.2;
+}
+
+.footer-instruction {
+    font-weight: bold;
+    color: #000;
+    margin-top: 0.2mm;
 }
 
 /* Print Controls - Screen Only */

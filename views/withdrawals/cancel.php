@@ -6,12 +6,8 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
-function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
-    if ($userRole === 'System Admin') return true;
-    $canCancelByRole = in_array($userRole, $roleConfig['withdrawals/cancel'] ?? []);
-    $canCancelByOwnership = $withdrawal['withdrawn_by'] == $userId;
-    return ($canCancelByRole || $canCancelByOwnership) && in_array($withdrawal['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'Released']);
-}
+
+// RBAC helpers are now in core/helpers.php
 ?>
 
 <!-- Navigation Actions (No Header - handled by layout) -->
@@ -44,11 +40,11 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                 <?php if ($withdrawal['status'] === 'released'): ?>
                     <div class="alert alert-warning" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Asset Already Released:</strong> This asset has already been released. Canceling this withdrawal will:
+                        <strong>Consumable Already Released:</strong> This asset has already been released. Canceling this withdrawal will:
                         <ul class="mb-0 mt-2">
-                            <li>Return the asset status to "Available"</li>
+                            <li>Return the consumable status to "Available"</li>
                             <li>Notify relevant parties of the cancellation</li>
-                            <li>Require the asset to be physically returned to inventory</li>
+                            <li>Require the consumable to be physically returned to inventory</li>
                         </ul>
                     </div>
                 <?php else: ?>
@@ -57,13 +53,13 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                         <strong>Pending Request Cancellation:</strong> This withdrawal request is still pending. Canceling will:
                         <ul class="mb-0 mt-2">
                             <li>Remove the request from the approval queue</li>
-                            <li>Keep the asset status as "Available"</li>
+                            <li>Keep the consumable status as "Available"</li>
                             <li>Notify the requester of the cancellation</li>
                         </ul>
                     </div>
                 <?php endif; ?>
                 
-                <?php if (canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $user['id'])): ?>
+                <?php if (canCancelWithdrawal($withdrawal, $user)): ?>
                 <form method="POST" action="?route=withdrawals/cancel&id=<?= $withdrawal['id'] ?>" id="cancelForm">
                     <?= CSRFProtection::getTokenField() ?>
                     
@@ -262,8 +258,8 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                     
                     <dt class="col-sm-5">Asset:</dt>
                     <dd class="col-sm-7">
-                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['asset_name'] ?? 'Unknown Asset') ?></div>
-                        <small class="text-muted"><?= htmlspecialchars($withdrawal['asset_ref'] ?? 'N/A') ?></small>
+                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['item_name'] ?? 'Unknown Asset') ?></div>
+                        <small class="text-muted"><?= htmlspecialchars($withdrawal['item_ref'] ?? 'N/A') ?></small>
                     </dd>
                     
                     <dt class="col-sm-5">Receiver:</dt>
@@ -347,7 +343,7 @@ function canCancelWithdrawal($withdrawal, $userRole, $roleConfig, $userId) {
                         </a>
                     <?php endif; ?>
                     
-                    <a href="?route=withdrawals/create" class="btn btn-outline-info btn-sm">
+                    <a href="?route=withdrawals/create-batch" class="btn btn-outline-info btn-sm">
                         <i class="bi bi-plus-circle me-1"></i>Create New Request
                     </a>
                 </div>

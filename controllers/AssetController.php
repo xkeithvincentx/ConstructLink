@@ -30,10 +30,32 @@
  * - Database: `assets` table, `categories` table (has is_consumable and asset_type fields)
  */
 
+// Middleware Dependencies
+require_once APP_ROOT . '/middleware/PermissionMiddleware.php';
+
+// Utility Dependencies
+require_once APP_ROOT . '/utils/FormDataProvider.php';
+
+// Phase 2 Refactoring - Service Layer Dependencies
+require_once APP_ROOT . '/services/Asset/AssetPermissionService.php';
+require_once APP_ROOT . '/services/Asset/AssetStatisticsService.php';
+
+// Phase 3 Refactoring - Additional Service Layer Dependencies
+require_once APP_ROOT . '/services/Asset/AssetLocationService.php';
+require_once APP_ROOT . '/services/Asset/AssetQueryService.php';
+require_once APP_ROOT . '/services/Asset/AssetProcurementService.php';
+require_once APP_ROOT . '/services/Asset/AssetWorkflowService.php';
+
 class AssetController {
     private $auth;
     private $assetModel;
     private $db;
+
+    // Phase 3: Service instances
+    private $locationService;
+    private $queryService;
+    private $procurementService;
+    private $workflowService;
 
     public function __construct() {
         $this->auth = Auth::getInstance();
@@ -41,6 +63,12 @@ class AssetController {
 
         // Initialize database connection using Database class
         $this->db = Database::getInstance()->getConnection();
+
+        // Initialize Phase 3 services
+        $this->locationService = new AssetLocationService($this->db, $this->assetModel);
+        $this->queryService = new AssetQueryService($this->db);
+        $this->procurementService = new AssetProcurementService($this->db, $this->assetModel);
+        $this->workflowService = new AssetWorkflowService($this->db, $this->assetModel, $this->auth);
 
         // Ensure user is authenticated
         if (!$this->auth->isAuthenticated()) {
@@ -58,11 +86,7 @@ class AssetController {
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
         
-        if (!in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.index');
         
         $page = (int)($_GET['page'] ?? 1);
 
@@ -90,9 +114,9 @@ class AssetController {
             $result = $this->assetModel->getAssetsWithFilters($filters, $page, $perPage);
             $assets = $result['data'] ?? [];
             $pagination = $result['pagination'] ?? [];
-            
+
             // Enhance asset data with consumable info and units
-            $assets = $this->enhanceAssetData($assets);
+            $assets = $this->queryService->enhanceAssetData($assets);
             
             // Get role-specific asset statistics for dashboard cards (from database)
             $currentProjectId = $currentUser['current_project_id'] ?? null;
@@ -107,20 +131,10 @@ class AssetController {
             // Get overdue assets for alerts
             $overdueAssets = $this->assetModel->getOverdueAssets('withdrawal');
 
-            // Get filter options
-            $categoryModel = new CategoryModel();
-            $projectModel = new ProjectModel();
-            $vendorModel = new VendorModel();
-
-            $categories = $categoryModel->getActiveCategories();
-            $projects = $projectModel->getActiveProjects();
-            $vendors = $vendorModel->findAll([], 'name ASC');
-
-            // Load brands from asset_brands table (not makers table)
-            $brandQuery = "SELECT id, official_name, quality_tier FROM asset_brands WHERE is_active = 1 ORDER BY official_name ASC";
-            $stmt = $this->db->prepare($brandQuery);
-            $stmt->execute();
-            $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Get filter options using FormDataProvider
+            $formProvider = new FormDataProvider();
+            $filterOptions = $formProvider->getAssetFilterOptions();
+            extract($filterOptions); // Extracts: categories, projects, vendors, brands
             
             $pageTitle = 'Inventory - ConstructLink™';
             $pageHeader = 'Inventory Management';
@@ -135,9 +149,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/index.php';
             
         } catch (Exception $e) {
-            error_log("Asset listing error: " . $e->getMessage());
-            $error = 'Failed to load assets';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load assets');
         }
     }
     
@@ -252,9 +264,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/view.php';
             
         } catch (Exception $e) {
-            error_log("Asset view error: " . $e->getMessage());
-            $error = 'Failed to load asset details';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load asset details');
         }
     }
     
@@ -262,16 +272,8 @@ class AssetController {
      * Display create asset form
      */
     public function create() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        $canMaker = in_array($userRole, ['Procurement Officer', 'Warehouseman']);
-        $canVerifier = ($userRole === 'Asset Director');
-        $canAuthorizer = ($userRole === 'System Admin');
-        if (!$canMaker && !$canVerifier && !$canAuthorizer) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        // Check permissions using config
+        PermissionMiddleware::requirePermission('assets/create');
         
         $errors = [];
         $messages = [];
@@ -351,27 +353,13 @@ class AssetController {
         
         // Get form options
         try {
-            $categoryModel = new CategoryModel();
-            $projectModel = new ProjectModel();
-            $makerModel = new MakerModel();
-            $vendorModel = new VendorModel();
-            $clientModel = new ClientModel();
-            $procurementModel = new ProcurementModel();
-            
-            $categories = $categoryModel->getActiveCategories(); // Includes business fields
-            $projects = $projectModel->getActiveProjects();
-            $makers = $makerModel->findAll([], 'name ASC');
-            $vendors = $vendorModel->findAll([], 'name ASC');
-            $clients = $clientModel->findAll([], 'name ASC');
-            
-            // Get brands from database
-            $db = Database::getInstance()->getConnection();
-            $brandQuery = "SELECT id, official_name, quality_tier FROM asset_brands WHERE is_active = 1 ORDER BY official_name ASC";
-            $brandStmt = $db->query($brandQuery);
-            $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Get both legacy and multi-item procurement sources
-            $procurements = $this->getCombinedProcurementSources();
+            // Load all form options using FormDataProvider
+            $formProvider = new FormDataProvider();
+            $formOptions = $formProvider->getAssetFormOptions();
+            extract($formOptions); // Extracts: categories, projects, makers, vendors, clients, brands
+
+            // Get procurement sources separately (not in FormDataProvider)
+            $procurements = $this->procurementService->getCombinedProcurementSources();
             
         } catch (Exception $e) {
             error_log("Form options loading error: " . $e->getMessage());
@@ -421,9 +409,10 @@ class AssetController {
                 return;
             }
             
-            // Status-based permission checking
-            $canEdit = $this->checkEditPermissions($userRole, $userId, $asset);
-            
+            // Status-based permission checking using AssetPermissionService
+            $permissionService = new AssetPermissionService();
+            $canEdit = $permissionService->canEditAsset($userRole, $userId, $asset);
+
             if (!$canEdit['allowed']) {
                 // Show friendly message instead of 403 error
                 $errorMessage = $canEdit['message'];
@@ -492,25 +481,11 @@ class AssetController {
                 }
             }
             
-            // Get form options
-            $categoryModel = new CategoryModel();
-            $projectModel = new ProjectModel();
-            $makerModel = new MakerModel();
-            $vendorModel = new VendorModel();
-            $clientModel = new ClientModel();
-            
-            $categories = $categoryModel->getActiveCategories(); // Includes business fields
-            $projects = $projectModel->getActiveProjects();
-            $makers = $makerModel->findAll([], 'name ASC');
-            $vendors = $vendorModel->findAll([], 'name ASC');
-            $clients = $clientModel->findAll([], 'name ASC');
-            
-            // Get brands from database (missing from edit form)
-            $db = Database::getInstance()->getConnection();
-            $brandQuery = "SELECT id, official_name, quality_tier FROM asset_brands WHERE is_active = 1 ORDER BY official_name ASC";
-            $brandStmt = $db->query($brandQuery);
-            $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
-            
+            // Get form options using FormDataProvider
+            $formProvider = new FormDataProvider();
+            $formOptions = $formProvider->getAssetFormOptions();
+            extract($formOptions); // Extracts: categories, projects, makers, vendors, clients, brands
+
             $pageTitle = 'Edit Asset - ' . $asset['name'];
             $pageHeader = 'Edit Asset: ' . $asset['ref'];
             $breadcrumbs = [
@@ -522,9 +497,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/edit.php';
             
         } catch (Exception $e) {
-            error_log("Asset edit error: " . $e->getMessage());
-            $error = 'Failed to load asset for editing';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load asset for editing');
         }
     }
     
@@ -532,17 +505,14 @@ class AssetController {
      * Delete asset (AJAX)
      */
     public function delete() {
-        // Check permissions - only System Admin and Asset Director can delete
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        if (!in_array($userRole, ['System Admin', 'Asset Director'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.delete')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -564,8 +534,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Asset deletion error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to delete asset']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'delete asset');
+            echo json_encode($errorData);
         }
     }
     
@@ -573,17 +543,14 @@ class AssetController {
      * Update asset status (AJAX)
      */
     public function updateStatus() {
-        // Check permissions
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        if (!in_array($userRole, ['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.update_status')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -607,8 +574,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Asset status update error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to update asset status']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'update asset status');
+            echo json_encode($errorData);
         }
     }
     
@@ -636,11 +603,7 @@ class AssetController {
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
         
-        if (!in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Procurement Officer'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.export');
         
         try {
             // Build filters from GET parameters
@@ -680,17 +643,14 @@ class AssetController {
      * Bulk update asset status
      */
     public function bulkUpdate() {
-        // Check permissions
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        if (!in_array($userRole, ['System Admin', 'Asset Director'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.bulk_update')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -728,8 +688,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Bulk update error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to perform bulk update']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'bulk update');
+            echo json_encode($errorData);
         }
     }
     
@@ -741,11 +701,7 @@ class AssetController {
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
         
-        if (!in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director', 'Project Manager'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.utilization');
         
         try {
             $projectId = $_GET['project_id'] ?? null;
@@ -766,9 +722,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/utilization.php';
             
         } catch (Exception $e) {
-            error_log("Asset utilization error: " . $e->getMessage());
-            $error = 'Failed to load utilization report';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load utilization report');
         }
     }
     
@@ -780,11 +734,7 @@ class AssetController {
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
         
-        if (!in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.depreciation');
         
         try {
             $projectId = $_GET['project_id'] ?? null;
@@ -805,9 +755,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/depreciation.php';
             
         } catch (Exception $e) {
-            error_log("Asset depreciation error: " . $e->getMessage());
-            $error = 'Failed to load depreciation report';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load depreciation report');
         }
     }
     
@@ -815,17 +763,14 @@ class AssetController {
      * Generate assets from procurement (called after procurement receipt)
      */
     public function generateFromProcurement() {
-        // Check permissions - only Warehouseman and Procurement Officer
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        if (!in_array($userRole, ['System Admin', 'Procurement Officer', 'Warehouseman'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.generate_from_procurement')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -848,8 +793,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Generate assets from procurement error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to generate assets']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'generate assets from procurement');
+            echo json_encode($errorData);
         }
     }
     
@@ -861,11 +806,7 @@ class AssetController {
         $userRole = $currentUser['role_name'] ?? '';
         
         // Check permissions - only Warehouseman can create legacy assets
-        if (!in_array($userRole, ['Warehouseman', 'System Admin'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.legacy_create');
         
         $errors = [];
         $messages = [];
@@ -905,11 +846,19 @@ class AssetController {
             ];
             
             try {
+                // Add inventory_source to mark as legacy workflow
+                $formData['inventory_source'] = 'legacy';
+
                 $result = $this->assetModel->createLegacyAsset($formData);
-                
+
                 if ($result['success']) {
-                    // Handle different response types (single asset vs multiple assets)
-                    if (isset($result['assets'])) {
+                    // Check if this was a duplicate item with quantity addition
+                    if (isset($result['is_duplicate']) && $result['is_duplicate'] === true) {
+                        // Duplicate detected - quantity was added to existing item
+                        $existingItem = $result['existing_item'];
+                        $quantityAdded = $result['quantity_added'];
+                        $messages[] = "Duplicate item detected! Added {$quantityAdded} {$existingItem['unit']} to existing item: <strong>{$existingItem['name']}</strong> (Ref: {$existingItem['ref']}). The quantity addition is pending verification through the MVA workflow.";
+                    } elseif (isset($result['assets'])) {
                         // Multiple assets created (non-consumable)
                         $count = $result['count'];
                         $type = $result['type'];
@@ -926,7 +875,7 @@ class AssetController {
                         $errors[] = $result['message'] ?? 'Failed to create legacy asset';
                     }
                 }
-                
+
             } catch (Exception $e) {
                 error_log("Legacy asset creation error: " . $e->getMessage());
                 $errors[] = 'Failed to create legacy asset';
@@ -934,21 +883,11 @@ class AssetController {
         }
         
         try {
-            // Get dropdown data with business classification info
-            $categoryModel = new CategoryModel();
-            $projectModel = new ProjectModel();
-            $makerModel = new MakerModel();
-            
-            $categories = $categoryModel->getActiveCategories(); // This includes business fields
-            $projects = $projectModel->getActiveProjects();
-            $makers = $makerModel->findAll([], 'name ASC');
-            
-            // Get brands from database
-            $db = Database::getInstance()->getConnection();
-            $brandQuery = "SELECT id, official_name, quality_tier FROM asset_brands WHERE is_active = 1 ORDER BY official_name ASC";
-            $brandStmt = $db->query($brandQuery);
-            $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
-            
+            // Get form options using FormDataProvider
+            $formProvider = new FormDataProvider();
+            $formOptions = $formProvider->getAssetFormOptions();
+            extract($formOptions); // Extracts: categories, projects, makers, vendors, clients, brands
+
             $pageTitle = 'Add Legacy Item - ConstructLink™';
             $pageHeader = 'Add Legacy Item';
             $breadcrumbs = [
@@ -960,9 +899,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/legacy_create.php';
             
         } catch (Exception $e) {
-            error_log("Legacy create view error: " . $e->getMessage());
-            $error = 'Failed to load legacy asset creation form';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load legacy asset creation form');
         }
     }
 
@@ -974,11 +911,7 @@ class AssetController {
         $userRole = $currentUser['role_name'] ?? '';
         
         // Check permissions - only Site Inventory Clerk
-        if (!in_array($userRole, ['Site Inventory Clerk', 'System Admin'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.verification_dashboard');
         
         try {
             // Get assets pending verification
@@ -998,9 +931,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/verification_dashboard.php';
             
         } catch (Exception $e) {
-            error_log("Verification dashboard error: " . $e->getMessage());
-            $error = 'Failed to load verification dashboard';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load verification dashboard');
         }
     }
 
@@ -1012,11 +943,7 @@ class AssetController {
         $userRole = $currentUser['role_name'] ?? '';
         
         // Check permissions - only Project Manager
-        if (!in_array($userRole, ['Project Manager', 'System Admin'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.authorization_dashboard');
         
         try {
             // Get assets pending authorization
@@ -1036,9 +963,7 @@ class AssetController {
             include APP_ROOT . '/views/assets/authorization_dashboard.php';
             
         } catch (Exception $e) {
-            error_log("Authorization dashboard error: " . $e->getMessage());
-            $error = 'Failed to load authorization dashboard';
-            include APP_ROOT . '/views/errors/500.php';
+            ControllerErrorHandler::handleException($e, 'load authorization dashboard');
         }
     }
 
@@ -1046,26 +971,16 @@ class AssetController {
      * Verify legacy asset (AJAX endpoint)
      */
     public function verifyAsset() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
-        
+
         $assetId = (int)($_POST['asset_id'] ?? 0);
         $notes = Validator::sanitize($_POST['notes'] ?? '');
         
@@ -1079,8 +994,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Verify asset error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to verify asset']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'verify asset');
+            echo json_encode($errorData);
         }
     }
 
@@ -1088,24 +1003,14 @@ class AssetController {
      * Authorize legacy asset (AJAX endpoint)
      */
     public function authorizeAsset() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Project Manager', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
         
         $assetId = (int)($_POST['asset_id'] ?? 0);
@@ -1121,8 +1026,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Authorize asset error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to authorize asset']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'authorize asset');
+            echo json_encode($errorData);
         }
     }
 
@@ -1130,24 +1035,14 @@ class AssetController {
      * Batch verify assets (AJAX endpoint)
      */
     public function batchVerify() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
         
         $assetIds = $_POST['asset_ids'] ?? [];
@@ -1163,8 +1058,8 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Batch verify error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to batch verify assets']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'batch verify assets');
+            echo json_encode($errorData);
         }
     }
 
@@ -1172,24 +1067,14 @@ class AssetController {
      * Batch authorize assets (AJAX endpoint)
      */
     public function batchAuthorize() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Project Manager', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
         
         $assetIds = $_POST['asset_ids'] ?? [];
@@ -1205,117 +1090,11 @@ class AssetController {
             echo json_encode($result);
             
         } catch (Exception $e) {
-            error_log("Batch authorize error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Failed to batch authorize assets']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'batch authorize assets');
+            echo json_encode($errorData);
         }
     }
 
-    /**
-     * Get combined procurement sources (legacy + multi-item)
-     */
-    private function getCombinedProcurementSources() {
-        $procurements = [];
-        
-        try {
-            // Get legacy procurement orders
-            $procurementModel = new ProcurementModel();
-            $legacyProcurements = $procurementModel->getReceivedProcurements();
-            
-            foreach ($legacyProcurements as $procurement) {
-                $procurements[] = [
-                    'id' => $procurement['id'],
-                    'type' => 'legacy',
-                    'po_number' => $procurement['po_number'],
-                    'title' => $procurement['item_name'],
-                    'vendor_name' => $procurement['vendor_name'] ?? '',
-                    'total_value' => $procurement['total_cost'] ?? 0,
-                    'item_count' => 1
-                ];
-            }
-            
-            // Get multi-item procurement orders
-            if (class_exists('ProcurementOrderModel')) {
-                $procurementOrderModel = new ProcurementOrderModel();
-                $multiItemOrders = $procurementOrderModel->getReceivedOrders();
-                
-                foreach ($multiItemOrders as $order) {
-                    $procurements[] = [
-                        'id' => $order['id'],
-                        'type' => 'multi_item',
-                        'po_number' => $order['po_number'],
-                        'title' => $order['title'],
-                        'vendor_name' => $order['vendor_name'] ?? '',
-                        'total_value' => $order['total_value'] ?? 0,
-                        'item_count' => $order['item_count'] ?? 0
-                    ];
-                }
-            }
-            
-        } catch (Exception $e) {
-            error_log("Get combined procurement sources error: " . $e->getMessage());
-        }
-        
-        return $procurements;
-    }
-    
-    /**
-     * Enhance asset data with consumable info and units
-     */
-    private function enhanceAssetData($assets) {
-        if (empty($assets)) {
-            return $assets;
-        }
-        
-        try {
-            $db = Database::getInstance()->getConnection();
-            
-            // Get category and procurement item data for all assets
-            $assetIds = array_column($assets, 'id');
-            $placeholders = str_repeat('?,', count($assetIds) - 1) . '?';
-            
-            $sql = "
-                SELECT a.id, c.is_consumable, pi.unit
-                FROM assets a
-                LEFT JOIN categories c ON a.category_id = c.id
-                LEFT JOIN procurement_items pi ON a.procurement_item_id = pi.id
-                WHERE a.id IN ({$placeholders})
-            ";
-            
-            $stmt = $db->prepare($sql);
-            $stmt->execute($assetIds);
-            $enhancementData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Create lookup array
-            $lookup = [];
-            foreach ($enhancementData as $data) {
-                $lookup[$data['id']] = [
-                    'is_consumable' => $data['is_consumable'],
-                    'unit' => $data['unit'] ?? 'pcs'
-                ];
-            }
-            
-            // Enhance each asset
-            foreach ($assets as &$asset) {
-                if (isset($lookup[$asset['id']])) {
-                    $asset['is_consumable'] = $lookup[$asset['id']]['is_consumable'];
-                    $asset['unit'] = $lookup[$asset['id']]['unit'];
-                } else {
-                    $asset['is_consumable'] = 0;
-                    $asset['unit'] = 'pcs';
-                }
-            }
-            
-        } catch (Exception $e) {
-            error_log("Enhance asset data error: " . $e->getMessage());
-            // If enhancement fails, add default values
-            foreach ($assets as &$asset) {
-                $asset['is_consumable'] = 0;
-                $asset['unit'] = 'pcs';
-            }
-        }
-        
-        return $assets;
-    }
     
     /**
      * Verify asset (Asset Director workflow)
@@ -1326,21 +1105,17 @@ class AssetController {
         $userRole = $currentUser['role_name'] ?? '';
         
         // Check permissions
-        if (!in_array($userRole, ['Asset Director', 'System Admin'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.verify');
         
         try {
             // Get asset details
-            $asset = $this->getAssetWithDetails($assetId);
+            $asset = $this->queryService->getAssetWithDetails($assetId);
             if (!$asset) {
                 http_response_code(404);
                 include APP_ROOT . '/views/errors/404.php';
                 return;
             }
-            
+
             // Check if asset is in pending verification status
             if ($asset['workflow_status'] !== 'pending_verification') {
                 $_SESSION['error'] = 'Asset is not in pending verification status';
@@ -1402,21 +1177,17 @@ class AssetController {
         $userRole = $currentUser['role_name'] ?? '';
         
         // Check permissions
-        if (!in_array($userRole, ['Finance Director', 'System Admin'])) {
-            http_response_code(403);
-            include APP_ROOT . '/views/errors/403.php';
-            return;
-        }
+        PermissionMiddleware::requirePermission('assets.authorize');
         
         try {
             // Get asset details
-            $asset = $this->getAssetWithDetails($assetId);
+            $asset = $this->queryService->getAssetWithDetails($assetId);
             if (!$asset) {
                 http_response_code(404);
                 include APP_ROOT . '/views/errors/404.php';
                 return;
             }
-            
+
             // Check if asset is in pending authorization status
             if ($asset['workflow_status'] !== 'pending_authorization') {
                 $_SESSION['error'] = 'Asset is not in pending authorization status';
@@ -1470,141 +1241,57 @@ class AssetController {
     }
     
     /**
-     * Get asset with detailed information including workflow data
-     */
-    public function getAssetWithDetails($assetId) {
-        try {
-            $sql = "
-                SELECT a.*, 
-                       c.name as category_name, c.is_consumable,
-                       p.name as project_name, p.location as project_location,
-                       v.name as vendor_name,
-                       m.name as maker_name,
-                       u1.full_name as made_by_name,
-                       u2.full_name as verified_by_name,
-                       u3.full_name as authorized_by_name,
-                       po.po_number, pi.item_name as procurement_item_name, pi.brand as procurement_item_brand
-                FROM assets a
-                LEFT JOIN categories c ON a.category_id = c.id
-                LEFT JOIN projects p ON a.project_id = p.id
-                LEFT JOIN vendors v ON a.vendor_id = v.id
-                LEFT JOIN makers m ON a.maker_id = m.id
-                LEFT JOIN users u1 ON a.made_by = u1.id
-                LEFT JOIN users u2 ON a.verified_by = u2.id
-                LEFT JOIN users u3 ON a.authorized_by = u3.id
-                LEFT JOIN procurement_orders po ON a.procurement_order_id = po.id
-                LEFT JOIN procurement_items pi ON a.procurement_item_id = pi.id
-                WHERE a.id = ?
-                LIMIT 1
-            ";
-            
-            $stmt = $this->assetModel->db->prepare($sql);
-            $stmt->execute([$assetId]);
-            return $stmt->fetch();
-            
-        } catch (Exception $e) {
-            error_log("Get asset with details error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
      * Assign or reassign asset to a sub-location (AJAX)
+     * Phase 3: Delegated to AssetLocationService
      */
     public function assignLocation() {
         header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
-        
+
         $currentUser = $this->auth->getCurrentUser();
         $userRole = $currentUser['role_name'] ?? '';
-        
+
         // Check permissions
-        if (!in_array($userRole, ['Warehouseman', 'Site Inventory Clerk', 'System Admin'])) {
+        if (!$this->locationService->canAssignLocation($userRole)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
+
         $assetId = (int)($_POST['asset_id'] ?? 0);
-        $subLocation = Validator::sanitize($_POST['sub_location'] ?? '');
-        $notes = Validator::sanitize($_POST['notes'] ?? '');
-        
-        if (!$assetId) {
-            echo json_encode(['success' => false, 'message' => 'Asset ID required']);
-            return;
-        }
-        
-        if (empty($subLocation)) {
-            echo json_encode(['success' => false, 'message' => 'Sub-location required']);
-            return;
-        }
-        
+        $subLocation = $_POST['sub_location'] ?? '';
+        $notes = $_POST['notes'] ?? '';
+
         try {
-            // Verify asset exists and user has access
-            $asset = $this->assetModel->getAssetWithDetails($assetId);
-            
-            if (!$asset) {
-                echo json_encode(['success' => false, 'message' => 'Asset not found']);
-                return;
-            }
-            
-            // Get old location for logging
-            $oldSubLocation = $asset['sub_location'] ?? '';
-            
-            // Update asset sub_location
-            $result = $this->assetModel->update($assetId, [
-                'sub_location' => $subLocation
-            ]);
-            
-            if ($result) {
-                // Log the location assignment activity
-                $this->assetModel->logAssetActivity(
-                    $assetId,
-                    'location_assigned',
-                    $oldSubLocation ? "Location changed from '{$oldSubLocation}' to '{$subLocation}'" : "Location assigned to '{$subLocation}'",
-                    $asset,
-                    array_merge($asset, ['sub_location' => $subLocation]),
-                    $notes
-                );
-                
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Location assigned successfully',
-                    'sub_location' => $subLocation
-                ]);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to assign location']);
-            }
-            
+            $result = $this->locationService->assignLocation(
+                $assetId,
+                $subLocation,
+                $notes,
+                $currentUser['id']
+            );
+
+            echo json_encode($result);
+
         } catch (Exception $e) {
-            error_log("Assign location error: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Server error']);
+            $errorData = ControllerErrorHandler::getErrorData($e, 'assign location');
+            echo json_encode($errorData);
         }
     }
     
     /**
      * Get asset verification data with enhanced details (API endpoint)
+     * Phase 3: Delegated to AssetWorkflowService
      */
     public function getVerificationData() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'Project Manager', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         // Get asset ID from request
         $assetId = $_GET['id'] ?? $_POST['id'] ?? null;
         if (!$assetId) {
@@ -1612,117 +1299,11 @@ class AssetController {
             echo json_encode(['success' => false, 'message' => 'Asset ID is required']);
             return;
         }
-        
+
         try {
-            // Get basic asset data first to debug
-            $stmt = $this->db->prepare("SELECT * FROM assets WHERE id = ?");
-            $stmt->execute([$assetId]);
-            $asset = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$asset) {
-                throw new Exception("Asset not found with ID: " . $assetId);
-            }
-            
-            // Check if it's a legacy asset
-            if ($asset['asset_source'] !== 'legacy') {
-                throw new Exception("Asset is not a legacy asset. Source: " . $asset['asset_source']);
-            }
-            
-            // Get additional related data
-            try {
-                // Category
-                if ($asset['category_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM categories WHERE id = ?");
-                    $stmt->execute([$asset['category_id']]);
-                    $category = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['category_name'] = $category['name'] ?? null;
-                }
-                
-                // Equipment Type
-                if ($asset['equipment_type_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
-                    $stmt->execute([$asset['equipment_type_id']]);
-                    $equipmentType = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['equipment_type_name'] = $equipmentType['name'] ?? null;
-                }
-                
-                // Equipment Subtype
-                if ($asset['subtype_id']) {
-                    $stmt = $this->db->prepare("SELECT subtype_name as name FROM equipment_subtypes WHERE id = ?");
-                    $stmt->execute([$asset['subtype_id']]);
-                    $subtype = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['subtype_name'] = $subtype['name'] ?? null;
-                }
-                
-                // Project
-                if ($asset['project_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM projects WHERE id = ?");
-                    $stmt->execute([$asset['project_id']]);
-                    $project = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['project_name'] = $project['name'] ?? null;
-                }
-                
-                // Brand
-                if ($asset['brand_id']) {
-                    $stmt = $this->db->prepare("SELECT official_name FROM asset_brands WHERE id = ?");
-                    $stmt->execute([$asset['brand_id']]);
-                    $brand = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['brand_name'] = $brand['official_name'] ?? null;
-                }
-                
-                // Creator
-                if ($asset['made_by']) {
-                    $stmt = $this->db->prepare("SELECT full_name FROM users WHERE id = ?");
-                    $stmt->execute([$asset['made_by']]);
-                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['created_by_name'] = $user['full_name'] ?? null;
-                }
-                
-                // Verifier
-                if ($asset['verified_by']) {
-                    $stmt = $this->db->prepare("SELECT full_name FROM users WHERE id = ?");
-                    $stmt->execute([$asset['verified_by']]);
-                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['verified_by_name'] = $user['full_name'] ?? null;
-                }
-                
-                // Disciplines - parse discipline_tags field
-                if (!empty($asset['discipline_tags'])) {
-                    $disciplineCodes = explode(',', $asset['discipline_tags']);
-                    $disciplineNames = [];
-                    $subDisciplineNames = [];
-                    
-                    foreach ($disciplineCodes as $code) {
-                        $code = trim($code);
-                        $stmt = $this->db->prepare("SELECT name, parent_id FROM asset_disciplines WHERE code = ? OR iso_code = ?");
-                        $stmt->execute([$code, $code]);
-                        $discipline = $stmt->fetch(PDO::FETCH_ASSOC);
-                        
-                        if ($discipline) {
-                            if ($discipline['parent_id'] === null) {
-                                // Main discipline
-                                $disciplineNames[] = $discipline['name'];
-                            } else {
-                                // Sub-discipline
-                                $subDisciplineNames[] = $discipline['name'];
-                            }
-                        }
-                    }
-                    
-                    $asset['discipline_names'] = !empty($disciplineNames) ? implode(', ', $disciplineNames) : null;
-                    $asset['sub_discipline_names'] = !empty($subDisciplineNames) ? implode(', ', $subDisciplineNames) : null;
-                } else {
-                    $asset['discipline_names'] = null;
-                    $asset['sub_discipline_names'] = null;
-                }
-                
-            } catch (Exception $e) {
-                error_log("Warning: Could not load some related data: " . $e->getMessage());
-                // Continue with basic asset data
-            }
-            
+            $asset = $this->workflowService->getVerificationData($assetId);
             echo json_encode($asset);
-            
+
         } catch (Exception $e) {
             error_log("Get verification data error: " . $e->getMessage());
             http_response_code(500);
@@ -1732,20 +1313,11 @@ class AssetController {
     
     /**
      * Get asset data for authorization modal (API endpoint)
+     * Phase 3: Delegated to AssetWorkflowService
      */
     public function getAuthorizationData() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions - only Project Managers can authorize
-        if (!in_array($userRole, ['Project Manager', 'System Admin'])) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Permission denied']);
-            return;
-        }
-        
         header('Content-Type: application/json');
-        
+
         // Get asset ID from request
         $assetId = $_GET['id'] ?? $_POST['id'] ?? null;
         if (!$assetId) {
@@ -1753,101 +1325,11 @@ class AssetController {
             echo json_encode(['success' => false, 'message' => 'Asset ID is required']);
             return;
         }
-        
+
         try {
-            // Get basic asset data
-            $stmt = $this->db->prepare("SELECT * FROM assets WHERE id = ?");
-            $stmt->execute([$assetId]);
-            $asset = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$asset) {
-                throw new Exception("Asset not found with ID: " . $assetId);
-            }
-            
-            // Only allow authorization for verified assets
-            if ($asset['workflow_status'] !== 'pending_authorization') {
-                throw new Exception("Asset is not ready for authorization. Current status: " . $asset['workflow_status']);
-            }
-            
-            // Get additional related data (same as verification)
-            try {
-                // Category
-                if ($asset['category_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM categories WHERE id = ?");
-                    $stmt->execute([$asset['category_id']]);
-                    $category = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['category_name'] = $category['name'] ?? null;
-                }
-                
-                // Equipment Type
-                if ($asset['equipment_type_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
-                    $stmt->execute([$asset['equipment_type_id']]);
-                    $equipmentType = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['equipment_type_name'] = $equipmentType['name'] ?? null;
-                }
-                
-                // Equipment Subtype
-                if ($asset['subtype_id']) {
-                    $stmt = $this->db->prepare("SELECT subtype_name as name FROM equipment_subtypes WHERE id = ?");
-                    $stmt->execute([$asset['subtype_id']]);
-                    $subtype = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['subtype_name'] = $subtype['name'] ?? null;
-                }
-                
-                // Project
-                if ($asset['project_id']) {
-                    $stmt = $this->db->prepare("SELECT name FROM projects WHERE id = ?");
-                    $stmt->execute([$asset['project_id']]);
-                    $project = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['project_name'] = $project['name'] ?? null;
-                }
-                
-                // Verifier
-                if ($asset['verified_by']) {
-                    $stmt = $this->db->prepare("SELECT full_name FROM users WHERE id = ?");
-                    $stmt->execute([$asset['verified_by']]);
-                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $asset['verified_by_name'] = $user['full_name'] ?? null;
-                }
-                
-                // Disciplines - parse discipline_tags field
-                if (!empty($asset['discipline_tags'])) {
-                    $disciplineCodes = explode(',', $asset['discipline_tags']);
-                    $disciplineNames = [];
-                    $subDisciplineNames = [];
-                    
-                    foreach ($disciplineCodes as $code) {
-                        $code = trim($code);
-                        $stmt = $this->db->prepare("SELECT name, parent_id FROM asset_disciplines WHERE code = ? OR iso_code = ?");
-                        $stmt->execute([$code, $code]);
-                        $discipline = $stmt->fetch(PDO::FETCH_ASSOC);
-                        
-                        if ($discipline) {
-                            if ($discipline['parent_id'] === null) {
-                                // Main discipline
-                                $disciplineNames[] = $discipline['name'];
-                            } else {
-                                // Sub-discipline
-                                $subDisciplineNames[] = $discipline['name'];
-                            }
-                        }
-                    }
-                    
-                    $asset['discipline_names'] = !empty($disciplineNames) ? implode(', ', $disciplineNames) : null;
-                    $asset['sub_discipline_names'] = !empty($subDisciplineNames) ? implode(', ', $subDisciplineNames) : null;
-                } else {
-                    $asset['discipline_names'] = null;
-                    $asset['sub_discipline_names'] = null;
-                }
-                
-            } catch (Exception $e) {
-                error_log("Warning: Could not load some related data for authorization: " . $e->getMessage());
-                // Continue with basic asset data
-            }
-            
+            $asset = $this->workflowService->getAuthorizationData($assetId);
             echo json_encode($asset);
-            
+
         } catch (Exception $e) {
             error_log("Get authorization data error: " . $e->getMessage());
             http_response_code(500);
@@ -1859,17 +1341,14 @@ class AssetController {
      * Validate asset quality using validation engine (API endpoint)
      */
     public function validateAssetQuality() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'Project Manager', 'System Admin'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.validate_quality')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -1906,66 +1385,41 @@ class AssetController {
     
     /**
      * Reject asset verification with feedback
+     * Phase 3: Delegated to AssetWorkflowService
      */
     public function rejectVerification() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'Project Manager', 'System Admin'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.reject_verification')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
-        
+
         try {
             $input = json_decode(file_get_contents('php://input'), true);
             $assetId = $input['asset_id'] ?? null;
             $feedbackNotes = $input['feedback_notes'] ?? '';
             $validationResults = $input['validation_results'] ?? null;
-            
-            if (!$assetId) {
-                throw new Exception("Asset ID is required");
-            }
-            
-            if (empty($feedbackNotes)) {
-                throw new Exception("Feedback notes are required");
-            }
-            
-            // Update asset status back to draft for revision
-            $stmt = $this->db->prepare("
-                UPDATE assets 
-                SET workflow_status = 'draft', 
-                    updated_at = NOW() 
-                WHERE id = ? AND asset_source = 'legacy'
-            ");
-            $stmt->execute([$assetId]);
-            
-            // Log the rejection review
-            $stmt = $this->db->prepare("
-                INSERT INTO asset_verification_reviews 
-                (asset_id, reviewer_id, review_type, review_status, review_notes, validation_results, created_at)
-                VALUES (?, ?, 'verification', 'needs_revision', ?, ?, NOW())
-            ");
-            $stmt->execute([
+
+            $result = $this->workflowService->rejectVerificationWithFeedback(
                 $assetId,
                 $currentUser['id'],
                 $feedbackNotes,
-                json_encode($validationResults)
-            ]);
-            
-            echo json_encode(['success' => true, 'message' => 'Asset sent back for revision']);
-            
+                $validationResults
+            );
+
+            echo json_encode($result);
+
         } catch (Exception $e) {
             error_log("Reject verification error: " . $e->getMessage());
             http_response_code(500);
@@ -1975,28 +1429,26 @@ class AssetController {
     
     /**
      * Approve asset with conditions
+     * Phase 3: Delegated to AssetWorkflowService
      */
     public function approveWithConditions() {
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
-        
-        // Check permissions
-        if (!in_array($userRole, ['Site Inventory Clerk', 'Project Manager', 'System Admin'])) {
+        header('Content-Type: application/json');
+
+        // Check permissions using PermissionMiddleware
+        if (!PermissionMiddleware::hasPermission('assets.approve_with_conditions')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Permission denied']);
             return;
         }
-        
-        header('Content-Type: application/json');
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
-        
+
         CSRFProtection::validateRequest();
-        
+
         try {
             $input = json_decode(file_get_contents('php://input'), true);
             $assetId = $input['asset_id'] ?? null;
@@ -2005,297 +1457,47 @@ class AssetController {
             $verifiedQuantity = $input['verified_quantity'] ?? null;
             $physicalCondition = $input['physical_condition'] ?? '';
             $validationResults = $input['validation_results'] ?? null;
-            
-            if (!$assetId) {
-                throw new Exception("Asset ID is required");
-            }
-            
-            $this->db->beginTransaction();
-            
-            // Update asset with verification data
-            $updateFields = [
-                'workflow_status' => 'pending_authorization',
-                'verified_by' => $currentUser['id'],
-                'verification_date' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ];
-            
-            // Update location if verified
-            if (!empty($verifiedLocation)) {
-                $updateFields['location'] = $verifiedLocation;
-            }
-            
-            // Update quantity if verified
-            if (!empty($verifiedQuantity)) {
-                $updateFields['quantity'] = $verifiedQuantity;
-                $updateFields['available_quantity'] = $verifiedQuantity;
-            }
-            
-            $setClause = implode(', ', array_map(fn($key) => "$key = ?", array_keys($updateFields)));
-            $stmt = $this->db->prepare("UPDATE assets SET $setClause WHERE id = ? AND asset_source = 'legacy'");
-            $stmt->execute([...array_values($updateFields), $assetId]);
-            
-            // Log the verification review
-            $overallScore = $validationResults['overall_score'] ?? null;
-            $completenessScore = $validationResults['completeness_score'] ?? null;
-            $accuracyScore = $validationResults['accuracy_score'] ?? null;
-            
-            $stmt = $this->db->prepare("
-                INSERT INTO asset_verification_reviews 
-                (asset_id, reviewer_id, review_type, review_status, overall_score, completeness_score, accuracy_score, review_notes, validation_results, physical_verification_completed, location_verified, created_at)
-                VALUES (?, ?, 'verification', 'completed', ?, ?, ?, ?, ?, ?, ?, NOW())
-            ");
-            $stmt->execute([
+
+            $result = $this->workflowService->approveWithConditions(
                 $assetId,
                 $currentUser['id'],
-                $overallScore,
-                $completenessScore,
-                $accuracyScore,
                 $verificationNotes,
-                json_encode($validationResults),
-                !empty($physicalCondition) ? 1 : 0,
-                !empty($verifiedLocation) ? 1 : 0
-            ]);
-            
-            $this->db->commit();
-            echo json_encode(['success' => true, 'message' => 'Asset approved with conditions and forwarded for authorization']);
-            
+                $verifiedLocation,
+                $verifiedQuantity,
+                $physicalCondition,
+                $validationResults
+            );
+
+            echo json_encode($result);
+
         } catch (Exception $e) {
-            $this->db->rollBack();
             error_log("Approve with conditions error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-    
+
     /**
-     * Check if user can edit asset based on workflow status and role
+     * ========================================================================
+     * PHASE 2 REFACTORING COMPLETE - BUSINESS LOGIC MOVED TO SERVICES
+     * ========================================================================
+     *
+     * The following methods have been extracted to service classes:
+     *
+     * 1. checkEditPermissions()
+     *    └─> Moved to: AssetPermissionService::canEditAsset()
+     *    └─> Purpose: Workflow-based edit permission logic
+     *    └─> Lines saved: ~90 lines
+     *
+     * 2. generateRoleBasedStats()
+     *    └─> Moved to: AssetStatisticsService::getRoleBasedStats()
+     *    └─> Purpose: Role-specific dashboard statistics
+     *    └─> Lines saved: ~132 lines
+     *
+     * Total lines removed from controller: ~222 lines
+     * Result: Cleaner controller, testable business logic
+     *
+     * ========================================================================
      */
-    private function checkEditPermissions($userRole, $userId, $asset) {
-        $workflowStatus = $asset['workflow_status'] ?? '';
-        $assetMakerId = $asset['made_by'] ?? 0;
-        $assetSource = $asset['asset_source'] ?? 'manual';
-
-        // System Admin and Asset Director can always edit
-        if (in_array($userRole, ['System Admin', 'Asset Director'])) {
-            return ['allowed' => true, 'message' => ''];
-        }
-
-        // Check permissions based on workflow status
-        switch ($workflowStatus) {
-            case 'draft':
-            case 'pending_verification':
-                // Warehouseman can only edit their own legacy assets in draft/pending stages
-                if ($userRole === 'Warehouseman' && $assetSource === 'legacy') {
-                    if ($assetMakerId == $userId) {
-                        return ['allowed' => true, 'message' => ''];
-                    } else {
-                        return [
-                            'allowed' => false,
-                            'message' => 'You can only edit legacy items that you created.'
-                        ];
-                    }
-                }
-
-                // Site Inventory Clerks can edit ANY asset during verification (to correct Warehouseman errors)
-                if ($userRole === 'Site Inventory Clerk') {
-                    return [
-                        'allowed' => true,
-                        'message' => '',
-                        'correction_role' => true // Flag that this is a correction by verifier
-                    ];
-                }
-
-                // Procurement Officers can edit during these stages
-                if ($userRole === 'Procurement Officer') {
-                    return ['allowed' => true, 'message' => ''];
-                }
-
-                break;
-
-            case 'pending_authorization':
-                // Site Inventory Clerk can still correct during authorization stage (before final approval)
-                if ($userRole === 'Site Inventory Clerk') {
-                    return [
-                        'allowed' => true,
-                        'message' => '',
-                        'correction_role' => true
-                    ];
-                }
-
-                // Project Managers can edit during authorization review
-                if ($userRole === 'Project Manager') {
-                    return [
-                        'allowed' => true,
-                        'message' => '',
-                        'correction_role' => true
-                    ];
-                }
-
-                // Procurement Officers can still edit
-                if ($userRole === 'Procurement Officer') {
-                    return ['allowed' => true, 'message' => ''];
-                }
-
-                break;
-
-            case 'approved':
-            case 'authorized':
-                // Only Asset Director and System Admin can edit approved assets
-                return [
-                    'allowed' => false,
-                    'message' => 'This item has been approved and cannot be edited. Please contact the Asset Director if changes are needed, or submit a change request through the system.'
-                ];
-
-            default:
-                // Unknown status - be restrictive
-                return [
-                    'allowed' => false,
-                    'message' => 'Item has unknown status. Please contact system administrator.'
-                ];
-        }
-
-        // Default deny for roles not explicitly allowed
-        return [
-            'allowed' => false,
-            'message' => 'Your role (' . $userRole . ') does not have permission to edit items in this workflow stage (' . $workflowStatus . ').'
-        ];
-    }
-    
-    /**
-     * Generate role-specific statistics for dashboard cards
-     */
-    private function generateRoleBasedStats($userRole, $assets) {
-        $stats = [];
-        
-        // Calculate basic statistics from assets
-        $totalAssets = count($assets);
-        $availableAssets = 0;
-        $inUseAssets = 0;
-        $maintenanceAssets = 0;
-        $lowStockItems = 0;
-        $totalValue = 0;
-        $pendingVerification = 0;
-        $pendingAuthorization = 0;
-        $approved = 0;
-        $projectsWithAssets = [];
-        
-        foreach ($assets as $asset) {
-            // Basic status counts
-            switch ($asset['status'] ?? '') {
-                case 'available':
-                    $availableAssets++;
-                    break;
-                case 'in_use':
-                case 'borrowed':
-                    $inUseAssets++;
-                    break;
-                case 'under_maintenance':
-                    $maintenanceAssets++;
-                    break;
-            }
-            
-            // Workflow status counts
-            switch ($asset['workflow_status'] ?? '') {
-                case 'pending_verification':
-                    $pendingVerification++;
-                    break;
-                case 'pending_authorization':
-                    $pendingAuthorization++;
-                    break;
-                case 'approved':
-                    $approved++;
-                    break;
-            }
-            
-            // Value calculations
-            if (!empty($asset['acquisition_cost'])) {
-                $totalValue += floatval($asset['acquisition_cost']);
-            }
-            
-            // Low stock check (for consumables with quantity < 10)
-            if (($asset['quantity'] ?? 0) < 10 && ($asset['available_quantity'] ?? 0) < 5) {
-                $lowStockItems++;
-            }
-            
-            // Track projects
-            if (!empty($asset['project_id'])) {
-                $projectsWithAssets[$asset['project_id']] = true;
-            }
-        }
-        
-        $utilizationRate = $totalAssets > 0 ? round(($inUseAssets / $totalAssets) * 100, 1) : 0;
-        $avgAssetValue = $totalAssets > 0 ? $totalValue / $totalAssets : 0;
-        $activeProjects = count($projectsWithAssets);
-        
-        // Role-specific statistics
-        switch ($userRole) {
-            case 'Project Manager':
-                $stats = [
-                    'total_project_assets' => $totalAssets,
-                    'available_assets' => $availableAssets,
-                    'utilization_rate' => $utilizationRate,
-                    'assets_in_use' => $inUseAssets,
-                    'low_stock_alerts' => $lowStockItems,
-                    'maintenance_pending' => $maintenanceAssets,
-                    'pending_authorization' => $pendingAuthorization,
-                    'approved_assets' => $approved
-                ];
-                break;
-                
-            case 'Site Inventory Clerk':
-                $stats = [
-                    'total_inventory_items' => $totalAssets,
-                    'total_consumable_units' => array_sum(array_column($assets, 'available_quantity')),
-                    'available_for_use' => $availableAssets,
-                    'pending_verification' => $pendingVerification,
-                    'tools_on_loan' => $inUseAssets,
-                    'items_in_transit' => $maintenanceAssets, // Could be refined
-                    'today_receipts' => 0, // Would need today's date filter
-                    'reorder_alerts' => $lowStockItems
-                ];
-                break;
-                
-            case 'Warehouseman':
-                $stats = [
-                    'warehouse_inventory' => $totalAssets,
-                    'available_stock' => $availableAssets,
-                    'tools_on_loan' => $inUseAssets,
-                    'items_in_transit' => $maintenanceAssets,
-                    'today_receipts' => 0, // Would need today's date filter
-                    'reorder_alerts' => $lowStockItems,
-                    'pending_verification' => $pendingVerification,
-                    'ready_for_issue' => $availableAssets
-                ];
-                break;
-                
-            case 'System Admin':
-            case 'Asset Director':
-                $stats = [
-                    'total_system_assets' => $totalAssets,
-                    'active_projects' => $activeProjects,
-                    'total_asset_value' => $totalValue,
-                    'avg_asset_value' => $avgAssetValue,
-                    'workflow_health' => round((($approved / max($totalAssets, 1)) * 100), 1),
-                    'pending_verification' => $pendingVerification,
-                    'pending_authorization' => $pendingAuthorization,
-                    'system_alerts' => $lowStockItems + $maintenanceAssets,
-                    'data_quality_score' => 85 // Could be calculated from completeness
-                ];
-                break;
-                
-            default:
-                // Default minimal stats for other roles
-                $stats = [
-                    'total_assets' => $totalAssets,
-                    'available_assets' => $availableAssets,
-                    'in_use_assets' => $inUseAssets,
-                    'maintenance_items' => $maintenanceAssets
-                ];
-                break;
-        }
-        
-        return $stats;
-    }
 }
 ?>

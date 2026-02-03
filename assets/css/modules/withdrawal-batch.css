@@ -1,0 +1,415 @@
+/**
+ * Withdrawal Batch Listing Page
+ * Styles for batch listing, statistics cards, filters, and tables
+ */
+
+/* ===========================================
+   STATISTICS CARDS
+   =========================================== */
+
+.withdrawal-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-card.stat-pending {
+    border-left-color: #ffc107;
+}
+
+.stat-card.stat-approved {
+    border-left-color: #198754;
+}
+
+.stat-card.stat-released {
+    border-left-color: #0d6efd;
+}
+
+.stat-card.stat-canceled {
+    border-left-color: #dc3545;
+}
+
+.stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stat-card-trend {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ===========================================
+   FILTER PANEL
+   =========================================== */
+
+.filter-panel {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.filter-panel-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* ===========================================
+   BATCH TABLE
+   =========================================== */
+
+.withdrawal-batch-table {
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.withdrawal-batch-table table {
+    margin-bottom: 0;
+}
+
+.withdrawal-batch-table thead {
+    background: #f8f9fa;
+}
+
+.withdrawal-batch-table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.withdrawal-batch-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.withdrawal-batch-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.withdrawal-batch-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Batch reference link */
+.batch-ref-link {
+    font-weight: 600;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.batch-ref-link:hover {
+    text-decoration: underline;
+}
+
+/* Receiver info */
+.receiver-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.receiver-name {
+    font-weight: 600;
+    color: #212529;
+}
+
+.receiver-contact,
+.receiver-position {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* ===========================================
+   STATUS BADGES
+   =========================================== */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.status-badge i {
+    font-size: 0.9rem;
+}
+
+.status-badge.status-pending-verification {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.status-pending-approval {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.status-badge.status-approved {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-badge.status-released {
+    background: #cfe2ff;
+    color: #052c65;
+}
+
+.status-badge.status-canceled {
+    background: #f8d7da;
+    color: #842029;
+}
+
+/* ===========================================
+   ACTION BUTTON GROUPS
+   =========================================== */
+
+.batch-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.batch-actions .btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.batch-actions .btn i {
+    font-size: 0.9rem;
+}
+
+/* Dropdown actions */
+.batch-action-dropdown .dropdown-menu {
+    min-width: 180px;
+}
+
+.batch-action-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+}
+
+.batch-action-dropdown .dropdown-item i {
+    width: 1.25rem;
+    text-align: center;
+}
+
+/* ===========================================
+   PAGINATION
+   =========================================== */
+
+.withdrawal-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.pagination-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.pagination {
+    margin: 0;
+}
+
+/* ===========================================
+   EMPTY STATE
+   =========================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-description {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ===========================================
+   RESPONSIVE ADJUSTMENTS
+   =========================================== */
+
+@media (max-width: 767.98px) {
+    .withdrawal-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .withdrawal-batch-table {
+        overflow-x: auto;
+    }
+
+    .batch-actions {
+        flex-direction: column;
+    }
+
+    .withdrawal-pagination {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+/* ===========================================
+   QUICK FILTERS (CHIPS)
+   =========================================== */
+
+.quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filter-chip {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    border: 2px solid #dee2e6;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.filter-chip:hover {
+    border-color: #0d6efd;
+    background: #f8f9fa;
+}
+
+.filter-chip.active {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.filter-chip .badge {
+    margin-left: 0.25rem;
+}
+
+/* ===========================================
+   LOADING STATES
+   =========================================== */
+
+.table-loading {
+    position: relative;
+    min-height: 300px;
+}
+
+.table-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3rem;
+    height: 3rem;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

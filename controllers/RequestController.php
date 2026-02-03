@@ -8,11 +8,16 @@ class RequestController {
     private $auth;
     private $requestModel;
     private $roleConfig;
-    
+    private $workflowService;
+
     public function __construct() {
         $this->auth = Auth::getInstance();
         $this->roleConfig = require APP_ROOT . '/config/roles.php';
         $this->requestModel = new RequestModel();
+
+        // Load RequestWorkflowService for MVA workflow
+        require_once APP_ROOT . '/services/RequestWorkflowService.php';
+        $this->workflowService = new RequestWorkflowService();
         
         // Ensure user is authenticated
         if (!$this->auth->isAuthenticated()) {
@@ -37,7 +42,7 @@ class RequestController {
         }
         
         $page = (int)($_GET['page'] ?? 1);
-        $perPage = 20;
+        $perPage = (int)($_GET['per_page'] ?? 5); // Default to 5 entries per page
         
         // Build filters
         $filters = [];
@@ -67,6 +72,9 @@ class RequestController {
             }
         } elseif ($userRole === 'Site Inventory Clerk') {
             // Site clerks can only see their own requests
+            $filters['requested_by'] = $currentUser['id'];
+        } elseif ($userRole === 'Warehouseman') {
+            // Warehouseman can only see their own requests
             $filters['requested_by'] = $currentUser['id'];
         } elseif ($userRole === 'Procurement Officer') {
             // Procurement officers can see all requests but with procurement-specific filtering
@@ -159,7 +167,9 @@ class RequestController {
                 'date_needed' => !empty($_POST['date_needed']) ? $_POST['date_needed'] : null,
                 'estimated_cost' => !empty($_POST['estimated_cost']) ? (float)$_POST['estimated_cost'] : null,
                 'remarks' => Validator::sanitize($_POST['remarks'] ?? ''),
-                'requested_by' => $currentUser['id']
+                'requested_by' => $currentUser['id'],
+                'inventory_item_id' => !empty($_POST['inventory_item_id']) ? (int)$_POST['inventory_item_id'] : null,
+                'is_restock' => isset($_POST['is_restock']) && $_POST['is_restock'] == '1' ? 1 : 0
             ];
             
             // Validate required fields
@@ -172,12 +182,25 @@ class RequestController {
             if (empty($formData['description'])) {
                 $errors[] = 'Description is required';
             }
-            
+
+            // Restock-specific validation
+            if ($formData['request_type'] === 'Restock' || $formData['is_restock'] == 1) {
+                if (empty($formData['inventory_item_id'])) {
+                    $errors[] = 'Inventory item is required for restock requests';
+                } else {
+                    // Validate restock request
+                    $restockValidation = $this->requestModel->validateRestockRequest($formData);
+                    if (!$restockValidation['valid']) {
+                        $errors = array_merge($errors, $restockValidation['errors']);
+                    }
+                }
+            }
+
             // Role-based request type restrictions
             if ($userRole === 'Site Inventory Clerk') {
-                $allowedTypes = ['Material', 'Tool'];
+                $allowedTypes = ['Material', 'Tool', 'Restock'];
                 if (!in_array($formData['request_type'], $allowedTypes)) {
-                    $errors[] = 'Site Inventory Clerks can only request Materials and Tools';
+                    $errors[] = 'Site Inventory Clerks can only request Materials, Tools, and Restock';
                 }
             }
             
@@ -236,11 +259,22 @@ class RequestController {
             }
             
             $categories = $categoryModel->findAll([], "name ASC");
-            
-            // Request types based on user role
-            $requestTypes = ['Material', 'Tool', 'Equipment', 'Service', 'Petty Cash', 'Other'];
+
+            // Get request types from database ENUM (no hardcoding)
+            $db = Database::getInstance()->getConnection();
+            $sql = "SHOW COLUMNS FROM requests LIKE 'request_type'";
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            $typeInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+            preg_match("/^enum\(\'(.*)\'\)$/", $typeInfo['Type'], $matches);
+            $allRequestTypes = explode("','", $matches[1]);
+
+            // Role-based filtering
+            $requestTypes = $allRequestTypes;
             if ($userRole === 'Site Inventory Clerk') {
-                $requestTypes = ['Material', 'Tool']; // Restricted types
+                $requestTypes = array_intersect($allRequestTypes, ['Material', 'Tool', 'Restock']);
+            } elseif ($userRole === 'Project Manager') {
+                $requestTypes = array_diff($allRequestTypes, ['Petty Cash']);
             }
             
             $pageTitle = 'Create Request - ConstructLink™';
@@ -322,131 +356,31 @@ class RequestController {
     }
     
     /**
-     * Review request (Asset Director, System Admin)
+     * Review request (DEPRECATED - redirects to view page)
+     * Kept for backward compatibility
      */
     public function review() {
-        // Check permissions
-        $currentUser = $this->auth->getCurrentUser();
-        $userRole = $currentUser['role_name'] ?? '';
         $requestId = $_GET['id'] ?? 0;
-        if (!$requestId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        if ($requestId) {
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
         }
-        $errors = [];
-        try {
-            $request = $this->requestModel->getRequestWithDetails($requestId);
-            if (!$request) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-            // Project Manager can review if assigned to the project and status is Submitted
-            $canPM = (
-                $userRole === 'Project Manager' &&
-                ($request['project_manager_id'] ?? null) == $currentUser['id'] &&
-                $request['status'] === 'Submitted'
-            );
-            if (!$this->auth->hasRole($this->roleConfig['requests/review'] ?? ['System Admin', 'Project Manager'])) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-            // Check if request can be reviewed
-            if ($request['status'] !== 'Submitted') {
-                $errors[] = 'This request is not ready for review or has already been reviewed.';
-            }
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                $action = $_POST['action'] ?? '';
-                $remarks = Validator::sanitize($_POST['remarks'] ?? '');
-                if (empty($errors)) {
-                    $newStatus = ($action === 'forward') ? 'Forwarded' : 'Reviewed';
-                    $result = $this->requestModel->updateRequestStatus($requestId, $newStatus, $currentUser['id'], $remarks);
-                    if ($result['success']) {
-                        $message = ($action === 'forward') ? 'request_forwarded' : 'request_reviewed';
-                        header('Location: ?route=requests/view&id=' . $requestId . '&message=' . $message);
-                        exit;
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                }
-            }
-            $pageTitle = 'Review Request - ConstructLink™';
-            $pageHeader = 'Review Request #' . $request['id'];
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Requests', 'url' => '?route=requests'],
-                ['title' => 'Review Request', 'url' => '?route=requests/review&id=' . $requestId]
-            ];
-            include APP_ROOT . '/views/requests/review.php';
-        } catch (Exception $e) {
-            error_log("Request review error: " . $e->getMessage());
-            $error = 'Failed to process review';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        header('Location: ?route=requests');
+        exit;
     }
 
     /**
-     * Approve/Decline request
+     * Approve request (DEPRECATED - redirects to view page)
+     * Kept for backward compatibility
      */
     public function approve() {
-        $currentUser = $this->auth->getCurrentUser();
         $requestId = $_GET['id'] ?? 0;
-        if (!$requestId) {
-            http_response_code(404);
-            include APP_ROOT . '/views/errors/404.php';
-            return;
+        if ($requestId) {
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
         }
-        $errors = [];
-        try {
-            $request = $this->requestModel->getRequestWithDetails($requestId);
-            if (!$request) {
-                http_response_code(404);
-                include APP_ROOT . '/views/errors/404.php';
-                return;
-            }
-            // Workflow-specific: Project Manager must be assigned to the project
-            if ($currentUser['role_name'] === 'Project Manager' && ($request['project_manager_id'] ?? null) != $currentUser['id']) {
-                http_response_code(403);
-                include APP_ROOT . '/views/errors/403.php';
-                return;
-            }
-            // Check if request can be approved
-            if (!in_array($request['status'], ['Reviewed', 'Forwarded'])) {
-                $errors[] = 'This request is not ready for approval.';
-            }
-            // (Optional) Keep type/value restrictions if you want, or remove for pure MVA
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                CSRFProtection::validateRequest();
-                $action = $_POST['action'] ?? '';
-                $remarks = Validator::sanitize($_POST['remarks'] ?? '');
-                if (empty($errors)) {
-                    $newStatus = ($action === 'approve') ? 'Approved' : 'Declined';
-                    $result = $this->requestModel->updateRequestStatus($requestId, $newStatus, $currentUser['id'], $remarks);
-                    if ($result['success']) {
-                        $message = ($action === 'approve') ? 'request_approved' : 'request_declined';
-                        header('Location: ?route=requests/view&id=' . $requestId . '&message=' . $message);
-                        exit;
-                    } else {
-                        $errors[] = $result['message'];
-                    }
-                }
-            }
-            $pageTitle = 'Approve Request - ConstructLink™';
-            $pageHeader = 'Approve/Decline Request #' . $request['id'];
-            $breadcrumbs = [
-                ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-                ['title' => 'Requests', 'url' => '?route=requests'],
-                ['title' => 'Approve Request', 'url' => '?route=requests/approve&id=' . $requestId]
-            ];
-            include APP_ROOT . '/views/requests/approve.php';
-        } catch (Exception $e) {
-            error_log("Request approval error: " . $e->getMessage());
-            $error = 'Failed to process approval';
-            include APP_ROOT . '/views/errors/500.php';
-        }
+        header('Location: ?route=requests');
+        exit;
     }
     
     /**
@@ -454,43 +388,58 @@ class RequestController {
      */
     public function view() {
         $requestId = $_GET['id'] ?? 0;
-        
+
         if (!$requestId) {
             http_response_code(404);
             include APP_ROOT . '/views/errors/404.php';
             return;
         }
-        
+
         try {
-            // Get enhanced request data with delivery status
-            $request = $this->requestModel->getRequestWithDeliveryStatus($requestId);
-            
+            // Get enhanced request data with workflow details
+            $request = $this->requestModel->getRequestWithWorkflow($requestId);
+
             if (!$request) {
                 http_response_code(404);
                 include APP_ROOT . '/views/errors/404.php';
                 return;
             }
-            
+
             // Check permissions
             $currentUser = $this->auth->getCurrentUser();
             $userRole = $currentUser['role_name'] ?? '';
-            
+
             if (!$this->auth->hasRole($this->roleConfig['requests/view'] ?? ['System Admin'])) {
                 http_response_code(403);
                 include APP_ROOT . '/views/errors/403.php';
                 return;
             }
-            
+
+            // Get workflow service for action button logic
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            // Get next approver info
+            $nextApprover = $workflowService->getNextApprover($requestId);
+
+            // Get workflow chain for timeline display
+            $workflowChain = $workflowService->getWorkflowChain($requestId);
+
+            // Check user permissions for workflow actions
+            $canVerify = $workflowService->canUserVerify($requestId, $currentUser['id']);
+            $canAuthorize = $workflowService->canUserAuthorize($requestId, $currentUser['id']);
+            $canApprove = $workflowService->canUserApprove($requestId, $currentUser['id']);
+
             // Get request activity logs
             $requestLogs = $this->requestModel->getRequestLogs($requestId);
-            
+
             // Get related procurement orders with delivery tracking
             $procurementOrders = [];
-            if ($request['status'] === 'Approved' || $request['status'] === 'Procured' || $request['status'] === 'Fulfilled') {
+            if (in_array($request['status'], ['Approved', 'Procured', 'Fulfilled'])) {
                 $procurementOrderModel = new ProcurementOrderModel();
                 $procurementOrders = $procurementOrderModel->getProcurementOrdersByRequest($requestId);
             }
-            
+
             $pageTitle = 'Request Details - ConstructLink™';
             $pageHeader = 'Request #' . $request['id'];
             $breadcrumbs = [
@@ -498,12 +447,12 @@ class RequestController {
                 ['title' => 'Requests', 'url' => '?route=requests'],
                 ['title' => 'View Details', 'url' => '?route=requests/view&id=' . $requestId]
             ];
-            
+
             // Pass auth instance to view
             $auth = $this->auth;
-            
+
             include APP_ROOT . '/views/requests/view.php';
-            
+
         } catch (Exception $e) {
             error_log("Request view error: " . $e->getMessage());
             $error = 'Failed to load request details';
@@ -653,6 +602,304 @@ class RequestController {
         // Optionally, check permissions here if needed
         header('Location: ?route=procurement-orders/createFromRequest&request_id=' . $requestId);
         exit;
+    }
+
+    /**
+     * Get inventory items for restock (API endpoint for AJAX calls)
+     */
+    public function getInventoryItemsForRestock() {
+        if (!$this->auth->isAuthenticated()) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            return;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+        $projectId = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
+        $lowStockOnly = isset($_GET['low_stock_only']) && $_GET['low_stock_only'] === 'true';
+
+        try {
+            $items = $this->requestModel->getInventoryItemsForRestock($projectId, $lowStockOnly);
+
+            // Format for Select2
+            $formattedItems = array_map(function($item) {
+                return [
+                    'id' => $item['id'],
+                    'text' => sprintf(
+                        '%s - %s [%s/%s %s] %s%%',
+                        $item['ref'],
+                        $item['name'],
+                        $item['available_quantity'],
+                        $item['quantity'],
+                        $item['unit'],
+                        $item['stock_level_percentage']
+                    ),
+                    'data' => $item
+                ];
+            }, $items);
+
+            echo json_encode([
+                'success' => true,
+                'items' => $formattedItems,
+                'count' => count($formattedItems)
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Get inventory items for restock error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to load inventory items']);
+        }
+    }
+
+    /**
+     * Verify request (MVA workflow - Verifier step)
+     */
+    public function verify() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            include APP_ROOT . '/views/errors/405.php';
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $requestId = $_POST['request_id'] ?? null;
+        $notes = Validator::sanitize($_POST['notes'] ?? '');
+
+        if (!$requestId) {
+            $_SESSION['error'] = 'Request ID is required';
+            header('Location: ?route=requests');
+            exit;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+
+        try {
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            if (!$workflowService->canUserVerify($requestId, $currentUser['id'])) {
+                $_SESSION['error'] = 'You are not authorized to verify this request';
+                header('Location: ?route=requests/view&id=' . $requestId);
+                exit;
+            }
+
+            $result = $workflowService->verifyRequest($requestId, $currentUser['id'], $notes);
+
+            if ($result['success']) {
+                $_SESSION['success'] = 'Request verified successfully';
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Request verification error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to verify request';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
+    }
+
+    /**
+     * Authorize request (MVA workflow - Authorizer step)
+     */
+    public function authorize() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            include APP_ROOT . '/views/errors/405.php';
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $requestId = $_POST['request_id'] ?? null;
+        $notes = Validator::sanitize($_POST['notes'] ?? '');
+
+        if (!$requestId) {
+            $_SESSION['error'] = 'Request ID is required';
+            header('Location: ?route=requests');
+            exit;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+
+        try {
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            if (!$workflowService->canUserAuthorize($requestId, $currentUser['id'])) {
+                $_SESSION['error'] = 'You are not authorized to authorize this request';
+                header('Location: ?route=requests/view&id=' . $requestId);
+                exit;
+            }
+
+            $result = $workflowService->authorizeRequest($requestId, $currentUser['id'], $notes);
+
+            if ($result['success']) {
+                $_SESSION['success'] = 'Request authorized successfully';
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Request authorization error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to authorize request';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
+    }
+
+    /**
+     * Approve request - Enhanced with MVA workflow
+     */
+    public function approveWorkflow() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            include APP_ROOT . '/views/errors/405.php';
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $requestId = $_POST['request_id'] ?? null;
+        $notes = Validator::sanitize($_POST['notes'] ?? '');
+
+        if (!$requestId) {
+            $_SESSION['error'] = 'Request ID is required';
+            header('Location: ?route=requests');
+            exit;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+
+        try {
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            if (!$workflowService->canUserApprove($requestId, $currentUser['id'])) {
+                $_SESSION['error'] = 'You are not authorized to approve this request';
+                header('Location: ?route=requests/view&id=' . $requestId);
+                exit;
+            }
+
+            $result = $workflowService->approveRequest($requestId, $currentUser['id'], $notes);
+
+            if ($result['success']) {
+                $_SESSION['success'] = 'Request approved successfully';
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Request approval error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to approve request';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
+    }
+
+    /**
+     * Decline request (MVA workflow - Can decline at any approval stage)
+     */
+    public function decline() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            include APP_ROOT . '/views/errors/405.php';
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $requestId = $_POST['request_id'] ?? null;
+        $declineReason = Validator::sanitize($_POST['decline_reason'] ?? '');
+
+        if (!$requestId) {
+            $_SESSION['error'] = 'Request ID is required';
+            header('Location: ?route=requests');
+            exit;
+        }
+
+        if (empty($declineReason)) {
+            $_SESSION['error'] = 'Decline reason is required';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+
+        try {
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            $result = $workflowService->declineRequest($requestId, $currentUser['id'], $declineReason);
+
+            if ($result['success']) {
+                $_SESSION['success'] = 'Request declined successfully';
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Request decline error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to decline request';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
+    }
+
+    /**
+     * Resubmit declined request (reset to Draft for editing)
+     */
+    public function resubmit() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            include APP_ROOT . '/views/errors/405.php';
+            return;
+        }
+
+        CSRFProtection::validateRequest();
+
+        $requestId = $_POST['request_id'] ?? null;
+
+        if (!$requestId) {
+            $_SESSION['error'] = 'Request ID is required';
+            header('Location: ?route=requests');
+            exit;
+        }
+
+        $currentUser = $this->auth->getCurrentUser();
+
+        try {
+            require_once APP_ROOT . '/services/RequestWorkflowService.php';
+            $workflowService = new RequestWorkflowService();
+
+            $result = $workflowService->resubmitRequest($requestId, $currentUser['id']);
+
+            if ($result['success']) {
+                $_SESSION['success'] = $result['message'];
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Request resubmit error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to resubmit request';
+            header('Location: ?route=requests/view&id=' . $requestId);
+            exit;
+        }
     }
 }
 ?>

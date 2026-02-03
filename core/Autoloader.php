@@ -15,6 +15,9 @@ class Autoloader {
         $this->addNamespace('Controllers\\', APP_ROOT . '/controllers/');
         $this->addNamespace('Views\\', APP_ROOT . '/views/');
         $this->addNamespace('Api\\', APP_ROOT . '/api/');
+        $this->addNamespace('Middleware\\', APP_ROOT . '/middleware/');
+        $this->addNamespace('Repositories\\', APP_ROOT . '/repositories/');
+        $this->addNamespace('Utils\\', APP_ROOT . '/utils/');
     }
     
     /**

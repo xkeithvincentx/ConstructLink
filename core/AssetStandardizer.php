@@ -64,9 +64,9 @@ class AssetStandardizer {
      */
     private function loadCorrectionsCache() {
         try {
-            $sql = "SELECT incorrect, correct, context, confidence_score 
-                    FROM asset_spelling_corrections 
-                    WHERE approved = 1 
+            $sql = "SELECT incorrect, correct, context, confidence_score
+                    FROM inventory_spelling_corrections
+                    WHERE approved = 1
                     ORDER BY confidence_score DESC";
             
             $stmt = $this->db->prepare($sql);
@@ -98,8 +98,8 @@ class AssetStandardizer {
      */
     private function loadBrandsCache() {
         try {
-            $sql = "SELECT id, official_name, variations, quality_tier 
-                    FROM asset_brands 
+            $sql = "SELECT id, official_name, variations, quality_tier
+                    FROM inventory_brands
                     WHERE is_active = 1";
             
             $stmt = $this->db->prepare($sql);
@@ -282,9 +282,9 @@ class AssetStandardizer {
     private function findAssetType($name, $category = null) {
         try {
             // First try exact match
-            $sql = "SELECT id, name, category, subcategory, search_keywords 
-                    FROM asset_types 
-                    WHERE LOWER(name) = LOWER(?) 
+            $sql = "SELECT id, name, category, subcategory, search_keywords
+                    FROM inventory_types
+                    WHERE LOWER(name) = LOWER(?)
                     AND is_active = 1";
             
             $params = [$name];
@@ -304,9 +304,9 @@ class AssetStandardizer {
             }
             
             // Try matching against common misspellings
-            $sql = "SELECT id, name, category, subcategory, search_keywords, common_misspellings 
-                    FROM asset_types 
-                    WHERE JSON_CONTAINS(LOWER(common_misspellings), ?) 
+            $sql = "SELECT id, name, category, subcategory, search_keywords, common_misspellings
+                    FROM inventory_types
+                    WHERE JSON_CONTAINS(LOWER(common_misspellings), ?)
                     AND is_active = 1";
             
             $params = [json_encode(strtolower($name))];
@@ -339,8 +339,8 @@ class AssetStandardizer {
      */
     private function fuzzyMatchAssetType($name, $category = null) {
         try {
-            $sql = "SELECT id, name, category, subcategory, search_keywords 
-                    FROM asset_types 
+            $sql = "SELECT id, name, category, subcategory, search_keywords
+                    FROM inventory_types
                     WHERE is_active = 1";
             
             if ($category) {
@@ -385,10 +385,10 @@ class AssetStandardizer {
      */
     private function getAssetDisciplines($assetTypeId) {
         try {
-            $sql = "SELECT d.id, d.code, d.name, adm.primary_use, adm.use_description 
-                    FROM asset_discipline_mappings adm 
-                    JOIN asset_disciplines d ON adm.discipline_id = d.id 
-                    WHERE adm.asset_type_id = ? 
+            $sql = "SELECT d.id, d.code, d.name, adm.primary_use, adm.use_description
+                    FROM inventory_discipline_mappings adm
+                    JOIN inventory_disciplines d ON adm.discipline_id = d.id
+                    WHERE adm.asset_type_id = ?
                     ORDER BY adm.primary_use DESC, d.display_order";
             
             $stmt = $this->db->prepare($sql);
@@ -434,7 +434,7 @@ class AssetStandardizer {
                         WHEN LOWER(search_keywords) LIKE LOWER(CONCAT('%', ?, '%')) THEN 60
                         ELSE 50
                     END AS relevance_score
-                    FROM asset_types
+                    FROM inventory_types
                     WHERE is_active = 1
                     AND (
                         LOWER(name) LIKE LOWER(CONCAT('%', ?, '%'))
@@ -530,19 +530,19 @@ class AssetStandardizer {
     public function learnCorrection($original, $corrected, $userId, $context = 'tool_name') {
         try {
             // Check if correction already exists
-            $sql = "SELECT id, usage_count, confidence_score 
-                    FROM asset_spelling_corrections 
-                    WHERE LOWER(incorrect) = LOWER(?) 
-                    AND LOWER(correct) = LOWER(?) 
+            $sql = "SELECT id, usage_count, confidence_score
+                    FROM inventory_spelling_corrections
+                    WHERE LOWER(incorrect) = LOWER(?)
+                    AND LOWER(correct) = LOWER(?)
                     AND context = ?";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$original, $corrected, $context]);
             $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if ($existing) {
                 // Update existing correction
-                $sql = "UPDATE asset_spelling_corrections 
+                $sql = "UPDATE inventory_spelling_corrections
                         SET usage_count = usage_count + 1,
                             confidence_score = LEAST(confidence_score + 0.05, 1.00),
                             updated_at = CURRENT_TIMESTAMP
@@ -551,7 +551,7 @@ class AssetStandardizer {
                 $stmt->execute([$existing['id']]);
             } else {
                 // Add new correction
-                $sql = "INSERT INTO asset_spelling_corrections 
+                $sql = "INSERT INTO inventory_spelling_corrections
                         (incorrect, correct, context, confidence_score, usage_count, created_by)
                         VALUES (?, ?, ?, 0.5, 1, ?)";
                 $stmt = $this->db->prepare($sql);
@@ -612,12 +612,12 @@ class AssetStandardizer {
             }
             
             $sql .= "ELSE 50 END AS relevance_score
-                    FROM assets a
+                    FROM inventory_items a
                     LEFT JOIN categories c ON a.category_id = c.id
                     LEFT JOIN projects p ON a.project_id = p.id
                     LEFT JOIN vendors v ON a.vendor_id = v.id
                     LEFT JOIN makers m ON a.maker_id = m.id
-                    LEFT JOIN asset_brands ab ON a.brand_id = ab.id
+                    LEFT JOIN inventory_brands ab ON a.brand_id = ab.id
                     WHERE 1=1 ";
             
             $params = [];
@@ -700,10 +700,10 @@ class AssetStandardizer {
      */
     private function trackSearch($query, $correctedQuery, $resultCount) {
         try {
-            $sql = "INSERT INTO asset_search_history 
+            $sql = "INSERT INTO inventory_search_history
                     (user_id, search_query, corrected_query, result_count, search_type)
                     VALUES (?, ?, ?, ?, 'manual')";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $_SESSION['user_id'] ?? null,
@@ -735,8 +735,8 @@ class AssetStandardizer {
             }
             
             // Fallback to asset type specifications
-            $sql = "SELECT at.typical_specifications 
-                    FROM asset_types at
+            $sql = "SELECT at.typical_specifications
+                    FROM inventory_types at
                     JOIN categories c ON at.category = c.name
                     WHERE c.id = ?
                     LIMIT 1";
@@ -781,10 +781,10 @@ class AssetStandardizer {
             $stats = [];
             
             // Total corrections
-            $sql = "SELECT COUNT(*) as total, 
+            $sql = "SELECT COUNT(*) as total,
                     SUM(approved = 1) as approved,
                     AVG(confidence_score) as avg_confidence
-                    FROM asset_spelling_corrections";
+                    FROM inventory_spelling_corrections";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $stats['corrections'] = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -792,7 +792,7 @@ class AssetStandardizer {
             // Total asset types
             $sql = "SELECT COUNT(*) as total,
                     COUNT(DISTINCT category) as categories
-                    FROM asset_types
+                    FROM inventory_types
                     WHERE is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -801,7 +801,7 @@ class AssetStandardizer {
             // Total brands
             $sql = "SELECT COUNT(*) as total,
                     SUM(is_verified = 1) as verified
-                    FROM asset_brands
+                    FROM inventory_brands
                     WHERE is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -812,7 +812,7 @@ class AssetStandardizer {
                     COUNT(DISTINCT user_id) as unique_users,
                     COUNT(corrected_query) as corrections_applied,
                     AVG(result_count) as avg_results
-                    FROM asset_search_history
+                    FROM inventory_search_history
                     WHERE search_timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();

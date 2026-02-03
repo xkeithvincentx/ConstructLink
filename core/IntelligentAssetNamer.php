@@ -28,17 +28,17 @@ class IntelligentAssetNamer {
     public function generateAssetName($equipmentTypeId, $subtypeId, $brand = null, $model = null) {
         try {
             // Get equipment type and subtype details
-            $sql = "SELECT 
+            $sql = "SELECT
                         et.name as equipment_type,
-                        es.subtype_name,
-                        es.material_type,
-                        es.power_source,
-                        es.size_category,
-                        es.application_area
-                    FROM equipment_subtypes es
-                    JOIN equipment_types et ON es.equipment_type_id = et.id
+                        es.name as subtype_name,
+                        es.technical_name,
+                        es.description,
+                        es.specifications_template,
+                        es.discipline_tags
+                    FROM inventory_subtypes es
+                    JOIN inventory_equipment_types et ON es.equipment_type_id = et.id
                     WHERE et.id = ? AND es.id = ?";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$equipmentTypeId, $subtypeId]);
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -70,46 +70,64 @@ class IntelligentAssetNamer {
      */
     private function buildNameComponents($data, $brand, $model) {
         $components = [];
-        
-        // 1. Power Source (if relevant and not obvious)
-        if ($data['power_source'] && $data['power_source'] !== 'Manual') {
-            // Only add power source if it's distinctive
-            $distinctivePower = ['Cordless', 'Battery', 'Pneumatic', 'Hydraulic'];
-            if (in_array($data['power_source'], $distinctivePower)) {
-                $components['power_source'] = $data['power_source'];
-            }
+
+        // 1. Technical name (if available and distinctive)
+        if (!empty($data['technical_name']) && $data['technical_name'] !== $data['equipment_type']) {
+            $components['technical_name'] = $data['technical_name'];
         }
-        
+
         // 2. Subtype (specific variation)
         if ($data['subtype_name'] && $data['subtype_name'] !== 'Standard') {
             $components['subtype'] = $data['subtype_name'];
         }
-        
+
         // 3. Equipment Type (main category)
         $components['equipment_type'] = $data['equipment_type'];
-        
-        // 4. Material specification (in parentheses)
-        if ($data['material_type']) {
-            $components['material'] = $data['material_type'];
+
+        // 4. Parse specifications template for additional details
+        if (!empty($data['specifications_template'])) {
+            $specs = $this->parseSpecifications($data['specifications_template']);
+            if (!empty($specs)) {
+                $components['specifications'] = $specs;
+            }
         }
-        
-        // 5. Size category (if specific)
-        if ($data['size_category'] && 
-            !in_array(strtolower($data['size_category']), ['standard', 'portable', 'compact'])) {
-            $components['size'] = $data['size_category'];
-        }
-        
-        // 6. Brand (if provided)
+
+        // 5. Brand (if provided)
         if ($brand && trim($brand) !== '') {
             $components['brand'] = trim($brand);
         }
-        
-        // 7. Model (if provided)
+
+        // 6. Model (if provided)
         if ($model && trim($model) !== '') {
             $components['model'] = trim($model);
         }
-        
+
         return $components;
+    }
+
+    /**
+     * Parse specifications template for name components
+     */
+    private function parseSpecifications($specsTemplate) {
+        if (empty($specsTemplate)) {
+            return [];
+        }
+
+        $specs = [];
+
+        // Try to decode JSON specifications
+        $decoded = json_decode($specsTemplate, true);
+        if (is_array($decoded)) {
+            // Extract relevant specifications for naming
+            $relevantKeys = ['power_source', 'material', 'size', 'capacity', 'voltage'];
+            foreach ($relevantKeys as $key) {
+                if (isset($decoded[$key]) && !empty($decoded[$key])) {
+                    $specs[$key] = $decoded[$key];
+                }
+            }
+        }
+
+        return $specs;
     }
     
     /**
@@ -117,43 +135,47 @@ class IntelligentAssetNamer {
      */
     private function assembleAssetName($components) {
         $nameParts = [];
-        
-        // Build main name: [Brand] [Power Source] [Subtype] [Equipment Type]
+
+        // Build main name: [Brand] [Technical Name] [Subtype] [Equipment Type]
         if (isset($components['brand'])) {
             $nameParts[] = $components['brand'];
         }
-        
-        if (isset($components['power_source'])) {
-            $nameParts[] = $components['power_source'];
+
+        if (isset($components['technical_name'])) {
+            $nameParts[] = $components['technical_name'];
         }
-        
+
         if (isset($components['subtype'])) {
             $nameParts[] = $components['subtype'];
         }
-        
+
         $nameParts[] = $components['equipment_type'];
-        
-        // Build specifications: (Material, Size)
+
+        // Build specifications from specifications array
         $specs = [];
-        if (isset($components['material'])) {
-            $specs[] = $components['material'];
+        if (isset($components['specifications'])) {
+            foreach ($components['specifications'] as $key => $value) {
+                if ($key === 'power_source' && !in_array($value, ['Manual', 'N/A'])) {
+                    // Add power source to main name instead of specs
+                    array_unshift($nameParts, $value);
+                } elseif (in_array($key, ['material', 'size', 'capacity', 'voltage'])) {
+                    $specs[] = $value;
+                }
+            }
         }
-        if (isset($components['size'])) {
-            $specs[] = $components['size'];
-        }
-        
+
         // Assemble final name
         $mainName = implode(' ', $nameParts);
-        
+
         if (!empty($specs)) {
             $mainName .= ' (' . implode(', ', $specs) . ')';
         }
-        
+
         // Add model if provided
         if (isset($components['model'])) {
             $mainName .= ' - ' . $components['model'];
         }
-        
+
         return $mainName;
     }
     
@@ -167,18 +189,17 @@ class IntelligentAssetNamer {
     public function getIntelligentUnit($equipmentTypeId, $subtypeId = null) {
         try {
             // Get equipment type and subtype details
-            $sql = "SELECT 
+            $sql = "SELECT
                         et.name as equipment_type,
                         c.name as category,
-                        es.subtype_name,
-                        es.material_type,
-                        es.power_source,
-                        es.size_category
-                    FROM equipment_types et
+                        es.name as subtype_name,
+                        es.technical_name,
+                        es.specifications_template
+                    FROM inventory_equipment_types et
                     JOIN categories c ON et.category_id = c.id
-                    LEFT JOIN equipment_subtypes es ON es.equipment_type_id = et.id AND es.id = ?
+                    LEFT JOIN inventory_subtypes es ON es.equipment_type_id = et.id AND es.id = ?
                     WHERE et.id = ?";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$subtypeId, $equipmentTypeId]);
             $data = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -202,7 +223,18 @@ class IntelligentAssetNamer {
         $category = strtolower($equipmentData['category']);
         $equipmentType = strtolower($equipmentData['equipment_type']);
         $subtype = strtolower($equipmentData['subtype_name'] ?? '');
-        $material = strtolower($equipmentData['material_type'] ?? '');
+        $technicalName = strtolower($equipmentData['technical_name'] ?? '');
+
+        // Parse specifications for material and other details
+        $material = '';
+        $powerSource = '';
+        if (!empty($equipmentData['specifications_template'])) {
+            $specs = json_decode($equipmentData['specifications_template'], true);
+            if (is_array($specs)) {
+                $material = strtolower($specs['material'] ?? '');
+                $powerSource = strtolower($specs['power_source'] ?? '');
+            }
+        }
         
         // Construction Materials - typically measured by volume, weight, or area
         if (strpos($category, 'construction materials') !== false) {
@@ -316,22 +348,22 @@ class IntelligentAssetNamer {
                 $params[] = $categoryId;
             }
             
-            $sql = "SELECT 
+            $sql = "SELECT
                         et.id as equipment_type_id,
                         et.name as equipment_type,
                         es.id as subtype_id,
-                        es.subtype_name,
-                        es.material_type,
-                        es.power_source,
-                        es.size_category,
-                        es.application_area,
+                        es.name as subtype_name,
+                        es.technical_name,
+                        es.description,
+                        es.specifications_template,
+                        es.discipline_tags,
                         c.name as category_name
-                    FROM equipment_subtypes es
-                    JOIN equipment_types et ON es.equipment_type_id = et.id
+                    FROM inventory_subtypes es
+                    JOIN inventory_equipment_types et ON es.equipment_type_id = et.id
                     JOIN categories c ON et.category_id = c.id
                     WHERE " . implode(" AND ", $whereConditions) . "
-                    ORDER BY et.name, es.subtype_name";
-            
+                    ORDER BY et.name, es.name";
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -353,7 +385,7 @@ class IntelligentAssetNamer {
                         'generated_name' => $nameData['generated_name'],
                         'confidence' => $confidence,
                         'category_name' => $result['category_name'],
-                        'application_area' => $result['application_area']
+                        'discipline_tags' => $result['discipline_tags']
                     ];
                 }
             }
@@ -376,62 +408,76 @@ class IntelligentAssetNamer {
      */
     private function calculateMatchConfidence($partialName, $equipmentData) {
         $score = 0.0;
-        
+
         // Check equipment type match
         $equipmentTypeLower = strtolower($equipmentData['equipment_type']);
-        if (strpos($equipmentTypeLower, $partialName) !== false || 
+        if (strpos($equipmentTypeLower, $partialName) !== false ||
             strpos($partialName, $equipmentTypeLower) !== false) {
             $score += 0.8;
         }
-        
+
         // Check subtype match
         $subtypeLower = strtolower($equipmentData['subtype_name']);
-        if (strpos($subtypeLower, $partialName) !== false || 
+        if (strpos($subtypeLower, $partialName) !== false ||
             strpos($partialName, $subtypeLower) !== false) {
             $score += 0.7;
         }
-        
-        // Check power source match
-        if ($equipmentData['power_source']) {
-            $powerLower = strtolower($equipmentData['power_source']);
-            if (strpos($powerLower, $partialName) !== false || 
-                strpos($partialName, $powerLower) !== false) {
-                $score += 0.5;
+
+        // Check technical name match
+        if (!empty($equipmentData['technical_name'])) {
+            $technicalLower = strtolower($equipmentData['technical_name']);
+            if (strpos($technicalLower, $partialName) !== false ||
+                strpos($partialName, $technicalLower) !== false) {
+                $score += 0.6;
             }
         }
-        
-        // Check material match
-        if ($equipmentData['material_type']) {
-            $materialLower = strtolower($equipmentData['material_type']);
-            if (strpos($materialLower, $partialName) !== false || 
-                strpos($partialName, $materialLower) !== false) {
+
+        // Check description match
+        if (!empty($equipmentData['description'])) {
+            $descLower = strtolower($equipmentData['description']);
+            if (strpos($descLower, $partialName) !== false) {
                 $score += 0.3;
             }
         }
-        
-        // Check application area
-        if ($equipmentData['application_area']) {
-            $appLower = strtolower($equipmentData['application_area']);
-            if (strpos($appLower, $partialName) !== false) {
+
+        // Check discipline tags
+        if (!empty($equipmentData['discipline_tags'])) {
+            $disciplineLower = strtolower($equipmentData['discipline_tags']);
+            if (strpos($disciplineLower, $partialName) !== false) {
                 $score += 0.2;
             }
         }
-        
+
+        // Parse specifications template for additional matching
+        if (!empty($equipmentData['specifications_template'])) {
+            $specs = json_decode($equipmentData['specifications_template'], true);
+            if (is_array($specs)) {
+                foreach ($specs as $key => $value) {
+                    $valueLower = strtolower((string)$value);
+                    if (strpos($valueLower, $partialName) !== false ||
+                        strpos($partialName, $valueLower) !== false) {
+                        $score += 0.2;
+                        break;
+                    }
+                }
+            }
+        }
+
         // Word matching bonus
         $partialWords = explode(' ', $partialName);
         $allText = strtolower(implode(' ', [
             $equipmentData['equipment_type'],
             $equipmentData['subtype_name'],
-            $equipmentData['power_source'] ?? '',
-            $equipmentData['material_type'] ?? ''
+            $equipmentData['technical_name'] ?? '',
+            $equipmentData['description'] ?? ''
         ]));
-        
+
         foreach ($partialWords as $word) {
             if (strlen($word) > 2 && strpos($allText, $word) !== false) {
                 $score += 0.1;
             }
         }
-        
+
         return min($score, 1.0); // Cap at 1.0
     }
     
@@ -470,7 +516,7 @@ class IntelligentAssetNamer {
      */
     public function updateAssetName($assetId, $nameData) {
         try {
-            $sql = "UPDATE assets 
+            $sql = "UPDATE inventory_items 
                     SET generated_name = ?, 
                         name_components = ?
                     WHERE id = ?";
@@ -497,9 +543,9 @@ class IntelligentAssetNamer {
     public function getEquipmentTypesByCategory($categoryId) {
         $sql = "SELECT et.id, et.name, et.description, et.category_id,
                        c.name as category_name
-                FROM equipment_types et 
-                JOIN categories c ON et.category_id = c.id 
-                WHERE et.category_id = ? AND et.is_active = 1 
+                FROM inventory_equipment_types et
+                JOIN categories c ON et.category_id = c.id
+                WHERE et.category_id = ? AND et.is_active = 1
                 ORDER BY et.name ASC";
         
         $stmt = $this->db->prepare($sql);
@@ -509,17 +555,17 @@ class IntelligentAssetNamer {
     
     /**
      * Get subtypes by equipment type for form population
-     * 
+     *
      * @param int $equipmentTypeId Equipment type ID
      * @return array Subtypes
      */
     public function getSubtypesByEquipmentType($equipmentTypeId) {
-        $sql = "SELECT id, subtype_name, material_type, power_source, 
-                       size_category, application_area 
-                FROM equipment_subtypes 
-                WHERE equipment_type_id = ? AND is_active = 1 
-                ORDER BY subtype_name ASC";
-        
+        $sql = "SELECT id, name as subtype_name, technical_name,
+                       description, specifications_template, discipline_tags, code
+                FROM inventory_subtypes
+                WHERE equipment_type_id = ? AND is_active = 1
+                ORDER BY name ASC";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$equipmentTypeId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -534,7 +580,7 @@ class IntelligentAssetNamer {
     public function getEquipmentTypeDetails($equipmentTypeId) {
         $sql = "SELECT et.id, et.name, et.description, et.category_id,
                        c.name as category_name, c.description as category_description
-                FROM equipment_types et
+                FROM inventory_equipment_types et
                 LEFT JOIN categories c ON et.category_id = c.id
                 WHERE et.id = ? AND et.is_active = 1";
         

@@ -35,7 +35,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             <div class="card-header">
                 <h6 class="card-title mb-0">
                     <i class="bi bi-info-circle me-2"></i>Item Information
-                    <?php if (!empty($asset['asset_source']) && $asset['asset_source'] === 'legacy'): ?>
+                    <?php if (!empty($asset['inventory_source']) && $asset['inventory_source'] === 'legacy'): ?>
                         <span class="badge bg-warning ms-2">Legacy Item</span>
                     <?php elseif (!empty($asset['standardized_name']) || !empty($asset['standardized_brand'])): ?>
                         <span class="badge bg-success ms-2">Standardized</span>
@@ -243,7 +243,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
         </div>
 
         <!-- Legacy Asset Workflow -->
-        <?php if (!empty($asset['asset_source']) && $asset['asset_source'] === 'legacy'): ?>
+        <?php if (!empty($asset['inventory_source']) && $asset['inventory_source'] === 'legacy'): ?>
         <div class="card mt-4">
             <div class="card-header">
                 <h6 class="card-title mb-0">
@@ -391,7 +391,7 @@ $roleConfig = require APP_ROOT . '/config/roles.php';
             </div>
             <div class="card-body">
                 <?php if ($asset['status'] === 'available' && in_array($user['role_name'], $roleConfig['withdrawals/create'] ?? [])): ?>
-                    <a href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>" class="btn btn-success w-100 mb-2">
+                    <a href="?route=withdrawals/create-batch&asset_id=<?= $asset['id'] ?>" class="btn btn-success w-100 mb-2">
                         <i class="bi bi-box-arrow-right me-1"></i>Withdraw Asset
                     </a>
                 <?php endif; ?>

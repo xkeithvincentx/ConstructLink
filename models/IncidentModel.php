@@ -383,7 +383,7 @@ class IncidentModel extends BaseModel {
                    uc.full_name as closed_by_name,
                    ucan.full_name as canceled_by_name
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id
@@ -424,7 +424,7 @@ class IncidentModel extends BaseModel {
         }
         
         if (!empty($filters['asset_id'])) {
-            $conditions[] = "i.asset_id = ?";
+            $conditions[] = "i.inventory_item_id = ?";
             $params[] = $filters['asset_id'];
         }
         
@@ -455,7 +455,7 @@ class IncidentModel extends BaseModel {
         $countSql = "
             SELECT COUNT(*) 
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             {$whereClause}
         ";
         
@@ -477,7 +477,7 @@ class IncidentModel extends BaseModel {
                    ua.full_name as authorized_by_name,
                    uc.full_name as closed_by_name
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id
@@ -563,7 +563,7 @@ class IncidentModel extends BaseModel {
                    ur.full_name as reported_by_name,
                    DATEDIFF(CURDATE(), i.date_reported) as days_open
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id
@@ -589,7 +589,7 @@ class IncidentModel extends BaseModel {
                    ur.full_name as reported_by_name,
                    DATEDIFF(CURDATE(), i.date_reported) as days_open
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id
@@ -616,7 +616,7 @@ class IncidentModel extends BaseModel {
             FROM {$this->table} i
             LEFT JOIN users ur ON i.reported_by = ur.id
             LEFT JOIN users ures ON i.resolved_by = ures.id
-            WHERE i.asset_id = ?
+            WHERE i.inventory_item_id = ?
             ORDER BY i.date_reported DESC
         ";
 
@@ -639,7 +639,7 @@ class IncidentModel extends BaseModel {
                    p.name as project_name,
                    ur.full_name as reported_by_name
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id
@@ -703,7 +703,7 @@ class IncidentModel extends BaseModel {
                    ur.full_name as reported_by_name,
                    ures.full_name as resolved_by_name
             FROM {$this->table} i
-            LEFT JOIN assets a ON i.asset_id = a.id
+            LEFT JOIN inventory_items a ON i.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users ur ON i.reported_by = ur.id

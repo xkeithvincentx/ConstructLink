@@ -30,11 +30,11 @@ try {
 
     // Get all transfers without references
     $sql = "
-        SELECT t.id, t.asset_id,
+        SELECT t.id, t.inventory_item_id,
                a.category_id,
                a.primary_discipline
         FROM transfers t
-        LEFT JOIN assets a ON t.asset_id = a.id
+        LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
         WHERE t.ref IS NULL OR t.ref = ''
         ORDER BY t.id ASC
     ";

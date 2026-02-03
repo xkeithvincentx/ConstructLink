@@ -47,14 +47,14 @@ try {
 
     // Get all transfers with temporary references (TR-2025-XXXX format)
     $sql = "
-        SELECT t.id, t.ref as current_ref, t.asset_id,
+        SELECT t.id, t.ref as current_ref, t.inventory_item_id,
                a.category_id,
                a.primary_discipline,
                a.name as asset_name,
                c.name as category_name,
                c.iso_code as category_iso_code
         FROM transfers t
-        LEFT JOIN assets a ON t.asset_id = a.id
+        LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
         LEFT JOIN categories c ON a.category_id = c.id
         WHERE t.ref LIKE 'TR-2025-%'
         ORDER BY t.id ASC

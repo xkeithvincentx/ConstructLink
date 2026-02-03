@@ -286,7 +286,7 @@ class BorrowedToolBatchModel extends BaseModel {
             // CONCURRENCY FIX: Lock asset row for reading to prevent double-booking
             // SELECT ... FOR UPDATE ensures no other transaction can modify this asset
             // until our transaction commits
-            $lockSql = "SELECT * FROM assets WHERE id = ? FOR UPDATE";
+            $lockSql = "SELECT * FROM inventory_items WHERE id = ? FOR UPDATE";
             $lockStmt = $this->db->prepare($lockSql);
             $lockStmt->execute([$item['asset_id']]);
             $asset = $lockStmt->fetch(PDO::FETCH_ASSOC);
@@ -305,7 +305,7 @@ class BorrowedToolBatchModel extends BaseModel {
                 SELECT bt.id, btb.batch_reference, btb.status
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
-                WHERE bt.asset_id = ?
+                WHERE bt.inventory_item_id = ?
                   AND btb.status IN (?, ?, ?, ?, ?)
                 LIMIT 1
             ";
@@ -444,7 +444,7 @@ class BorrowedToolBatchModel extends BaseModel {
         foreach ($validatedItems as $item) {
             $borrowData = [
                 'batch_id' => $batchId,
-                'asset_id' => $item['asset']['id'],
+                'inventory_item_id' => $item['asset']['id'],
                 'quantity' => $item['quantity'],
                 'quantity_returned' => 0,
                 'borrower_name' => $batchData['borrower_name'],

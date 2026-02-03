@@ -61,7 +61,7 @@ class BorrowedToolStatisticsService {
                     SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as active_count,
                     SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as overdue_count
                 FROM borrowed_tools bt
-                LEFT JOIN assets a ON bt.asset_id = a.id
+                LEFT JOIN inventory_items a ON bt.inventory_item_id = a.id
                 {$whereClause}";
 
         // Prepend status constants to params
@@ -104,7 +104,7 @@ class BorrowedToolStatisticsService {
                        a.ref as asset_ref,
                        DATEDIFF(CURDATE(), bt.expected_return) as days_overdue
                 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 {$whereClause}
                 ORDER BY bt.expected_return ASC";
 
@@ -144,7 +144,7 @@ class BorrowedToolStatisticsService {
                     COUNT(*) as borrow_count,
                     SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as returned_count
                 FROM borrowed_tools bt
-                LEFT JOIN assets a ON bt.asset_id = a.id
+                LEFT JOIN inventory_items a ON bt.inventory_item_id = a.id
                 {$whereClause}
                 GROUP BY period
                 ORDER BY period DESC
@@ -183,7 +183,7 @@ class BorrowedToolStatisticsService {
                     COUNT(*) as borrow_count,
                     SUM(CASE WHEN bt.status = ? THEN 1 ELSE 0 END) as overdue_count
                 FROM borrowed_tools bt
-                LEFT JOIN assets a ON bt.asset_id = a.id
+                LEFT JOIN inventory_items a ON bt.inventory_item_id = a.id
                 {$whereClause}
                 GROUP BY bt.borrower_name, bt.borrower_contact
                 ORDER BY borrow_count DESC
@@ -208,7 +208,7 @@ class BorrowedToolStatisticsService {
         $sql = "SELECT
                     bt.id,
                     bt.batch_id,
-                    bt.asset_id,
+                    bt.inventory_item_id,
                     bt.borrower_name,
                     bt.expected_return as expected_return_date,
                     bt.actual_return as returned_date,
@@ -225,9 +225,9 @@ class BorrowedToolStatisticsService {
                         ELSE bt.status
                     END as current_status
                 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 LEFT JOIN borrowed_tool_batches batch ON bt.batch_id = batch.id
-                WHERE bt.asset_id = ?
+                WHERE bt.inventory_item_id = ?
                 ORDER BY bt.created_at DESC";
 
         $params = [

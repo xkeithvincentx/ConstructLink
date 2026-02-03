@@ -66,24 +66,24 @@ $user = $auth->getCurrentUser();
                                     Please select a project.
                                 </div>
                                 <div class="form-text">
-                                    Select the project first to see available assets.
+                                    Select the project first to see available consumables.
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Asset Selection (Second) -->
+                        <!-- Consumable Selection (Second) -->
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="asset_id" class="form-label">Asset <span class="text-danger">*</span></label>
-                                <select class="form-select <?= isset($errors) && in_array('Asset is required', $errors) ? 'is-invalid' : '' ?>" 
-                                        id="asset_id" name="asset_id" required onchange="updateAssetInfo()" disabled>
+                                <label for="asset_id" class="form-label">Consumable Item <span class="text-danger">*</span></label>
+                                <select class="form-select <?= isset($errors) && in_array('Consumable is required', $errors) ? 'is-invalid' : '' ?>"
+                                        id="asset_id" name="asset_id" required onchange="updateConsumableInfo()" disabled>
                                     <option value="">Select Project First</option>
                                 </select>
                                 <div class="invalid-feedback">
-                                    Please select an asset.
+                                    Please select a consumable item.
                                 </div>
                                 <div class="form-text">
-                                    Only available assets from the selected project are shown.
+                                    Only available consumables from the selected project are shown.
                                 </div>
                             </div>
                         </div>
@@ -118,7 +118,7 @@ $user = $auth->getCurrentUser();
                                        value="<?= htmlspecialchars($formData['expected_return'] ?? '') ?>"
                                        min="<?= date('Y-m-d', strtotime('+1 day')) ?>">
                                 <div class="form-text">
-                                    Optional: When do you expect to return this asset?
+                                    Optional: When do you expect to return this consumable?
                                 </div>
                             </div>
                         </div>
@@ -127,12 +127,12 @@ $user = $auth->getCurrentUser();
                     <!-- Purpose -->
                     <div class="mb-3">
                         <label for="purpose" class="form-label">Purpose <span class="text-danger">*</span></label>
-                        <textarea class="form-control <?= isset($errors) && in_array('Purpose is required', $errors) ? 'is-invalid' : '' ?>" 
-                                  id="purpose" 
-                                  name="purpose" 
-                                  rows="3" 
+                        <textarea class="form-control <?= isset($errors) && in_array('Purpose is required', $errors) ? 'is-invalid' : '' ?>"
+                                  id="purpose"
+                                  name="purpose"
+                                  rows="3"
                                   required
-                                  placeholder="Describe the purpose for withdrawing this asset..."><?= htmlspecialchars($formData['purpose'] ?? '') ?></textarea>
+                                  placeholder="Describe the purpose for withdrawing this consumable..."><?= htmlspecialchars($formData['purpose'] ?? '') ?></textarea>
                         <div class="invalid-feedback">
                             Please describe the purpose of this withdrawal.
                         </div>
@@ -163,21 +163,21 @@ $user = $auth->getCurrentUser();
     </div>
     
     <div class="col-lg-4">
-        <!-- Asset Information Panel -->
-        <div class="card" id="assetInfoPanel" style="display: none;">
+        <!-- Consumable Information Panel -->
+        <div class="card" id="consumableInfoPanel" style="display: none;">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>Asset Information
+                    <i class="bi bi-info-circle me-2"></i>Consumable Information
                 </h6>
             </div>
             <div class="card-body">
                 <dl class="row">
                     <dt class="col-sm-5">Reference:</dt>
-                    <dd class="col-sm-7" id="assetRef">-</dd>
+                    <dd class="col-sm-7" id="consumableRef">-</dd>
                     <dt class="col-sm-5">Category:</dt>
-                    <dd class="col-sm-7" id="assetCategory">-</dd>
+                    <dd class="col-sm-7" id="consumableCategory">-</dd>
                     <dt class="col-sm-5">Project:</dt>
-                    <dd class="col-sm-7" id="assetProject">-</dd>
+                    <dd class="col-sm-7" id="consumableProject">-</dd>
                     <dt class="col-sm-5">Status:</dt>
                     <dd class="col-sm-7">
                         <span class="badge bg-success">Available</span>
@@ -197,17 +197,17 @@ $user = $auth->getCurrentUser();
                     <li><i class="bi bi-person-check text-info me-1"></i> <strong>Verifier:</strong> Site Inventory Clerk/Project Manager verifies (Pending Approval)</li>
                     <li><i class="bi bi-person-check-fill text-success me-1"></i> <strong>Authorizer:</strong> Project Manager authorizes (Approved)</li>
                     <li><i class="bi bi-box-arrow-in-right text-secondary me-1"></i> <strong>Releaser:</strong> Asset Director/Warehouseman releases (Released)</li>
-                    <li><i class="bi bi-arrow-return-left text-success me-1"></i> <strong>Completer:</strong> Asset returned (Returned)</li>
+                    <li><i class="bi bi-arrow-return-left text-success me-1"></i> <strong>Completer:</strong> Consumable returned (Returned)</li>
                     <li><i class="bi bi-x-circle text-danger me-1"></i> <strong>Canceled:</strong> Request canceled (Canceled)</li>
                 </ul>
             </div>
         </div>
-        
-        <!-- Project Assets Count -->
+
+        <!-- Project Consumables Count -->
         <div class="card mt-3" id="projectStatsPanel" style="display: none;">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-bar-chart me-2"></i>Project Assets
+                    <i class="bi bi-bar-chart me-2"></i>Project Consumables
                 </h6>
             </div>
             <div class="card-body">
@@ -229,77 +229,77 @@ $user = $auth->getCurrentUser();
 </div>
 
 <script>
-// Store all assets data
-let allAssets = <?= json_encode($assets ?? []) ?>;
+// Store all consumables data
+let allConsumables = <?= json_encode($assets ?? []) ?>;
 
-// Load assets for selected project
+// Load consumables for selected project
 function loadProjectAssets() {
     const projectSelect = document.getElementById('project_id');
-    const assetSelect = document.getElementById('asset_id');
+    const consumableSelect = document.getElementById('asset_id');
     const projectStatsPanel = document.getElementById('projectStatsPanel');
     const submitBtn = document.getElementById('submitBtn');
-    
+
     const projectId = projectSelect.value;
-    
-    // Clear asset selection
-    assetSelect.innerHTML = '<option value="">Loading...</option>';
-    assetSelect.disabled = true;
+
+    // Clear consumable selection
+    consumableSelect.innerHTML = '<option value="">Loading...</option>';
+    consumableSelect.disabled = true;
     submitBtn.disabled = true;
-    
+
     // Hide panels
-    document.getElementById('assetInfoPanel').style.display = 'none';
+    document.getElementById('consumableInfoPanel').style.display = 'none';
     projectStatsPanel.style.display = 'none';
-    
+
     if (!projectId) {
-        assetSelect.innerHTML = '<option value="">Select Project First</option>';
+        consumableSelect.innerHTML = '<option value="">Select Project First</option>';
         return;
     }
-    
-    // Filter assets by project
-    const projectAssets = allAssets.filter(asset => asset.project_id == projectId);
-    
-    // Populate asset dropdown
-    assetSelect.innerHTML = '<option value="">Select Asset</option>';
-    projectAssets.forEach(asset => {
+
+    // Filter consumables by project
+    const projectConsumables = allConsumables.filter(consumable => consumable.project_id == projectId);
+
+    // Populate consumable dropdown
+    consumableSelect.innerHTML = '<option value="">Select Consumable</option>';
+    projectConsumables.forEach(consumable => {
         const option = document.createElement('option');
-        option.value = asset.id;
-        option.textContent = `${asset.ref} - ${asset.name}`;
-        option.dataset.ref = asset.ref;
-        option.dataset.category = asset.category_name || 'N/A';
-        option.dataset.project = asset.project_name || 'N/A';
-        assetSelect.appendChild(option);
+        option.value = consumable.id;
+        option.textContent = `${consumable.ref} - ${consumable.name}`;
+        option.dataset.ref = consumable.ref;
+        option.dataset.category = consumable.category_name || 'N/A';
+        option.dataset.project = consumable.project_name || 'N/A';
+        consumableSelect.appendChild(option);
     });
-    
-    assetSelect.disabled = false;
-    
+
+    consumableSelect.disabled = false;
+
     // Update project stats
-    document.getElementById('availableCount').textContent = projectAssets.length;
-    document.getElementById('totalCount').textContent = projectAssets.length;
+    document.getElementById('availableCount').textContent = projectConsumables.length;
+    document.getElementById('totalCount').textContent = projectConsumables.length;
     projectStatsPanel.style.display = 'block';
-    
+
     // Update submit button state
     updateSubmitButton();
 }
 
-// Update asset information when asset is selected
-function updateAssetInfo() {
-    const assetSelect = document.getElementById('asset_id');
-    const selectedOption = assetSelect.options[assetSelect.selectedIndex];
-    const assetInfoPanel = document.getElementById('assetInfoPanel');
-    
+// Update consumable information when consumable is selected
+function updateConsumableInfo() {
+    const consumableSelect = document.getElementById('asset_id');
+    const selectedOption = consumableSelect.options[consumableSelect.selectedIndex];
+    const consumableInfoPanel = document.getElementById('consumableInfoPanel');
+
     if (selectedOption.value) {
-        // Show asset info panel
-        assetInfoPanel.style.display = 'block';
-        
-        // Update asset information
-        document.getElementById('assetRef').textContent = selectedOption.dataset.ref || '-';
-        document.getElementById('assetCategory').textContent = selectedOption.dataset.category || '-';
-        document.getElementById('assetProject').textContent = selectedOption.dataset.project || '-';
+        // Show consumable info panel
+        consumableInfoPanel.style.display = 'block';
+
+        // Update consumable information
+        document.getElementById('consumableRef').textContent = selectedOption.dataset.ref || '-';
+        document.getElementById('consumableCategory').textContent = selectedOption.dataset.category || '-';
+        document.getElementById('consumableProject').textContent = selectedOption.dataset.project || '-';
     } else {
-        // Hide asset info panel
-        assetInfoPanel.style.display = 'none';
+        // Hide consumable info panel
+        consumableInfoPanel.style.display = 'none';
     }
-    
+
     updateSubmitButton();
 }
 
@@ -354,16 +354,16 @@ document.getElementById('purpose').addEventListener('input', updateSubmitButton)
 
 // Initialize form
 document.addEventListener('DOMContentLoaded', function() {
-    // If project is pre-selected, load assets
+    // If project is pre-selected, load consumables
     const projectSelect = document.getElementById('project_id');
     if (projectSelect.value) {
         loadProjectAssets();
-        
-        // If asset is also pre-selected, update info
+
+        // If consumable is also pre-selected, update info
         setTimeout(() => {
-            const assetSelect = document.getElementById('asset_id');
-            if (assetSelect.value) {
-                updateAssetInfo();
+            const consumableSelect = document.getElementById('asset_id');
+            if (consumableSelect.value) {
+                updateConsumableInfo();
             }
         }, 100);
     }

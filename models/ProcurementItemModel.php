@@ -178,7 +178,7 @@ class ProcurementItemModel extends BaseModel {
                 SELECT pi.*, c.name as category_name,
                        po.project_id, po.vendor_id, po.status as order_status,
                        (COALESCE(pi.quantity_received, pi.quantity) - COALESCE(
-                           (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                        )) as available_for_generation,
                        pi.discrepancy_notes,
                        pi.discrepancy_type,
@@ -222,10 +222,10 @@ class ProcurementItemModel extends BaseModel {
                        po.project_id, po.vendor_id, po.status as order_status,
                        COALESCE(pi.quantity_received, pi.quantity) as total_quantity,
                        COALESCE(
-                           (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                        ) as assets_generated,
                        (COALESCE(pi.quantity_received, pi.quantity) - COALESCE(
-                           (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                        )) as available_for_generation
                 FROM procurement_items pi
                 LEFT JOIN categories c ON pi.category_id = c.id
@@ -449,7 +449,7 @@ class ProcurementItemModel extends BaseModel {
                 SELECT pi.*, c.name as category_name,
                        po.project_id, po.vendor_id, po.status as order_status,
                        (COALESCE(pi.quantity_received, pi.quantity) - COALESCE(
-                           (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                        )) as available_for_generation,
                        pi.discrepancy_notes,
                        pi.discrepancy_type,

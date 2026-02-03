@@ -142,7 +142,7 @@ class TransferController {
             
             // Process form submission
             $formData = [
-                'asset_id' => (int)($_POST['asset_id'] ?? 0),
+                'inventory_item_id' => (int)($_POST['inventory_item_id'] ?? 0),
                 'from_project' => (int)($_POST['from_project'] ?? 0),
                 'to_project' => (int)($_POST['to_project'] ?? 0),
                 'reason' => Validator::sanitize($_POST['reason'] ?? ''),
@@ -154,7 +154,7 @@ class TransferController {
             ];
             
             // Validate
-            if (empty($formData['asset_id'])) {
+            if (empty($formData['inventory_item_id'])) {
                 $errors[] = 'Asset is required';
             }
             if (empty($formData['from_project'])) {
@@ -959,17 +959,17 @@ class TransferController {
             // Base query
             $sql = "
                 SELECT a.*, c.name as category_name, p.name as project_name, p.location as project_location
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 WHERE a.status = 'available'
                   AND p.is_active = 1
                   AND a.id NOT IN (
-                      SELECT DISTINCT asset_id FROM borrowed_tools WHERE status = 'borrowed'
+                      SELECT DISTINCT inventory_item_id FROM borrowed_tools WHERE status = 'borrowed'
                       UNION
-                      SELECT DISTINCT asset_id FROM withdrawals WHERE status IN ('pending', 'released')
+                      SELECT DISTINCT inventory_item_id FROM withdrawals WHERE status IN ('pending', 'released')
                       UNION
-                      SELECT DISTINCT asset_id FROM transfers WHERE status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Received')
+                      SELECT DISTINCT inventory_item_id FROM transfers WHERE status IN ('Pending Verification', 'Pending Approval', 'Approved', 'Received')
                   )
             ";
 
@@ -1025,16 +1025,16 @@ class TransferController {
             $db = Database::getInstance()->getConnection();
             $sql = "
                 SELECT a.*, c.name as category_name
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 WHERE a.project_id = ?
                   AND a.status = 'available'
                   AND a.id NOT IN (
-                      SELECT DISTINCT asset_id FROM borrowed_tools WHERE status = 'borrowed'
+                      SELECT DISTINCT inventory_item_id FROM borrowed_tools WHERE status = 'borrowed'
                       UNION
-                      SELECT DISTINCT asset_id FROM withdrawals WHERE status IN ('pending', 'released')
+                      SELECT DISTINCT inventory_item_id FROM withdrawals WHERE status IN ('pending', 'released')
                       UNION
-                      SELECT DISTINCT asset_id FROM transfers WHERE status IN ('pending', 'approved')
+                      SELECT DISTINCT inventory_item_id FROM transfers WHERE status IN ('pending', 'approved')
                   )
                 ORDER BY a.name ASC
             ";
@@ -1101,7 +1101,7 @@ class TransferController {
             $input = json_decode(file_get_contents('php://input'), true);
             
             $data = [
-                'asset_id' => $input['asset_id'] ?? 0,
+                'inventory_item_id' => $input['inventory_item_id'] ?? 0,
                 'from_project' => $input['from_project'] ?? 0,
                 'to_project' => $input['to_project'] ?? 0,
                 'reason' => Validator::sanitize($input['reason'] ?? ''),

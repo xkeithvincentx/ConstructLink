@@ -110,17 +110,17 @@ $additionalJS = ['assets/js/modules/requests/components/view-actions.js'];
                     <div class="col-md-6">
                         <dl class="row">
                             <dt class="col-sm-5">Requested By:</dt>
-                            <dd class="col-sm-7"><?= htmlspecialchars($request['requested_by_name']) ?></dd>
-                            
+                            <dd class="col-sm-7"><?= htmlspecialchars($request['requested_by_name'] ?? 'Unknown') ?></dd>
+
                             <dt class="col-sm-5">Request Date:</dt>
                             <dd class="col-sm-7"><?= date('M j, Y g:i A', strtotime($request['created_at'])) ?></dd>
-                            
-                            <?php if ($request['reviewed_by_name']): ?>
+
+                            <?php if (!empty($request['reviewed_by_name'])): ?>
                             <dt class="col-sm-5">Reviewed By:</dt>
                             <dd class="col-sm-7"><?= htmlspecialchars($request['reviewed_by_name']) ?></dd>
                             <?php endif; ?>
-                            
-                            <?php if ($request['approved_by_name']): ?>
+
+                            <?php if (!empty($request['approved_by_name'])): ?>
                             <dt class="col-sm-5">Approved By:</dt>
                             <dd class="col-sm-7"><?= htmlspecialchars($request['approved_by_name']) ?></dd>
                             <?php endif; ?>

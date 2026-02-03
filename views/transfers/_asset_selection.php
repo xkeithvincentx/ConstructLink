@@ -18,13 +18,13 @@ $errors = $errors ?? [];
 <!-- Asset Selection with Enhanced Search -->
 <div class="row mb-4">
     <div class="col-md-12">
-        <label for="asset_id" class="form-label">Asset <span class="text-danger">*</span></label>
+        <label for="inventory_item_id" class="form-label">Asset <span class="text-danger">*</span></label>
 
-        <!-- Hidden input for actual asset_id -->
-        <input type="hidden" id="asset_id" name="asset_id" x-model="formData.asset_id" required>
+        <!-- Hidden input for actual inventory_item_id -->
+        <input type="hidden" id="inventory_item_id" name="inventory_item_id" x-model="formData.inventory_item_id" required>
 
         <!-- Validation div for asset selection -->
-        <div x-show="!formData.asset_id" class="text-danger small mt-1" style="display: none;">
+        <div x-show="!formData.inventory_item_id" class="text-danger small mt-1" style="display: none;">
             Please select an asset to transfer.
         </div>
 

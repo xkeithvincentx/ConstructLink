@@ -8,10 +8,12 @@
 class BorrowedToolsPermissionGuard {
     private $auth;
     private $roleConfig;
+    private $permissionsConfig;
 
     public function __construct() {
         $this->auth = Auth::getInstance();
         $this->roleConfig = require APP_ROOT . '/config/roles.php';
+        $this->permissionsConfig = require APP_ROOT . '/config/permissions.php';
     }
 
     /**
@@ -43,26 +45,28 @@ class BorrowedToolsPermissionGuard {
         }
 
         // Handle MVA workflow permissions using configuration
+        // NOTE: Using direct permission key lookup (e.g., 'borrowed_tools.create')
+        // because permissions.php uses flat keys, not nested arrays
         switch ($action) {
             case 'create':
                 // Maker roles from config
-                $allowedRoles = config('permissions.borrowed_tools.create', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.create'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'create_any_project':
                 // Only roles with cross-project access
-                $allowedRoles = config('permissions.borrowed_tools.create_any_project', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.create_any_project'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'verify':
                 // Verifier roles (streamlined: auto-approve, critical: require approval)
                 if ($isCritical) {
-                    $allowedRoles = config('permissions.borrowed_tools.verify_critical', []);
+                    $allowedRoles = $this->permissionsConfig['borrowed_tools.verify_critical'] ?? [];
                 } else {
                     // Streamlined workflow: makers can verify their own
                     $allowedRoles = array_merge(
-                        config('permissions.borrowed_tools.verify', []),
-                        config('permissions.borrowed_tools.create', [])
+                        $this->permissionsConfig['borrowed_tools.verify'] ?? [],
+                        $this->permissionsConfig['borrowed_tools.create'] ?? []
                     );
                 }
                 return in_array($userRole, $allowedRoles);
@@ -72,27 +76,27 @@ class BorrowedToolsPermissionGuard {
                 if (!$isCritical) {
                     return false; // Streamlined tools don't need approval
                 }
-                $allowedRoles = config('permissions.borrowed_tools.approve_critical', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.approve_critical'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'borrow':
                 // Release to borrower (Equipment Custodian)
-                $allowedRoles = config('permissions.borrowed_tools.release', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.release'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'return':
                 // Anyone who can release can also process returns
-                $allowedRoles = config('permissions.borrowed_tools.return', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.return'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'extend':
                 // Extension requires approval from authorizer
-                $allowedRoles = config('permissions.borrowed_tools.extend', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.extend'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'cancel':
                 // Cancel permissions
-                $allowedRoles = config('permissions.borrowed_tools.cancel', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.cancel'] ?? [];
 
                 // Original maker can cancel if not yet verified
                 if (isset($tool['status']) &&
@@ -106,17 +110,17 @@ class BorrowedToolsPermissionGuard {
 
             case 'view':
                 // View permissions (project-scoped)
-                $allowedRoles = config('permissions.borrowed_tools.view', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.view'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'view_all_projects':
                 // View across all projects (oversight roles)
-                $allowedRoles = config('permissions.borrowed_tools.view_all_projects', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.view_all_projects'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             case 'print':
                 // Print permissions
-                $allowedRoles = config('permissions.borrowed_tools.print', []);
+                $allowedRoles = $this->permissionsConfig['borrowed_tools.print'] ?? [];
                 return in_array($userRole, $allowedRoles);
 
             default:

@@ -57,7 +57,7 @@ for ($copy = 1; $copy <= 4; $copy++):
             <h1><?= strtoupper($systemName) ?> BORROWING FORM</h1>
         </div>
 
-        <!-- Info Section -->
+        <!-- Info Section (Compact 2-row layout) -->
         <div class="info-section">
             <div class="info-row">
                 <div class="info-field">
@@ -65,7 +65,11 @@ for ($copy = 1; $copy <= 4; $copy++):
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Date Filled:</span>
+                    <span class="info-label">Date:</span>
+                    <span class="info-value"></span>
+                </div>
+                <div class="info-field">
+                    <span class="info-label">Reference:</span>
                     <span class="info-value"></span>
                 </div>
             </div>
@@ -75,17 +79,11 @@ for ($copy = 1; $copy <= 4; $copy++):
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Released Date:</span>
-                    <span class="info-value"></span>
-                </div>
-            </div>
-            <div class="info-row">
-                <div class="info-field">
-                    <span class="info-label">Returned Date:</span>
+                    <span class="info-label">Released:</span>
                     <span class="info-value"></span>
                 </div>
                 <div class="info-field">
-                    <span class="info-label">Reference No.:</span>
+                    <span class="info-label">Returned:</span>
                     <span class="info-value"></span>
                 </div>
             </div>
@@ -175,7 +173,7 @@ for ($copy = 1; $copy <= 4; $copy++):
                 <?php for ($i = 1; $i <= 5; $i++): ?>
                 <tr>
                     <td class="text-center"><span class="checkbox"></span></td>
-                    <td class="border-bottom-dashed"></td>
+                    <td class="border-bottom-dashed"><span class="others-row-number"><?= $i ?>.</span></td>
                     <td class="qty-col"></td>
                     <td class="qty-col return-col"></td>
                 </tr>
@@ -183,28 +181,50 @@ for ($copy = 1; $copy <= 4; $copy++):
             </tbody>
         </table>
 
-        <!-- Signature Section -->
+        <!-- Totals Section -->
+        <div class="totals-section">
+            <div class="totals-header">TOTALS (Fill before release)</div>
+            <div class="totals-row">
+                <span class="totals-label">TOTAL ITEMS CHECKED:</span>
+                <span class="totals-input-box"></span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">TOTAL QTY OUT:</span>
+                <span class="totals-input-box"></span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">TOTAL QTY IN:</span>
+                <span class="totals-input-box"></span>
+            </div>
+        </div>
+
+        <!-- Signature Section (Compact) -->
         <div class="signature-section">
             <div class="sig-box">
-                <div class="sig-label">BORROWER</div>
-                <div class="sig-space"></div>
+                <div class="sig-label">BORROWED BY</div>
+                <div class="sig-line"></div>
+                <div class="sig-text-small">Print Name</div>
+                <div class="sig-line"></div>
                 <div class="sig-text-small">Signature</div>
             </div>
             <div class="sig-box">
-                <div class="sig-label">OIC</div>
-                <div class="sig-space"></div>
-                <div class="sig-text-small">Signature (Optional)</div>
+                <div class="sig-label">OIC (Optional)</div>
+                <div class="sig-line"></div>
+                <div class="sig-text-small">Initial</div>
             </div>
             <div class="sig-box">
                 <div class="sig-label">RELEASED BY</div>
-                <div class="sig-space"></div>
+                <div class="sig-line"></div>
+                <div class="sig-text-small">Print Name</div>
+                <div class="sig-line"></div>
                 <div class="sig-text-small">Signature</div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="form-footer">
-            <?= $systemName ?> by Ranoa Digital Solutions
+            <div><?= $systemName ?> by Ranoa Digital Solutions</div>
+            <div class="footer-instruction">Verify totals before return</div>
         </div>
     </div>
 <?php endfor; ?>

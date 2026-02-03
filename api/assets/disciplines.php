@@ -39,10 +39,10 @@ try {
     switch ($action) {
         case 'list':
             // Get all disciplines with hierarchy
-            $sql = "SELECT d.id, d.code, d.name, d.description, 
+            $sql = "SELECT d.id, d.code, d.name, d.description,
                     d.parent_id, p.name as parent_name, d.display_order
-                    FROM asset_disciplines d
-                    LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+                    FROM inventory_disciplines d
+                    LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
                     WHERE d.is_active = 1
                     ORDER BY COALESCE(p.display_order, d.display_order), d.display_order";
             
@@ -89,8 +89,8 @@ try {
             
             $sql = "SELECT d.id, d.code, d.name, d.description,
                     adm.primary_use, adm.use_description, adm.frequency_of_use
-                    FROM asset_discipline_mappings adm
-                    JOIN asset_disciplines d ON adm.discipline_id = d.id
+                    FROM inventory_discipline_mappings adm
+                    JOIN inventory_disciplines d ON adm.discipline_id = d.id
                     WHERE adm.asset_type_id = ? AND d.is_active = 1
                     ORDER BY adm.primary_use DESC, d.display_order";
             
@@ -120,9 +120,9 @@ try {
                     COUNT(adm.id) as usage_count,
                     MAX(adm.primary_use) as has_primary_use
                     FROM categories c
-                    JOIN asset_types at ON at.category = c.name
-                    JOIN asset_discipline_mappings adm ON adm.asset_type_id = at.id
-                    JOIN asset_disciplines d ON adm.discipline_id = d.id
+                    JOIN inventory_types at ON at.category = c.name
+                    JOIN inventory_discipline_mappings adm ON adm.asset_type_id = at.id
+                    JOIN inventory_disciplines d ON adm.discipline_id = d.id
                     WHERE c.id = ? AND d.is_active = 1
                     GROUP BY d.id, d.code, d.name, d.description
                     ORDER BY has_primary_use DESC, usage_count DESC, d.display_order";
@@ -159,9 +159,9 @@ try {
             $sql = "SELECT DISTINCT at.id, at.name, at.category, at.subcategory,
                     GROUP_CONCAT(d.name SEPARATOR ', ') as disciplines,
                     COUNT(adm.id) as discipline_count
-                    FROM asset_types at
-                    JOIN asset_discipline_mappings adm ON adm.asset_type_id = at.id
-                    JOIN asset_disciplines d ON adm.discipline_id = d.id
+                    FROM inventory_types at
+                    JOIN inventory_discipline_mappings adm ON adm.asset_type_id = at.id
+                    JOIN inventory_disciplines d ON adm.discipline_id = d.id
                     WHERE d.id IN ($placeholders) AND at.is_active = 1
                     GROUP BY at.id, at.name, at.category, at.subcategory
                     ORDER BY discipline_count DESC, at.name

@@ -75,7 +75,7 @@ class BorrowedToolWorkflowService {
 
             // Prepare borrow data with initial MVA status
             $borrowData = [
-                'asset_id' => $data['asset_id'],
+                'inventory_item_id' => $data['asset_id'],
                 'borrower_name' => $data['borrower_name'],
                 'borrower_contact' => $data['borrower_contact'] ?? null,
                 'expected_return' => $data['expected_return'],
@@ -181,7 +181,7 @@ class BorrowedToolWorkflowService {
             }
 
             // Verify asset is still available
-            $asset = $this->assetModel->find($borrowedTool['asset_id']);
+            $asset = $this->assetModel->find($borrowedTool['inventory_item_id']);
             if (!$asset) {
                 $this->db->rollBack();
                 return ResponseFormatter::notFound('Asset');
@@ -207,7 +207,7 @@ class BorrowedToolWorkflowService {
             }
 
             // Update asset status to borrowed
-            $assetUpdated = $this->assetModel->update($borrowedTool['asset_id'], ['status' => AssetStatus::BORROWED]);
+            $assetUpdated = $this->assetModel->update($borrowedTool['inventory_item_id'], ['status' => AssetStatus::BORROWED]);
             if (!$assetUpdated) {
                 $this->db->rollBack();
                 return ResponseFormatter::error('Failed to update asset status');
@@ -391,7 +391,7 @@ class BorrowedToolWorkflowService {
 
             // Create borrowed tool record with streamlined status (directly to Borrowed)
             $borrowData = [
-                'asset_id' => $data['asset_id'],
+                'inventory_item_id' => $data['asset_id'],
                 'borrower_name' => $data['borrower_name'],
                 'borrower_contact' => $data['borrower_contact'] ?? null,
                 'expected_return' => $data['expected_return'],
@@ -416,7 +416,7 @@ class BorrowedToolWorkflowService {
             }
 
             // Update asset status to borrowed
-            $assetUpdateSql = "UPDATE assets SET status = ? WHERE id = ?";
+            $assetUpdateSql = "UPDATE inventory_items SET status = ? WHERE id = ?";
             $assetStmt = $this->db->prepare($assetUpdateSql);
             if (!$assetStmt->execute([AssetStatus::BORROWED, $data['asset_id']])) {
                 $this->db->rollBack();

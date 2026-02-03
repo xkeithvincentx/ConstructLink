@@ -1,536 +1,701 @@
 <?php
+/**
+ * Consumable Withdrawals Index View
+ *
+ * REFACTORED: Matches borrowed-tools pattern with Alpine.js filters,
+ * unified single/batch display, and clean minimal design
+ */
+
 // Start output buffering to capture content
 ob_start();
+
+// Load ViewHelper for reusable components
+require_once APP_ROOT . '/helpers/ViewHelper.php';
 
 $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
+
+// Group withdrawals by batch_id for batch display
+$groupedWithdrawals = [];
+$singleWithdrawals = [];
+
+foreach ($withdrawals as $withdrawal) {
+    if (!empty($withdrawal['batch_id'])) {
+        if (!isset($groupedWithdrawals[$withdrawal['batch_id']])) {
+            $groupedWithdrawals[$withdrawal['batch_id']] = [];
+        }
+        $groupedWithdrawals[$withdrawal['batch_id']][] = $withdrawal;
+    } else {
+        $singleWithdrawals[] = $withdrawal;
+    }
+}
+
+// Merge grouped batches and single items for display
+$displayItems = [];
+foreach ($groupedWithdrawals as $batchId => $batchItems) {
+    if (count($batchItems) > 1) {
+        $displayItems[] = [
+            'type' => 'batch',
+            'batch_id' => $batchId,
+            'items' => $batchItems,
+            'primary' => $batchItems[0]
+        ];
+    } else {
+        $displayItems[] = [
+            'type' => 'single',
+            'item' => $batchItems[0]
+        ];
+    }
+}
+foreach ($singleWithdrawals as $withdrawal) {
+    $displayItems[] = [
+        'type' => 'single',
+        'item' => $withdrawal
+    ];
+}
+
+// Sort by ID descending
+usort($displayItems, function($a, $b) {
+    $idA = $a['type'] === 'batch' ? $a['primary']['id'] : $a['item']['id'];
+    $idB = $b['type'] === 'batch' ? $b['primary']['id'] : $b['item']['id'];
+    return $idB - $idA;
+});
+
+// Generate CSRF token for JavaScript
+$csrfToken = CSRFProtection::generateToken();
 ?>
 
-<!-- Action Buttons (No Header - handled by layout) -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <!-- Primary Actions (Left) -->
-    <div class="btn-toolbar gap-2" role="toolbar" aria-label="Primary actions">
-        <?php if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
-            <a href="?route=withdrawals/create" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>
-                <span class="d-none d-sm-inline">New Withdrawal</span>
-                <span class="d-sm-none">Create</span>
+<!-- Withdrawals Module Container with Configuration -->
+<div id="withdrawals-app"
+     x-data="withdrawalsIndexApp()"
+     data-csrf-token="<?= htmlspecialchars($csrfToken) ?>">
+
+<!-- Action Buttons -->
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <!-- Desktop: Action Buttons -->
+    <div class="d-none d-md-flex gap-2">
+        <?php if (hasPermission('withdrawals/create')): ?>
+            <a href="?route=withdrawals/create-batch"
+               class="btn btn-success btn-sm"
+               aria-label="Create new withdrawal request">
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>New Withdrawal
             </a>
         <?php endif; ?>
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                id="refreshBtn"
+                aria-label="Refresh list">
+            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Refresh
+        </button>
     </div>
 </div>
 
-<!-- Statistics Cards -->
-<div class="row g-3 mb-4">
-    <!-- Pending Verification -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--warning-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-clock-history text-warning fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Pending Verification</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['pending_verification'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-person me-1"></i><?= $withdrawalStats['my_pending_verifications'] ?? 0 ?> for your review
-                </p>
-                <?php if (in_array($userRole, $roleConfig['withdrawals/verify'] ?? []) && ($withdrawalStats['my_pending_verifications'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Pending%20Verification" class="btn btn-sm btn-outline-warning w-100 mt-2">
-                        <i class="bi bi-search me-1"></i>Verify Now
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
+<!-- Mobile: Action Buttons -->
+<div class="d-md-none d-grid gap-2 mb-4">
+    <?php if (hasPermission('withdrawals/create')): ?>
+        <a href="?route=withdrawals/create-batch" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>New Withdrawal Request
+        </a>
+    <?php endif; ?>
+</div>
 
-    <!-- Pending Approval -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--info-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-person-check text-info fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Pending Approval</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['pending_approval'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-person-check me-1"></i><?= $withdrawalStats['my_pending_approvals'] ?? 0 ?> for your approval
-                </p>
-                <?php if (in_array($userRole, $roleConfig['withdrawals/approve'] ?? []) && ($withdrawalStats['my_pending_approvals'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Pending%20Approval" class="btn btn-sm btn-outline-info w-100 mt-2">
-                        <i class="bi bi-check-circle me-1"></i>Approve Now
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
+<!-- MVA Workflow Help (Collapsible) -->
+<div class="mb-3">
+    <button class="btn btn-link btn-sm text-decoration-none p-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mvaHelp"
+            aria-expanded="false"
+            aria-controls="mvaHelp">
+        <i class="bi bi-question-circle me-1" aria-hidden="true"></i>
+        How does the MVA workflow work?
+    </button>
+</div>
 
-    <!-- Approved for Release -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--success-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-check-circle text-success fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Approved for Release</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['approved'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-box-arrow-right me-1"></i>Ready for warehouse release
-                </p>
-                <?php if (in_array($userRole, $roleConfig['withdrawals/release'] ?? []) && ($withdrawalStats['approved'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Approved" class="btn btn-sm btn-outline-success w-100 mt-2">
-                        <i class="bi bi-box-arrow-right me-1"></i>Release Assets
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Released (Active) -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--primary-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-box-arrow-right text-primary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Released (Active)</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['released'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-clock me-1"></i><?= $withdrawalStats['overdue_returns'] ?? 0 ?> overdue returns
-                </p>
-                <?php if (($withdrawalStats['overdue_returns'] ?? 0) > 0): ?>
-                    <a href="?route=withdrawals&status=Released" class="btn btn-sm btn-outline-danger w-100 mt-2">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Review Overdue
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Returned (Completed) -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-arrow-return-left text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Returned</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['returned'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-percent me-1"></i><?= $withdrawalStats['return_rate'] ?? 0 ?>% return rate
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Canceled -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-x-circle text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Canceled</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['canceled'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-graph-down me-1"></i><?= $withdrawalStats['cancellation_rate'] ?? 0 ?>% cancellation rate
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Total Withdrawals -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card h-100" style="border-left: 4px solid var(--neutral-color);">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle bg-light p-2 me-3">
-                        <i class="bi bi-list-ul text-secondary fs-5"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1 small">Total Withdrawals</h6>
-                        <h3 class="mb-0"><?= $withdrawalStats['total_withdrawals'] ?? 0 ?></h3>
-                    </div>
-                </div>
-                <p class="text-muted mb-0 small">
-                    <i class="bi bi-graph-up me-1"></i>All time
-                </p>
-            </div>
+<div class="collapse" id="mvaHelp">
+    <div class="alert alert-info mb-4" role="status">
+        <strong><i class="bi bi-info-circle me-2" aria-hidden="true"></i>MVA Workflow:</strong>
+        <ol class="mb-0 ps-3 mt-2">
+            <li><strong>Maker</strong> (Warehouseman) creates withdrawal request for consumables</li>
+            <li><strong>Verifier</strong> (Site Inventory Clerk) verifies consumables match inventory records</li>
+            <li><strong>Authorizer</strong> (Project Manager) approves usage for project requirements
+                <span class="badge bg-primary ms-2">Quantities Reserved</span>
+            </li>
+            <li>Warehouseman releases consumables (physically hands over to receiver)</li>
+            <li><em>Optional:</em> If consumables are unused, they can be returned (quantity restored)</li>
+        </ol>
+        <div class="alert alert-warning mt-3 mb-0">
+            <strong>Important:</strong> Inventory quantities are <strong>reserved at approval</strong> (step 3), not at release.
+            This ensures items are committed when the Authorizer approves, preventing double-booking.
         </div>
     </div>
 </div>
 
-<!-- MVA Workflow Info Banner -->
-<div class="alert alert-info mb-4">
-    <strong><i class="bi bi-info-circle me-2"></i>MVA Workflow:</strong>
-    <span class="badge bg-warning text-dark">Verifier</span> (Project Manager) →
-    <span class="badge bg-info">Authorizer</span> (Asset Director) →
-    <span class="badge bg-success">Approved</span> →
-    <span class="badge bg-primary">Released</span> →
-    <span class="badge bg-secondary">Returned</span>
-</div>
-
-<!-- Overdue Alerts -->
-<?php if (!empty($overdueWithdrawals)): ?>
-    <div class="alert alert-warning" role="alert">
-        <h6 class="alert-heading">
-            <i class="bi bi-exclamation-triangle me-2"></i>Overdue Withdrawals Alert
-        </h6>
-        <p class="mb-2">There are <?= count($overdueWithdrawals) ?> overdue withdrawal(s) that require immediate attention:</p>
-        <ul class="mb-0">
-            <?php foreach (array_slice($overdueWithdrawals, 0, 3) as $overdue): ?>
-                <li>
-                    <strong><?= htmlspecialchars($overdue['asset_name']) ?></strong> 
-                    (<?= htmlspecialchars($overdue['asset_ref']) ?>) - 
-                    <?= $overdue['days_overdue'] ?> days overdue
-                    <a href="?route=withdrawals/view&id=<?= $overdue['id'] ?>" class="ms-2">View Details</a>
-                </li>
-            <?php endforeach; ?>
-            <?php if (count($overdueWithdrawals) > 3): ?>
-                <li><em>... and <?= count($overdueWithdrawals) - 3 ?> more</em></li>
-            <?php endif; ?>
-        </ul>
-    </div>
-<?php endif; ?>
-
-<!-- Filters -->
+<!-- Filters with Alpine.js -->
 <div class="card mb-4">
-    <div class="card-header">
-        <h6 class="card-title mb-0">
-            <i class="bi bi-funnel me-2"></i>Filters
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-funnel me-2" aria-hidden="true"></i>Filters
         </h6>
+        <button type="button"
+                class="btn btn-sm btn-link text-decoration-none p-0"
+                @click="clearFilters()"
+                x-show="filters.status || filters.receiver || filters.dateFrom || filters.dateTo"
+                x-transition>
+            <i class="bi bi-x-circle me-1"></i>Clear All
+        </button>
     </div>
     <div class="card-body">
-        <form method="GET" action="?route=withdrawals" class="row g-3">
-            <div class="col-md-3">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">All Statuses</option>
-                    <option value="Pending Verification" <?= ($_GET['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>Pending Verification</option>
-                    <option value="Pending Approval" <?= ($_GET['status'] ?? '') === 'Pending Approval' ? 'selected' : '' ?>>Pending Approval</option>
-                    <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>Approved</option>
-                    <option value="Released" <?= ($_GET['status'] ?? '') === 'Released' ? 'selected' : '' ?>>Released</option>
-                    <option value="Returned" <?= ($_GET['status'] ?? '') === 'Returned' ? 'selected' : '' ?>>Returned</option>
-                    <option value="Canceled" <?= ($_GET['status'] ?? '') === 'Canceled' ? 'selected' : '' ?>>Canceled</option>
-                </select>
+        <form @submit.prevent="applyFilters()">
+            <div class="row g-3">
+                <!-- Status Filter -->
+                <div class="col-lg-3 col-md-6">
+                    <label for="filterStatus" class="form-label">
+                        <i class="bi bi-funnel-fill me-1 text-muted" aria-hidden="true"></i>Status
+                    </label>
+                    <select id="filterStatus"
+                            class="form-select"
+                            x-model="filters.status"
+                            @change="applyFilters()">
+                        <option value="">All Statuses</option>
+                        <option value="Pending Verification">Pending Verification</option>
+                        <option value="Pending Approval">Pending Approval</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Released">Released</option>
+                        <option value="Returned">Returned</option>
+                        <option value="Canceled">Canceled</option>
+                    </select>
+                </div>
+
+                <!-- Receiver Search -->
+                <div class="col-lg-3 col-md-6">
+                    <label for="filterReceiver" class="form-label">
+                        <i class="bi bi-person me-1 text-muted" aria-hidden="true"></i>Receiver
+                    </label>
+                    <div class="input-group">
+                        <input type="text"
+                               id="filterReceiver"
+                               class="form-control"
+                               x-model="filters.receiver"
+                               placeholder="Search receiver..."
+                               @keyup.enter="applyFilters()">
+                        <button class="btn btn-outline-secondary"
+                                type="button"
+                                @click="filters.receiver = ''; applyFilters()"
+                                x-show="filters.receiver"
+                                x-transition
+                                aria-label="Clear receiver filter">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date From -->
+                <div class="col-lg-2 col-md-6">
+                    <label for="filterDateFrom" class="form-label">
+                        <i class="bi bi-calendar-event me-1 text-muted" aria-hidden="true"></i>From
+                    </label>
+                    <input type="date"
+                           id="filterDateFrom"
+                           class="form-control"
+                           x-model="filters.dateFrom"
+                           @change="applyFilters()">
+                </div>
+
+                <!-- Date To -->
+                <div class="col-lg-2 col-md-6">
+                    <label for="filterDateTo" class="form-label">
+                        <i class="bi bi-calendar-check me-1 text-muted" aria-hidden="true"></i>To
+                    </label>
+                    <input type="date"
+                           id="filterDateTo"
+                           class="form-control"
+                           x-model="filters.dateTo"
+                           @change="applyFilters()">
+                </div>
+
+                <!-- Actions -->
+                <div class="col-lg-2 col-md-12">
+                    <label class="form-label d-none d-lg-block">&nbsp;</label>
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1" aria-hidden="true"></i>Apply Filters
+                    </button>
+                </div>
             </div>
-            <?php 
-            // Hide project filter if user has a current project assigned
-            $showProjectFilter = in_array($userRole, ['System Admin', 'Finance Director', 'Asset Director']) 
-                                || empty($user['current_project_id']);
-            ?>
-            <?php if ($showProjectFilter): ?>
-            <div class="col-md-3">
-                <label for="project_id" class="form-label">Project</label>
-                <select class="form-select" id="project_id" name="project_id">
-                    <option value="">All Projects</option>
-                    <?php if (isset($projects) && is_array($projects)): ?>
-                        <?php foreach ($projects as $project): ?>
-                            <option value="<?= $project['id'] ?>" 
-                                    <?= ($_GET['project_id'] ?? '') == $project['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($project['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            <div class="col-md-3">
-                <label for="date_from" class="form-label">Date From</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" 
-                       value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
-            </div>
-            <div class="col-md-3">
-                <label for="date_to" class="form-label">Date To</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" 
-                       value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
-            </div>
-            <div class="<?= $showProjectFilter ? 'col-md-6' : 'col-md-9' ?>">
-                <label for="search" class="form-label">Search</label>
-                <input type="text" class="form-control" id="search" name="search" 
-                       placeholder="Search by asset name, receiver, or purpose..."
-                       value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-            </div>
-            <div class="<?= $showProjectFilter ? 'col-md-6' : 'col-md-3' ?> d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="bi bi-search me-1"></i>Filter
-                </button>
-                <a href="?route=withdrawals" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle me-1"></i>Clear
-                </a>
+
+            <!-- Active Filters Display -->
+            <div x-show="filters.status || filters.receiver || filters.dateFrom || filters.dateTo"
+                 x-transition
+                 class="mt-3 pt-3 border-top">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <small class="text-muted fw-semibold">Active Filters:</small>
+
+                    <span x-show="filters.status"
+                          x-transition
+                          class="badge bg-primary">
+                        Status: <span x-text="filters.status"></span>
+                        <button type="button"
+                                class="btn-close btn-close-white ms-1"
+                                style="font-size: 0.6rem;"
+                                @click="filters.status = ''; applyFilters()"
+                                aria-label="Remove status filter"></button>
+                    </span>
+
+                    <span x-show="filters.receiver"
+                          x-transition
+                          class="badge bg-info">
+                        Receiver: <span x-text="filters.receiver"></span>
+                        <button type="button"
+                                class="btn-close btn-close-white ms-1"
+                                style="font-size: 0.6rem;"
+                                @click="filters.receiver = ''; applyFilters()"
+                                aria-label="Remove receiver filter"></button>
+                    </span>
+
+                    <span x-show="filters.dateFrom"
+                          x-transition
+                          class="badge bg-success">
+                        From: <span x-text="filters.dateFrom"></span>
+                        <button type="button"
+                                class="btn-close btn-close-white ms-1"
+                                style="font-size: 0.6rem;"
+                                @click="filters.dateFrom = ''; applyFilters()"
+                                aria-label="Remove date from filter"></button>
+                    </span>
+
+                    <span x-show="filters.dateTo"
+                          x-transition
+                          class="badge bg-warning">
+                        To: <span x-text="filters.dateTo"></span>
+                        <button type="button"
+                                class="btn-close btn-close-white ms-1"
+                                style="font-size: 0.6rem;"
+                                @click="filters.dateTo = ''; applyFilters()"
+                                aria-label="Remove date to filter"></button>
+                    </span>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Withdrawals Table -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="card-title mb-0">Withdrawal Requests</h6>
-        <div class="d-flex gap-2">
-            <?php if ($auth->hasPermission('view_all_assets') || $auth->hasPermission('view_financial_data')): ?>
-                <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Export
-                </button>
-            <?php endif; ?>
-            <button class="btn btn-sm btn-outline-secondary" onclick="printTable()">
-                <i class="bi bi-printer me-1"></i>Print
-            </button>
-        </div>
+<?php include APP_ROOT . '/views/withdrawals/partials/_withdrawals_list.php'; ?>
+
+<!-- Withdrawal Verification Modal -->
+<?php
+ob_start();
+?>
+<input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
+<input type="hidden" name="batch_id" value="">
+<input type="hidden" name="is_single_item" value="0" id="verifyIsSingleItem">
+
+<div class="alert alert-info" role="alert">
+    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+    Review all items in this withdrawal batch and confirm they match inventory records.
+</div>
+
+<div class="batch-modal-items mb-3">
+    <!-- Items will be loaded here via JavaScript -->
+</div>
+
+<div class="mb-3">
+    <label for="verification_notes" class="form-label">Verification Notes</label>
+    <textarea class="form-control"
+              id="verification_notes"
+              name="verification_notes"
+              rows="3"
+              placeholder="Optional notes about the verification"
+              aria-describedby="verification_notes_help"></textarea>
+    <small id="verification_notes_help" class="form-text text-muted">Add any relevant notes about the verification process</small>
+</div>
+<?php
+$modalBody = ob_get_clean();
+
+ob_start();
+?>
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="submit" class="btn btn-warning">
+    <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Verify Batch
+</button>
+<?php
+$modalActions = ob_get_clean();
+
+$id = 'withdrawalVerifyModal';
+$title = 'Verify Withdrawal Batch';
+$icon = 'check-circle';
+$headerClass = 'bg-warning';
+$body = $modalBody;
+$actions = $modalActions;
+$size = 'lg';
+$formAction = 'index.php?route=withdrawals/batch/verify';
+$formMethod = 'POST';
+
+include APP_ROOT . '/views/components/modal.php';
+?>
+
+<!-- Withdrawal Approval Modal -->
+<?php
+ob_start();
+?>
+<input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
+<input type="hidden" name="batch_id" value="">
+<input type="hidden" name="is_single_item" value="0" id="approveIsSingleItem">
+
+<div class="alert alert-success" role="alert">
+    <i class="bi bi-shield-check me-2" aria-hidden="true"></i>
+    <strong>Approval Authorization:</strong> Review all items and approve this withdrawal batch.
+</div>
+<div class="alert alert-warning" role="alert">
+    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+    <strong>Important:</strong> Approving this request will <strong>reserve quantities</strong> from inventory immediately.
+    Quantities shown as "Available Now" reflect real-time inventory. If another user has withdrawn items since this request was created, approval may fail.
+</div>
+
+<div class="batch-modal-items mb-3">
+    <!-- Items will be loaded here via JavaScript -->
+</div>
+
+<div class="mb-3">
+    <label for="approval_notes" class="form-label">Approval Notes</label>
+    <textarea class="form-control"
+              id="approval_notes"
+              name="approval_notes"
+              rows="3"
+              placeholder="Optional notes about the approval"
+              aria-describedby="approval_notes_help"></textarea>
+    <small id="approval_notes_help" class="form-text text-muted">Add any relevant notes about the approval</small>
+</div>
+<?php
+$modalBody = ob_get_clean();
+
+ob_start();
+?>
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="submit" class="btn btn-success">
+    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Approve Batch
+</button>
+<?php
+$modalActions = ob_get_clean();
+
+$id = 'withdrawalApproveModal';
+$title = 'Approve Withdrawal Batch';
+$icon = 'shield-check';
+$headerClass = 'bg-success text-white';
+$body = $modalBody;
+$actions = $modalActions;
+$size = 'lg';
+$formAction = 'index.php?route=withdrawals/batch/approve';
+
+include APP_ROOT . '/views/components/modal.php';
+?>
+
+<!-- Withdrawal Release Modal -->
+<?php
+ob_start();
+?>
+<input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
+<input type="hidden" name="batch_id" value="">
+<input type="hidden" name="is_single_item" value="0" id="releaseIsSingleItem">
+
+<div class="alert alert-info" role="alert">
+    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+    <span id="releaseModalDescription">Confirm that all consumables in this batch are being physically released to the receiver. <strong>Note:</strong> Quantities were already reserved at approval - this step confirms physical handover.</span>
+</div>
+
+<div class="batch-modal-items mb-3">
+    <!-- Items will be loaded here via JavaScript -->
+</div>
+
+<!-- Release Checklist -->
+<div class="card bg-light mb-3">
+    <div class="card-header">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-clipboard-check me-2" aria-hidden="true"></i>Release Verification Checklist
+        </h6>
     </div>
     <div class="card-body">
-        <?php if (empty($withdrawals)): ?>
-            <div class="text-center py-5">
-                <i class="bi bi-inbox display-1 text-muted"></i>
-                <h5 class="mt-3 text-muted">No withdrawal requests found</h5>
-                <p class="text-muted">Try adjusting your filters or create a new withdrawal request.</p>
-                <?php if (in_array($userRole, $roleConfig['withdrawals/create'] ?? [])): ?>
-                    <a href="?route=withdrawals/create" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Create Withdrawal Request
-                    </a>
-                <?php endif; ?>
-            </div>
-        <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-hover" id="withdrawalsTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Asset</th>
-                            <th>Project</th>
-                            <th>Receiver</th>
-                            <th>Purpose</th>
-                            <th>Requested</th>
-                            <th>Expected Return</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($withdrawals as $withdrawal): ?>
-                            <tr>
-                                <td>
-                                    <a href="?route=withdrawals/view&id=<?= $withdrawal['id'] ?>" class="text-decoration-none">
-                                        #<?= $withdrawal['id'] ?>
-                                    </a>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2">
-                                            <i class="bi bi-box text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-medium"><?= htmlspecialchars($withdrawal['asset_name']) ?></div>
-                                            <small class="text-muted"><?= htmlspecialchars($withdrawal['asset_ref']) ?></small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark">
-                                        <?= htmlspecialchars($withdrawal['project_name']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div>
-                                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['receiver_name']) ?></div>
-                                        <small class="text-muted">by <?= htmlspecialchars($withdrawal['withdrawn_by_name']) ?></small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                                          title="<?= htmlspecialchars($withdrawal['purpose']) ?>">
-                                        <?= htmlspecialchars($withdrawal['purpose']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <small><?= date('M j, Y', strtotime($withdrawal['created_at'])) ?></small>
-                                </td>
-                                <td>
-                                    <?php if ($withdrawal['expected_return']): ?>
-                                        <small class="<?= strtotime($withdrawal['expected_return']) < time() && $withdrawal['status'] === 'Released' ? 'text-danger fw-bold' : '' ?>">
-                                            <?= date('M j, Y', strtotime($withdrawal['expected_return'])) ?>
-                                            <?php if (strtotime($withdrawal['expected_return']) < time() && $withdrawal['status'] === 'Released'): ?>
-                                                <i class="bi bi-exclamation-triangle text-danger ms-1" title="Overdue"></i>
-                                            <?php endif; ?>
-                                        </small>
-                                    <?php else: ?>
-                                        <small class="text-muted">Not specified</small>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    $statusClasses = [
-                                        'Pending Verification' => 'bg-warning',
-                                        'Pending Approval' => 'bg-info',
-                                        'Approved' => 'bg-primary',
-                                        'Released' => 'bg-success',
-                                        'Returned' => 'bg-info',
-                                        'Canceled' => 'bg-secondary'
-                                    ];
-                                    $statusClass = $statusClasses[$withdrawal['status']] ?? 'bg-secondary';
-                                    ?>
-                                    <span class="badge <?= $statusClass ?>">
-                                        <?= ucfirst($withdrawal['status']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="?route=withdrawals/view&id=<?= $withdrawal['id'] ?>" 
-                                           class="btn btn-outline-primary" title="View Details">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        
-                        <?php 
-                        // Use specific permission arrays from roles configuration
-                        $verifyRoles = $roleConfig['withdrawals/verify'] ?? [];
-                        $approveRoles = $roleConfig['withdrawals/approve'] ?? [];
-                        $releaseRoles = $roleConfig['withdrawals/release'] ?? [];
-                        $returnRoles = $roleConfig['withdrawals/return'] ?? [];
-                        $cancelRoles = $roleConfig['withdrawals/cancel'] ?? [];
-                        ?>
-                        
-                        <?php if (in_array($userRole, $verifyRoles) && $withdrawal['status'] === 'Pending Verification'): ?>
-                            <a href="?route=withdrawals/verify&id=<?= $withdrawal['id'] ?>" 
-                               class="btn btn-outline-warning" title="Verify Request">
-                                <i class="bi bi-search"></i>
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php if (in_array($userRole, $approveRoles) && $withdrawal['status'] === 'Pending Approval'): ?>
-                            <a href="?route=withdrawals/approve&id=<?= $withdrawal['id'] ?>" 
-                               class="btn btn-outline-info" title="Approve Request">
-                                <i class="bi bi-person-check"></i>
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php if (in_array($userRole, $releaseRoles) && $withdrawal['status'] === 'Approved'): ?>
-                            <a href="?route=withdrawals/release&id=<?= $withdrawal['id'] ?>" 
-                               class="btn btn-outline-success" title="Release Asset">
-                                <i class="bi bi-check-circle"></i>
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php if (in_array($userRole, $returnRoles) && $withdrawal['status'] === 'Released'): ?>
-                            <a href="?route=withdrawals/return&id=<?= $withdrawal['id'] ?>" 
-                               class="btn btn-outline-info" title="Mark as Returned">
-                                <i class="bi bi-arrow-return-left"></i>
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php if (in_array($userRole, $cancelRoles) && in_array($withdrawal['status'], ['Pending Verification', 'Pending Approval', 'Approved', 'Released'])): ?>
-                            <a href="?route=withdrawals/cancel&id=<?= $withdrawal['id'] ?>" 
-                               class="btn btn-outline-danger" title="Cancel Request">
-                                <i class="bi bi-x-circle"></i>
-                            </a>
-                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Pagination -->
-            <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-                <nav aria-label="Withdrawals pagination" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagination['current_page'] > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?route=withdrawals&page=<?= $pagination['current_page'] - 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
-                                    Previous
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                        
-                        <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                            <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                                <a class="page-link" href="?route=withdrawals&page=<?= $i ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
-                                    <?= $i ?>
-                                </a>
-                            </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?route=withdrawals&page=<?= $pagination['current_page'] + 1 ?><?= http_build_query(array_filter($_GET, fn($k) => $k !== 'page'), '', '&') ?>">
-                                    Next
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
-            <?php endif; ?>
-        <?php endif; ?>
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="check_receiver_verified"
+                   name="check_receiver_verified"
+                   required>
+            <label class="form-check-label" for="check_receiver_verified">
+                <strong>Receiver identity verified and matches request</strong>
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="check_quantity_verified"
+                   name="check_quantity_verified"
+                   required>
+            <label class="form-check-label" for="check_quantity_verified">
+                <strong>Quantities verified against inventory records</strong>
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="check_condition_documented"
+                   name="check_condition_documented"
+                   required>
+            <label class="form-check-label" for="check_condition_documented">
+                <strong>Consumable condition documented</strong>
+            </label>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="check_receiver_acknowledged"
+                   name="check_receiver_acknowledged"
+                   required>
+            <label class="form-check-label" for="check_receiver_acknowledged">
+                <strong>Receiver acknowledged receipt and responsibility</strong>
+            </label>
+        </div>
     </div>
 </div>
 
+<!-- Release Notes -->
+<div class="mb-3">
+    <label for="release_notes" class="form-label">Release Notes</label>
+    <textarea class="form-control"
+              id="release_notes"
+              name="release_notes"
+              rows="3"
+              placeholder="Document the condition of consumables and any special instructions"
+              aria-describedby="release_notes_help"></textarea>
+    <small id="release_notes_help" class="form-text text-muted">Add any relevant notes about the release process</small>
+</div>
+
+<!-- Warning Message -->
+<div class="alert alert-warning mb-0" role="alert">
+    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+    <strong>Confirmation:</strong> By completing this release, you confirm that consumables have been physically handed over to the receiver. Inventory quantities were reserved at approval.
+</div>
+<?php
+$modalBody = ob_get_clean();
+
+ob_start();
+?>
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="submit" class="btn btn-info" id="completeReleaseBtn">
+    <i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>Complete Release
+</button>
+<?php
+$modalActions = ob_get_clean();
+
+$id = 'withdrawalReleaseModal';
+$title = 'Release Consumables';
+$icon = 'box-arrow-up';
+$headerClass = 'bg-info text-white';
+$body = $modalBody;
+$actions = $modalActions;
+$size = 'xl';
+$formAction = 'index.php?route=withdrawals/batch/release';
+
+include APP_ROOT . '/views/components/modal.php';
+?>
+
+<!-- Withdrawal Return Modal -->
+<div class="modal fade" id="withdrawalReturnModal" tabindex="-1" aria-labelledby="withdrawalReturnModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="withdrawalReturnModalLabel">
+                    <i class="bi bi-box-arrow-down me-2" aria-hidden="true"></i>Return Consumables
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="withdrawalReturnForm">
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>" id="returnCsrfToken">
+                    <input type="hidden" name="batch_id" value="" id="returnBatchId">
+                    <input type="hidden" name="is_single_item" value="0" id="returnIsSingleItem">
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                        <strong>Return Instructions:</strong> Enter the quantity being returned for each item. Partial returns are allowed. Select condition and add notes as needed.
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="withdrawalReturnTable">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th class="col-return-num">#</th>
+                                    <th class="col-return-equipment">Consumable</th>
+                                    <th class="col-return-reference">Reference</th>
+                                    <th class="col-return-withdrawn text-center">Qty Withdrawn</th>
+                                    <th class="col-return-returning text-center">Returning Now</th>
+                                    <th class="col-return-condition">Condition</th>
+                                    <th class="col-return-notes">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalReturnItems">
+                                <!-- Items will be populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="return_notes" class="form-label">Overall Return Notes</label>
+                        <textarea class="form-control"
+                                  id="return_notes"
+                                  name="return_notes"
+                                  rows="3"
+                                  placeholder="Optional notes about the return"
+                                  aria-describedby="return_notes_help"></textarea>
+                        <small id="return_notes_help" class="form-text text-muted">Add any relevant notes about the overall return</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="processReturnBtn">
+                        <i class="bi bi-box-arrow-down me-1" aria-hidden="true"></i>Process Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Withdrawal Cancel Modal -->
+<div class="modal fade" id="withdrawalCancelModal" tabindex="-1" aria-labelledby="withdrawalCancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="withdrawalCancelModalLabel">
+                    <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancel Withdrawal
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="withdrawalCancelForm" method="POST" action="">
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
+                    <input type="hidden" name="withdrawal_id" value="" id="cancelWithdrawalId">
+                    <input type="hidden" name="is_batch" value="0" id="cancelIsBatch">
+
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+                        <strong>Warning:</strong> This action cannot be undone. Are you sure you want to cancel this withdrawal?
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <select class="form-select" id="cancel_reason" name="cancellation_reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="no_longer_needed">No longer needed</option>
+                            <option value="wrong_item">Wrong item requested</option>
+                            <option value="duplicate_request">Duplicate request</option>
+                            <option value="project_delayed">Project delayed/postponed</option>
+                            <option value="budget_constraints">Budget constraints</option>
+                            <option value="other">Other (specify below)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="cancelCustomReasonDiv" style="display: none;">
+                        <label for="cancel_custom_reason" class="form-label">Please specify <span class="text-danger">*</span></label>
+                        <textarea class="form-control"
+                                  id="cancel_custom_reason"
+                                  name="custom_reason"
+                                  rows="2"
+                                  placeholder="Please provide details..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cancel_notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control"
+                                  id="cancel_notes"
+                                  name="reason"
+                                  rows="3"
+                                  placeholder="Optional: Provide any additional context..."
+                                  aria-describedby="cancel_notes_help"></textarea>
+                        <small id="cancel_notes_help" class="form-text text-muted">Add any relevant notes about the cancellation</small>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmCancel" required>
+                        <label class="form-check-label" for="confirmCancel">
+                            I understand this action cannot be undone
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Withdrawal</button>
+                    <button type="submit" class="btn btn-danger" id="confirmCancelBtn">
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancel Withdrawal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Load Alpine.js component -->
+<script type="module">
+import { withdrawalsIndexApp } from '/assets/js/withdrawals/withdrawals-index.js';
+window.withdrawalsIndexApp = withdrawalsIndexApp;
+</script>
+
+<!-- Refresh functionality -->
 <script>
-// Export to Excel
-function exportToExcel() {
-    const params = new URLSearchParams(window.location.search);
-    params.set('export', 'excel');
-    window.location.href = '?route=withdrawals/export&' + params.toString();
-}
-
-// Print table
-function printTable() {
-    window.print();
-}
-
-// Auto-refresh for pending withdrawals
-if (document.querySelector('.badge.bg-warning')) {
-    setTimeout(() => {
-        location.reload();
-    }, 60000); // Refresh every 60 seconds if there are pending withdrawals
-}
-
-// Enhanced search functionality
-document.getElementById('search').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        this.form.submit();
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            window.location.reload();
+        });
     }
-});
 
-// Date range validation
-document.getElementById('date_from').addEventListener('change', function() {
-    const dateTo = document.getElementById('date_to');
-    if (this.value && dateTo.value && this.value > dateTo.value) {
-        alert('Start date cannot be later than end date');
-        this.value = '';
-    }
-});
+    // Cancel modal functionality
+    const cancelModal = document.getElementById('withdrawalCancelModal');
+    if (cancelModal) {
+        cancelModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const withdrawalId = button.getAttribute('data-withdrawal-id');
+            const isBatch = button.getAttribute('data-is-batch') === 'true';
 
-document.getElementById('date_to').addEventListener('change', function() {
-    const dateFrom = document.getElementById('date_from');
-    if (this.value && dateFrom.value && this.value < dateFrom.value) {
-        alert('End date cannot be earlier than start date');
-        this.value = '';
+            // Update form fields
+            document.getElementById('cancelWithdrawalId').value = withdrawalId;
+            document.getElementById('cancelIsBatch').value = isBatch ? '1' : '0';
+
+            // Set form action
+            const form = document.getElementById('withdrawalCancelForm');
+            if (isBatch) {
+                form.action = '?route=withdrawals/batch/cancel&id=' + withdrawalId;
+            } else {
+                form.action = '?route=withdrawals/cancel&id=' + withdrawalId;
+            }
+
+            // Reset form
+            form.reset();
+            document.getElementById('cancelCustomReasonDiv').style.display = 'none';
+        });
+
+        // Toggle custom reason field
+        document.getElementById('cancel_reason').addEventListener('change', function() {
+            const customReasonDiv = document.getElementById('cancelCustomReasonDiv');
+            const customReasonField = document.getElementById('cancel_custom_reason');
+
+            if (this.value === 'other') {
+                customReasonDiv.style.display = 'block';
+                customReasonField.required = true;
+            } else {
+                customReasonDiv.style.display = 'none';
+                customReasonField.required = false;
+                customReasonField.value = '';
+            }
+        });
     }
 });
 </script>
@@ -540,11 +705,11 @@ document.getElementById('date_to').addEventListener('change', function() {
 $content = ob_get_clean();
 
 // Set page variables
-$pageTitle = 'Asset Withdrawals - ConstructLink™';
-$pageHeader = 'Asset Withdrawals';
+$pageTitle = 'Consumable Withdrawals - ConstructLink™';
+$pageHeader = 'Consumable Withdrawals';
 $breadcrumbs = [
     ['title' => 'Dashboard', 'url' => '?route=dashboard'],
-    ['title' => 'Withdrawals', 'url' => '?route=withdrawals']
+    ['title' => 'Consumable Withdrawals', 'url' => '?route=withdrawals']
 ];
 
 // Include main layout

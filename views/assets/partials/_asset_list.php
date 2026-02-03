@@ -60,7 +60,7 @@
                     <?php
                     // Get asset data for mobile view
                     $status = $asset['status'] ?? 'available';
-                    $assetSource = $asset['asset_source'] ?? 'manual';
+                    $assetSource = $asset['inventory_source'] ?? 'manual';
                     $workflowStatus = $asset['workflow_status'] ?? 'approved';
                     $quantity = (int)($asset['quantity'] ?? 1);
                     $availableQuantity = (int)($asset['available_quantity'] ?? 1);
@@ -185,7 +185,7 @@
                                             if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
                                         ?>
                                             <li>
-                                                <a class="dropdown-item text-success" href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>">
+                                                <a class="dropdown-item text-success" href="?route=withdrawals/create-batch&asset_id=<?= $asset['id'] ?>">
                                                     <i class="bi bi-box-arrow-right me-2"></i>Withdraw
                                                 </a>
                                             </li>
@@ -330,7 +330,7 @@
                                 <td class="text-center">
                                     <?php
                                     $status = $asset['status'] ?? 'unknown';
-                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    $assetSource = $asset['inventory_source'] ?? 'manual';
                                     $workflowStatus = $asset['workflow_status'] ?? 'approved';
 
                                     // Override status display for pending legacy assets
@@ -395,7 +395,7 @@
                                 <td class="d-none d-xxl-table-cell text-center">
                                     <?php
                                     $workflowStatus = $asset['workflow_status'] ?? 'approved';
-                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    $assetSource = $asset['inventory_source'] ?? 'manual';
                                     
                                     // Only show workflow status for legacy assets
                                     if ($assetSource === 'legacy'):
@@ -445,7 +445,7 @@
                                 <td class="text-center">
                                     <?php
                                     // Get asset data for actions
-                                    $assetSource = $asset['asset_source'] ?? 'manual';
+                                    $assetSource = $asset['inventory_source'] ?? 'manual';
                                     $workflowStatus = $asset['workflow_status'] ?? 'approved';
                                     ?>
 
@@ -518,7 +518,7 @@
                                                 if ($isConsumable && in_array($userRole, $roleConfig['withdrawals/create'] ?? [])):
                                             ?>
                                                 <li>
-                                                    <a class="dropdown-item text-success" href="?route=withdrawals/create&asset_id=<?= $asset['id'] ?>">
+                                                    <a class="dropdown-item text-success" href="?route=withdrawals/create-batch&asset_id=<?= $asset['id'] ?>">
                                                         <i class="bi bi-box-arrow-right me-2"></i>Withdraw
                                                     </a>
                                                 </li>

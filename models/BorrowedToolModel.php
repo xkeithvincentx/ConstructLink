@@ -19,7 +19,7 @@ class BorrowedToolModel extends BaseModel {
     private $statisticsService;
     private $queryService;
     protected $fillable = [
-        'asset_id', 'borrower_name', 'borrower_contact', 'expected_return',
+        'inventory_item_id', 'borrower_name', 'borrower_contact', 'expected_return',
         'actual_return', 'issued_by', 'purpose', 'condition_out', 'condition_in', 'status',
         // Batch support fields
         'batch_id', 'quantity', 'quantity_returned', 'line_notes', 'condition_returned',
@@ -134,7 +134,7 @@ class BorrowedToolModel extends BaseModel {
             }
             // Update asset status back to available
             $assetModel = new AssetModel();
-            $assetUpdated = $assetModel->update($borrowedTool['asset_id'], ['status' => AssetStatus::AVAILABLE]);
+            $assetUpdated = $assetModel->update($borrowedTool['inventory_item_id'], ['status' => AssetStatus::AVAILABLE]);
             if (!$assetUpdated) {
                 $this->db->rollBack();
                 return ['success' => false, 'message' => 'Failed to update asset status'];
@@ -285,7 +285,7 @@ class BorrowedToolModel extends BaseModel {
             $db = Database::getInstance()->getConnection();
             $sql = "
                 SELECT c.name, c.description
-                FROM assets a
+                FROM inventory_items a
                 JOIN categories c ON a.category_id = c.id
                 WHERE a.id = ?
             ";
@@ -446,7 +446,7 @@ class BorrowedToolModel extends BaseModel {
                        c.name as category_name,
                        et.name as equipment_type_name
                 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 INNER JOIN categories c ON a.category_id = c.id
                 LEFT JOIN equipment_types et ON a.equipment_type_id = et.id
                 WHERE bt.batch_id = ?

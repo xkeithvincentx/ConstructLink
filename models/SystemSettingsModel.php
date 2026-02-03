@@ -412,13 +412,13 @@ class SystemSettingsModel extends BaseModel {
             $stats = [];
             
             // Total assets
-            $sql = "SELECT COUNT(*) FROM assets";
+            $sql = "SELECT COUNT(*) FROM inventory_items";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $stats['total'] = $stmt->fetchColumn();
             
             // Total value
-            $sql = "SELECT SUM(acquisition_cost) FROM assets WHERE acquisition_cost IS NOT NULL";
+            $sql = "SELECT SUM(acquisition_cost) FROM inventory_items WHERE acquisition_cost IS NOT NULL";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $stats['total_value'] = $stmt->fetchColumn() ?: 0;
@@ -426,7 +426,7 @@ class SystemSettingsModel extends BaseModel {
             // Assets by status
             $sql = "
                 SELECT status, COUNT(*) as count
-                FROM assets
+                FROM inventory_items
                 GROUP BY status
                 ORDER BY count DESC
             ";

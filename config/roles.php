@@ -12,15 +12,30 @@ return [
         'maker' => ['Site Inventory Clerk', 'Site Admin'], // Initiates request in system
         'verifier' => ['Project Manager'], // Reviews if request is valid for project
         'authorizer' => ['Finance Director'], // Approves based on budget/priority
-        'viewer' => ['System Admin', 'Asset Director', 'Procurement Officer'] // Can view all requests
+        'viewer' => ['System Admin', 'Asset Director', 'Procurement Officer', 'Warehouseman'] // Can view all requests
     ],
-    'requests/create' => ['Site Inventory Clerk', 'Site Admin', 'Project Manager', 'System Admin'],
+    'requests/create' => ['Site Inventory Clerk', 'Site Admin', 'Project Manager', 'System Admin', 'Warehouseman'],
     'requests/review' => ['Project Manager', 'System Admin'],
-    'requests/approve' => ['Finance Director', 'System Admin'],
-    'requests/view' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager', 'Site Inventory Clerk', 'Site Admin'],
+    'requests/approve' => ['Finance Director', 'Asset Director', 'System Admin'],
+    'requests/verify' => ['Site Inventory Clerk', 'Site Admin', 'Project Manager', 'System Admin'],
+    'requests/authorize' => ['Project Manager', 'Finance Director', 'Asset Director', 'System Admin'],
+    'requests/decline' => ['Site Inventory Clerk', 'Site Admin', 'Project Manager', 'Finance Director', 'Asset Director', 'System Admin'],
+    'requests/view' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager', 'Site Inventory Clerk', 'Site Admin', 'Warehouseman'],
     'requests/export' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer'],
     'requests/getStats' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager'],
     'requests/getPendingRequests' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager'],
+
+    // =================================================================
+    // 1A. 📦 RESTOCK REQUESTS (Consumable Inventory Replenishment)
+    // =================================================================
+    'restock' => [
+        'maker' => ['Warehouseman', 'Site Inventory Clerk', 'Site Admin'], // Creates restock request for low stock consumables
+        'verifier' => ['Site Inventory Clerk', 'Project Manager'], // Validates stock level and necessity
+        'authorizer' => ['Project Manager', 'Finance Director'], // Approves restock based on budget
+        'approver' => ['Finance Director', 'Asset Director'], // Final approval for high-value restocks
+        'viewer' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager', 'Site Inventory Clerk', 'Warehouseman'] // Can view restock requests
+    ],
+    'api/requests/inventory-items' => ['System Admin', 'Asset Director', 'Finance Director', 'Procurement Officer', 'Project Manager', 'Site Inventory Clerk', 'Site Admin', 'Warehouseman'],
 
     // =================================================================
     // 2. 🛒 DIRECT PROCUREMENT (HEAD OFFICE INITIATED)
@@ -118,7 +133,7 @@ return [
     'withdrawals/release' => ['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'],
     'withdrawals/return' => ['System Admin', 'Asset Director', 'Warehouseman'],
     'withdrawals/view' => ['System Admin', 'Asset Director', 'Finance Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'],
-    'withdrawals/cancel' => ['System Admin', 'Asset Director', 'Project Manager', 'Site Inventory Clerk'],
+    'withdrawals/cancel' => ['System Admin', 'Warehouseman', 'Asset Director', 'Project Manager', 'Site Inventory Clerk'],
 
     // =================================================================
     // 7. ⚠️ INCIDENTS (LOSS, THEFT, DAMAGE)

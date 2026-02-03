@@ -41,7 +41,7 @@ class BorrowedToolBatchQueryService {
                 // Check if all items in batch belong to project
                 $checkSql = "SELECT COUNT(DISTINCT a.project_id) as project_count
                            FROM borrowed_tools bt
-                           INNER JOIN assets a ON bt.asset_id = a.id
+                           INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                            WHERE bt.batch_id = ?";
                 $checkStmt = $this->db->prepare($checkSql);
                 $checkStmt->execute([$batchId]);
@@ -92,7 +92,7 @@ class BorrowedToolBatchQueryService {
                        et.name as equipment_type_name,
                        p.name as project_name
                 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 INNER JOIN categories c ON a.category_id = c.id
                 LEFT JOIN equipment_types et ON a.equipment_type_id = et.id
                 INNER JOIN projects p ON a.project_id = p.id
@@ -152,7 +152,7 @@ class BorrowedToolBatchQueryService {
         if (!empty($filters['project_id'])) {
             $conditions[] = "EXISTS (
                 SELECT 1 FROM borrowed_tools bt
-                INNER JOIN assets a ON bt.asset_id = a.id
+                INNER JOIN inventory_items a ON bt.inventory_item_id = a.id
                 WHERE bt.batch_id = btb.id AND a.project_id = ?
             )";
             $params[] = $filters['project_id'];

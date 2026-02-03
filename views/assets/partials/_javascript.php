@@ -22,6 +22,9 @@ window.ConstructLinkConfig = {
     userId: <?= (int)($user['id'] ?? 0) ?>,
     userRole: '<?= htmlspecialchars($user['role_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>'
 };
+
+// Make CSRF token available globally for non-module scripts (enhanced-verification.js)
+window.CSRFTokenValue = window.ConstructLinkConfig.csrfToken;
 </script>
 
 <!-- jQuery (required for Select2 on filters) -->

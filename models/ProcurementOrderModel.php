@@ -450,7 +450,7 @@ class ProcurementOrderModel extends BaseModel {
                        (SELECT COUNT(*) FROM procurement_items pi 
                         WHERE pi.procurement_order_id = po.id 
                         AND (COALESCE(pi.quantity_received, pi.quantity) - COALESCE(
-                            (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                            (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                         )) > 0) as items_available_for_generation
                 FROM procurement_orders po
                 LEFT JOIN vendors v ON po.vendor_id = v.id
@@ -479,7 +479,7 @@ class ProcurementOrderModel extends BaseModel {
                 SELECT pi.*, c.name as category_name,
                        po.project_id, po.vendor_id,
                        (pi.quantity_received - COALESCE(
-                           (SELECT COUNT(*) FROM procurement_assets pa WHERE pa.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM procurement_inventory pi_inv WHERE pi_inv.procurement_item_id = pi.id), 0
                        )) as available_for_generation
                 FROM procurement_items pi
                 LEFT JOIN categories c ON pi.category_id = c.id
@@ -516,7 +516,7 @@ class ProcurementOrderModel extends BaseModel {
                        c.depreciation_applicable,
                        po.project_id, po.vendor_id,
                        (pi.quantity_received - COALESCE(
-                           (SELECT COUNT(*) FROM procurement_assets pa WHERE pa.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM procurement_inventory pi_inv WHERE pi_inv.procurement_item_id = pi.id), 0
                        )) as available_for_generation,
                        CASE 
                            WHEN c.generates_assets = 0 THEN 'expense_only'
@@ -650,12 +650,12 @@ class ProcurementOrderModel extends BaseModel {
                         THEN 1 
                     END) as expense_items,
                     COALESCE(SUM(
-                        CASE 
-                            WHEN c.generates_assets = 1 
-                                 AND (c.capitalization_threshold = 0 
-                                      OR pi.unit_price >= c.capitalization_threshold 
+                        CASE
+                            WHEN c.generates_assets = 1
+                                 AND (c.capitalization_threshold = 0
+                                      OR pi.unit_price >= c.capitalization_threshold
                                       OR c.auto_expense_below_threshold = 0)
-                            THEN (SELECT COUNT(*) FROM procurement_assets pa WHERE pa.procurement_item_id = pi.id)
+                            THEN (SELECT COUNT(*) FROM procurement_inventory pi_inv WHERE pi_inv.procurement_item_id = pi.id)
                             ELSE 0
                         END
                     ), 0) as assets_generated,
@@ -1994,7 +1994,7 @@ class ProcurementOrderModel extends BaseModel {
             $sql = "
                 SELECT pi.*, c.name as category_name,
                        (pi.quantity_received - COALESCE(
-                           (SELECT COUNT(*) FROM assets a WHERE a.procurement_item_id = pi.id), 0
+                           (SELECT COUNT(*) FROM inventory_items a WHERE a.procurement_item_id = pi.id), 0
                        )) as available_for_generation
                 FROM procurement_items pi
                 LEFT JOIN categories c ON pi.category_id = c.id

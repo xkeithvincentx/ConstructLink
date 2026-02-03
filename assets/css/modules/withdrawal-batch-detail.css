@@ -1,0 +1,446 @@
+/**
+ * Withdrawal Batch Detail Page
+ * Styles for viewing a single batch with workflow timeline and items
+ */
+
+/* ===========================================
+   BATCH HEADER CARD
+   =========================================== */
+
+.batch-header-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.batch-header-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.batch-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.batch-info-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.batch-info-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.batch-info-value.large {
+    font-size: 1.5rem;
+}
+
+.batch-reference {
+    font-family: 'Courier New', monospace;
+    color: #0d6efd;
+}
+
+/* ===========================================
+   WORKFLOW TIMELINE
+   =========================================== */
+
+.workflow-timeline-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.timeline-container {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-horizontal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 2rem 0;
+}
+
+/* Timeline connector line */
+.timeline-horizontal::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #e9ecef;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.timeline-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-step-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+/* Completed step */
+.timeline-step.completed .timeline-step-icon {
+    background: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+/* Current/active step */
+.timeline-step.current .timeline-step-icon {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(13, 110, 253, 0.1);
+    }
+}
+
+/* Pending step */
+.timeline-step.pending .timeline-step-icon {
+    background: white;
+    border-color: #dee2e6;
+    color: #adb5bd;
+}
+
+/* Canceled step */
+.timeline-step.canceled .timeline-step-icon {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.timeline-step-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #495057;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-step-details {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.timeline-step-date {
+    font-weight: 500;
+}
+
+.timeline-step-user {
+    font-size: 0.8rem;
+}
+
+/* Mobile timeline - vertical */
+@media (max-width: 767.98px) {
+    .timeline-horizontal {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 3rem;
+    }
+
+    .timeline-horizontal::before {
+        width: 3px;
+        height: 100%;
+        top: 0;
+        left: 28px;
+        right: auto;
+    }
+
+    .timeline-step {
+        flex-direction: row;
+        width: 100%;
+        margin-bottom: 2rem;
+        align-items: flex-start;
+    }
+
+    .timeline-step-icon {
+        margin-bottom: 0;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .timeline-step-label,
+    .timeline-step-details {
+        text-align: left;
+    }
+}
+
+/* ===========================================
+   ITEMS TABLE
+   =========================================== */
+
+.batch-items-card {
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.batch-items-table {
+    margin-bottom: 0;
+}
+
+.batch-items-table thead {
+    background: #f8f9fa;
+}
+
+.batch-items-table th {
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+.batch-items-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.item-ref {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.item-category {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Quantity column */
+.quantity-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0d6efd;
+}
+
+.unit-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ===========================================
+   ACTION BUTTONS
+   =========================================== */
+
+.batch-actions-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.action-button-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.action-button-group .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Permission-based visibility */
+.action-hidden {
+    display: none !important;
+}
+
+/* ===========================================
+   RECEIVER INFORMATION
+   =========================================== */
+
+.receiver-card {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 1.25rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1.5rem;
+}
+
+.receiver-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.receiver-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0d6efd;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.receiver-details {
+    flex: 1;
+}
+
+.receiver-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.receiver-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.receiver-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ===========================================
+   PURPOSE & NOTES
+   =========================================== */
+
+.purpose-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.purpose-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #495057;
+    white-space: pre-wrap;
+}
+
+/* ===========================================
+   AUDIT TRAIL
+   =========================================== */
+
+.audit-trail-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.audit-entry {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.audit-entry:last-child {
+    border-bottom: none;
+}
+
+.audit-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.audit-content {
+    flex: 1;
+}
+
+.audit-action {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.audit-meta {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* ===========================================
+   RESPONSIVE ADJUSTMENTS
+   =========================================== */
+
+@media (max-width: 767.98px) {
+    .batch-header-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-button-group {
+        flex-direction: column;
+    }
+
+    .action-button-group .btn {
+        justify-content: center;
+    }
+
+    .receiver-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}

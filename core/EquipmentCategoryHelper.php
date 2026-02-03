@@ -87,9 +87,9 @@ class EquipmentCategoryHelper {
                     et.name as equipment_type_name,
                     p.name as project_name,
                     p.id as project_id
-                FROM assets a
+                FROM inventory_items a
                 INNER JOIN categories c ON a.category_id = c.id
-                LEFT JOIN equipment_types et ON a.equipment_type_id = et.id
+                LEFT JOIN inventory_equipment_types et ON a.equipment_type_id = et.id
                 INNER JOIN projects p ON a.project_id = p.id
                 WHERE a.status = 'available'
                   AND a.workflow_status = 'approved'
@@ -120,7 +120,7 @@ class EquipmentCategoryHelper {
             $statusPlaceholders = implode(',', array_fill(0, count($excludedStatuses), '?'));
 
             $sql .= " AND a.id NOT IN (
-                SELECT bt.asset_id
+                SELECT bt.inventory_item_id
                 FROM borrowed_tools bt
                 INNER JOIN borrowed_tool_batches btb ON bt.batch_id = btb.id
                 WHERE btb.status IN ($statusPlaceholders)
@@ -295,7 +295,7 @@ class EquipmentCategoryHelper {
 
             if ($projectId) {
                 $sql .= " INNER JOIN borrowed_tools bt ON btb.id = bt.batch_id
-                          INNER JOIN assets a ON bt.asset_id = a.id";
+                          INNER JOIN inventory_items a ON bt.inventory_item_id = a.id";
                 $conditions[] = "a.project_id = ?";
                 $params[] = $projectId;
             }
@@ -318,6 +318,229 @@ class EquipmentCategoryHelper {
         } catch (Exception $e) {
             error_log("Get common borrowers error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Get grouped consumables by category (for withdrawal batches)
+     * Only returns items where is_consumable = 1 AND available_quantity > 0
+     *
+     * @param int|null $projectId Filter by project
+     * @return array Consumables grouped by simplified categories
+     */
+    public static function getGroupedConsumables($projectId = null) {
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            // Build query - only consumable items with available quantity
+            // Include count of pending withdrawals (not yet approved) for awareness
+            $sql = "
+                SELECT
+                    ii.id,
+                    ii.ref,
+                    ii.name,
+                    ii.model,
+                    ii.available_quantity,
+                    ii.unit,
+                    ii.status,
+                    c.id as category_id,
+                    c.name as category_name,
+                    c.iso_code,
+                    p.name as project_name,
+                    p.id as project_id,
+                    (
+                        SELECT COUNT(DISTINCT COALESCE(w.batch_id, w.id))
+                        FROM withdrawals w
+                        WHERE w.inventory_item_id = ii.id
+                          AND w.status IN ('Pending Verification', 'Pending Approval')
+                    ) as pending_withdrawal_count
+                FROM inventory_items ii
+                INNER JOIN categories c ON ii.category_id = c.id
+                INNER JOIN projects p ON ii.project_id = p.id
+                WHERE c.is_consumable = 1
+                  AND ii.available_quantity > 0
+                  AND ii.status = 'available'
+                  AND ii.workflow_status = 'approved'
+                  AND p.is_active = 1
+            ";
+
+            $params = [];
+
+            if ($projectId) {
+                $sql .= " AND ii.project_id = ?";
+                $params[] = $projectId;
+            }
+
+            $sql .= " ORDER BY c.name, ii.name";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $allConsumables = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Simplified consumable categories
+            $categories = [
+                'office_supplies' => [
+                    'label' => 'Office Supplies',
+                    'icon' => 'bi-pencil',
+                    'description' => 'Paper, pens, and office materials',
+                    'db_categories' => ['Office Supplies', 'Stationery'],
+                    'items' => []
+                ],
+                'construction_materials' => [
+                    'label' => 'Construction Materials',
+                    'icon' => 'bi-bricks',
+                    'description' => 'Building materials and supplies',
+                    'db_categories' => ['Construction Materials', 'Building Supplies'],
+                    'items' => []
+                ],
+                'electrical' => [
+                    'label' => 'Electrical Supplies',
+                    'icon' => 'bi-lightning',
+                    'description' => 'Wires, cables, and electrical components',
+                    'db_categories' => ['Electrical Supplies', 'Wiring'],
+                    'items' => []
+                ],
+                'safety_consumables' => [
+                    'label' => 'Safety Consumables',
+                    'icon' => 'bi-shield-check',
+                    'description' => 'Disposable PPE and safety items',
+                    'db_categories' => ['Safety Consumables', 'PPE Consumables'],
+                    'items' => []
+                ],
+                'cleaning' => [
+                    'label' => 'Cleaning Supplies',
+                    'icon' => 'bi-droplet',
+                    'description' => 'Cleaning materials and chemicals',
+                    'db_categories' => ['Cleaning Supplies', 'Janitorial'],
+                    'items' => []
+                ],
+                'others' => [
+                    'label' => 'Other Consumables',
+                    'icon' => 'bi-three-dots',
+                    'description' => 'Other consumable items',
+                    'db_categories' => [],
+                    'items' => []
+                ]
+            ];
+
+            // Group consumables by category
+            foreach ($allConsumables as $consumable) {
+                // Mark as consumable
+                $consumable['is_consumable'] = true;
+
+                $categoryName = $consumable['category_name'];
+                $placed = false;
+
+                // Try to match to a simplified category
+                foreach ($categories as $key => $category) {
+                    if ($key === 'others') continue;
+
+                    if (in_array($categoryName, $category['db_categories'])) {
+                        $categories[$key]['items'][] = $consumable;
+                        $placed = true;
+                        break;
+                    }
+                }
+
+                // If not placed, put in "Others"
+                if (!$placed) {
+                    $categories['others']['items'][] = $consumable;
+                }
+            }
+
+            // Remove empty categories (except Others)
+            foreach ($categories as $key => $category) {
+                if ($key !== 'others' && empty($category['items'])) {
+                    unset($categories[$key]);
+                }
+            }
+
+            return $categories;
+
+        } catch (Exception $e) {
+            error_log("Get grouped consumables error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get common receivers from withdrawal history
+     * Returns list of receiver names who have received withdrawals before
+     *
+     * @param int|null $projectId Filter by project
+     * @param int $limit Number of results
+     * @return array List of receiver names with withdrawal counts
+     */
+    public static function getCommonReceivers($projectId = null, $limit = 20) {
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            $sql = "
+                SELECT
+                    TRIM(wb.receiver_name) as receiver_name,
+                    wb.receiver_contact,
+                    COUNT(DISTINCT wb.id) as withdrawal_count,
+                    MAX(wb.created_at) as last_withdrawal_date
+                FROM withdrawal_batches wb
+            ";
+
+            $conditions = [];
+            $params = [];
+
+            if ($projectId) {
+                $sql .= " INNER JOIN withdrawals w ON wb.id = w.batch_id
+                          INNER JOIN inventory_items ii ON w.inventory_item_id = ii.id";
+                $conditions[] = "ii.project_id = ?";
+                $params[] = $projectId;
+            }
+
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(" AND ", $conditions);
+            }
+
+            $sql .= " GROUP BY UPPER(TRIM(wb.receiver_name)), wb.receiver_contact
+                      ORDER BY withdrawal_count DESC, last_withdrawal_date DESC
+                      LIMIT ?";
+
+            $params[] = $limit;
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (Exception $e) {
+            error_log("Get common receivers error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get available quantity for specific inventory item
+     * Used for real-time validation in withdrawal forms
+     *
+     * @param int $inventoryItemId Inventory item ID
+     * @return int Available quantity (0 if not found or error)
+     */
+    public static function getAvailableQuantity($inventoryItemId) {
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            $sql = "
+                SELECT available_quantity
+                FROM inventory_items
+                WHERE id = ?
+                  AND status = 'available'
+            ";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$inventoryItemId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ? (int)$result['available_quantity'] : 0;
+
+        } catch (Exception $e) {
+            error_log("Get available quantity error: " . $e->getMessage());
+            return 0;
         }
     }
 }

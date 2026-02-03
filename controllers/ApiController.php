@@ -299,9 +299,10 @@ class ApiController {
                 try {
                     $withdrawalModel = new WithdrawalModel();
                     $stats['withdrawals'] = $withdrawalModel->getWithdrawalStats();
-                    
-                    // Get overdue withdrawals
-                    $stats['overdue']['withdrawals'] = count($withdrawalModel->getOverdueWithdrawals());
+
+                    // Note: Consumables don't have strict overdue concept like borrowed tools
+                    // Withdrawals are for consumables that are used/consumed, not returned
+                    $stats['overdue']['withdrawals'] = 0;
                 } catch (Exception $e) {
                     error_log("Withdrawal stats error: " . $e->getMessage());
                     $stats['withdrawals'] = ['total' => 0, 'pending' => 0, 'released' => 0, 'returned' => 0];
@@ -1267,36 +1268,10 @@ class ApiController {
                 error_log("NotificationModel error (table may not exist): " . $e->getMessage());
             }
             
-            // Get overdue withdrawals (limit to reduce load time)
-            if (hasRole(['System Admin', 'Asset Director', 'Warehouseman', 'Project Manager', 'Site Inventory Clerk'])) {
-                try {
-                    if (class_exists('WithdrawalModel')) {
-                        $withdrawalModel = new WithdrawalModel();
-                        $overdueWithdrawals = $withdrawalModel->getOverdueWithdrawals();
-                    } else {
-                        $overdueWithdrawals = [];
-                    }
-
-                    $count = 0;
-                    foreach ($overdueWithdrawals as $withdrawal) {
-                        if ($count >= 3) break; // Limit to 3 withdrawal notifications
-
-                        $notifications[] = [
-                            'id' => 'withdrawal_' . $withdrawal['id'],
-                            'type' => 'warning',
-                            'title' => 'Overdue Withdrawal',
-                            'message' => "Asset {$withdrawal['asset_ref']} is overdue for return",
-                            'icon' => 'bi bi-exclamation-triangle',
-                            'url' => '?route=withdrawals/view&id=' . $withdrawal['id'],
-                            'time' => $this->timeAgo($withdrawal['expected_return']),
-                            'unread' => true
-                        ];
-                        $count++;
-                    }
-                } catch (Throwable $e) {
-                    error_log("Withdrawal notifications error: " . $e->getMessage());
-                }
-            }
+            // Note: Overdue withdrawal notifications removed
+            // Withdrawals are for consumables that are used/consumed, not borrowed with return dates
+            // Unlike borrowed tools, consumables don't have a strict "overdue" concept
+            // This functionality was previously causing errors as getOverdueWithdrawals() method was removed
             
             // Skip system notifications if we already have enough
             $maxNotifications = $limit * 2; // Fetch 2x limit to have buffer
@@ -1635,14 +1610,14 @@ class ApiController {
             }
             
             // Get total count
-            $countSql = "SELECT COUNT(*) FROM asset_brands $whereClause";
+            $countSql = "SELECT COUNT(*) FROM inventory_brands $whereClause";
             $countStmt = $db->prepare($countSql);
             $countStmt->execute($params);
             $totalItems = $countStmt->fetchColumn();
             
             // Get brands with usage count
             $sql = "
-                SELECT 
+                SELECT
                     b.id,
                     b.official_name,
                     b.variations,
@@ -1652,10 +1627,10 @@ class ApiController {
                     b.is_active,
                     b.created_at,
                     COALESCE(asset_count.count, 0) as assets_count
-                FROM asset_brands b
+                FROM inventory_brands b
                 LEFT JOIN (
                     SELECT brand_id, COUNT(*) as count
-                    FROM assets
+                    FROM inventory_items
                     GROUP BY brand_id
                 ) asset_count ON b.id = asset_count.brand_id
                 $whereClause
@@ -1725,20 +1700,20 @@ class ApiController {
         
         try {
             // Check if brand has assets
-            $assetsCheckSql = "SELECT COUNT(*) FROM assets WHERE brand_id = ?";
+            $assetsCheckSql = "SELECT COUNT(*) FROM inventory_items WHERE brand_id = ?";
             $assetsCheckStmt = $db->prepare($assetsCheckSql);
             $assetsCheckStmt->execute([$id]);
             
             if ($assetsCheckStmt->fetchColumn() > 0) {
                 // Soft delete - just deactivate
-                $deactivateSql = "UPDATE asset_brands SET is_active = 0 WHERE id = ?";
+                $deactivateSql = "UPDATE inventory_brands SET is_active = 0 WHERE id = ?";
                 $deactivateStmt = $db->prepare($deactivateSql);
                 $deactivateStmt->execute([$id]);
                 
                 echo json_encode(['success' => true, 'message' => 'Brand deactivated (has associated assets)']);
             } else {
                 // Hard delete - no assets
-                $deleteSql = "DELETE FROM asset_brands WHERE id = ?";
+                $deleteSql = "DELETE FROM inventory_brands WHERE id = ?";
                 $deleteStmt = $db->prepare($deleteSql);
                 $deleteStmt->execute([$id]);
                 
@@ -1811,14 +1786,14 @@ class ApiController {
             }
             
             // Get total count
-            $countSql = "SELECT COUNT(*) FROM asset_disciplines d $whereClause";
+            $countSql = "SELECT COUNT(*) FROM inventory_disciplines d $whereClause";
             $countStmt = $db->prepare($countSql);
             $countStmt->execute($params);
             $totalItems = $countStmt->fetchColumn();
             
             // Get disciplines with parent information and asset counts
             $sql = "
-                SELECT 
+                SELECT
                     d.id,
                     d.code,
                     d.iso_code,
@@ -1830,14 +1805,14 @@ class ApiController {
                     d.is_active,
                     d.created_at,
                     COALESCE(asset_count.count, 0) as assets_count
-                FROM asset_disciplines d
-                LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+                FROM inventory_disciplines d
+                LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
                 LEFT JOIN (
-                    SELECT 
+                    SELECT
                         d_inner.id as discipline_id,
                         COUNT(DISTINCT a.id) as count
-                    FROM asset_disciplines d_inner
-                    LEFT JOIN assets a ON (
+                    FROM inventory_disciplines d_inner
+                    LEFT JOIN inventory_items a ON (
                         a.discipline_tags IS NOT NULL 
                         AND a.discipline_tags LIKE CONCAT('%', d_inner.iso_code, '%')
                     )
@@ -1901,7 +1876,7 @@ class ApiController {
         
         try {
             // Check if discipline exists
-            $checkSql = "SELECT id FROM asset_disciplines WHERE id = ?";
+            $checkSql = "SELECT id FROM inventory_disciplines WHERE id = ?";
             $checkStmt = $db->prepare($checkSql);
             $checkStmt->execute([$id]);
             
@@ -1911,7 +1886,7 @@ class ApiController {
             }
             
             // Check if discipline has children
-            $childrenCheckSql = "SELECT COUNT(*) FROM asset_disciplines WHERE parent_id = ?";
+            $childrenCheckSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE parent_id = ?";
             $childrenCheckStmt = $db->prepare($childrenCheckSql);
             $childrenCheckStmt->execute([$id]);
             
@@ -1921,7 +1896,7 @@ class ApiController {
             }
             
             // Check if discipline has assets
-            $assetsCheckSql = "SELECT COUNT(*) FROM asset_discipline_mappings WHERE discipline_id = ?";
+            $assetsCheckSql = "SELECT COUNT(*) FROM inventory_discipline_mappings WHERE discipline_id = ?";
             $assetsCheckStmt = $db->prepare($assetsCheckSql);
             $assetsCheckStmt->execute([$id]);
             
@@ -1931,7 +1906,7 @@ class ApiController {
             }
             
             // Delete the discipline
-            $deleteSql = "DELETE FROM asset_disciplines WHERE id = ?";
+            $deleteSql = "DELETE FROM inventory_disciplines WHERE id = ?";
             $deleteStmt = $db->prepare($deleteSql);
             $deleteStmt->execute([$id]);
             
@@ -1962,10 +1937,10 @@ class ApiController {
             switch ($action) {
                 case 'list':
                     // Get all disciplines with hierarchy
-                    $sql = "SELECT d.id, d.code, d.name, d.description, 
+                    $sql = "SELECT d.id, d.code, d.name, d.description,
                             d.parent_id, p.name as parent_name, d.display_order
-                            FROM asset_disciplines d
-                            LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+                            FROM inventory_disciplines d
+                            LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
                             WHERE d.is_active = 1
                             ORDER BY COALESCE(p.display_order, d.display_order), d.display_order";
                     
@@ -2015,9 +1990,9 @@ class ApiController {
                             COUNT(adm.id) as usage_count,
                             MAX(adm.primary_use) as has_primary_use
                             FROM categories c
-                            JOIN asset_types at ON at.category = c.name
-                            JOIN asset_discipline_mappings adm ON adm.asset_type_id = at.id
-                            JOIN asset_disciplines d ON adm.discipline_id = d.id
+                            JOIN inventory_types at ON at.category = c.name
+                            JOIN inventory_discipline_mappings adm ON adm.asset_type_id = at.id
+                            JOIN inventory_disciplines d ON adm.discipline_id = d.id
                             WHERE c.id = ? AND d.is_active = 1
                             GROUP BY d.id, d.code, d.name, d.description
                             ORDER BY has_primary_use DESC, usage_count DESC, d.display_order";
@@ -2079,7 +2054,7 @@ class ApiController {
             $db = Database::getInstance()->getConnection();
             
             // Try exact match first
-            $sql = "SELECT id, official_name, quality_tier FROM asset_brands 
+            $sql = "SELECT id, official_name, quality_tier FROM inventory_brands
                     WHERE LOWER(official_name) = LOWER(?) LIMIT 1";
             $stmt = $db->prepare($sql);
             $stmt->execute([$brand]);
@@ -2108,7 +2083,7 @@ class ApiController {
                         WHEN LOWER(variations) LIKE LOWER(CONCAT('%', ?, '%')) THEN 70
                         ELSE 50
                     END as score
-                    FROM asset_brands
+                    FROM inventory_brands
                     WHERE (
                         LOWER(official_name) LIKE LOWER(CONCAT('%', ?, '%'))
                         OR LOWER(variations) LIKE LOWER(CONCAT('%', ?, '%'))
@@ -2257,7 +2232,7 @@ class ApiController {
                     $sql = "SELECT bs.*, u.full_name as suggested_by_name, a.name as asset_name, a.ref as asset_ref
                             FROM brand_suggestions bs 
                             JOIN users u ON bs.suggested_by = u.id
-                            LEFT JOIN assets a ON bs.asset_id = a.id
+                            LEFT JOIN inventory_items a ON bs.asset_id = a.id
                             WHERE bs.suggested_by = ?
                             ORDER BY bs.created_at DESC";
                     
@@ -2389,15 +2364,15 @@ class ApiController {
                     $limit = min((int)($_GET['limit'] ?? 20), 100);
                     $offset = max((int)($_GET['offset'] ?? 0), 0);
                     
-                    $sql = "SELECT bs.*, u.full_name as suggested_by_name, 
+                    $sql = "SELECT bs.*, u.full_name as suggested_by_name,
                             a.name as asset_name, a.ref as asset_ref,
                             r.full_name as reviewed_by_name,
                             ab.official_name as approved_brand_name
                             FROM brand_suggestions bs
                             JOIN users u ON bs.suggested_by = u.id
-                            LEFT JOIN assets a ON bs.asset_id = a.id
+                            LEFT JOIN inventory_items a ON bs.asset_id = a.id
                             LEFT JOIN users r ON bs.reviewed_by = r.id
-                            LEFT JOIN asset_brands ab ON bs.approved_brand_id = ab.id
+                            LEFT JOIN inventory_brands ab ON bs.approved_brand_id = ab.id
                             WHERE bs.status = ?
                             ORDER BY bs.created_at DESC
                             LIMIT ? OFFSET ?";
@@ -2445,7 +2420,7 @@ class ApiController {
                         
                         // If approved and creating new brand
                         if ($data['status'] === 'approved' && !empty($data['create_brand'])) {
-                            $brandSql = "INSERT INTO asset_brands (official_name, quality_tier, is_active)
+                            $brandSql = "INSERT INTO inventory_brands (official_name, quality_tier, is_active)
                                          VALUES (?, ?, 1)";
                             $brandStmt = $db->prepare($brandSql);
                             $brandStmt->execute([
@@ -2462,7 +2437,7 @@ class ApiController {
                             
                             // Update related asset if exists
                             if (!empty($data['update_asset']) && !empty($data['asset_id'])) {
-                                $assetSql = "UPDATE assets SET brand_id = ? WHERE id = ?";
+                                $assetSql = "UPDATE inventory_items SET brand_id = ? WHERE id = ?";
                                 $assetStmt = $db->prepare($assetSql);
                                 $assetStmt->execute([$newBrandId, $data['asset_id']]);
                                 
@@ -2528,7 +2503,7 @@ class ApiController {
                     $stats['recent_activity'] = $stmt->fetchColumn();
                     
                     // Assets with unknown brands
-                    $stmt = $db->query("SELECT COUNT(*) FROM assets WHERE brand_id IS NULL AND standardized_name IS NOT NULL");
+                    $stmt = $db->query("SELECT COUNT(*) FROM inventory_items WHERE brand_id IS NULL AND standardized_name IS NOT NULL");
                     $stats['assets_unknown_brands'] = $stmt->fetchColumn();
                     
                     echo json_encode(['success' => true, 'data' => $stats]);
@@ -2570,7 +2545,7 @@ class ApiController {
             $db = Database::getInstance()->getConnection();
             
             // Get asset details
-            $assetSql = "SELECT name FROM assets WHERE id = ?";
+            $assetSql = "SELECT name FROM inventory_items WHERE id = ?";
             $assetStmt = $db->prepare($assetSql);
             $assetStmt->execute([$data['asset_id']]);
             $assetName = $assetStmt->fetchColumn();
@@ -2630,13 +2605,13 @@ class ApiController {
             $newBrandName = null;
             
             if ($oldBrandId) {
-                $stmt = $db->prepare("SELECT official_name FROM asset_brands WHERE id = ?");
+                $stmt = $db->prepare("SELECT official_name FROM inventory_brands WHERE id = ?");
                 $stmt->execute([$oldBrandId]);
                 $oldBrandName = $stmt->fetchColumn();
             }
-            
+
             if ($newBrandId) {
-                $stmt = $db->prepare("SELECT official_name FROM asset_brands WHERE id = ?");
+                $stmt = $db->prepare("SELECT official_name FROM inventory_brands WHERE id = ?");
                 $stmt->execute([$newBrandId]);
                 $newBrandName = $stmt->fetchColumn();
             }
@@ -2816,9 +2791,9 @@ class ApiController {
                     $stmt = $db->query('
                         SELECT et.id, et.name, et.description, et.category_id,
                                c.name as category_name
-                        FROM equipment_types et 
-                        JOIN categories c ON et.category_id = c.id 
-                        WHERE et.is_active = 1 
+                        FROM inventory_equipment_types et
+                        JOIN categories c ON et.category_id = c.id
+                        WHERE et.is_active = 1
                         ORDER BY et.name ASC
                     ');
                     

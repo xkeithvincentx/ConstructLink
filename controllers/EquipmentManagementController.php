@@ -62,7 +62,7 @@ class EquipmentManagementController {
         $stats['total_subtypes'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Items using this classification
-        $stmt = $this->db->query("SELECT COUNT(*) as total FROM assets");
+        $stmt = $this->db->query("SELECT COUNT(*) as total FROM inventory_items");
         $stats['total_assets'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Categories breakdown
@@ -81,7 +81,7 @@ class EquipmentManagementController {
             FROM categories c
             LEFT JOIN equipment_types et ON c.id = et.category_id
             LEFT JOIN equipment_subtypes es ON et.id = es.equipment_type_id
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             GROUP BY c.id
             ORDER BY c.name
         ");
@@ -114,7 +114,7 @@ class EquipmentManagementController {
                 COUNT(DISTINCT a.id) as assets_count
             FROM categories c
             LEFT JOIN equipment_types et ON c.id = et.category_id
-            LEFT JOIN assets a ON c.id = a.category_id
+            LEFT JOIN inventory_items a ON c.id = a.category_id
             GROUP BY c.id
             ORDER BY c.name
         ");
@@ -287,7 +287,7 @@ class EquipmentManagementController {
 
         try {
             // Check if category is in use
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM assets WHERE category_id = ?");
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM inventory_items WHERE category_id = ?");
             $stmt->execute([$id]);
             $usage = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -353,7 +353,7 @@ class EquipmentManagementController {
             FROM equipment_types et
             LEFT JOIN categories c ON et.category_id = c.id
             LEFT JOIN equipment_subtypes s ON et.id = s.equipment_type_id
-            LEFT JOIN assets a ON et.id = a.equipment_type_id
+            LEFT JOIN inventory_items a ON et.id = a.equipment_type_id
         ";
 
         if ($categoryId > 0) {
@@ -517,7 +517,7 @@ class EquipmentManagementController {
 
         try {
             // Check usage
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM assets WHERE equipment_type_id = ?");
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM inventory_items WHERE equipment_type_id = ?");
             $stmt->execute([$id]);
             $usage = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -575,7 +575,7 @@ class EquipmentManagementController {
             FROM equipment_subtypes s
             LEFT JOIN equipment_types et ON s.equipment_type_id = et.id
             LEFT JOIN categories c ON et.category_id = c.id
-            LEFT JOIN assets a ON s.id = a.equipment_subtype_id
+            LEFT JOIN inventory_items a ON s.id = a.equipment_subtype_id
         ";
 
         if ($equipmentTypeId > 0) {
@@ -785,7 +785,7 @@ class EquipmentManagementController {
 
         try {
             // Check usage
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM assets WHERE subtype_id = ?");
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM inventory_items WHERE subtype_id = ?");
             $stmt->execute([$id]);
             $usage = $stmt->fetch(PDO::FETCH_ASSOC);
 

@@ -63,15 +63,7 @@ $showCategoryInfo = $mode === 'legacy';
                                 data-keywords="<?= htmlspecialchars($category['search_keywords'] ?? '') ?>"
                                 <?= ($formData['category_id'] ?? '') == $category['id'] ? 'selected' : '' ?>>
                             <?php if ($mode === 'legacy'): ?>
-                                <?php
-                                $assetTypeIcon = '';
-                                switch($category['asset_type'] ?? 'capital') {
-                                    case 'capital': $assetTypeIcon = '🔧'; break;
-                                    case 'inventory': $assetTypeIcon = '📦'; break;
-                                    case 'expense': $assetTypeIcon = '💰'; break;
-                                }
-                                echo $assetTypeIcon . ' ' . htmlspecialchars($category['name']);
-                                ?>
+                                <?= htmlspecialchars($category['name']) ?>
                                 <?= $category['is_consumable'] ? ' (Consumable)' : '' ?>
                             <?php else: ?>
                                 <?= htmlspecialchars($category['name']) ?>

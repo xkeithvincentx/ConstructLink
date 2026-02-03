@@ -865,7 +865,7 @@ class VendorModel extends BaseModel {
             }
             
             // Check if vendor has related assets
-            $sql = "SELECT COUNT(*) FROM assets WHERE vendor_id = ?";
+            $sql = "SELECT COUNT(*) FROM inventory_items WHERE vendor_id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$id]);
             $assetCount = $stmt->fetchColumn();
@@ -939,7 +939,7 @@ class VendorModel extends BaseModel {
             $sql = "
                 SELECT c.name as category_name, COUNT(a.id) as asset_count, 
                        SUM(a.acquisition_cost) as total_value
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 WHERE a.vendor_id = ?
                 GROUP BY c.id, c.name

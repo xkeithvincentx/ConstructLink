@@ -177,7 +177,7 @@ class ProjectModel extends BaseModel {
                        COUNT(DISTINCT r.id) as requests_count
                 FROM projects p
                 LEFT JOIN users pm ON p.project_manager_id = pm.id
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                 LEFT JOIN user_projects up ON p.id = up.project_id AND up.is_active = 1
                 LEFT JOIN withdrawals w ON p.id = w.project_id
                 LEFT JOIN procurement_orders po ON p.id = po.project_id
@@ -275,7 +275,7 @@ class ProjectModel extends BaseModel {
                        COUNT(DISTINCT po.id) as procurement_count
                 FROM projects p
                 LEFT JOIN users pm ON p.project_manager_id = pm.id
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                 LEFT JOIN user_projects up ON p.id = up.project_id AND up.is_active = 1
                 LEFT JOIN withdrawals w ON p.id = w.project_id
                 LEFT JOIN procurement_orders po ON p.id = po.project_id
@@ -358,7 +358,7 @@ class ProjectModel extends BaseModel {
                     COUNT(DISTINCT r.id) as total_requests
                 FROM projects p
                 LEFT JOIN user_projects up ON p.id = up.project_id AND up.is_active = 1
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                 LEFT JOIN withdrawals w ON p.id = w.project_id
                 LEFT JOIN procurement_orders po ON p.id = po.project_id
                 LEFT JOIN requests r ON p.id = r.project_id
@@ -562,7 +562,7 @@ class ProjectModel extends BaseModel {
             $this->beginTransaction();
             
             // Check if project has assets
-            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE project_id = ?");
+            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM inventory_items WHERE project_id = ?");
             $assetCount->execute([$id]);
             $count = $assetCount->fetchColumn();
             

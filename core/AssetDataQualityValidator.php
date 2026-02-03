@@ -38,7 +38,7 @@ class AssetDataQualityValidator {
      */
     private function loadValidationRules() {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM asset_validation_rules WHERE is_active = 1 ORDER BY severity DESC");
+            $stmt = $this->db->prepare("SELECT * FROM inventory_validation_rules WHERE is_active = 1 ORDER BY severity DESC");
             $stmt->execute();
             $this->validationRules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             error_log("Loaded " . count($this->validationRules) . " validation rules");
@@ -374,7 +374,7 @@ class AssetDataQualityValidator {
     private function validateDuplicate($value, $logic, $assetData, &$suggestions) {
         // Check for duplicate serial numbers
         if (!empty($value) && !empty($assetData['id'])) {
-            $stmt = $this->db->prepare("SELECT id, ref, name FROM assets WHERE serial_number = ? AND id != ? LIMIT 1");
+            $stmt = $this->db->prepare("SELECT id, ref, name FROM inventory_items WHERE serial_number = ? AND id != ? LIMIT 1");
             $stmt->execute([$value, $assetData['id']]);
             $duplicate = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -394,7 +394,7 @@ class AssetDataQualityValidator {
         // Get brand and equipment type names for more intelligent checking
         $stmt = $this->db->prepare("
             SELECT b.official_name as brand_name, et.name as equipment_name
-            FROM asset_brands b, equipment_types et 
+            FROM inventory_brands b, inventory_equipment_types et
             WHERE b.id = ? AND et.id = ?
         ");
         $stmt->execute([$brandId, $equipmentTypeId]);
@@ -433,7 +433,7 @@ class AssetDataQualityValidator {
      */
     private function checkDisciplineEquipmentMatch($disciplineTags, $equipmentTypeId, &$suggestions) {
         // Get equipment type details
-        $stmt = $this->db->prepare("SELECT name, category_id FROM equipment_types WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT name, category_id FROM inventory_equipment_types WHERE id = ?");
         $stmt->execute([$equipmentTypeId]);
         $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -603,7 +603,7 @@ class AssetDataQualityValidator {
     private function calculateContextAwareScores($assetData, $validationResults) {
         $equipmentName = '';
         if (!empty($assetData['equipment_type_id'])) {
-            $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT name FROM inventory_equipment_types WHERE id = ?");
             $stmt->execute([$assetData['equipment_type_id']]);
             $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
             $equipmentName = $equipment ? strtolower($equipment['name']) : '';
@@ -771,7 +771,7 @@ class AssetDataQualityValidator {
     private function validateContextualRequirement($value, $logic, $assetData, &$suggestions) {
         // Check if requirement applies to this equipment type
         if (isset($logic['required_for_equipment_types']) && !empty($assetData['equipment_type_id'])) {
-            $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT name FROM inventory_equipment_types WHERE id = ?");
             $stmt->execute([$assetData['equipment_type_id']]);
             $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -808,8 +808,8 @@ class AssetDataQualityValidator {
         if (empty($assetData['equipment_type_id'])) {
             return ['passed' => true, 'suggestions' => $suggestions];
         }
-        
-        $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
+
+        $stmt = $this->db->prepare("SELECT name FROM inventory_equipment_types WHERE id = ?");
         $stmt->execute([$assetData['equipment_type_id']]);
         $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -839,7 +839,7 @@ class AssetDataQualityValidator {
         $subDisciplines = [];
         
         foreach ($disciplines as $disciplineCode) {
-            $stmt = $this->db->prepare("SELECT name, parent_id, code FROM asset_disciplines WHERE code = ? OR iso_code = ?");
+            $stmt = $this->db->prepare("SELECT name, parent_id, code FROM inventory_disciplines WHERE code = ? OR iso_code = ?");
             $stmt->execute([$disciplineCode, $disciplineCode]);
             $discipline = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -858,7 +858,7 @@ class AssetDataQualityValidator {
         
         // Check if sub-disciplines have corresponding main disciplines
         foreach ($subDisciplines as $subDiscipline) {
-            $stmt = $this->db->prepare("SELECT code FROM asset_disciplines WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT code FROM inventory_disciplines WHERE id = ?");
             $stmt->execute([$subDiscipline['parent_id']]);
             $parent = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -878,9 +878,9 @@ class AssetDataQualityValidator {
         if (empty($assetData['quantity']) || empty($assetData['equipment_type_id'])) {
             return ['passed' => true, 'suggestions' => $suggestions];
         }
-        
+
         $quantity = (int)$assetData['quantity'];
-        $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT name FROM inventory_equipment_types WHERE id = ?");
         $stmt->execute([$assetData['equipment_type_id']]);
         $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -922,7 +922,7 @@ class AssetDataQualityValidator {
         
         // Get equipment context for better cost validation
         if (!empty($assetData['equipment_type_id'])) {
-            $stmt = $this->db->prepare("SELECT name FROM equipment_types WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT name FROM inventory_equipment_types WHERE id = ?");
             $stmt->execute([$assetData['equipment_type_id']]);
             $equipment = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -974,7 +974,7 @@ class AssetDataQualityValidator {
         // Get average cost for this category
         $stmt = $this->db->prepare("
             SELECT AVG(acquisition_cost) as avg_cost, COUNT(*) as count
-            FROM assets 
+            FROM inventory_items 
             WHERE category_id = ? AND acquisition_cost > 0
         ");
         $stmt->execute([$categoryId]);

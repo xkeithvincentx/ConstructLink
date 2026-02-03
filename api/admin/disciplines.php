@@ -76,10 +76,10 @@ function handleGet($db) {
     if ($id) {
         try {
             $sql = "
-                SELECT 
+                SELECT
                     d.id,
                     d.code,
-                    " . (columnExists('asset_disciplines', 'iso_code') ? 'd.iso_code,' : 'NULL as iso_code,') . "
+                    " . (columnExists('inventory_disciplines', 'iso_code') ? 'd.iso_code,' : 'NULL as iso_code,') . "
                     d.name,
                     d.description,
                     d.parent_id,
@@ -88,17 +88,17 @@ function handleGet($db) {
                     d.is_active,
                     d.created_at,
                     COALESCE(asset_count.count, 0) as assets_count
-                FROM asset_disciplines d
-                LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+                FROM inventory_disciplines d
+                LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
                 LEFT JOIN (
-                    SELECT 
+                    SELECT
                         d_inner.id as discipline_id,
                         COUNT(DISTINCT a.id) as count
-                    FROM asset_disciplines d_inner
-                    LEFT JOIN assets a ON (
-                        a.discipline_tags IS NOT NULL 
+                    FROM inventory_disciplines d_inner
+                    LEFT JOIN inventory_items a ON (
+                        a.discipline_tags IS NOT NULL
                         AND a.discipline_tags LIKE CONCAT('%', d_inner.iso_code, '%')
-                        " . (columnExists('assets', 'deleted_at') ? 'AND a.deleted_at IS NULL' : '') . "
+                        " . (columnExists('inventory_items', 'deleted_at') ? 'AND a.deleted_at IS NULL' : '') . "
                     )
                     GROUP BY d_inner.id
                 ) asset_count ON d.id = asset_count.discipline_id
@@ -157,14 +157,14 @@ function handleGet($db) {
         }
         
         // Get total count
-        $countSql = "SELECT COUNT(*) FROM asset_disciplines d $whereClause";
+        $countSql = "SELECT COUNT(*) FROM inventory_disciplines d $whereClause";
         $countStmt = $db->prepare($countSql);
         $countStmt->execute($params);
         $totalItems = $countStmt->fetchColumn();
         
         // Get disciplines with parent information and asset counts
         $sql = "
-            SELECT 
+            SELECT
                 d.id,
                 d.code,
                 d.iso_code,
@@ -176,17 +176,17 @@ function handleGet($db) {
                 d.is_active,
                 d.created_at,
                 COALESCE(asset_count.count, 0) as assets_count
-            FROM asset_disciplines d
-            LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+            FROM inventory_disciplines d
+            LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
             LEFT JOIN (
-                SELECT 
+                SELECT
                     d_inner.id as discipline_id,
                     COUNT(DISTINCT a.id) as count
-                FROM asset_disciplines d_inner
-                LEFT JOIN assets a ON (
-                    a.discipline_tags IS NOT NULL 
+                FROM inventory_disciplines d_inner
+                LEFT JOIN inventory_items a ON (
+                    a.discipline_tags IS NOT NULL
                     AND a.discipline_tags LIKE CONCAT('%', d_inner.iso_code, '%')
-                    " . (columnExists('assets', 'deleted_at') ? 'AND a.deleted_at IS NULL' : '') . "
+                    " . (columnExists('inventory_items', 'deleted_at') ? 'AND a.deleted_at IS NULL' : '') . "
                 )
                 GROUP BY d_inner.id
             ) asset_count ON d.id = asset_count.discipline_id
@@ -256,29 +256,29 @@ function handlePost($db) {
     
     try {
         // Check if code already exists
-        $checkSql = "SELECT COUNT(*) FROM asset_disciplines WHERE code = ?";
+        $checkSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE code = ?";
         $checkStmt = $db->prepare($checkSql);
         $checkStmt->execute([$input['code']]);
-        
+
         if ($checkStmt->fetchColumn() > 0) {
             echo json_encode(['success' => false, 'message' => 'Discipline code already exists']);
             return;
         }
-        
+
         // Validate parent_id if provided
         if (!empty($input['parent_id'])) {
-            $parentCheckSql = "SELECT COUNT(*) FROM asset_disciplines WHERE id = ? AND is_active = 1";
+            $parentCheckSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE id = ? AND is_active = 1";
             $parentCheckStmt = $db->prepare($parentCheckSql);
             $parentCheckStmt->execute([$input['parent_id']]);
-            
+
             if ($parentCheckStmt->fetchColumn() == 0) {
                 echo json_encode(['success' => false, 'message' => 'Invalid parent discipline']);
                 return;
             }
         }
-        
+
         // Get next sort order
-        $sortOrderSql = "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM asset_disciplines WHERE parent_id " . 
+        $sortOrderSql = "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM inventory_disciplines WHERE parent_id " . 
                         (empty($input['parent_id']) ? "IS NULL" : "= ?");
         $sortOrderStmt = $db->prepare($sortOrderSql);
         if (!empty($input['parent_id'])) {
@@ -290,10 +290,10 @@ function handlePost($db) {
         
         // Insert new discipline
         $insertSql = "
-            INSERT INTO asset_disciplines (code, iso_code, name, description, parent_id, sort_order, is_active, created_at)
+            INSERT INTO inventory_disciplines (code, iso_code, name, description, parent_id, sort_order, is_active, created_at)
             VALUES (?, ?, ?, ?, ?, ?, 1, NOW())
         ";
-        
+
         $insertStmt = $db->prepare($insertSql);
         $insertStmt->execute([
             $input['code'],
@@ -303,16 +303,16 @@ function handlePost($db) {
             !empty($input['parent_id']) ? $input['parent_id'] : null,
             $sortOrder
         ]);
-        
+
         $newId = $db->lastInsertId();
-        
+
         // Return the created discipline
         $selectSql = "
-            SELECT 
+            SELECT
                 d.id, d.code, d.name, d.description, d.parent_id,
                 p.name as parent_name, d.sort_order, d.is_active, d.created_at
-            FROM asset_disciplines d
-            LEFT JOIN asset_disciplines p ON d.parent_id = p.id
+            FROM inventory_disciplines d
+            LEFT JOIN inventory_disciplines p ON d.parent_id = p.id
             WHERE d.id = ?
         ";
         $selectStmt = $db->prepare($selectSql);
@@ -357,28 +357,28 @@ function handlePut($db) {
     
     try {
         // Check if discipline exists
-        $checkSql = "SELECT id, code FROM asset_disciplines WHERE id = ?";
+        $checkSql = "SELECT id, code FROM inventory_disciplines WHERE id = ?";
         $checkStmt = $db->prepare($checkSql);
         $checkStmt->execute([$id]);
         $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$existing) {
             echo json_encode(['success' => false, 'message' => 'Discipline not found']);
             return;
         }
-        
+
         // Check if code conflicts (if being changed)
         if (!empty($input['code']) && $input['code'] !== $existing['code']) {
-            $codeCheckSql = "SELECT COUNT(*) FROM asset_disciplines WHERE code = ? AND id != ?";
+            $codeCheckSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE code = ? AND id != ?";
             $codeCheckStmt = $db->prepare($codeCheckSql);
             $codeCheckStmt->execute([$input['code'], $id]);
-            
+
             if ($codeCheckStmt->fetchColumn() > 0) {
                 echo json_encode(['success' => false, 'message' => 'Discipline code already exists']);
                 return;
             }
         }
-        
+
         // Validate parent_id if provided
         if (isset($input['parent_id']) && !empty($input['parent_id'])) {
             // Prevent self-reference
@@ -386,11 +386,11 @@ function handlePut($db) {
                 echo json_encode(['success' => false, 'message' => 'Discipline cannot be its own parent']);
                 return;
             }
-            
-            $parentCheckSql = "SELECT COUNT(*) FROM asset_disciplines WHERE id = ? AND is_active = 1";
+
+            $parentCheckSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE id = ? AND is_active = 1";
             $parentCheckStmt = $db->prepare($parentCheckSql);
             $parentCheckStmt->execute([$input['parent_id']]);
-            
+
             if ($parentCheckStmt->fetchColumn() == 0) {
                 echo json_encode(['success' => false, 'message' => 'Invalid parent discipline']);
                 return;
@@ -427,9 +427,9 @@ function handlePut($db) {
             return;
         }
         
-        $updateSql = "UPDATE asset_disciplines SET " . implode(', ', $updateFields) . " WHERE id = ?";
+        $updateSql = "UPDATE inventory_disciplines SET " . implode(', ', $updateFields) . " WHERE id = ?";
         $params[] = $id;
-        
+
         $updateStmt = $db->prepare($updateSql);
         $updateStmt->execute($params);
         
@@ -450,37 +450,37 @@ function handleDelete($db) {
     
     try {
         // Check if discipline exists
-        $checkSql = "SELECT id FROM asset_disciplines WHERE id = ?";
+        $checkSql = "SELECT id FROM inventory_disciplines WHERE id = ?";
         $checkStmt = $db->prepare($checkSql);
         $checkStmt->execute([$id]);
-        
+
         if (!$checkStmt->fetch()) {
             echo json_encode(['success' => false, 'message' => 'Discipline not found']);
             return;
         }
-        
+
         // Check if discipline has children
-        $childrenCheckSql = "SELECT COUNT(*) FROM asset_disciplines WHERE parent_id = ?";
+        $childrenCheckSql = "SELECT COUNT(*) FROM inventory_disciplines WHERE parent_id = ?";
         $childrenCheckStmt = $db->prepare($childrenCheckSql);
         $childrenCheckStmt->execute([$id]);
-        
+
         if ($childrenCheckStmt->fetchColumn() > 0) {
             echo json_encode(['success' => false, 'message' => 'Cannot delete discipline with child disciplines']);
             return;
         }
-        
+
         // Check if discipline has assets
-        $assetsCheckSql = "SELECT COUNT(*) FROM asset_discipline_mappings WHERE discipline_id = ?";
+        $assetsCheckSql = "SELECT COUNT(*) FROM inventory_discipline_mappings WHERE discipline_id = ?";
         $assetsCheckStmt = $db->prepare($assetsCheckSql);
         $assetsCheckStmt->execute([$id]);
-        
+
         if ($assetsCheckStmt->fetchColumn() > 0) {
             echo json_encode(['success' => false, 'message' => 'Cannot delete discipline with associated assets']);
             return;
         }
-        
+
         // Delete the discipline
-        $deleteSql = "DELETE FROM asset_disciplines WHERE id = ?";
+        $deleteSql = "DELETE FROM inventory_disciplines WHERE id = ?";
         $deleteStmt = $db->prepare($deleteSql);
         $deleteStmt->execute([$id]);
         

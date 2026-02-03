@@ -180,7 +180,7 @@ error_log("Transfer Create - User Role: {$userRole}, Current Project ID: " . ($u
 function transferForm() {
     return {
         formData: {
-            asset_id: '<?= htmlspecialchars($formData['asset_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>',
+            inventory_item_id: '<?= htmlspecialchars($formData['inventory_item_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>',
             from_project: '<?= htmlspecialchars($formData['from_project'] ?? '', ENT_QUOTES, 'UTF-8') ?>',
             to_project: '<?= htmlspecialchars($formData['to_project'] ?? '', ENT_QUOTES, 'UTF-8') ?>',
             transfer_type: '<?= htmlspecialchars($formData['transfer_type'] ?? '', ENT_QUOTES, 'UTF-8') ?>',
@@ -230,7 +230,7 @@ function transferForm() {
             console.log('Current User Project ID:', this.currentUserProjectId);
             console.log('Selected Asset Project ID:', asset.project_id);
 
-            this.formData.asset_id = asset.id;
+            this.formData.inventory_item_id = asset.id;
             this.selectedAssetInfo = asset;
             this.searchText = `${asset.ref} - ${asset.name}`;
             this.showDropdown = false;
@@ -275,7 +275,7 @@ function transferForm() {
         },
 
         clearSelection() {
-            this.formData.asset_id = '';
+            this.formData.inventory_item_id = '';
             this.selectedAssetInfo = null;
             this.searchText = '';
             this.formData.from_project = '';

@@ -126,7 +126,7 @@ try {
         $asset['actions'] = [
             'view' => "?route=assets/view&id={$asset['id']}",
             'edit' => "?route=assets/edit&id={$asset['id']}",
-            'withdraw' => "?route=withdrawals/create&asset_id={$asset['id']}",
+            'withdraw' => "?route=withdrawals/create-batch&asset_id={$asset['id']}",
             'transfer' => "?route=transfers/create&asset_id={$asset['id']}",
             'maintenance' => "?route=maintenance/create&asset_id={$asset['id']}",
             'qr_print' => "?route=assets/print-tag&id={$asset['id']}"

@@ -44,7 +44,11 @@ $additionalJS = [
                             <label for="project_id" class="form-label">
                                 Project <span class="text-danger">*</span>
                             </label>
-                            <select name="project_id" id="project_id" class="form-select" required aria-required="true">
+                            <?php
+                            // Disable project dropdown if user has only one assigned project
+                            $disableProject = (isset($projects) && count($projects) === 1);
+                            ?>
+                            <select name="project_id" id="project_id" class="form-select" required aria-required="true" <?= $disableProject ? 'disabled' : '' ?>>
                                 <option value="">Select Project</option>
                                 <?php if (isset($projects) && is_array($projects)): ?>
                                     <?php foreach ($projects as $project): ?>
@@ -54,6 +58,13 @@ $additionalJS = [
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
+                            <?php if ($disableProject): ?>
+                                <!-- Hidden field to ensure value is submitted when disabled -->
+                                <input type="hidden" name="project_id" value="<?= $formData['project_id'] ?? ($projects[0]['id'] ?? '') ?>">
+                                <div class="form-text text-info">
+                                    <i class="bi bi-info-circle me-1"></i>You are assigned to this project.
+                                </div>
+                            <?php endif; ?>
                             <div class="invalid-feedback" role="alert">
                                 Please select a project.
                             </div>
@@ -66,20 +77,8 @@ $additionalJS = [
                             <select name="request_type" id="request_type" class="form-select" required aria-required="true">
                                 <option value="">Select Request Type</option>
                                 <?php
-                                // Role-based request type restrictions
-                                $allowedTypes = ['Material', 'Tool', 'Equipment', 'Service', 'Petty Cash', 'Other'];
-
-                                // Site Inventory Clerk can only request Materials and Tools
-                                if ($user['role_name'] === 'Site Inventory Clerk') {
-                                    $allowedTypes = ['Material', 'Tool'];
-                                }
-
-                                // Project Manager restrictions (can't request Petty Cash)
-                                if ($user['role_name'] === 'Project Manager') {
-                                    $allowedTypes = array_diff($allowedTypes, ['Petty Cash']);
-                                }
-
-                                foreach ($allowedTypes as $type):
+                                // Request types are passed from controller (DRY - no hardcoding)
+                                foreach ($requestTypes as $type):
                                 ?>
                                     <option value="<?= $type ?>" <?= ($formData['request_type'] ?? '') === $type ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($type) ?>
@@ -91,9 +90,67 @@ $additionalJS = [
                             </div>
                             <?php if ($user['role_name'] === 'Site Inventory Clerk'): ?>
                                 <div class="form-text text-info">
-                                    <i class="bi bi-info-circle me-1"></i>Site Inventory Clerks can only request Materials and Tools.
+                                    <i class="bi bi-info-circle me-1"></i>Site Inventory Clerks can only request Materials, Tools, and Restock.
                                 </div>
                             <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Restock-specific fields (hidden by default) -->
+                    <div id="restockFields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="inventory_item_id" class="form-label">
+                                    Select Item to Restock <span class="text-danger">*</span>
+                                </label>
+                                <select name="inventory_item_id" id="inventory_item_id" class="form-select">
+                                    <option value="">Select inventory item...</option>
+                                </select>
+                                <div class="invalid-feedback" role="alert">
+                                    Please select an inventory item to restock.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock Level Display -->
+                        <div id="stockLevelDisplay" style="display: none;" class="alert alert-info">
+                            <h6><i class="bi bi-box-seam me-2"></i>Current Stock Level</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Total Quantity:</strong> <span id="displayTotalQty">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Available:</strong> <span id="displayAvailableQty">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Consumed:</strong> <span id="displayConsumedQty">-</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Unit:</strong> <span id="displayUnit">-</span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="restock_quantity" class="form-label">
+                                    Quantity to Add <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="quantity" id="restock_quantity" class="form-control" min="1" placeholder="Enter quantity to add">
+                                <div class="form-text">How many units to add to current stock?</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="restock_reason" class="form-label">
+                                    Reason for Restock <span class="text-danger">*</span>
+                                </label>
+                                <select name="restock_reason" id="restock_reason" class="form-select">
+                                    <option value="">Select reason...</option>
+                                    <option value="Low Stock">Low Stock</option>
+                                    <option value="Project Demand">Project Demand</option>
+                                    <option value="Planned Restocking">Planned Restocking</option>
+                                    <option value="Emergency">Emergency</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -231,6 +288,7 @@ $additionalJS = [
                     <li><strong>Equipment:</strong> Heavy machinery, vehicles</li>
                     <li><strong>Service:</strong> Professional services, repairs</li>
                     <li><strong>Petty Cash:</strong> Small cash expenses</li>
+                    <li><strong>Restock:</strong> Add quantity to existing consumable items</li>
                     <li><strong>Other:</strong> Miscellaneous requests</li>
                 </ul>
 
@@ -268,6 +326,146 @@ $additionalJS = [
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const requestTypeSelect = document.getElementById('request_type');
+    const projectSelect = document.getElementById('project_id');
+    const restockFields = document.getElementById('restockFields');
+    const inventoryItemSelect = document.getElementById('inventory_item_id');
+    const stockLevelDisplay = document.getElementById('stockLevelDisplay');
+    const quantityFields = document.getElementById('quantityFields');
+    const estimatedCostField = document.getElementById('estimatedCostField');
+    const categoryField = document.getElementById('categoryField');
+
+    // Toggle restock fields based on request type
+    requestTypeSelect.addEventListener('change', function() {
+        const isRestock = this.value === 'Restock';
+
+        if (isRestock) {
+            restockFields.style.display = 'block';
+            // Hide non-restock fields
+            if (quantityFields) quantityFields.style.display = 'none';
+            if (categoryField) categoryField.style.display = 'none';
+
+            // Load inventory items if project selected
+            if (projectSelect.value) {
+                loadInventoryItems(projectSelect.value);
+            }
+        } else {
+            restockFields.style.display = 'none';
+            stockLevelDisplay.style.display = 'none';
+            inventoryItemSelect.innerHTML = '<option value="">Select inventory item...</option>';
+        }
+    });
+
+    // Reload inventory items when project changes
+    projectSelect.addEventListener('change', function() {
+        if (requestTypeSelect.value === 'Restock' && this.value) {
+            loadInventoryItems(this.value);
+        }
+    });
+
+    // Load inventory items via AJAX
+    function loadInventoryItems(projectId) {
+        fetch(`api/requests/inventory-items.php?project_id=${projectId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    inventoryItemSelect.innerHTML = '<option value="">Select inventory item...</option>';
+
+                    data.items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.text;
+                        option.dataset.totalQty = item.total_quantity;
+                        option.dataset.availableQty = item.available_quantity;
+                        option.dataset.unit = item.unit;
+                        inventoryItemSelect.appendChild(option);
+                    });
+
+                    // Show low stock items at top
+                    if (data.statistics && data.statistics.low_stock > 0) {
+                        const lowStockNote = document.createElement('option');
+                        lowStockNote.disabled = true;
+                        lowStockNote.textContent = `--- ${data.statistics.low_stock} Low Stock Items ---`;
+                        inventoryItemSelect.insertBefore(lowStockNote, inventoryItemSelect.children[1]);
+                    }
+
+                    // Refresh Select2 if initialized
+                    if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+                        jQuery('#inventory_item_id').trigger('change.select2');
+                    }
+                } else {
+                    console.error('Failed to load inventory items:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading inventory items:', error);
+            });
+    }
+
+    // Display stock level when item selected
+    inventoryItemSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (this.value) {
+            const totalQty = selectedOption.dataset.totalQty;
+            const availableQty = selectedOption.dataset.availableQty;
+            const unit = selectedOption.dataset.unit;
+            const consumedQty = totalQty - availableQty;
+
+            document.getElementById('displayTotalQty').textContent = `${totalQty} ${unit}`;
+            document.getElementById('displayAvailableQty').textContent = `${availableQty} ${unit}`;
+            document.getElementById('displayConsumedQty').textContent = `${consumedQty} ${unit}`;
+            document.getElementById('displayUnit').textContent = unit;
+
+            stockLevelDisplay.style.display = 'block';
+
+            // Auto-suggest restock quantity (consumed amount)
+            document.getElementById('restock_quantity').value = consumedQty > 0 ? consumedQty : '';
+        } else {
+            stockLevelDisplay.style.display = 'none';
+        }
+    });
+
+    // Initialize Select2 for searchable inventory item dropdown
+    if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+        jQuery(document).ready(function($) {
+            $('#inventory_item_id').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Search for inventory item...',
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return 'No consumable items found. Select a project first.';
+                    },
+                    searching: function() {
+                        return 'Searching inventory...';
+                    }
+                }
+            });
+
+            // Trigger change event for stock display when Select2 changes
+            $('#inventory_item_id').on('select2:select', function(e) {
+                // Trigger native change event
+                this.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+    }
+});
+</script>
+
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 CSS for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <?php
 // Capture content and assign to variable

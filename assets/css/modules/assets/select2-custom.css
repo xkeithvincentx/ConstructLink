@@ -7,12 +7,27 @@
  * This was a reported issue where search boxes were hidden, making
  * category/project selection difficult with large datasets.
  *
- * CRITICAL FIX 2: Removes double arrow issue by completely removing
- * native select styling and ensuring Select2 takes over completely.
+ * CRITICAL FIX 2: Removes double arrow issue with comprehensive approach:
+ * - Removes Bootstrap 5's .form-select background-image arrow
+ * - Removes any pseudo-element arrows (::before, ::after)
+ * - Ensures only Select2's native arrow (<b> element) is visible
+ * - Applies to both original select elements AND Select2 containers
+ *
+ * The double arrow was caused by:
+ * 1. Bootstrap's background-image on the Select2 container span element
+ * 2. Potential pseudo-element arrows from theme CSS
+ * 3. Bootstrap's styling bleeding through to Select2 elements
+ *
+ * Solution: Comprehensive removal of ALL background-images and pseudo-elements
+ * from Select2 selection containers, while preserving the single arrow element.
+ *
+ * LOADING ORDER: This file MUST be loaded AFTER Select2 library CSS
+ * to ensure proper override of default Select2 styles.
  *
  * @module assets/select2-custom
- * @version 3.1.0
+ * @version 3.3.0
  * @since Phase 3 Refactoring
+ * @updated 2025-01-17 - Fixed double arrow issue with comprehensive CSS overrides
  */
 
 /* ==========================================================================
@@ -20,14 +35,32 @@
    This must come first to prevent browser default styles
    ========================================================================== */
 
-/* Target all selects in filter forms - highest priority */
+/* Target ALL select elements that will use Select2 - highest priority */
+select.form-select[id*="category"],
+select.form-select[id*="project"],
+select.form-select[id*="brand"],
+select.form-select[id*="maker"],
+select.form-select[id*="vendor"],
+select.form-select[id*="client"],
+select.form-select[id*="status"],
+select.form-select[id*="asset_type"],
+select.form-select[id*="workflow"],
+select.form-select[id*="condition"],
+select.form-select[id*="location"],
+select.form-select[id*="unit"],
+select.form-select[id*="discipline"],
+select.form-select[id*="bulk"],
 #filter-form select,
 #filter-form-mobile select,
+select#category_id,
+select#project_id,
+select#brand,
+select#primary_discipline,
+select#unit,
+select#bulk-serial-mode,
 select#status,
 select#status-mobile,
-select#category_id,
 select#category_id-mobile,
-select#project_id,
 select#project_id-mobile,
 select#brand_id,
 select#brand_id-mobile,
@@ -111,6 +144,11 @@ select.select2-hidden-accessible {
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   display: flex;
   align-items: center;
+  /* CRITICAL: Remove Bootstrap's form-select arrow background */
+  background-image: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
 }
 
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
@@ -132,6 +170,8 @@ select.select2-hidden-accessible {
   transform: translateY(-50%);
   width: 12px;
   height: 12px;
+  /* Ensure this is the ONLY arrow visible */
+  z-index: 10;
 }
 
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow b {
@@ -145,6 +185,16 @@ select.select2-hidden-accessible {
   position: absolute;
   top: 50%;
   width: 0;
+  /* Ensure no background image on arrow element */
+  background: none !important;
+  background-image: none !important;
+}
+
+/* CRITICAL: Override Select2 Bootstrap 5 theme arrow if it adds extras */
+.select2-container--bootstrap-5 .select2-selection__arrow::before,
+.select2-container--bootstrap-5 .select2-selection__arrow::after {
+  display: none !important;
+  content: none !important;
 }
 
 /* Clear button positioning */
@@ -162,6 +212,35 @@ select.select2-hidden-accessible {
 /* Make Select2 container block-level to replace native select */
 .select2-container {
   display: block !important;
+}
+
+/* CRITICAL: Remove ALL background images from Select2 selection elements */
+.select2-container .select2-selection,
+.select2-container .select2-selection--single,
+.select2-container--bootstrap-5 .select2-selection,
+.select2-container--bootstrap-5 .select2-selection--single,
+span.select2-selection,
+span.select2-selection--single,
+span.select2-selection.select2-selection--single {
+  background-image: none !important;
+  background: #fff !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Remove any pseudo-element arrows */
+.select2-container .select2-selection::before,
+.select2-container .select2-selection::after,
+.select2-container .select2-selection--single::before,
+.select2-container .select2-selection--single::after,
+.select2-container--bootstrap-5 .select2-selection::before,
+.select2-container--bootstrap-5 .select2-selection::after,
+.select2-container--bootstrap-5 .select2-selection--single::before,
+.select2-container--bootstrap-5 .select2-selection--single::after {
+  display: none !important;
+  content: none !important;
+  background-image: none !important;
 }
 
 /* Small form-select variant for filter dropdowns */

@@ -454,7 +454,7 @@ class MaintenanceModel extends BaseModel {
                    uv.full_name as verified_by_name,
                    ua.full_name as approved_by_name
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             LEFT JOIN users uc ON m.created_by = uc.id
@@ -492,7 +492,7 @@ class MaintenanceModel extends BaseModel {
         }
         
         if (!empty($filters['asset_id'])) {
-            $conditions[] = "m.asset_id = ?";
+            $conditions[] = "m.inventory_item_id = ?";
             $params[] = $filters['asset_id'];
         }
         
@@ -518,7 +518,7 @@ class MaintenanceModel extends BaseModel {
         $countSql = "
             SELECT COUNT(*) 
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             {$whereClause}
         ";
         
@@ -536,7 +536,7 @@ class MaintenanceModel extends BaseModel {
                    c.name as category_name,
                    p.name as project_name
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             {$whereClause}
@@ -616,7 +616,7 @@ class MaintenanceModel extends BaseModel {
                    p.name as project_name,
                    DATEDIFF(CURDATE(), m.scheduled_date) as days_overdue
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             WHERE m.status IN ('Pending Verification', 'Pending Approval', 'Approved') 
@@ -640,7 +640,7 @@ class MaintenanceModel extends BaseModel {
                    p.name as project_name,
                    DATEDIFF(m.scheduled_date, CURDATE()) as days_until_due
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             WHERE m.status IN ('Pending Verification', 'Pending Approval', 'Approved') 
@@ -701,7 +701,7 @@ class MaintenanceModel extends BaseModel {
                 m.actual_cost as cost,
                 m.assigned_to as technician_name
             FROM {$this->table} m
-            WHERE m.asset_id = ?
+            WHERE m.inventory_item_id = ?
             ORDER BY m.scheduled_date DESC
         ";
 
@@ -724,7 +724,7 @@ class MaintenanceModel extends BaseModel {
                 SUM(CASE WHEN m.type = 'corrective' THEN COALESCE(m.actual_cost, 0) ELSE 0 END) as corrective_cost,
                 SUM(CASE WHEN m.type = 'emergency' THEN COALESCE(m.actual_cost, 0) ELSE 0 END) as emergency_cost
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             WHERE m.scheduled_date BETWEEN ? AND ?
               AND m.status = 'completed'
@@ -751,7 +751,7 @@ class MaintenanceModel extends BaseModel {
                    c.name as category_name,
                    p.name as project_name
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             {$whereClause}
@@ -775,7 +775,7 @@ class MaintenanceModel extends BaseModel {
                        c.name as category_name,
                        p.name as project_name
                 FROM {$this->table} m
-                LEFT JOIN assets a ON m.asset_id = a.id
+                LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 WHERE m.scheduled_date BETWEEN ? AND ?
@@ -818,7 +818,7 @@ class MaintenanceModel extends BaseModel {
                    c.name as category_name,
                    p.name as project_name
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.asset_id = a.id
+            LEFT JOIN inventory_items a ON m.inventory_item_id = a.id
             LEFT JOIN categories c ON a.category_id = c.id
             LEFT JOIN projects p ON a.project_id = p.id
             {$whereClause}

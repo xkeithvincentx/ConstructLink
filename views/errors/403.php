@@ -41,7 +41,11 @@
                         <div class="error-code">403</div>
                         <h2 class="mb-4">Access Denied</h2>
                         <p class="lead mb-4">
-                            You don't have permission to access this resource.
+                            <?php if (isset($error) && !empty($error)): ?>
+                                <?= htmlspecialchars($error) ?>
+                            <?php else: ?>
+                                You don't have permission to access this resource.
+                            <?php endif; ?>
                         </p>
                         <div class="mb-4">
                             <i class="bi bi-shield-x display-4"></i>

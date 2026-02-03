@@ -240,7 +240,7 @@ class SecureLink {
             $stmt = $db->prepare("
                 SELECT a.*, c.name as category_name, p.name as project_name, 
                        m.name as maker_name, v.name as vendor_name
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects p ON a.project_id = p.id
                 LEFT JOIN makers m ON a.maker_id = m.id
@@ -356,7 +356,7 @@ class SecureLink {
             if ($result['success']) {
                 // Update asset with new QR path
                 $db = Database::getInstance()->getConnection();
-                $stmt = $db->prepare("UPDATE assets SET qr_code_path = ? WHERE id = ?");
+                $stmt = $db->prepare("UPDATE inventory_items SET qr_code_path = ? WHERE id = ?");
                 $stmt->execute([$result['qr_path'], $assetId]);
                 
                 // Log regeneration

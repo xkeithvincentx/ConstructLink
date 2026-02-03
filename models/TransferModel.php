@@ -7,7 +7,7 @@
 class TransferModel extends BaseModel {
     protected $table = 'transfers';
     protected $fillable = [
-        'ref', 'asset_id', 'from_project', 'to_project', 'reason', 'initiated_by',
+        'ref', 'inventory_item_id', 'from_project', 'to_project', 'reason', 'initiated_by',
         'transfer_type', 'approved_by', 'transfer_date', 'expected_return',
         'actual_return', 'approval_date', 'status', 'notes', 'verified_by',
         'verification_date', 'dispatched_by', 'dispatch_date', 'dispatch_notes',
@@ -22,7 +22,7 @@ class TransferModel extends BaseModel {
     public function createTransfer($data) {
         try {
             $validation = $this->validate($data, [
-                'asset_id' => 'required|integer',
+                'inventory_item_id' => 'required|integer',
                 'from_project' => 'required|integer',
                 'to_project' => 'required|integer',
                 'reason' => 'required|max:500',
@@ -56,7 +56,7 @@ class TransferModel extends BaseModel {
             
             // Check if asset is available for transfer
             $assetModel = new AssetModel();
-            $asset = $assetModel->find($data['asset_id']);
+            $asset = $assetModel->find($data['inventory_item_id']);
             
             if (!$asset) {
                 $this->rollback();
@@ -116,7 +116,7 @@ class TransferModel extends BaseModel {
                 $assetStatus = 'in_use';
             }
             
-            $assetUpdateResult = $assetModel->update($data['asset_id'], [
+            $assetUpdateResult = $assetModel->update($data['inventory_item_id'], [
                 'status' => $assetStatus
             ]);
             
@@ -210,7 +210,7 @@ class TransferModel extends BaseModel {
             
             // Update asset status to 'in_transit' after approval
             $assetModel = new AssetModel();
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'status' => 'in_transit'  // Asset is now in transit
             ]);
             
@@ -323,7 +323,7 @@ class TransferModel extends BaseModel {
 
             // Update asset project location and status
             $assetModel = new AssetModel();
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'project_id' => $transfer['to_project'],
                 'status' => 'available'  // Asset is now available at the new location
             ]);
@@ -387,7 +387,7 @@ class TransferModel extends BaseModel {
             
             // Update asset project location and status
             $assetModel = new AssetModel();
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'project_id' => $transfer['to_project'],
                 'status' => 'available'  // Asset is now available at the new location
             ]);
@@ -456,7 +456,7 @@ class TransferModel extends BaseModel {
             
             // Restore asset status to available (whether it was in_use or in_transit)
             $assetModel = new AssetModel();
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'status' => 'available'
             ]);
             
@@ -510,7 +510,7 @@ class TransferModel extends BaseModel {
                        COALESCE(uri.full_name, 'Unknown') as return_initiated_by_name,
                        COALESCE(urr.full_name, 'Unknown') as return_received_by_name
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -592,7 +592,7 @@ class TransferModel extends BaseModel {
             $countSql = "
                 SELECT COUNT(*) 
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 {$whereClause}
             ";
             
@@ -615,7 +615,7 @@ class TransferModel extends BaseModel {
                        pt.project_manager_id as to_project_manager_id,
                        COALESCE(ui.full_name, 'Unknown') as initiated_by_name
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -731,7 +731,7 @@ class TransferModel extends BaseModel {
                 $valueSql = "
                     SELECT COALESCE(SUM(a.acquisition_cost), 0) as permanent_transfer_value
                     FROM transfers t
-                    LEFT JOIN assets a ON t.asset_id = a.id
+                    LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                     WHERE t.transfer_type = 'permanent'
                       AND t.status = 'Completed'
                 ";
@@ -800,7 +800,7 @@ class TransferModel extends BaseModel {
                 LEFT JOIN projects pt ON t.to_project = pt.id
                 LEFT JOIN users ui ON t.initiated_by = ui.id
                 LEFT JOIN users ua ON t.approved_by = ua.id
-                WHERE t.asset_id = ?
+                WHERE t.inventory_item_id = ?
                 ORDER BY t.created_at DESC
             ";
 
@@ -829,7 +829,7 @@ class TransferModel extends BaseModel {
                        pt.name as to_project_name,
                        ui.full_name as initiated_by_name
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
                 LEFT JOIN users ui ON t.initiated_by = ui.id
@@ -878,7 +878,7 @@ class TransferModel extends BaseModel {
                        ui.full_name as initiated_by_name,
                        ua.full_name as approved_by_name
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -925,7 +925,7 @@ class TransferModel extends BaseModel {
             
             // Validate asset is available at destination
             $assetModel = new AssetModel();
-            $asset = $assetModel->find($transfer['asset_id']);
+            $asset = $assetModel->find($transfer['inventory_item_id']);
             
             if (!$asset || $asset['status'] !== 'available') {
                 $this->rollback();
@@ -938,7 +938,7 @@ class TransferModel extends BaseModel {
             }
             
             // Set asset status to in_transit
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'status' => 'in_transit'
             ]);
             
@@ -1019,7 +1019,7 @@ class TransferModel extends BaseModel {
             
             // Validate asset exists and is in appropriate status for return receipt
             $assetModel = new AssetModel();
-            $asset = $assetModel->find($transfer['asset_id']);
+            $asset = $assetModel->find($transfer['inventory_item_id']);
             
             if (!$asset) {
                 $this->rollback();
@@ -1048,7 +1048,7 @@ class TransferModel extends BaseModel {
             }
             
             // Return asset to original project and mark as available
-            $assetUpdateResult = $assetModel->update($transfer['asset_id'], [
+            $assetUpdateResult = $assetModel->update($transfer['inventory_item_id'], [
                 'project_id' => $transfer['from_project'],
                 'status' => 'available'
             ]);
@@ -1142,7 +1142,7 @@ class TransferModel extends BaseModel {
                        ui.full_name as return_initiated_by_name,
                        DATEDIFF(NOW(), t.return_initiation_date) as days_in_transit
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -1175,7 +1175,7 @@ class TransferModel extends BaseModel {
                        ui.full_name as return_initiated_by_name,
                        DATEDIFF(NOW(), t.return_initiation_date) as days_in_transit
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -1219,7 +1219,7 @@ class TransferModel extends BaseModel {
                        ui.full_name as initiated_by_name,
                        DATEDIFF(CURDATE(), t.expected_return) as days_overdue
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id
@@ -1255,7 +1255,7 @@ class TransferModel extends BaseModel {
                        ui.full_name as initiated_by_name,
                        DATEDIFF(t.expected_return, CURDATE()) as days_until_due
                 FROM transfers t
-                LEFT JOIN assets a ON t.asset_id = a.id
+                LEFT JOIN inventory_items a ON t.inventory_item_id = a.id
                 LEFT JOIN categories c ON a.category_id = c.id
                 LEFT JOIN projects pf ON t.from_project = pf.id
                 LEFT JOIN projects pt ON t.to_project = pt.id

@@ -110,7 +110,7 @@ class MakerModel extends BaseModel {
             }
             
             // Check if maker has assets
-            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE maker_id = ?");
+            $assetCount = $this->db->prepare("SELECT COUNT(*) FROM inventory_items WHERE maker_id = ?");
             $assetCount->execute([$id]);
             
             if ($assetCount->fetchColumn() > 0) {
@@ -177,7 +177,7 @@ class MakerModel extends BaseModel {
                    COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                    GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') as popular_categories
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.id = a.maker_id
+            LEFT JOIN inventory_items a ON m.id = a.maker_id
             LEFT JOIN categories c ON a.category_id = c.id
             {$whereClause}
             GROUP BY m.id, m.name, m.country, m.website, m.description, m.created_at, m.updated_at
@@ -215,7 +215,7 @@ class MakerModel extends BaseModel {
                    COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                    GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') as categories
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.id = a.maker_id
+            LEFT JOIN inventory_items a ON m.id = a.maker_id
             LEFT JOIN categories c ON a.category_id = c.id
             WHERE m.id = ?
             GROUP BY m.id, m.name, m.country, m.website, m.description, m.created_at, m.updated_at
@@ -242,7 +242,7 @@ class MakerModel extends BaseModel {
                 COUNT(DISTINCT m.country) as countries_represented,
                 COALESCE(SUM(a.acquisition_cost), 0) as total_value
             FROM {$this->table} m
-            LEFT JOIN assets a ON m.id = a.maker_id
+            LEFT JOIN inventory_items a ON m.id = a.maker_id
             {$whereClause}
         ";
         
@@ -262,7 +262,7 @@ class MakerModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value
                 FROM {$this->table} m
-                LEFT JOIN assets a ON m.id = a.maker_id
+                LEFT JOIN inventory_items a ON m.id = a.maker_id
                 GROUP BY m.id, m.name, m.country, m.website, m.description, m.created_at, m.updated_at
                 ORDER BY m.name ASC
             ";
@@ -333,7 +333,7 @@ class MakerModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value
                 FROM {$this->table} m
-                INNER JOIN assets a ON m.id = a.maker_id
+                INNER JOIN inventory_items a ON m.id = a.maker_id
                 GROUP BY m.id, m.name, m.country
                 ORDER BY asset_count DESC
                 LIMIT ?
@@ -362,7 +362,7 @@ class MakerModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value
                 FROM {$this->table} m
-                LEFT JOIN assets a ON m.id = a.maker_id
+                LEFT JOIN inventory_items a ON m.id = a.maker_id
                 WHERE m.country IS NOT NULL AND m.country != ''
                 GROUP BY m.country
                 ORDER BY maker_count DESC
@@ -390,7 +390,7 @@ class MakerModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                     GROUP_CONCAT(DISTINCT a.status) as statuses
-                FROM assets a
+                FROM inventory_items a
                 INNER JOIN categories c ON a.category_id = c.id
                 WHERE a.maker_id = ?
                 GROUP BY c.id, c.name
@@ -461,7 +461,7 @@ class MakerModel extends BaseModel {
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value,
                     COUNT(DISTINCT a.category_id) as categories_count,
                     COUNT(DISTINCT a.project_id) as projects_count
-                FROM assets a
+                FROM inventory_items a
                 {$whereClause}
             ";
             
@@ -487,7 +487,7 @@ class MakerModel extends BaseModel {
                     m.name as maker_name,
                     COUNT(a.id) as assets_added,
                     COALESCE(SUM(a.acquisition_cost), 0) as total_value
-                FROM assets a
+                FROM inventory_items a
                 INNER JOIN makers m ON a.maker_id = m.id
                 WHERE DATE(a.created_at) BETWEEN ? AND ?
                 GROUP BY DATE(a.created_at), m.id, m.name

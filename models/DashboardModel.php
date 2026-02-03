@@ -65,7 +65,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN status = 'under_maintenance' THEN 1 ELSE 0 END) as maintenance_assets,
                     SUM(CASE WHEN status = 'retired' THEN 1 ELSE 0 END) as retired_assets,
                     SUM(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as total_value
-                FROM assets
+                FROM inventory_items
             ";
             
             $params = [];
@@ -192,7 +192,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END) as canceled_maintenance,
                     SUM(CASE WHEN status IN ('scheduled', 'in_progress') AND scheduled_date < CURDATE() THEN 1 ELSE 0 END) as overdue_maintenance
                 FROM maintenance m
-                JOIN assets a ON m.asset_id = a.id
+                JOIN inventory_items a ON m.inventory_item_id = a.id
             ";
             
             $params = [];
@@ -244,7 +244,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN type = 'damaged' THEN 1 ELSE 0 END) as damaged_assets,
                     SUM(CASE WHEN type = 'stolen' THEN 1 ELSE 0 END) as stolen_assets
                 FROM incidents i
-                JOIN assets a ON i.asset_id = a.id
+                JOIN inventory_items a ON i.inventory_item_id = a.id
             ";
             
             $params = [];
@@ -399,7 +399,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as total_value,
                     COALESCE(c.low_stock_threshold, 5) as low_stock_threshold
                 FROM categories c
-                LEFT JOIN assets a ON c.id = a.category_id
+                LEFT JOIN inventory_items a ON c.id = a.category_id
                 WHERE a.status NOT IN ('retired', 'disposed', 'lost') OR a.id IS NULL
                 GROUP BY c.id, c.name, c.is_consumable, c.low_stock_threshold
                 HAVING total_count > 0 OR c.id IN (
@@ -429,7 +429,7 @@ class DashboardModel extends BaseModel {
                         SUM(CASE WHEN a.status = 'available' THEN 1 ELSE 0 END) as available_count,
                         SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity
                     FROM projects p
-                    INNER JOIN assets a ON p.id = a.project_id
+                    INNER JOIN inventory_items a ON p.id = a.project_id
                     INNER JOIN categories c ON a.category_id = c.id
                     WHERE a.category_id = ?
                         AND a.status NOT IN ('retired', 'disposed', 'lost')
@@ -499,7 +499,7 @@ class DashboardModel extends BaseModel {
                     COALESCE(c.low_stock_threshold, 3) as low_stock_threshold
                 FROM categories c
                 INNER JOIN equipment_types et ON c.id = et.category_id AND et.is_active = 1
-                LEFT JOIN assets a ON et.id = a.equipment_type_id
+                LEFT JOIN inventory_items a ON et.id = a.equipment_type_id
                 WHERE (a.id IS NULL OR a.status NOT IN ('retired', 'disposed', 'lost'))
                 GROUP BY c.id, c.name, c.is_consumable, et.id, et.name, c.low_stock_threshold
                 HAVING total_count > 0
@@ -540,7 +540,7 @@ class DashboardModel extends BaseModel {
                         SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
                         SUM(CASE WHEN a.status = 'available' AND c.is_consumable = 1 THEN a.available_quantity ELSE 0 END) as available_quantity
                     FROM projects p
-                    INNER JOIN assets a ON p.id = a.project_id
+                    INNER JOIN inventory_items a ON p.id = a.project_id
                     INNER JOIN categories c ON a.category_id = c.id
                     WHERE a.equipment_type_id = ?
                         AND a.status NOT IN ('retired', 'disposed', 'lost')
@@ -626,7 +626,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_assets,
                     SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_assets
                 FROM projects p
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                     AND a.status NOT IN ('retired', 'disposed', 'lost')
                 WHERE p.is_active = 1
                 GROUP BY p.id, p.name, p.is_active
@@ -650,7 +650,7 @@ class DashboardModel extends BaseModel {
                         SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
                         SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count
                     FROM categories c
-                    INNER JOIN assets a ON c.id = a.category_id
+                    INNER JOIN inventory_items a ON c.id = a.category_id
                     WHERE a.project_id = ?
                         AND a.status NOT IN ('retired', 'disposed', 'lost')
                     GROUP BY c.id, c.name, c.is_consumable
@@ -673,7 +673,7 @@ class DashboardModel extends BaseModel {
                             SUM(CASE WHEN a.status IN ('in_use', 'borrowed') THEN 1 ELSE 0 END) as in_use_count,
                             SUM(CASE WHEN a.status IN ('under_maintenance', 'damaged') THEN 1 ELSE 0 END) as maintenance_count
                         FROM equipment_types et
-                        INNER JOIN assets a ON et.id = a.equipment_type_id
+                        INNER JOIN inventory_items a ON et.id = a.equipment_type_id
                         WHERE a.project_id = ?
                             AND a.category_id = ?
                             AND a.status NOT IN ('retired', 'disposed', 'lost')
@@ -748,7 +748,7 @@ class DashboardModel extends BaseModel {
                     SUM(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as total_asset_value,
                     AVG(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as avg_asset_value,
                     COUNT(CASE WHEN acquisition_cost > 10000 THEN 1 END) as high_value_assets
-                FROM assets
+                FROM inventory_items
             ";
 
             $stmt = $this->db->prepare($assetSql);
@@ -780,7 +780,7 @@ class DashboardModel extends BaseModel {
                     p.budget,
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as utilized
                 FROM projects p
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                 WHERE p.is_active = 1
                 GROUP BY p.id, p.name, p.budget
                 ORDER BY utilized DESC
@@ -841,7 +841,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN status = 'retired' THEN 1 END) as retired_assets,
                     COUNT(DISTINCT category_id) as categories_in_use,
                     COUNT(CASE WHEN status = 'disposed' THEN 1 END) as disposed_assets
-                FROM assets
+                FROM inventory_items
             ";
             
             $stmt = $this->db->prepare($assetSql);
@@ -873,7 +873,7 @@ class DashboardModel extends BaseModel {
                     COUNT(*) as total,
                     COUNT(CASE WHEN status IN ('in_use', 'borrowed') THEN 1 END) as in_use,
                     ROUND((COUNT(CASE WHEN status IN ('in_use', 'borrowed') THEN 1 END) * 100.0 / COUNT(*)), 2) as utilization_rate
-                FROM assets
+                FROM inventory_items
                 WHERE status NOT IN ('retired', 'disposed')
             ";
             
@@ -1029,7 +1029,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN bt.status = 'Returned'
                         AND DATE(bt.actual_return) = CURDATE() THEN 1 END) as tools_returned_today
                 FROM borrowed_tools bt
-                JOIN assets a ON bt.asset_id = a.id
+                JOIN inventory_items a ON bt.inventory_item_id = a.id
             ";
 
             $toolParams = [];
@@ -1075,7 +1075,7 @@ class DashboardModel extends BaseModel {
                         AND a.available_quantity <= COALESCE(c.critical_stock_threshold, 1) THEN 1 END) as critical_stock_items,
                     COUNT(CASE WHEN c.is_consumable = 1
                         AND a.available_quantity = 0 THEN 1 END) as out_of_stock_items
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 WHERE a.status = 'available'
             ";
@@ -1102,7 +1102,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN DATE(qr_tag_printed) = CURDATE() THEN 1 END) as qr_printed_today,
                     COUNT(CASE WHEN DATE(qr_tag_applied) = CURDATE() THEN 1 END) as qr_applied_today,
                     COUNT(CASE WHEN DATE(qr_tag_verified) = CURDATE() THEN 1 END) as qr_verified_today
-                FROM assets
+                FROM inventory_items
                 WHERE status NOT IN ('retired', 'disposed')
             ";
 
@@ -1123,7 +1123,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN location IS NOT NULL
                         AND updated_at < DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 END) as location_needs_verification,
                     COUNT(DISTINCT location) as total_locations
-                FROM assets
+                FROM inventory_items
                 WHERE status IN ('available', 'in_use', 'borrowed')
             ";
 
@@ -1144,7 +1144,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN current_condition = 'Fair' THEN 1 END) as fair_condition,
                     COUNT(CASE WHEN current_condition IN ('Poor', 'Damaged') THEN 1 END) as poor_damaged_condition,
                     COUNT(CASE WHEN status = 'under_maintenance' THEN 1 END) as under_maintenance
-                FROM assets
+                FROM inventory_items
                 WHERE status NOT IN ('retired', 'disposed')
             ";
 
@@ -1241,7 +1241,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN a.status = 'available' THEN 1 END) as available_project_assets,
                     COUNT(CASE WHEN a.status = 'in_use' THEN 1 END) as in_use_project_assets,
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as project_asset_value
-                FROM assets a
+                FROM inventory_items a
                 WHERE a.project_id = ?
             ";
             
@@ -1314,7 +1314,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN bt.actual_return IS NOT NULL AND DATE(bt.actual_return) = CURDATE() THEN 1 END) as tools_returned_today,
                     COUNT(CASE WHEN r.created_at >= CURDATE() THEN 1 END) as requests_created_today
                 FROM borrowed_tools bt
-                JOIN assets a1 ON bt.asset_id = a1.id
+                JOIN inventory_items a1 ON bt.inventory_item_id = a1.id
                 LEFT JOIN requests r ON r.project_id = a1.project_id
                 WHERE (bt.created_at >= CURDATE() OR r.created_at >= CURDATE())
             ";
@@ -1362,7 +1362,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN i.type = 'lost' AND i.status NOT IN ('Resolved', 'Closed') THEN 1 END) as lost_items,
                     COUNT(CASE WHEN i.type = 'damaged' AND i.status NOT IN ('Resolved', 'Closed') THEN 1 END) as damaged_items
                 FROM incidents i
-                JOIN assets a2 ON i.asset_id = a2.id
+                JOIN inventory_items a2 ON i.inventory_item_id = a2.id
             ";
             
             $incidentParams = [];
@@ -1381,7 +1381,7 @@ class DashboardModel extends BaseModel {
                     COUNT(CASE WHEN a.status = 'available' THEN 1 END) as available_on_site,
                     COUNT(CASE WHEN a.status = 'in_use' THEN 1 END) as in_use_on_site,
                     COUNT(CASE WHEN c.is_consumable = 1 AND a.available_quantity < 10 THEN 1 END) as low_stock_alerts
-                FROM assets a
+                FROM inventory_items a
                 LEFT JOIN categories c ON a.category_id = c.id
                 WHERE (a.location LIKE '%Site%' OR a.project_id IS NOT NULL)
             ";
@@ -1481,7 +1481,7 @@ class DashboardModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as total_value
                 FROM categories c
-                LEFT JOIN assets a ON c.id = a.category_id
+                LEFT JOIN inventory_items a ON c.id = a.category_id
                 GROUP BY c.id, c.name
                 ORDER BY asset_count DESC
             ";
@@ -1507,7 +1507,7 @@ class DashboardModel extends BaseModel {
                     COUNT(a.id) as asset_count,
                     SUM(CASE WHEN a.acquisition_cost IS NOT NULL THEN a.acquisition_cost ELSE 0 END) as total_value
                 FROM projects p
-                LEFT JOIN assets a ON p.id = a.project_id
+                LEFT JOIN inventory_items a ON p.id = a.project_id
                 WHERE p.is_active = 1
                 GROUP BY p.id, p.name
                 ORDER BY asset_count DESC
@@ -1533,7 +1533,7 @@ class DashboardModel extends BaseModel {
                     DATE_FORMAT(acquired_date, '%Y-%m') as month,
                     COUNT(*) as acquisitions,
                     SUM(CASE WHEN acquisition_cost IS NOT NULL THEN acquisition_cost ELSE 0 END) as total_cost
-                FROM assets
+                FROM inventory_items
                 WHERE acquired_date >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
                 GROUP BY DATE_FORMAT(acquired_date, '%Y-%m')
                 ORDER BY month ASC

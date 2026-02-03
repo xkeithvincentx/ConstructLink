@@ -1,0 +1,426 @@
+/**
+ * Withdrawal Forms CSS
+ * Styling for create-batch withdrawal page
+ * Two-column layout: Selection panel + Cart sidebar
+ */
+
+/* ===========================================
+   LAYOUT - Two Column Grid
+   =========================================== */
+
+.withdrawal-batch-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 991.98px) {
+    .withdrawal-batch-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===========================================
+   CATEGORY PILLS
+   =========================================== */
+
+.category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.category-pill {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: 2px solid #dee2e6;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-pill:hover {
+    border-color: #0d6efd;
+    background: #f8f9fa;
+}
+
+.category-pill.active {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.category-pill i {
+    font-size: 1.1rem;
+}
+
+/* ===========================================
+   SEARCH BAR
+   =========================================== */
+
+.consumable-search {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.consumable-search input {
+    padding-right: 2.5rem;
+}
+
+.consumable-search .clear-search {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.consumable-search .clear-search:hover {
+    color: #dc3545;
+}
+
+/* ===========================================
+   ITEM CARDS
+   =========================================== */
+
+.consumable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.consumable-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: white;
+    position: relative;
+}
+
+.consumable-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.consumable-card.selected {
+    border-color: #198754;
+    background: #f0f9f4;
+}
+
+.consumable-card .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.consumable-card .item-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #212529;
+    margin: 0;
+}
+
+.consumable-card .item-ref {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.consumable-card .item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.consumable-card .stock-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.consumable-card .stock-badge {
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+}
+
+.consumable-card .stock-badge.in-stock {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.consumable-card .stock-badge.low-stock {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.consumable-card .stock-badge.out-of-stock {
+    background: #f8d7da;
+    color: #842029;
+}
+
+/* Checkmark overlay when selected */
+.consumable-card .selected-checkmark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    background: #198754;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+/* ===========================================
+   CART SIDEBAR (DESKTOP)
+   =========================================== */
+
+.withdrawal-cart {
+    position: sticky;
+    top: 1rem;
+    height: fit-content;
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+}
+
+.withdrawal-cart .card-body {
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.cart-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6c757d;
+}
+
+.cart-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cart-item {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #f8f9fa;
+}
+
+.cart-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.5rem;
+}
+
+.cart-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.cart-item-remove {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.cart-item-remove:hover {
+    color: #bb2d3b;
+}
+
+.cart-item-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.cart-item-quantity label {
+    font-size: 0.85rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.cart-item-quantity input {
+    width: 80px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.cart-item-quantity .stock-limit {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.cart-summary {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+    margin-top: auto;
+}
+
+.cart-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.cart-summary-row:last-child {
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid #dee2e6;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* ===========================================
+   CART MOBILE (OFFCANVAS)
+   =========================================== */
+
+@media (max-width: 991.98px) {
+    .withdrawal-cart {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        max-height: none;
+        z-index: 1050;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .cart-toggle-mobile {
+        display: block;
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 1049;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+}
+
+/* ===========================================
+   QUANTITY VALIDATION
+   =========================================== */
+
+.quantity-error {
+    border-color: #dc3545 !important;
+}
+
+.quantity-warning {
+    border-color: #ffc107 !important;
+}
+
+.quantity-feedback {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.quantity-feedback.error {
+    color: #dc3545;
+}
+
+.quantity-feedback.warning {
+    color: #856404;
+}
+
+/* ===========================================
+   LOADING STATES
+   =========================================== */
+
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+/* ===========================================
+   ERROR STATES
+   =========================================== */
+
+.item-unavailable {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.item-unavailable::after {
+    content: "OUT OF STOCK";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+}

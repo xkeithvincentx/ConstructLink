@@ -310,12 +310,12 @@ class Router {
      * Show 403 forbidden page
      */
     private function show403() {
-        // http_response_code(403);
-        // if (file_exists(APP_ROOT . '/views/errors/403.php')) {
-        //     include APP_ROOT . '/views/errors/403.php';
-        // } else {
-        //     echo '<h1>403 - Access Forbidden</h1>';
-        // }
+        http_response_code(403);
+        if (file_exists(APP_ROOT . '/views/errors/403.php')) {
+            include APP_ROOT . '/views/errors/403.php';
+        } else {
+            echo '<h1>403 - Access Forbidden</h1>';
+        }
     }
     
     /**

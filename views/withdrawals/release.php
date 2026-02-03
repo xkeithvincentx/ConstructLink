@@ -12,10 +12,8 @@ $auth = Auth::getInstance();
 $user = $auth->getCurrentUser();
 $userRole = $user['role_name'] ?? 'Guest';
 $roleConfig = require APP_ROOT . '/config/roles.php';
-function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
-    if ($userRole === 'System Admin') return true;
-    return $withdrawal['status'] === 'Approved' && in_array($userRole, $roleConfig['withdrawals/release'] ?? []);
-}
+
+// RBAC helpers are now in core/helpers.php
 ?>
 
 <!-- Navigation Actions (No Header - handled by layout) -->
@@ -41,22 +39,22 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
         <div class="card">
             <div class="card-header">
                 <h6 class="card-title mb-0">
-                    <i class="bi bi-check-circle me-2"></i>Confirm Asset Release
+                    <i class="bi bi-check-circle me-2"></i>Confirm Consumable Release
                 </h6>
             </div>
             <div class="card-body">
                 <div class="alert alert-info" role="alert">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>Asset Release Process:</strong> By releasing this asset, you confirm that:
+                    <strong>Consumable Release Process:</strong> By releasing this asset, you confirm that:
                     <ul class="mb-0 mt-2">
                         <li>The withdrawal request has been reviewed and approved</li>
-                        <li>The asset is available and ready for use</li>
+                        <li>The consumable is available and ready for use</li>
                         <li>The receiver has been properly identified</li>
-                        <li>The asset status will be changed to "In Use"</li>
+                        <li>The consumable status will be changed to "In Use"</li>
                     </ul>
                 </div>
                 
-           <?php if (canReleaseWithdrawal($withdrawal, $userRole, $roleConfig)): ?>
+           <?php if (canReleaseWithdrawal($withdrawal, $user)): ?>
            <form method="POST" action="?route=withdrawals/release&id=<?= htmlspecialchars($withdrawal['id']) ?>" id="releaseForm">
                     <?= CSRFProtection::getTokenField() ?>
                     <input type="hidden" name="withdrawal_id" value="<?= htmlspecialchars($withdrawal['id']) ?>">
@@ -71,7 +69,7 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                                     <label class="form-check-label" for="standard_release">
                                         <i class="bi bi-check-circle text-success me-1"></i>Standard Release
                                     </label>
-                                    <div class="form-text">Normal asset release for approved requests</div>
+                                    <div class="form-text">Normal consumable release for approved requests</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -86,13 +84,13 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                         </div>
                     </div>
                     
-                    <!-- Asset Condition Check -->
+                    <!-- Consumable Condition Check -->
                     <div class="mb-3">
-                        <label class="form-label">Asset Condition Verification <span class="text-danger">*</span></label>
+                        <label class="form-label">Consumable Condition Verification <span class="text-danger">*</span></label>
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="asset_condition" id="condition_excellent" value="excellent" required>
+                                    <input class="form-check-input" type="radio" name="consumable_condition" id="condition_excellent" value="excellent" required>
                                     <label class="form-check-label" for="condition_excellent">
                                         <i class="bi bi-star-fill text-success me-1"></i>Excellent
                                     </label>
@@ -100,7 +98,7 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="asset_condition" id="condition_good" value="good" required>
+                                    <input class="form-check-input" type="radio" name="consumable_condition" id="condition_good" value="good" required>
                                     <label class="form-check-label" for="condition_good">
                                         <i class="bi bi-check-circle text-success me-1"></i>Good
                                     </label>
@@ -108,7 +106,7 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="asset_condition" id="condition_fair" value="fair" required>
+                                    <input class="form-check-input" type="radio" name="consumable_condition" id="condition_fair" value="fair" required>
                                     <label class="form-check-label" for="condition_fair">
                                         <i class="bi bi-exclamation-triangle text-warning me-1"></i>Fair
                                     </label>
@@ -130,7 +128,7 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                                    value="<?= htmlspecialchars($withdrawal['receiver_name']) ?>" readonly>
                         </div>
                         <div class="form-text">
-                            Verify the identity of the person receiving the asset.
+                            Verify the identity of the person receiving the consumable.
                         </div>
                     </div>
                     
@@ -141,7 +139,7 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                                   id="release_notes" 
                                   name="release_notes" 
                                   rows="4" 
-                                  placeholder="Enter any notes about the asset release, special instructions, or conditions..."></textarea>
+                                  placeholder="Enter any notes about the consumable release, special instructions, or conditions..."></textarea>
                         <div class="form-text">
                             Document any special conditions, instructions, or observations.
                         </div>
@@ -165,25 +163,25 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="confirmAssetCondition" name="confirmAssetCondition" required>
                             <label class="form-check-label" for="confirmAssetCondition">
-                                I have inspected the asset and confirmed its condition is suitable for use.
+                                I have inspected the consumable and confirmed its condition is suitable for use.
                             </label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="confirmReceiverIdentity" name="confirmReceiverIdentity" required>
                             <label class="form-check-label" for="confirmReceiverIdentity">
-                                I have verified the identity of the person receiving the asset.
+                                I have verified the identity of the person receiving the consumable.
                             </label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="confirmAuthorization" name="confirmAuthorization" required>
                             <label class="form-check-label" for="confirmAuthorization">
-                                I have the authority to release this asset for the specified purpose.
+                                I have the authority to release this consumable for the specified purpose.
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="confirmResponsibility" name="confirmResponsibility" required>
                             <label class="form-check-label" for="confirmResponsibility">
-                                I understand that I am responsible for this asset release decision.
+                                I understand that I am responsible for this consumable release decision.
                             </label>
                         </div>
                     </div>
@@ -194,13 +192,13 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                             <i class="bi bi-x-circle me-1"></i>Cancel
                         </a>
                         <button type="submit" class="btn btn-success" id="releaseButton" disabled>
-                            <i class="bi bi-check-circle me-1"></i>Release Asset
+                            <i class="bi bi-check-circle me-1"></i>Release Consumable
                         </button>
                     </div>
                 </form>
            <?php else: ?>
 <div class="alert alert-danger mt-4">
-    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to release this asset or it is not in a releasable status.
+    <i class="bi bi-exclamation-triangle me-2"></i>You do not have permission to release this consumable or it is not in a releasable status.
 </div>
 <?php endif; ?>
             </div>
@@ -222,8 +220,8 @@ function canReleaseWithdrawal($withdrawal, $userRole, $roleConfig) {
                     
                     <dt class="col-sm-5">Asset:</dt>
                     <dd class="col-sm-7">
-                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['asset_name']) ?></div>
-                        <small class="text-muted"><?= htmlspecialchars($withdrawal['asset_ref']) ?></small>
+                        <div class="fw-medium"><?= htmlspecialchars($withdrawal['item_name']) ?></div>
+                        <small class="text-muted"><?= htmlspecialchars($withdrawal['item_ref']) ?></small>
                     </dd>
                     
                     <dt class="col-sm-5">Receiver:</dt>
@@ -367,7 +365,7 @@ function updateReleaseButton() {
     const releaseButton = document.getElementById('releaseButton');
     const requiredCheckboxes = document.querySelectorAll('#releaseForm input[type="checkbox"][required]');
     const authorizationSelected = document.querySelector('input[name="authorization_level"]:checked');
-    const conditionSelected = document.querySelector('input[name="asset_condition"]:checked');
+    const conditionSelected = document.querySelector('input[name="consumable_condition"]:checked');
     
     let allRequiredChecked = true;
     requiredCheckboxes.forEach(checkbox => {
@@ -395,7 +393,7 @@ document.querySelectorAll('#releaseForm input, #releaseForm textarea').forEach(e
 // Form validation
 document.getElementById('releaseForm').addEventListener('submit', function(e) {
     const authorizationLevel = document.querySelector('input[name="authorization_level"]:checked');
-    const assetCondition = document.querySelector('input[name="asset_condition"]:checked');
+    const assetCondition = document.querySelector('input[name="consumable_condition"]:checked');
     
     if (!authorizationLevel) {
         e.preventDefault();
@@ -420,7 +418,7 @@ document.getElementById('releaseForm').addEventListener('submit', function(e) {
     }
     
     // Final confirmation
-    let confirmMessage = 'Are you sure you want to release this asset?';
+    let confirmMessage = 'Are you sure you want to release this consumable?';
     if (authorizationLevel.value === 'emergency') {
         confirmMessage += '\n\nThis is an EMERGENCY RELEASE and will be logged for audit purposes.';
     }
@@ -432,11 +430,11 @@ document.getElementById('releaseForm').addEventListener('submit', function(e) {
 });
 
 // Auto-fill release notes based on selections
-document.querySelectorAll('input[name="authorization_level"], input[name="asset_condition"]').forEach(input => {
+document.querySelectorAll('input[name="authorization_level"], input[name="consumable_condition"]').forEach(input => {
     input.addEventListener('change', function() {
         const releaseNotes = document.getElementById('release_notes');
         const authLevel = document.querySelector('input[name="authorization_level"]:checked');
-        const condition = document.querySelector('input[name="asset_condition"]:checked');
+        const condition = document.querySelector('input[name="consumable_condition"]:checked');
         
         if (authLevel && condition && !releaseNotes.value) {
             let notes = `Asset released under ${authLevel.value} authorization. `;

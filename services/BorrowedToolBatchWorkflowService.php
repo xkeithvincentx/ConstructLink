@@ -236,8 +236,8 @@ class BorrowedToolBatchWorkflowService {
 
             // Update asset statuses to borrowed
             $updateAssetsSql = "
-                UPDATE assets a
-                INNER JOIN borrowed_tools bt ON a.id = bt.asset_id
+                UPDATE inventory_items a
+                INNER JOIN borrowed_tools bt ON a.id = bt.inventory_item_id
                 SET a.status = ?
                 WHERE bt.batch_id = ?
             ";
